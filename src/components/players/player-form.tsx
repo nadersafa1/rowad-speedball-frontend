@@ -42,6 +42,9 @@ const playerSchema = z.object({
   gender: z.enum(["male", "female"], {
     required_error: "Gender is required",
   }),
+  preferredHand: z.enum(["left", "right"], {
+    required_error: "Preferred hand is required",
+  }),
 });
 
 type PlayerFormData = z.infer<typeof playerSchema>;
@@ -63,6 +66,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
       name: player?.name || "",
       dateOfBirth: player?.dateOfBirth?.split("T")[0] || "",
       gender: player?.gender || undefined,
+      preferredHand: player?.preferredHand || undefined,
     },
   });
 
@@ -170,6 +174,46 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                           className="w-4 h-4 text-rowad-600 border-gray-300 focus:ring-rowad-500"
                         />
                         <span className="text-sm font-medium">Female</span>
+                      </label>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Preferred Hand Field */}
+            <FormField
+              control={form.control}
+              name="preferredHand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preferred Hand</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-4">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="left"
+                          checked={field.value === "left"}
+                          onChange={() => field.onChange("left")}
+                          disabled={isLoading}
+                          className="w-4 h-4 text-rowad-600 border-gray-300 focus:ring-rowad-500"
+                        />
+                        <span className="text-sm font-medium">Left Handed</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="right"
+                          checked={field.value === "right"}
+                          onChange={() => field.onChange("right")}
+                          disabled={isLoading}
+                          className="w-4 h-4 text-rowad-600 border-gray-300 focus:ring-rowad-500"
+                        />
+                        <span className="text-sm font-medium">
+                          Right Handed
+                        </span>
                       </label>
                     </div>
                   </FormControl>

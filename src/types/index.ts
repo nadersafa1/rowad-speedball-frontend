@@ -3,17 +3,26 @@ export type Player = {
   id: string;
   name: string;
   dateOfBirth: string;
-  gender: 'male' | 'female';
+  gender: "male" | "female";
+  preferredHand: "left" | "right";
   age: number;
   ageGroup: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PaginatedResponse<T> = {
+  data: T[];
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
 };
 
 export type Test = {
   id: string;
   name: string;
-  testType: '60_30' | '30_30' | '30_60';
+  testType: "60_30" | "30_30" | "30_60";
   dateConducted: string;
   description?: string;
   createdAt: Date;
@@ -41,9 +50,15 @@ export type TestWithResults = Test & {
   testResults?: (TestResult & { player?: Player })[];
 };
 
-export type CreatePlayerData = Omit<Player, 'id' | 'age' | 'ageGroup' | 'createdAt' | 'updatedAt'>;
-export type CreateTestData = Omit<Test, 'id' | 'createdAt' | 'updatedAt'>;
-export type CreateTestResultData = Omit<TestResult, 'id' | 'totalScore' | 'createdAt' | 'updatedAt'>;
+export type CreatePlayerData = Omit<
+  Player,
+  "id" | "age" | "ageGroup" | "createdAt" | "updatedAt"
+>;
+export type CreateTestData = Omit<Test, "id" | "createdAt" | "updatedAt">;
+export type CreateTestResultData = Omit<
+  TestResult,
+  "id" | "totalScore" | "createdAt" | "updatedAt"
+>;
 
 export type AuthUser = {
   email: string;
@@ -53,4 +68,3 @@ export type AuthResponse = {
   authenticated: boolean;
   user?: AuthUser;
 };
-

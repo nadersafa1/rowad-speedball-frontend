@@ -17,10 +17,11 @@ import { usePlayersStore } from "@/store/players-store";
 import { useAuthStore } from "@/store/auth-store";
 import { calculateAge, getAgeGroup, formatDate } from "@/lib/utils";
 import PlayerForm from "@/components/players/player-form";
+import Pagination from "@/components/ui/pagination";
 
 const PlayersPage = () => {
   const { user } = useAuthStore();
-  const { players, isLoading, error, fetchPlayers, clearError } =
+  const { players, isLoading, error, pagination, fetchPlayers, clearError } =
     usePlayersStore();
 
   const [playerFormOpen, setPlayerFormOpen] = useState(false);
@@ -30,6 +31,7 @@ const PlayersPage = () => {
     search: "",
     gender: "",
     ageGroup: "",
+    page: 1,
   });
 
   // Initial fetch
@@ -43,7 +45,11 @@ const PlayersPage = () => {
   }, [filters, fetchPlayers]);
 
   const handleSearchChange = (value: string) => {
-    setFilters((prev) => ({ ...prev, search: value }));
+    setFilters((prev) => ({ ...prev, search: value, page: 1 }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
   };
 
   if (error) {
@@ -129,7 +135,11 @@ const PlayersPage = () => {
                 <select
                   value={filters.gender}
                   onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, gender: e.target.value }))
+                    setFilters((prev) => ({
+                      ...prev,
+                      gender: e.target.value,
+                      page: 1,
+                    }))
                   }
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rowad-500 focus:border-transparent"
                 >
@@ -149,6 +159,7 @@ const PlayersPage = () => {
                     setFilters((prev) => ({
                       ...prev,
                       ageGroup: e.target.value,
+                      page: 1,
                     }))
                   }
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rowad-500 focus:border-transparent"
@@ -230,11 +241,28 @@ const PlayersPage = () => {
                         {player.ageGroup}
                       </span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        Preferred Hand:
+                      </span>
+                      <span className="capitalize">{player.preferredHand}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {players.length > 0 && pagination.totalPages > 1 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
 
@@ -244,26 +272,32 @@ const PlayersPage = () => {
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold">{players.length}</p>
+                <p className="text-2xl font-bold">{pagination.totalItems}</p>
                 <p className="text-muted-foreground text-sm">Total Players</p>
               </div>
               <div>
                 <p className="text-2xl font-bold">
                   {players.filter((p) => p.gender === "male").length}
                 </p>
-                <p className="text-muted-foreground text-sm">Male</p>
+                <p className="text-muted-foreground text-sm">
+                  Male (Current Page)
+                </p>
               </div>
               <div>
                 <p className="text-2xl font-bold">
                   {players.filter((p) => p.gender === "female").length}
                 </p>
-                <p className="text-muted-foreground text-sm">Female</p>
+                <p className="text-muted-foreground text-sm">
+                  Female (Current Page)
+                </p>
               </div>
               <div>
                 <p className="text-2xl font-bold">
                   {new Set(players.map((p) => p.ageGroup)).size}
                 </p>
-                <p className="text-muted-foreground text-sm">Age Groups</p>
+                <p className="text-muted-foreground text-sm">
+                  Age Groups (Current Page)
+                </p>
               </div>
             </div>
           </CardContent>

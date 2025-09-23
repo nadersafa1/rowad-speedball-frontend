@@ -1,16 +1,28 @@
 // Players Store - Single responsibility: Players state management
-import { create } from 'zustand';
-import { apiClient } from '@/lib/api-client';
-import type { Player, PlayerWithResults } from '@/types';
+import { create } from "zustand";
+import { apiClient } from "@/lib/api-client";
+import type { Player, PlayerWithResults, PaginatedResponse } from "@/types";
 
 interface PlayersState {
   players: Player[];
   selectedPlayer: PlayerWithResults | null;
   isLoading: boolean;
   error: string | null;
+  pagination: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+  };
 
   // Actions
-  fetchPlayers: (filters?: { search?: string; gender?: string; ageGroup?: string }) => Promise<void>;
+  fetchPlayers: (filters?: {
+    search?: string;
+    gender?: string;
+    ageGroup?: string;
+    page?: number;
+    limit?: number;
+  }) => Promise<void>;
   fetchPlayer: (id: string) => Promise<void>;
   createPlayer: (data: any) => Promise<void>;
   updatePlayer: (id: string, data: any) => Promise<void>;
@@ -24,22 +36,42 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   selectedPlayer: null,
   isLoading: false,
   error: null,
+  pagination: {
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 0,
+  },
 
   fetchPlayers: async (filters = {}) => {
     set({ isLoading: true, error: null });
     try {
       const params = {
         search: filters.search || undefined,
-        gender: filters.gender as any || undefined,
+        gender: (filters.gender as any) || undefined,
         ageGroup: filters.ageGroup || undefined,
+        page: filters.page || 1,
+        limit: filters.limit || 10,
       };
-      
-      const players = await apiClient.getPlayers(params) as Player[];
-      set({ players, isLoading: false });
+
+      const response = (await apiClient.getPlayers(
+        params
+      )) as PaginatedResponse<Player>;
+      set({
+        players: response.data,
+        pagination: {
+          page: response.page,
+          limit: response.limit,
+          totalItems: response.totalItems,
+          totalPages: response.totalPages,
+        },
+        isLoading: false,
+      });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch players',
-        isLoading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to fetch players",
+        isLoading: false,
       });
     }
   },
@@ -47,12 +79,13 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   fetchPlayer: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const player = await apiClient.getPlayer(id) as PlayerWithResults;
+      const player = (await apiClient.getPlayer(id)) as PlayerWithResults;
       set({ selectedPlayer: player, isLoading: false });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch player',
-        isLoading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to fetch player",
+        isLoading: false,
       });
     }
   },
@@ -60,15 +93,16 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   createPlayer: async (data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const newPlayer = await apiClient.createPlayer(data) as Player;
-      set(state => ({ 
+      const newPlayer = (await apiClient.createPlayer(data)) as Player;
+      set((state) => ({
         players: [...state.players, newPlayer],
-        isLoading: false 
+        isLoading: false,
       }));
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to create player',
-        isLoading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to create player",
+        isLoading: false,
       });
       throw error;
     }
@@ -77,16 +111,23 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   updatePlayer: async (id: string, data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedPlayer = await apiClient.updatePlayer(id, data) as Player;
-      set(state => ({ 
-        players: state.players.map(p => p.id === id ? updatedPlayer : p),
-        selectedPlayer: state.selectedPlayer?.id === id ? { ...updatedPlayer, testResults: state.selectedPlayer.testResults } : state.selectedPlayer,
-        isLoading: false 
+      const updatedPlayer = (await apiClient.updatePlayer(id, data)) as Player;
+      set((state) => ({
+        players: state.players.map((p) => (p.id === id ? updatedPlayer : p)),
+        selectedPlayer:
+          state.selectedPlayer?.id === id
+            ? {
+                ...updatedPlayer,
+                testResults: state.selectedPlayer.testResults,
+              }
+            : state.selectedPlayer,
+        isLoading: false,
       }));
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to update player',
-        isLoading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to update player",
+        isLoading: false,
       });
       throw error;
     }
@@ -96,15 +137,17 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await apiClient.deletePlayer(id);
-      set(state => ({ 
-        players: state.players.filter(p => p.id !== id),
-        selectedPlayer: state.selectedPlayer?.id === id ? null : state.selectedPlayer,
-        isLoading: false 
+      set((state) => ({
+        players: state.players.filter((p) => p.id !== id),
+        selectedPlayer:
+          state.selectedPlayer?.id === id ? null : state.selectedPlayer,
+        isLoading: false,
       }));
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to delete player',
-        isLoading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to delete player",
+        isLoading: false,
       });
       throw error;
     }
