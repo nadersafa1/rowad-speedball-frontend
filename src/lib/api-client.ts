@@ -197,10 +197,14 @@ export class ApiClient {
   }
 }
 
-// Singleton instance - provide fallback URL for development
-const defaultApiUrl =
-  process.env.NODE_ENV === "production"
-    ? "/api/v1" // In production, use relative path (proxy through nginx or direct backend)
-    : "http://localhost:2000/api/v1";
+// Singleton instance - use environment variable only
+const defaultApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+if (!defaultApiUrl) {
+  throw new Error(
+    "NEXT_PUBLIC_API_BASE_URL environment variable is required. " +
+      "Please set it in your .env file."
+  );
+}
 
 export const apiClient = new ApiClient(defaultApiUrl);

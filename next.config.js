@@ -2,14 +2,32 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // Removed standalone output for now to fix issues
-  async rewrites() {
+  
+  // Environment variables to expose to the client
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+  },
+
+  // Optional: Add security headers for production
+  async headers() {
     return [
       {
-        source: '/api/:path*',
-        destination: process.env.NODE_ENV === 'production' 
-          ? 'http://backend:5555/api/:path*'
-          : 'http://localhost:2000/api/:path*',
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+        ],
       },
     ];
   },

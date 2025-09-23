@@ -1,30 +1,65 @@
-# Use the official Node.js image as the base image
-FROM node:22-alpine
+# syntax=docker/dockerfile:1
+
+# Use Bun's official Alpine image
+ARG BUN_VERSION=1.2.19-alpine
+FROM oven/bun:${BUN_VERSION} AS base
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Set the working directory inside the container
+# Create app directory and non-root user
 WORKDIR /app
+RUN addgroup -g 1001 -S bunjs && \
+    adduser -S speedball -u 1001
 
-# Copy root package.json and package-lock.json for workspace setup
-COPY package.json package-lock.json ./
+# Copy package files for dependency installation
+COPY package.json bun.lockb* ./
 
-# Copy frontend package.json
-COPY apps/frontend/package.json ./apps/frontend/
+# Install dependencies (including devDependencies for build)
+RUN bun install --frozen-lockfile
 
-# Install dependencies for the workspace
-RUN npm install
+# Copy source code
+COPY . .
 
-# Copy the frontend application code
-COPY apps/frontend ./apps/frontend
+# Build the Next.js application
+RUN bun run build
 
-# Build the frontend application
-WORKDIR /app/apps/frontend
-RUN npm run build
+# Production stage
+FROM oven/bun:${BUN_VERSION}-alpine AS production
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create app directory and non-root user
+WORKDIR /app
+RUN addgroup -g 1001 -S bunjs && \
+    adduser -S speedball -u 1001
+
+# Copy package files for production dependencies
+COPY package.json bun.lockb* ./
+
+# Install only production dependencies
+RUN bun install --frozen-lockfile --production
+
+# Copy built application from base stage
+COPY --from=base --chown=speedball:bunjs /app/.next ./.next
+COPY --from=base --chown=speedball:bunjs /app/public ./public
+COPY --from=base --chown=speedball:bunjs /app/next.config.js ./next.config.js
+COPY --from=base --chown=speedball:bunjs /app/package.json ./package.json
+
+# Change ownership of the app directory to the speedball user
+RUN chown -R speedball:bunjs /app
+USER speedball
 
 # Expose the port your app runs on
 EXPOSE 3000
 
-# Command to start your application
-CMD ["dumb-init", "--", "npm", "start"]
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD bun -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Start the Next.js application
+CMD ["bun", "run", "start"]
