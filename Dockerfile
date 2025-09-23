@@ -15,7 +15,7 @@ RUN addgroup -g 1001 -S bunjs && \
 # Copy package files for dependency installation
 COPY package.json bun.lockb* ./
 
-# Install dependencies (including devDependencies for build)
+# Install all dependencies (including devDependencies for build)
 RUN bun install --frozen-lockfile
 
 # Copy source code
@@ -25,7 +25,7 @@ COPY . .
 RUN bun run build
 
 # Production stage
-FROM oven/bun:${BUN_VERSION}-alpine AS production
+FROM oven/bun:${BUN_VERSION} AS production
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
@@ -38,14 +38,11 @@ RUN addgroup -g 1001 -S bunjs && \
 # Copy package files for production dependencies
 COPY package.json bun.lockb* ./
 
-# Install only production dependencies
-RUN bun install --frozen-lockfile --production
+# Install all dependencies (needed for Next.js runtime)
+RUN bun install --frozen-lockfile
 
-# Copy built application from base stage
-COPY --from=base --chown=speedball:bunjs /app/.next ./.next
-COPY --from=base --chown=speedball:bunjs /app/public ./public
-COPY --from=base --chown=speedball:bunjs /app/next.config.js ./next.config.js
-COPY --from=base --chown=speedball:bunjs /app/package.json ./package.json
+# Copy the entire built application from base stage
+COPY --from=base --chown=speedball:bunjs /app .
 
 # Change ownership of the app directory to the speedball user
 RUN chown -R speedball:bunjs /app
@@ -59,7 +56,7 @@ ENTRYPOINT ["dumb-init", "--"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD bun -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD bun -e "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the Next.js application
 CMD ["bun", "run", "start"]
