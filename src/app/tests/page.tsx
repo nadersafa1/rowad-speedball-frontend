@@ -16,10 +16,12 @@ import { useTestsStore } from "@/store/tests-store";
 import { useAuthStore } from "@/store/auth-store";
 import { formatDate, getTestTypeLabel } from "@/lib/utils";
 import TestForm from "@/components/tests/test-form";
+import Pagination from "@/components/ui/pagination";
 
 const TestsPage = () => {
   const { user } = useAuthStore();
-  const { tests, isLoading, error, fetchTests, clearError } = useTestsStore();
+  const { tests, isLoading, error, pagination, fetchTests, clearError } =
+    useTestsStore();
 
   const [testFormOpen, setTestFormOpen] = useState(false);
 
@@ -28,6 +30,7 @@ const TestsPage = () => {
     testType: "",
     dateFrom: "",
     dateTo: "",
+    page: 1,
   });
 
   // Initial fetch
@@ -39,6 +42,10 @@ const TestsPage = () => {
   useEffect(() => {
     fetchTests(filters);
   }, [filters, fetchTests]);
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
+  };
 
   const getTestTypeColor = (testType: string) => {
     switch (testType) {
@@ -117,7 +124,9 @@ const TestsPage = () => {
             <Button
               variant={filters.testType === "" ? "default" : "outline"}
               size="sm"
-              onClick={() => setFilters((prev) => ({ ...prev, testType: "" }))}
+              onClick={() =>
+                setFilters((prev) => ({ ...prev, testType: "", page: 1 }))
+              }
             >
               All Tests
             </Button>
@@ -125,7 +134,7 @@ const TestsPage = () => {
               variant={filters.testType === "60_30" ? "default" : "outline"}
               size="sm"
               onClick={() =>
-                setFilters((prev) => ({ ...prev, testType: "60_30" }))
+                setFilters((prev) => ({ ...prev, testType: "60_30", page: 1 }))
               }
             >
               Super Solo (60s/30s)
@@ -134,7 +143,7 @@ const TestsPage = () => {
               variant={filters.testType === "30_30" ? "default" : "outline"}
               size="sm"
               onClick={() =>
-                setFilters((prev) => ({ ...prev, testType: "30_30" }))
+                setFilters((prev) => ({ ...prev, testType: "30_30", page: 1 }))
               }
             >
               Juniors Solo (30s/30s)
@@ -143,7 +152,7 @@ const TestsPage = () => {
               variant={filters.testType === "30_60" ? "default" : "outline"}
               size="sm"
               onClick={() =>
-                setFilters((prev) => ({ ...prev, testType: "30_60" }))
+                setFilters((prev) => ({ ...prev, testType: "30_60", page: 1 }))
               }
             >
               Speed Solo (30s/60s)
@@ -231,6 +240,17 @@ const TestsPage = () => {
         </div>
       )}
 
+      {/* Pagination */}
+      {tests.length > 0 && pagination.totalPages > 1 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
+
       {/* Test Types Legend */}
       <Card className="mt-8">
         <CardHeader>
@@ -275,26 +295,32 @@ const TestsPage = () => {
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold">{tests.length}</p>
+                <p className="text-2xl font-bold">{pagination.totalItems}</p>
                 <p className="text-muted-foreground text-sm">Total Tests</p>
               </div>
               <div>
                 <p className="text-2xl font-bold">
                   {tests.filter((t) => t.testType === "60_30").length}
                 </p>
-                <p className="text-muted-foreground text-sm">Super Solo</p>
+                <p className="text-muted-foreground text-sm">
+                  Super Solo (Current Page)
+                </p>
               </div>
               <div>
                 <p className="text-2xl font-bold">
                   {tests.filter((t) => t.testType === "30_30").length}
                 </p>
-                <p className="text-muted-foreground text-sm">Juniors Solo</p>
+                <p className="text-muted-foreground text-sm">
+                  Juniors Solo (Current Page)
+                </p>
               </div>
               <div>
                 <p className="text-2xl font-bold">
                   {tests.filter((t) => t.testType === "30_60").length}
                 </p>
-                <p className="text-muted-foreground text-sm">Speed Solo</p>
+                <p className="text-muted-foreground text-sm">
+                  Speed Solo (Current Page)
+                </p>
               </div>
             </div>
           </CardContent>

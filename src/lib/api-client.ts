@@ -99,11 +99,15 @@ export class ApiClient {
     testType?: string;
     dateFrom?: string;
     dateTo?: string;
+    page?: number;
+    limit?: number;
   }) {
     const searchParams = new URLSearchParams();
     if (params?.testType) searchParams.set("testType", params.testType);
     if (params?.dateFrom) searchParams.set("dateFrom", params.dateFrom);
     if (params?.dateTo) searchParams.set("dateTo", params.dateTo);
+    if (params?.page) searchParams.set("page", params.page.toString());
+    if (params?.limit) searchParams.set("limit", params.limit.toString());
 
     const query = searchParams.toString();
     return this.request(`/tests${query ? `?${query}` : ""}`);

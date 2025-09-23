@@ -1,16 +1,28 @@
 // Tests Store - Single responsibility: Tests state management
-import { create } from 'zustand';
-import { apiClient } from '@/lib/api-client';
-import type { Test, TestWithResults } from '@/types';
+import { create } from "zustand";
+import { apiClient } from "@/lib/api-client";
+import type { Test, TestWithResults, PaginatedResponse } from "@/types";
 
 interface TestsState {
   tests: Test[];
   selectedTest: TestWithResults | null;
   isLoading: boolean;
   error: string | null;
+  pagination: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+  };
 
   // Actions
-  fetchTests: (filters?: { testType?: string; dateFrom?: string; dateTo?: string }) => Promise<void>;
+  fetchTests: (filters?: {
+    testType?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  }) => Promise<void>;
   fetchTest: (id: string, includeResults?: boolean) => Promise<void>;
   createTest: (data: any) => Promise<void>;
   updateTest: (id: string, data: any) => Promise<void>;
@@ -24,22 +36,41 @@ export const useTestsStore = create<TestsState>((set, get) => ({
   selectedTest: null,
   isLoading: false,
   error: null,
+  pagination: {
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 0,
+  },
 
   fetchTests: async (filters = {}) => {
     set({ isLoading: true, error: null });
     try {
       const params = {
-        testType: filters.testType as any || undefined,
+        testType: (filters.testType as any) || undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
+        page: filters.page || 1,
+        limit: filters.limit || 10,
       };
-      
-      const tests = await apiClient.getTests(params) as Test[];
-      set({ tests, isLoading: false });
+
+      const response = (await apiClient.getTests(
+        params
+      )) as PaginatedResponse<Test>;
+      set({
+        tests: response.data,
+        pagination: {
+          page: response.page,
+          limit: response.limit,
+          totalItems: response.totalItems,
+          totalPages: response.totalPages,
+        },
+        isLoading: false,
+      });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch tests',
-        isLoading: false 
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch tests",
+        isLoading: false,
       });
     }
   },
@@ -47,12 +78,15 @@ export const useTestsStore = create<TestsState>((set, get) => ({
   fetchTest: async (id: string, includeResults = false) => {
     set({ isLoading: true, error: null });
     try {
-      const test = await apiClient.getTest(id, includeResults) as TestWithResults;
+      const test = (await apiClient.getTest(
+        id,
+        includeResults
+      )) as TestWithResults;
       set({ selectedTest: test, isLoading: false });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch test',
-        isLoading: false 
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch test",
+        isLoading: false,
       });
     }
   },
@@ -60,15 +94,15 @@ export const useTestsStore = create<TestsState>((set, get) => ({
   createTest: async (data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const newTest = await apiClient.createTest(data) as Test;
-      set(state => ({ 
+      const newTest = (await apiClient.createTest(data)) as Test;
+      set((state) => ({
         tests: [...state.tests, newTest],
-        isLoading: false 
+        isLoading: false,
       }));
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to create test',
-        isLoading: false 
+      set({
+        error: error instanceof Error ? error.message : "Failed to create test",
+        isLoading: false,
       });
       throw error;
     }
@@ -77,16 +111,22 @@ export const useTestsStore = create<TestsState>((set, get) => ({
   updateTest: async (id: string, data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedTest = await apiClient.updateTest(id, data) as Test;
-      set(state => ({ 
-        tests: state.tests.map(t => t.id === id ? updatedTest : t),
-        selectedTest: state.selectedTest?.id === id ? { ...updatedTest, testResults: state.selectedTest.testResults } : state.selectedTest,
-        isLoading: false 
+      const updatedTest = (await apiClient.updateTest(id, data)) as Test;
+      set((state) => ({
+        tests: state.tests.map((t) => (t.id === id ? updatedTest : t)),
+        selectedTest:
+          state.selectedTest?.id === id
+            ? {
+                ...updatedTest,
+                testResults: state.selectedTest.testResults,
+              }
+            : state.selectedTest,
+        isLoading: false,
       }));
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to update test',
-        isLoading: false 
+      set({
+        error: error instanceof Error ? error.message : "Failed to update test",
+        isLoading: false,
       });
       throw error;
     }
@@ -96,15 +136,15 @@ export const useTestsStore = create<TestsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await apiClient.deleteTest(id);
-      set(state => ({ 
-        tests: state.tests.filter(t => t.id !== id),
+      set((state) => ({
+        tests: state.tests.filter((t) => t.id !== id),
         selectedTest: state.selectedTest?.id === id ? null : state.selectedTest,
-        isLoading: false 
+        isLoading: false,
       }));
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to delete test',
-        isLoading: false 
+      set({
+        error: error instanceof Error ? error.message : "Failed to delete test",
+        isLoading: false,
       });
       throw error;
     }
