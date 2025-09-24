@@ -23,6 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client"; //import the auth client
 
 // Validation schema
 const loginSchema = z.object({
@@ -45,7 +46,7 @@ interface LoginFormProps {
 
 const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { isLoading, error, clearError } = useAuthStore();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -58,8 +59,26 @@ const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
   const onSubmit = async (data: LoginFormData) => {
     clearError();
     try {
-      await login(data.email, data.password);
-      onSuccess?.();
+      const { data: response, error } = await authClient.signIn.email(
+        {
+          email: data.email, // user email address
+          password: data.password, // user password -> min 8 characters by default
+        },
+        {
+          onRequest: (ctx) => {
+            //show loading
+          },
+          onSuccess: (ctx) => {
+            //redirect to the dashboard or sign in page
+          },
+          onError: (ctx) => {
+            // display the error message
+            alert(ctx.error.message);
+          },
+        }
+      );
+
+      console.log(response);
     } catch (error) {
       // Error is handled by the store
     }

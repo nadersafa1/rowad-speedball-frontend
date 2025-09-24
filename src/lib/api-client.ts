@@ -32,14 +32,6 @@ export class ApiClient {
     return response.json();
   }
 
-  // Auth methods
-  async login(email: string, password: string) {
-    return this.request("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-  }
-
   async logout() {
     return this.request("/auth/logout", {
       method: "POST",
