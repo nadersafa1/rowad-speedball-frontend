@@ -16,6 +16,10 @@ RUN bun install --frozen-lockfile
 # Copy source code
 COPY . .
 
+# Set default build-time environment variable (can be overridden)
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:2000/api/v1
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
 # Build the application
 RUN bun run build
 
