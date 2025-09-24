@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,17 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client";
 import AnalyticsDashboard from "@/components/dashboard/analytics-dashboard";
 
 const HomePage = () => {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { data: session, isPending } = authClient.useSession();
 
-  useEffect(() => {
-    // Check authentication status on page load
-    checkAuth();
-  }, [checkAuth]);
+  const user = session?.user || null;
+  const isAuthenticated = !!session?.user;
+  const isLoading = isPending;
 
   // Show loading state while checking authentication
   if (isLoading) {

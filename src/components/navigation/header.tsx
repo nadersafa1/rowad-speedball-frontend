@@ -8,7 +8,7 @@ import { Menu, X, Users, Trophy, BarChart3, Home, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client";
 import LoginForm from "@/components/auth/login-form";
 
 const navigation = [
@@ -21,7 +21,11 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
+  const { data: session } = authClient.useSession();
+  const user = session?.user || null;
+  const logout = async () => {
+    await authClient.signOut();
+  };
 
   return (
     <header className="bg-white shadow-sm border-b">

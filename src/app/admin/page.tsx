@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Trophy, Target, Edit, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Users,
+  Trophy,
+  Target,
+  Edit,
+  Trash2,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,17 +20,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client";
 import { usePlayersStore } from "@/store/players-store";
 import { useTestsStore } from "@/store/tests-store";
 import PlayerForm from "@/components/players/player-form";
 import TestForm from "@/components/tests/test-form";
 import ResultsForm from "@/components/results/results-form";
-import LoginForm from "@/components/auth/login-form";
+import AuthModal from "@/components/auth/auth-modal";
 
 const AdminDashboard = () => {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { data: session, isPending } = authClient.useSession();
+
+  const user = session?.user || null;
+  const isAuthenticated = !!session?.user;
+  const isLoading = isPending;
+
+  const logout = async () => {
+    await authClient.signOut();
+  };
   const {
     players,
     fetchPlayers,
@@ -42,11 +58,7 @@ const AdminDashboard = () => {
   const [editingTest, setEditingTest] = useState<any>(null);
   const [resultsFormOpen, setResultsFormOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<any>(null);
-
-  useEffect(() => {
-    // Check authentication status on page load
-    checkAuth();
-  }, [checkAuth]);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     // Fetch data only when authenticated
@@ -72,18 +84,32 @@ const AdminDashboard = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
-          <LoginForm
-            onSuccess={() => {
-              // After successful login, the auth state will update and this component will re-render
-              // showing the admin dashboard
-            }}
-          />
-          <div className="mt-6 text-center">
-            <Button variant="outline" onClick={() => router.push("/")}>
-              ← Back to Homepage
-            </Button>
-          </div>
+          <Card className="w-full">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold">Admin Access</CardTitle>
+              <CardDescription>
+                Sign in to manage SpeedballHub for Rowad Club
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <Button
+                onClick={() => setAuthModalOpen(true)}
+                className="w-full bg-rowad-600 hover:bg-rowad-700"
+              >
+                Sign In / Sign Up
+              </Button>
+              <Button variant="outline" onClick={() => router.push("/")}>
+                ← Back to Homepage
+              </Button>
+            </CardContent>
+          </Card>
         </div>
+
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          defaultMode="login"
+        />
       </div>
     );
   }
@@ -120,12 +146,31 @@ const AdminDashboard = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Admin Dashboard
-        </h1>
-        <p className="text-gray-600">
-          Manage players, tests, and results for Rowad speedball team
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Admin Dashboard
+            </h1>
+            <p className="text-gray-600">
+              Manage players, tests, and results for Rowad speedball team
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-600">Welcome,</p>
+              <p className="font-medium">{user?.name || user?.email}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}

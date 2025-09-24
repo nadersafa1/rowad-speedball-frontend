@@ -14,4 +14,7 @@ const getAuthBaseURL = () => {
 export const authClient = createAuthClient({
   /** The base URL of the server */
   baseURL: getAuthBaseURL(),
+  fetchOptions: {
+    credentials: "include", // Important for session cookies
+  },
 });

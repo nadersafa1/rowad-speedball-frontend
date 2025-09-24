@@ -13,13 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useTestsStore } from "@/store/tests-store";
-import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client";
 import { formatDate, getTestTypeLabel } from "@/lib/utils";
 import TestForm from "@/components/tests/test-form";
 import Pagination from "@/components/ui/pagination";
 
 const TestsPage = () => {
-  const { user } = useAuthStore();
+  const { data: session } = authClient.useSession();
+  const user = session?.user || null;
   const { tests, isLoading, error, pagination, fetchTests, clearError } =
     useTestsStore();
 

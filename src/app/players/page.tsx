@@ -14,13 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { usePlayersStore } from "@/store/players-store";
-import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client";
 import { calculateAge, getAgeGroup, formatDate } from "@/lib/utils";
 import PlayerForm from "@/components/players/player-form";
 import Pagination from "@/components/ui/pagination";
 
 const PlayersPage = () => {
-  const { user } = useAuthStore();
+  const { data: session } = authClient.useSession();
+  const user = session?.user || null;
   const { players, isLoading, error, pagination, fetchPlayers, clearError } =
     usePlayersStore();
 

@@ -23,14 +23,15 @@ import {
 } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { usePlayersStore } from "@/store/players-store";
-import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client";
 import ResultsForm from "@/components/results/results-form";
 import PlayerForm from "@/components/players/player-form";
 
 const PlayerDetailPage = () => {
   const params = useParams();
   const playerId = params.id as string;
-  const { user } = useAuthStore();
+  const { data: session } = authClient.useSession();
+  const user = session?.user || null;
   const { selectedPlayer, fetchPlayer, isLoading } = usePlayersStore();
   const [resultFormOpen, setResultFormOpen] = useState(false);
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false);

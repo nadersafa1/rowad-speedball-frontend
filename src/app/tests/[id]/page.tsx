@@ -23,14 +23,15 @@ import {
 } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useTestsStore } from "@/store/tests-store";
-import { useAuthStore } from "@/store/auth-store";
+import { authClient } from "@/lib/auth-client";
 import ResultsForm from "@/components/results/results-form";
 import TestForm from "@/components/tests/test-form";
 
 const TestDetailPage = () => {
   const params = useParams();
   const testId = params.id as string;
-  const { user } = useAuthStore();
+  const { data: session } = authClient.useSession();
+  const user = session?.user || null;
   const { selectedTest, fetchTest, isLoading } = useTestsStore();
   const [resultFormOpen, setResultFormOpen] = useState(false);
   const [editTestFormOpen, setEditTestFormOpen] = useState(false);

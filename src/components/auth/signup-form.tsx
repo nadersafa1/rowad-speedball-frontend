@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,48 +25,62 @@ import {
 import { authClient } from "@/lib/auth-client";
 
 // Validation schema
-const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Please enter a valid email address"),
-  password: z
-    .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters"),
-});
+const signupSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Name is required")
+      .min(2, "Name must be at least 2 characters"),
+    email: z
+      .string()
+      .min(1, "Email is required")
+      .email("Please enter a valid email address"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type SignupFormData = z.infer<typeof signupSchema>;
 
-interface LoginFormProps {
+interface SignupFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
+const SignupForm = ({ onSuccess, onCancel }: SignupFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     setError(null);
     setIsLoading(true);
     try {
-      const { data: response, error } = await authClient.signIn.email({
+      const { data: response, error } = await authClient.signUp.email({
         email: data.email,
         password: data.password,
+        name: data.name,
       });
 
       if (error) {
-        setError(error.message || "Login failed");
+        setError(error.message || "Signup failed");
         return;
       }
 
@@ -75,7 +89,7 @@ const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
         onSuccess?.();
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Login failed");
+      setError(error instanceof Error ? error.message : "Signup failed");
     } finally {
       setIsLoading(false);
     }
@@ -84,14 +98,34 @@ const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+        <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
         <CardDescription>
-          Sign in to manage SpeedballHub for Rowad Club
+          Sign up to manage SpeedballHub for Rowad Club
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Name Field */}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="John Doe"
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Email Field */}
             <FormField
               control={form.control}
@@ -149,6 +183,45 @@ const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
               )}
             />
 
+            {/* Confirm Password Field */}
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        disabled={isLoading}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        disabled={isLoading}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Error Display */}
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
@@ -177,12 +250,12 @@ const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Signing in...
+                    Creating account...
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    Sign In
+                    <UserPlus className="h-4 w-4" />
+                    Sign Up
                   </div>
                 )}
               </Button>
@@ -194,4 +267,4 @@ const LoginForm = ({ onSuccess, onCancel }: LoginFormProps) => {
   );
 };
 
-export default LoginForm;
+export default SignupForm;
