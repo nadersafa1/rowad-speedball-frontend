@@ -28,7 +28,9 @@ const TestsPage = () => {
 
   // Local filter state
   const [filters, setFilters] = useState({
-    testType: "",
+    q: "",
+    playingTime: undefined as number | undefined,
+    recoveryTime: undefined as number | undefined,
     dateFrom: "",
     dateTo: "",
     page: 1,
@@ -48,7 +50,16 @@ const TestsPage = () => {
     setFilters((prev) => ({ ...prev, page }));
   };
 
-  const getTestTypeColor = (testType: string) => {
+  // Helper functions to map playingTime/recoveryTime to test types
+  const getTestTypeFromTimes = (playingTime: number, recoveryTime: number) => {
+    if (playingTime === 60 && recoveryTime === 30) return "60_30";
+    if (playingTime === 30 && recoveryTime === 30) return "30_30";
+    if (playingTime === 30 && recoveryTime === 60) return "30_60";
+    return "custom";
+  };
+
+  const getTestTypeColor = (playingTime: number, recoveryTime: number) => {
+    const testType = getTestTypeFromTimes(playingTime, recoveryTime);
     switch (testType) {
       case "60_30":
         return "bg-red-100 text-red-800 border-red-200";
@@ -123,37 +134,73 @@ const TestsPage = () => {
         <CardContent>
           <div className="flex gap-2 flex-wrap">
             <Button
-              variant={filters.testType === "" ? "default" : "outline"}
+              variant={
+                !filters.playingTime && !filters.recoveryTime
+                  ? "default"
+                  : "outline"
+              }
               size="sm"
               onClick={() =>
-                setFilters((prev) => ({ ...prev, testType: "", page: 1 }))
+                setFilters((prev) => ({
+                  ...prev,
+                  playingTime: undefined,
+                  recoveryTime: undefined,
+                  page: 1,
+                }))
               }
             >
               All Tests
             </Button>
             <Button
-              variant={filters.testType === "60_30" ? "default" : "outline"}
+              variant={
+                filters.playingTime === 60 && filters.recoveryTime === 30
+                  ? "default"
+                  : "outline"
+              }
               size="sm"
               onClick={() =>
-                setFilters((prev) => ({ ...prev, testType: "60_30", page: 1 }))
+                setFilters((prev) => ({
+                  ...prev,
+                  playingTime: 60,
+                  recoveryTime: 30,
+                  page: 1,
+                }))
               }
             >
               Super Solo (60s/30s)
             </Button>
             <Button
-              variant={filters.testType === "30_30" ? "default" : "outline"}
+              variant={
+                filters.playingTime === 30 && filters.recoveryTime === 30
+                  ? "default"
+                  : "outline"
+              }
               size="sm"
               onClick={() =>
-                setFilters((prev) => ({ ...prev, testType: "30_30", page: 1 }))
+                setFilters((prev) => ({
+                  ...prev,
+                  playingTime: 30,
+                  recoveryTime: 30,
+                  page: 1,
+                }))
               }
             >
               Juniors Solo (30s/30s)
             </Button>
             <Button
-              variant={filters.testType === "30_60" ? "default" : "outline"}
+              variant={
+                filters.playingTime === 30 && filters.recoveryTime === 60
+                  ? "default"
+                  : "outline"
+              }
               size="sm"
               onClick={() =>
-                setFilters((prev) => ({ ...prev, testType: "30_60", page: 1 }))
+                setFilters((prev) => ({
+                  ...prev,
+                  playingTime: 30,
+                  recoveryTime: 60,
+                  page: 1,
+                }))
               }
             >
               Speed Solo (30s/60s)
@@ -184,7 +231,7 @@ const TestsPage = () => {
             <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No tests found</h3>
             <p className="text-muted-foreground">
-              {filters.testType
+              {filters.playingTime || filters.recoveryTime
                 ? "No tests found for the selected type."
                 : "No tests have been conducted yet."}
             </p>
@@ -208,10 +255,11 @@ const TestsPage = () => {
                     </div>
                     <div
                       className={`px-2 py-1 rounded-md text-xs font-medium border ${getTestTypeColor(
-                        test.testType
+                        test.playingTime,
+                        test.recoveryTime
                       )}`}
                     >
-                      {getTestTypeLabel(test.testType)}
+                      {getTestTypeLabel(test.playingTime, test.recoveryTime)}
                     </div>
                   </div>
                 </CardHeader>
@@ -225,7 +273,12 @@ const TestsPage = () => {
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>{getTestTypeLabel(test.testType)}</span>
+                        <span>
+                          {getTestTypeLabel(
+                            test.playingTime,
+                            test.recoveryTime
+                          )}
+                        </span>
                       </div>
                     </div>
                     <div className="pt-2 border-t">
@@ -301,7 +354,11 @@ const TestsPage = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {tests.filter((t) => t.testType === "60_30").length}
+                  {
+                    tests.filter(
+                      (t) => t.playingTime === 60 && t.recoveryTime === 30
+                    ).length
+                  }
                 </p>
                 <p className="text-muted-foreground text-sm">
                   Super Solo (Current Page)
@@ -309,7 +366,11 @@ const TestsPage = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {tests.filter((t) => t.testType === "30_30").length}
+                  {
+                    tests.filter(
+                      (t) => t.playingTime === 30 && t.recoveryTime === 30
+                    ).length
+                  }
                 </p>
                 <p className="text-muted-foreground text-sm">
                   Juniors Solo (Current Page)
@@ -317,7 +378,11 @@ const TestsPage = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {tests.filter((t) => t.testType === "30_60").length}
+                  {
+                    tests.filter(
+                      (t) => t.playingTime === 30 && t.recoveryTime === 60
+                    ).length
+                  }
                 </p>
                 <p className="text-muted-foreground text-sm">
                   Speed Solo (Current Page)

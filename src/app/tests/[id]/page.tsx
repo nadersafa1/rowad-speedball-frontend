@@ -59,30 +59,24 @@ const TestDetailPage = () => {
     );
   }
 
-  const getTestTypeLabel = (testType: string) => {
-    switch (testType) {
-      case "60_30":
-        return "Super Solo (60s/30s)";
-      case "30_30":
-        return "Juniors Solo (30s/30s)";
-      case "30_60":
-        return "Speed Solo (30s/60s)";
-      default:
-        return testType;
-    }
+  const getTestTypeLabel = (playingTime: number, recoveryTime: number) => {
+    if (playingTime === 60 && recoveryTime === 30)
+      return "Super Solo (60s/30s)";
+    if (playingTime === 30 && recoveryTime === 30)
+      return "Juniors Solo (30s/30s)";
+    if (playingTime === 30 && recoveryTime === 60)
+      return "Speed Solo (30s/60s)";
+    return `Custom (${playingTime}s/${recoveryTime}s)`;
   };
 
-  const getTestTypeColor = (testType: string) => {
-    switch (testType) {
-      case "60_30":
-        return "bg-red-100 text-red-800";
-      case "30_30":
-        return "bg-blue-100 text-blue-800";
-      case "30_60":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  const getTestTypeColor = (playingTime: number, recoveryTime: number) => {
+    if (playingTime === 60 && recoveryTime === 30)
+      return "bg-red-100 text-red-800";
+    if (playingTime === 30 && recoveryTime === 30)
+      return "bg-blue-100 text-blue-800";
+    if (playingTime === 30 && recoveryTime === 60)
+      return "bg-green-100 text-green-800";
+    return "bg-gray-100 text-gray-800";
   };
 
   // Filter results based on selected filters
@@ -163,10 +157,14 @@ const TestDetailPage = () => {
                     </h1>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-medium ${getTestTypeColor(
-                        selectedTest.testType
+                        selectedTest.playingTime,
+                        selectedTest.recoveryTime
                       )}`}
                     >
-                      {getTestTypeLabel(selectedTest.testType)}
+                      {getTestTypeLabel(
+                        selectedTest.playingTime,
+                        selectedTest.recoveryTime
+                      )}
                     </span>
                   </div>
                   {user && (
@@ -210,7 +208,11 @@ const TestDetailPage = () => {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     <span>
-                      Test Type: {getTestTypeLabel(selectedTest.testType)}
+                      Test Type:{" "}
+                      {getTestTypeLabel(
+                        selectedTest.playingTime,
+                        selectedTest.recoveryTime
+                      )}
                     </span>
                   </div>
                 </div>

@@ -22,11 +22,16 @@ export type PaginatedResponse<T> = {
 export type Test = {
   id: string;
   name: string;
-  testType: "60_30" | "30_30" | "30_60";
+  playingTime: number;
+  recoveryTime: number;
   dateConducted: string;
   description?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+  // Calculated fields from backend
+  totalTime?: number;
+  formattedTotalTime?: string;
+  status?: string;
 };
 
 export type TestResult = {

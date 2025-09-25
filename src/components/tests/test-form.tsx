@@ -30,9 +30,16 @@ const testSchema = z.object({
     .min(1, "Test name is required")
     .min(3, "Test name must be at least 3 characters")
     .max(200, "Test name must be less than 200 characters"),
-  testType: z.enum(["60_30", "30_30", "30_60"], {
-    required_error: "Test type is required",
-  }),
+  playingTime: z
+    .number()
+    .int("Playing time must be an integer")
+    .min(1, "Playing time must be at least 1 minute")
+    .max(300, "Playing time cannot exceed 300 minutes"),
+  recoveryTime: z
+    .number()
+    .int("Recovery time must be an integer")
+    .min(0, "Recovery time cannot be negative")
+    .max(300, "Recovery time cannot exceed 300 minutes"),
   dateConducted: z
     .string()
     .min(1, "Date is required")
@@ -66,7 +73,8 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
     resolver: zodResolver(testSchema),
     defaultValues: {
       name: test?.name || "",
-      testType: test?.testType || undefined,
+      playingTime: test?.playingTime || 30,
+      recoveryTime: test?.recoveryTime || 30,
       dateConducted: test?.dateConducted?.split("T")[0] || "",
       description: test?.description || "",
     },
@@ -84,19 +92,6 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
       onSuccess?.();
     } catch (error) {
       // Error is handled by the store
-    }
-  };
-
-  const getTestTypeLabel = (type: string) => {
-    switch (type) {
-      case "60_30":
-        return "Super Solo (60s Play / 30s Rest)";
-      case "30_30":
-        return "Juniors Solo (30s Play / 30s Rest)";
-      case "30_60":
-        return "Speed Solo (30s Play / 60s Rest)";
-      default:
-        return type;
     }
   };
 
@@ -135,60 +130,98 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
               )}
             />
 
-            {/* Test Type Field */}
+            {/* Playing Time Field */}
             <FormField
               control={form.control}
-              name="testType"
+              name="playingTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Test Type</FormLabel>
+                  <FormLabel>Playing Time (seconds)</FormLabel>
                   <FormControl>
-                    <div className="space-y-3">
-                      {[
-                        {
-                          value: "60_30",
-                          label: "Super Solo",
-                          desc: "60 seconds play, 30 seconds rest",
-                        },
-                        {
-                          value: "30_30",
-                          label: "Juniors Solo",
-                          desc: "30 seconds play, 30 seconds rest",
-                        },
-                        {
-                          value: "30_60",
-                          label: "Speed Solo",
-                          desc: "30 seconds play, 60 seconds rest",
-                        },
-                      ].map((option) => (
-                        <label
-                          key={option.value}
-                          className="flex items-start space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50"
-                        >
-                          <input
-                            type="radio"
-                            value={option.value}
-                            checked={field.value === option.value}
-                            onChange={() => field.onChange(option.value)}
-                            disabled={isLoading}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 mt-1"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">
-                              {option.label}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {option.desc}
-                            </div>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
+                    <Input
+                      {...field}
+                      type="number"
+                      min="1"
+                      max="300"
+                      placeholder="Enter playing time in seconds"
+                      disabled={isLoading}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 0)
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Recovery Time Field */}
+            <FormField
+              control={form.control}
+              name="recoveryTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recovery Time (seconds)</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      min="0"
+                      max="300"
+                      placeholder="Enter recovery time in seconds"
+                      disabled={isLoading}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 0)
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Quick Presets */}
+            <div className="space-y-2">
+              <FormLabel>Quick Presets</FormLabel>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.setValue("playingTime", 60);
+                    form.setValue("recoveryTime", 30);
+                  }}
+                  disabled={isLoading}
+                >
+                  Super Solo (60s/30s)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.setValue("playingTime", 30);
+                    form.setValue("recoveryTime", 30);
+                  }}
+                  disabled={isLoading}
+                >
+                  Juniors Solo (30s/30s)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.setValue("playingTime", 30);
+                    form.setValue("recoveryTime", 60);
+                  }}
+                  disabled={isLoading}
+                >
+                  Speed Solo (30s/60s)
+                </Button>
+              </div>
+            </div>
 
             {/* Date Conducted Field */}
             <FormField

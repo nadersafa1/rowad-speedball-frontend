@@ -17,7 +17,9 @@ interface TestsState {
 
   // Actions
   fetchTests: (filters?: {
-    testType?: string;
+    q?: string;
+    playingTime?: number;
+    recoveryTime?: number;
     dateFrom?: string;
     dateTo?: string;
     page?: number;
@@ -47,7 +49,9 @@ export const useTestsStore = create<TestsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const params = {
-        testType: (filters.testType as any) || undefined,
+        q: filters.q || undefined,
+        playingTime: filters.playingTime || undefined,
+        recoveryTime: filters.recoveryTime || undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
         page: filters.page || 1,

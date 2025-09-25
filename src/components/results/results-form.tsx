@@ -199,9 +199,10 @@ const ResultsForm = ({
                       {tests.map((test) => (
                         <option key={test.id} value={test.id}>
                           {test.name} (
-                          {test.testType === "60_30"
+                          {test.playingTime === 60 && test.recoveryTime === 30
                             ? "Super Solo"
-                            : test.testType === "30_30"
+                            : test.playingTime === 30 &&
+                              test.recoveryTime === 30
                             ? "Juniors Solo"
                             : "Speed Solo"}
                           )
@@ -217,9 +218,11 @@ const ResultsForm = ({
                         selectedTest.dateConducted
                       ).toLocaleDateString()}{" "}
                       • Type:{" "}
-                      {selectedTest.testType === "60_30"
+                      {selectedTest.playingTime === 60 &&
+                      selectedTest.recoveryTime === 30
                         ? "Super Solo (60s/30s)"
-                        : selectedTest.testType === "30_30"
+                        : selectedTest.playingTime === 30 &&
+                          selectedTest.recoveryTime === 30
                         ? "Juniors Solo (30s/30s)"
                         : "Speed Solo (30s/60s)"}
                     </div>

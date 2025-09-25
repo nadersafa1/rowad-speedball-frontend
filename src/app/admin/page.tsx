@@ -394,18 +394,19 @@ const AdminDashboard = () => {
                       <h3 className="font-semibold text-lg">{test.name}</h3>
                       <span
                         className={`text-sm px-2 py-1 rounded ${
-                          test.testType === "60_30"
+                          test.playingTime === 60 && test.recoveryTime === 30
                             ? "bg-red-100 text-red-800"
-                            : test.testType === "30_30"
+                            : test.playingTime === 30 &&
+                              test.recoveryTime === 30
                             ? "bg-blue-100 text-blue-800"
                             : "bg-green-100 text-green-800"
                         }`}
                       >
-                        {test.testType === "60_30"
-                          ? "Type A"
-                          : test.testType === "30_30"
-                          ? "Type B"
-                          : "Type C"}
+                        {test.playingTime === 60 && test.recoveryTime === 30
+                          ? "Super Solo"
+                          : test.playingTime === 30 && test.recoveryTime === 30
+                          ? "Juniors Solo"
+                          : "Speed Solo"}
                       </span>
                     </div>
                     <p className="text-gray-600">

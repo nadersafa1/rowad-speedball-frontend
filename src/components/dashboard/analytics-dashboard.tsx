@@ -102,7 +102,15 @@ const RichDashboard = () => {
   // Get filtered tests based on selected test type
   const filteredTests = useMemo(() => {
     if (selectedTestType === "all") return tests;
-    return tests.filter((test) => test.testType === selectedTestType);
+    return tests.filter((test) => {
+      if (selectedTestType === "60_30")
+        return test.playingTime === 60 && test.recoveryTime === 30;
+      if (selectedTestType === "30_30")
+        return test.playingTime === 30 && test.recoveryTime === 30;
+      if (selectedTestType === "30_60")
+        return test.playingTime === 30 && test.recoveryTime === 60;
+      return false;
+    });
   }, [tests, selectedTestType]);
 
   // Get available test results data
@@ -128,7 +136,14 @@ const RichDashboard = () => {
           return {
             testId: test.id,
             testName: test.name,
-            testType: test.testType,
+            testType:
+              test.playingTime === 60 && test.recoveryTime === 30
+                ? "60_30"
+                : test.playingTime === 30 && test.recoveryTime === 30
+                ? "30_30"
+                : test.playingTime === 30 && test.recoveryTime === 60
+                ? "30_60"
+                : "custom",
             testDate: test.dateConducted,
             playerId: player.id,
             playerName: player.name,
@@ -268,7 +283,7 @@ const RichDashboard = () => {
 
     // Test type distribution
     const testTypeDistribution = tests.reduce((acc, test) => {
-      const typeLabel = getTestTypeLabel(test.testType);
+      const typeLabel = getTestTypeLabel(test.playingTime, test.recoveryTime);
       acc[typeLabel] = (acc[typeLabel] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -345,7 +360,13 @@ const RichDashboard = () => {
                   <TestTube className="h-4 w-4" />
                   {selectedTestType === "all"
                     ? "All Types"
-                    : getTestTypeLabel(selectedTestType)}
+                    : selectedTestType === "60_30"
+                    ? "Super Solo (60s/30s)"
+                    : selectedTestType === "30_30"
+                    ? "Juniors Solo (30s/30s)"
+                    : selectedTestType === "30_60"
+                    ? "Speed Solo (30s/60s)"
+                    : selectedTestType}
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               }
@@ -391,9 +412,10 @@ const RichDashboard = () => {
               options={filteredTests.map((test) => ({
                 value: test.id,
                 label: test.name,
-                description: `${getTestTypeLabel(test.testType)} • ${new Date(
-                  test.dateConducted
-                ).toLocaleDateString()}`,
+                description: `${getTestTypeLabel(
+                  test.playingTime,
+                  test.recoveryTime
+                )} • ${new Date(test.dateConducted).toLocaleDateString()}`,
               }))}
               selectedValues={selectedTests}
               onSelectionChange={setSelectedTests}

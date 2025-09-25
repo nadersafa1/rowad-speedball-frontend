@@ -17,4 +17,8 @@ export const authClient = createAuthClient({
   fetchOptions: {
     credentials: "include", // Important for session cookies
   },
+  // Ensure session is properly managed
+  session: {
+    enabled: true,
+  },
 });

@@ -26,6 +26,12 @@ export class ApiClient {
       const error = await response
         .json()
         .catch(() => ({ message: "Network error" }));
+
+      // If it's an authentication error, provide more specific message
+      if (response.status === 401) {
+        throw new Error("Authentication required. Please log in again.");
+      }
+
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
@@ -88,14 +94,20 @@ export class ApiClient {
 
   // Test methods
   async getTests(params?: {
-    testType?: string;
+    q?: string;
+    playingTime?: number;
+    recoveryTime?: number;
     dateFrom?: string;
     dateTo?: string;
     page?: number;
     limit?: number;
   }) {
     const searchParams = new URLSearchParams();
-    if (params?.testType) searchParams.set("testType", params.testType);
+    if (params?.q) searchParams.set("q", params.q);
+    if (params?.playingTime)
+      searchParams.set("playingTime", params.playingTime.toString());
+    if (params?.recoveryTime)
+      searchParams.set("recoveryTime", params.recoveryTime.toString());
     if (params?.dateFrom) searchParams.set("dateFrom", params.dateFrom);
     if (params?.dateTo) searchParams.set("dateTo", params.dateTo);
     if (params?.page) searchParams.set("page", params.page.toString());
