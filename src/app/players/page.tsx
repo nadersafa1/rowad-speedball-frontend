@@ -1,29 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Users, Search, Filter, Plus } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { usePlayersStore } from "@/store/players-store";
-import { authClient } from "@/lib/auth-client";
-import { calculateAge, getAgeGroup, formatDate } from "@/lib/utils";
 import PlayerForm from "@/components/players/player-form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Pagination from "@/components/ui/pagination";
-import PlayersFiltersSection from "./components/players-filters";
-import { PlayersFilters } from "./types";
-import { Gender } from "./types/enums";
-import { AgeGroup } from "./types/enums";
-import PlayersStats from "./components/players-stats";
+import { authClient } from "@/lib/auth-client";
+import { usePlayersStore } from "@/store/players-store";
+import { Plus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import PlayerCard from "./components/player-card";
+import PlayersFiltersSection from "./components/players-filters";
+import PlayersStats from "./components/players-stats";
+import { PlayersFilters } from "./types";
+import { AgeGroup, Gender } from "./types/enums";
 
 const PlayersPage = () => {
   const { data: session } = authClient.useSession();
@@ -39,6 +29,7 @@ const PlayersPage = () => {
     gender: Gender.ALL,
     ageGroup: AgeGroup.ALL,
     page: 1,
+    limit: 12,
   });
 
   // Fetch when filters change
