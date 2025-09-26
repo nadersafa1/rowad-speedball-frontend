@@ -4,6 +4,7 @@ import TestForm from "@/components/tests/test-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui";
 import Pagination from "@/components/ui/pagination";
 import { authClient } from "@/lib/auth-client";
 import { Plus, Trophy } from "lucide-react";
@@ -111,17 +112,15 @@ const TestsPage = () => {
           ))}
         </div>
       ) : tests.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No tests found</h3>
-            <p className="text-muted-foreground">
-              {filters.playingTime || filters.recoveryTime
-                ? "No tests found for the selected type."
-                : "No tests have been conducted yet."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Trophy}
+          title="No tests found"
+          description={
+            filters.playingTime || filters.recoveryTime
+              ? "No tests found for the selected type."
+              : "No tests have been conducted yet."
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tests.map((test) => (

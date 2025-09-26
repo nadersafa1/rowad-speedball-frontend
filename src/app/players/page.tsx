@@ -4,6 +4,7 @@ import PlayerForm from "@/components/players/player-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui";
 import Pagination from "@/components/ui/pagination";
 import { authClient } from "@/lib/auth-client";
 import { Plus, Users } from "lucide-react";
@@ -110,17 +111,15 @@ const PlayersPage = () => {
           ))}
         </div>
       ) : players.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No players found</h3>
-            <p className="text-muted-foreground">
-              {filters.q
-                ? "Try adjusting your search terms."
-                : "No players have been registered yet."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title="No players found"
+          description={
+            filters.q
+              ? "Try adjusting your search terms."
+              : "No players have been registered yet."
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {players.map((player) => (
