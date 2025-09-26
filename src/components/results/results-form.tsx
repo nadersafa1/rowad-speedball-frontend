@@ -8,6 +8,13 @@ import { Target, Save, Users, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
   FormField,
@@ -155,22 +162,26 @@ const ResultsForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Player</FormLabel>
-                  <FormControl>
-                    <select
-                      {...field}
-                      disabled={isLoading || !!preselectedPlayerId}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option value="">Select a player...</option>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isLoading || !!preselectedPlayerId}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a player..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
                       {players.map((player) => (
-                        <option key={player.id} value={player.id}>
+                        <SelectItem key={player.id} value={player.id}>
                           {player.name} (
                           {player.gender === "male" ? "👨" : "👩"}{" "}
                           {player.ageGroup})
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
-                  </FormControl>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                   {selectedPlayer && (
                     <div className="text-sm text-gray-600 mt-1">
@@ -189,15 +200,19 @@ const ResultsForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Test</FormLabel>
-                  <FormControl>
-                    <select
-                      {...field}
-                      disabled={isLoading || !!preselectedTestId}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option value="">Select a test...</option>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isLoading || !!preselectedTestId}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a test..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
                       {tests.map((test) => (
-                        <option key={test.id} value={test.id}>
+                        <SelectItem key={test.id} value={test.id}>
                           {test.name} (
                           {test.playingTime === 60 && test.recoveryTime === 30
                             ? "Super Solo"
@@ -206,10 +221,10 @@ const ResultsForm = ({
                             ? "Juniors Solo"
                             : "Speed Solo"}
                           )
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
-                  </FormControl>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                   {selectedTest && (
                     <div className="text-sm text-gray-600 mt-1">
