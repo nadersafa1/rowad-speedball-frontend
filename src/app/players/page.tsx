@@ -18,6 +18,10 @@ import { authClient } from "@/lib/auth-client";
 import { calculateAge, getAgeGroup, formatDate } from "@/lib/utils";
 import PlayerForm from "@/components/players/player-form";
 import Pagination from "@/components/ui/pagination";
+import PlayersFiltersSection from "./components/players-filters";
+import { PlayersFilters } from "./types";
+import { Gender } from "./types/enums";
+import { AgeGroup } from "./types/enums";
 
 const PlayersPage = () => {
   const { data: session } = authClient.useSession();
@@ -28,26 +32,18 @@ const PlayersPage = () => {
   const [playerFormOpen, setPlayerFormOpen] = useState(false);
 
   // Local filter state
-  const [filters, setFilters] = useState({
-    search: "",
-    gender: "",
-    ageGroup: "",
+  const [filters, setFilters] = useState<PlayersFilters>({
+    q: "",
+    gender: Gender.ALL,
+    ageGroup: AgeGroup.ALL,
     page: 1,
   });
 
-  // Initial fetch
-  useEffect(() => {
-    fetchPlayers();
-  }, [fetchPlayers]);
-
   // Fetch when filters change
   useEffect(() => {
+    console.log("filters", filters);
     fetchPlayers(filters);
   }, [filters, fetchPlayers]);
-
-  const handleSearchChange = (value: string) => {
-    setFilters((prev) => ({ ...prev, search: value, page: 1 }));
-  };
 
   const handlePageChange = (page: number) => {
     setFilters((prev) => ({ ...prev, page }));
@@ -105,82 +101,7 @@ const PlayersPage = () => {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search players..."
-                  value={filters.search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* Gender and Age Group Filters */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Gender
-                </label>
-                <select
-                  value={filters.gender}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      gender: e.target.value,
-                      page: 1,
-                    }))
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rowad-500 focus:border-transparent"
-                >
-                  <option value="">All Genders</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-              </div>
-
-              <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Age Group
-                </label>
-                <select
-                  value={filters.ageGroup}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      ageGroup: e.target.value,
-                      page: 1,
-                    }))
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rowad-500 focus:border-transparent"
-                >
-                  <option value="">All Age Groups</option>
-                  <option value="Mini">Mini (U-07)</option>
-                  <option value="U-09">U-09</option>
-                  <option value="U-11">U-11</option>
-                  <option value="U-13">U-13</option>
-                  <option value="U-15">U-15</option>
-                  <option value="U-17">U-17</option>
-                  <option value="U-19">U-19</option>
-                  <option value="U-21">U-21</option>
-                  <option value="Seniors">Seniors</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PlayersFiltersSection filters={filters} setFilters={setFilters} />
 
       {/* Players Grid */}
       {isLoading ? (
@@ -204,7 +125,7 @@ const PlayersPage = () => {
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No players found</h3>
             <p className="text-muted-foreground">
-              {filters.search
+              {filters.q
                 ? "Try adjusting your search terms."
                 : "No players have been registered yet."}
             </p>

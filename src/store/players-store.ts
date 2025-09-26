@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api-client";
 import type { Player, PlayerWithResults, PaginatedResponse } from "@/types";
+import { PlayersFilters } from "@/app/players/types";
 
 interface PlayersState {
   players: Player[];
@@ -16,13 +17,7 @@ interface PlayersState {
   };
 
   // Actions
-  fetchPlayers: (filters?: {
-    search?: string;
-    gender?: string;
-    ageGroup?: string;
-    page?: number;
-    limit?: number;
-  }) => Promise<void>;
+  fetchPlayers: (filters?: PlayersFilters) => Promise<void>;
   fetchPlayer: (id: string) => Promise<void>;
   createPlayer: (data: any) => Promise<void>;
   updatePlayer: (id: string, data: any) => Promise<void>;
@@ -45,18 +40,23 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
 
   fetchPlayers: async (filters = {}) => {
     set({ isLoading: true, error: null });
+
+    console.log("filters inside function", filters);
     try {
       const params = {
-        search: filters.search || undefined,
-        gender: (filters.gender as any) || undefined,
-        ageGroup: filters.ageGroup || undefined,
-        page: filters.page || 1,
-        limit: filters.limit || 10,
+        q: filters.q,
+        gender: filters.gender as any,
+        ageGroup: filters.ageGroup,
+        page: filters.page,
+        limit: filters.limit,
       };
+
+      console.log("params inside function", params);
 
       const response = (await apiClient.getPlayers(
         params
       )) as PaginatedResponse<Player>;
+
       set({
         players: response.data,
         pagination: {
