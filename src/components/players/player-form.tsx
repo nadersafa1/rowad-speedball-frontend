@@ -6,7 +6,6 @@ import { z } from "zod";
 import { UserPlus, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
   Form,
   FormControl,
@@ -23,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { usePlayersStore } from "@/store/players-store";
+import { DateOfBirthPicker } from "@/components/players/date-of-birth-picker";
 
 // Validation schema
 const playerSchema = z.object({
@@ -32,14 +32,11 @@ const playerSchema = z.object({
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name must be less than 100 characters"),
   dateOfBirth: z
-    .string()
-    .min(1, "Date of birth is required")
-    .refine((date) => {
-      const birthDate = new Date(date);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      return age >= 6 && age <= 50;
-    }, "Player must be between 6 and 50 years old"),
+    .date()
+    .refine(
+      (date) => date <= new Date(new Date().getFullYear() - 4, 0, 1),
+      "Player must be at least 4 years old"
+    ),
   gender: z.enum(["male", "female"], {
     required_error: "Gender is required",
   }),
@@ -65,7 +62,9 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
     resolver: zodResolver(playerSchema),
     defaultValues: {
       name: player?.name || "",
-      dateOfBirth: player?.dateOfBirth?.split("T")[0] || "",
+      dateOfBirth: player
+        ? new Date(player?.dateOfBirth?.split("T")[0])
+        : new Date(new Date().getFullYear() - 4, 0, 1),
       gender: player?.gender || undefined,
       preferredHand: player?.preferredHand || undefined,
     },
@@ -129,15 +128,9 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                 <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
                   <FormControl>
-                    <DatePicker
-                      date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => {
-                        field.onChange(
-                          date ? date.toISOString().split("T")[0] : ""
-                        );
-                      }}
-                      placeholder="Select date of birth"
-                      disabled={isLoading}
+                    <DateOfBirthPicker
+                      date={field.value}
+                      onDateChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />

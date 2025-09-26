@@ -1,12 +1,13 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Trophy, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -15,14 +16,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useTestsStore } from "@/store/tests-store";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Save, Trophy } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { TestDatePicker } from "./test-date-picker.tsx";
 
 // Validation schema
 const testSchema = z.object({
@@ -41,16 +41,15 @@ const testSchema = z.object({
     .int("Recovery time must be an integer")
     .min(0, "Recovery time cannot be negative")
     .max(300, "Recovery time cannot exceed 300 seconds"),
-  dateConducted: z
-    .string()
-    .min(1, "Date is required")
-    .refine((date) => {
-      const testDate = new Date(date);
-      const today = new Date();
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(today.getFullYear() - 1);
-      return testDate >= oneYearAgo;
-    }, "Test date must be within the last year or in the future"),
+  dateConducted: z.date().refine((date) => {
+    const testDate = new Date(date);
+    const today = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(today.getFullYear() - 1);
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(today.getFullYear() + 1);
+    return testDate >= oneYearAgo && testDate <= oneYearFromNow;
+  }, "Test date must be within the last year or the next year"),
   description: z
     .string()
     .max(500, "Description must be less than 500 characters")
@@ -76,10 +75,15 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
       name: test?.name || "",
       playingTime: test?.playingTime || 30,
       recoveryTime: test?.recoveryTime || 30,
-      dateConducted: test?.dateConducted?.split("T")[0] || "",
+      dateConducted: test?.dateConducted
+        ? new Date(test?.dateConducted?.split("T")[0])
+        : new Date(),
       description: test?.description || "",
     },
   });
+
+  const playingTime = form.watch("playingTime");
+  const recoveryTime = form.watch("recoveryTime");
 
   const onSubmit = async (data: TestFormData) => {
     clearError();
@@ -187,7 +191,11 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={
+                    playingTime === 60 && recoveryTime === 30
+                      ? "default"
+                      : "outline"
+                  }
                   size="sm"
                   onClick={() => {
                     form.setValue("playingTime", 60);
@@ -199,7 +207,11 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={
+                    playingTime === 30 && recoveryTime === 30
+                      ? "default"
+                      : "outline"
+                  }
                   size="sm"
                   onClick={() => {
                     form.setValue("playingTime", 30);
@@ -211,7 +223,11 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={
+                    playingTime === 30 && recoveryTime === 60
+                      ? "default"
+                      : "outline"
+                  }
                   size="sm"
                   onClick={() => {
                     form.setValue("playingTime", 30);
@@ -230,16 +246,11 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
               name="dateConducted"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date Conducted</FormLabel>
+                  <FormLabel>Test Day</FormLabel>
                   <FormControl>
-                    <DatePicker
-                      date={field.value ? new Date(field.value) : undefined}
-                      onDateChange={(date) => {
-                        field.onChange(
-                          date ? date.toISOString().split("T")[0] : ""
-                        );
-                      }}
-                      placeholder="Select test date"
+                    <TestDatePicker
+                      date={field.value}
+                      onDateChange={field.onChange}
                       disabled={isLoading}
                     />
                   </FormControl>
