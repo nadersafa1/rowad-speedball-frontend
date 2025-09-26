@@ -41,7 +41,6 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   fetchPlayers: async (filters = {}) => {
     set({ isLoading: true, error: null });
 
-    console.log("filters inside function", filters);
     try {
       const params = {
         q: filters.q,
@@ -50,8 +49,6 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
         page: filters.page,
         limit: filters.limit,
       };
-
-      console.log("params inside function", params);
 
       const response = (await apiClient.getPlayers(
         params

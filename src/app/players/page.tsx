@@ -22,6 +22,8 @@ import PlayersFiltersSection from "./components/players-filters";
 import { PlayersFilters } from "./types";
 import { Gender } from "./types/enums";
 import { AgeGroup } from "./types/enums";
+import PlayersStats from "./components/players-stats";
+import PlayerCard from "./components/player-card";
 
 const PlayersPage = () => {
   const { data: session } = authClient.useSession();
@@ -41,7 +43,6 @@ const PlayersPage = () => {
 
   // Fetch when filters change
   useEffect(() => {
-    console.log("filters", filters);
     fetchPlayers(filters);
   }, [filters, fetchPlayers]);
 
@@ -134,45 +135,7 @@ const PlayersPage = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {players.map((player) => (
-            <Link key={player.id} href={`/players/${player.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="text-lg text-rowad-600">
-                    {player.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {player.gender === "male" ? "👨" : "👩"} {player.ageGroup} •
-                    Age {player.age}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Date of Birth:
-                      </span>
-                      <span>{formatDate(player.dateOfBirth)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Gender:</span>
-                      <span className="capitalize">{player.gender}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Age Group:</span>
-                      <span className="font-medium text-speedball-600">
-                        {player.ageGroup}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Preferred Hand:
-                      </span>
-                      <span className="capitalize">{player.preferredHand}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+            <PlayerCard key={player.id} player={player} />
           ))}
         </div>
       )}
@@ -189,42 +152,7 @@ const PlayersPage = () => {
       )}
 
       {/* Stats */}
-      {players.length > 0 && (
-        <Card className="mt-8">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold">{pagination.totalItems}</p>
-                <p className="text-muted-foreground text-sm">Total Players</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {players.filter((p) => p.gender === "male").length}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Male (Current Page)
-                </p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {players.filter((p) => p.gender === "female").length}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Female (Current Page)
-                </p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {new Set(players.map((p) => p.ageGroup)).size}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Age Groups (Current Page)
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <PlayersStats />
     </div>
   );
 };
