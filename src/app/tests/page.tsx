@@ -1,76 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Trophy, Calendar, Filter, Clock, Plus } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { useTestsStore } from "@/store/tests-store";
-import { authClient } from "@/lib/auth-client";
-import { formatDate, getTestTypeLabel } from "@/lib/utils";
 import TestForm from "@/components/tests/test-form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Pagination from "@/components/ui/pagination";
+import { authClient } from "@/lib/auth-client";
+import { Plus, Trophy } from "lucide-react";
+import { useState } from "react";
+import TestCard from "./components/test-card";
+import TestTypeLegend from "./components/test-type-legend";
+import TestsFiltersSection from "./components/tests-filters";
+import TestsStats from "./components/tests-stats";
+import { useTests } from "./hooks/use-tests";
+import { TestsFilters } from "./types";
 
 const TestsPage = () => {
   const { data: session } = authClient.useSession();
   const user = session?.user || null;
-  const { tests, isLoading, error, pagination, fetchTests, clearError } =
-    useTestsStore();
-
   const [testFormOpen, setTestFormOpen] = useState(false);
 
   // Local filter state
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<TestsFilters>({
     q: "",
-    playingTime: undefined as number | undefined,
-    recoveryTime: undefined as number | undefined,
+    playingTime: undefined,
+    recoveryTime: undefined,
     dateFrom: "",
     dateTo: "",
     page: 1,
   });
 
-  // Initial fetch
-  useEffect(() => {
-    fetchTests();
-  }, [fetchTests]);
-
-  // Fetch when filters change
-  useEffect(() => {
-    fetchTests(filters);
-  }, [filters, fetchTests]);
-
-  const handlePageChange = (page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
-  };
-
-  // Helper functions to map playingTime/recoveryTime to test types
-  const getTestTypeFromTimes = (playingTime: number, recoveryTime: number) => {
-    if (playingTime === 60 && recoveryTime === 30) return "60_30";
-    if (playingTime === 30 && recoveryTime === 30) return "30_30";
-    if (playingTime === 30 && recoveryTime === 60) return "30_60";
-    return "custom";
-  };
-
-  const getTestTypeColor = (playingTime: number, recoveryTime: number) => {
-    const testType = getTestTypeFromTimes(playingTime, recoveryTime);
-    switch (testType) {
-      case "60_30":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "30_30":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "30_60":
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  const {
+    tests,
+    isLoading,
+    error,
+    pagination,
+    clearError,
+    handlePageChange,
+    refetch,
+  } = useTests(filters);
 
   if (error) {
     return (
@@ -114,7 +82,7 @@ const TestsPage = () => {
               <TestForm
                 onSuccess={() => {
                   setTestFormOpen(false);
-                  fetchTests();
+                  refetch();
                 }}
                 onCancel={() => setTestFormOpen(false)}
               />
@@ -123,91 +91,8 @@ const TestsPage = () => {
         )}
       </div>
 
-      {/* Test Type Filter */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Test Types
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={
-                !filters.playingTime && !filters.recoveryTime
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  playingTime: undefined,
-                  recoveryTime: undefined,
-                  page: 1,
-                }))
-              }
-            >
-              All Tests
-            </Button>
-            <Button
-              variant={
-                filters.playingTime === 60 && filters.recoveryTime === 30
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  playingTime: 60,
-                  recoveryTime: 30,
-                  page: 1,
-                }))
-              }
-            >
-              Super Solo (60s/30s)
-            </Button>
-            <Button
-              variant={
-                filters.playingTime === 30 && filters.recoveryTime === 30
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  playingTime: 30,
-                  recoveryTime: 30,
-                  page: 1,
-                }))
-              }
-            >
-              Juniors Solo (30s/30s)
-            </Button>
-            <Button
-              variant={
-                filters.playingTime === 30 && filters.recoveryTime === 60
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  playingTime: 30,
-                  recoveryTime: 60,
-                  page: 1,
-                }))
-              }
-            >
-              Speed Solo (30s/60s)
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters */}
+      <TestsFiltersSection filters={filters} setFilters={setFilters} />
 
       {/* Tests Grid */}
       {isLoading ? (
@@ -240,56 +125,7 @@ const TestsPage = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tests.map((test) => (
-            <Link key={test.id} href={`/tests/${test.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2">
-                        {test.name}
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-2 mt-2">
-                        <Calendar className="h-4 w-4" />
-                        {formatDate(test.dateConducted)}
-                      </CardDescription>
-                    </div>
-                    <div
-                      className={`px-2 py-1 rounded-md text-xs font-medium border ${getTestTypeColor(
-                        test.playingTime,
-                        test.recoveryTime
-                      )}`}
-                    >
-                      {getTestTypeLabel(test.playingTime, test.recoveryTime)}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {test.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {test.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {getTestTypeLabel(
-                            test.playingTime,
-                            test.recoveryTime
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <Button size="sm" variant="outline" className="w-full">
-                        View Results
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+            <TestCard key={test.id} test={test} />
           ))}
         </div>
       )}
@@ -306,92 +142,10 @@ const TestsPage = () => {
       )}
 
       {/* Test Types Legend */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle className="text-lg">Test Types Guide</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 border rounded-lg">
-              <div className="bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm font-medium mb-2 inline-block">
-                Super Solo
-              </div>
-              <h4 className="font-semibold">60s Play / 30s Rest</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                High-intensity endurance test with extended play time
-              </p>
-            </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm font-medium mb-2 inline-block">
-                Juniors Solo
-              </div>
-              <h4 className="font-semibold">30s Play / 30s Rest</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                Balanced intensity test with equal play and rest periods
-              </p>
-            </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm font-medium mb-2 inline-block">
-                Speed Solo
-              </div>
-              <h4 className="font-semibold">30s Play / 60s Rest</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                Recovery-focused test with extended rest periods
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <TestTypeLegend />
 
       {/* Stats */}
-      {tests.length > 0 && (
-        <Card className="mt-8">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold">{pagination.totalItems}</p>
-                <p className="text-muted-foreground text-sm">Total Tests</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {
-                    tests.filter(
-                      (t) => t.playingTime === 60 && t.recoveryTime === 30
-                    ).length
-                  }
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Super Solo (Current Page)
-                </p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {
-                    tests.filter(
-                      (t) => t.playingTime === 30 && t.recoveryTime === 30
-                    ).length
-                  }
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Juniors Solo (Current Page)
-                </p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {
-                    tests.filter(
-                      (t) => t.playingTime === 30 && t.recoveryTime === 60
-                    ).length
-                  }
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Speed Solo (Current Page)
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <TestsStats tests={tests} pagination={pagination} />
     </div>
   );
 };

@@ -6,21 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Pagination from "@/components/ui/pagination";
 import { authClient } from "@/lib/auth-client";
-import { usePlayersStore } from "@/store/players-store";
 import { Plus, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PlayerCard from "./components/player-card";
 import PlayersFiltersSection from "./components/players-filters";
 import PlayersStats from "./components/players-stats";
+import { usePlayers } from "./hooks/use-players";
 import { PlayersFilters } from "./types";
 import { AgeGroup, Gender } from "./types/enums";
 
 const PlayersPage = () => {
   const { data: session } = authClient.useSession();
   const user = session?.user || null;
-  const { players, isLoading, error, pagination, fetchPlayers, clearError } =
-    usePlayersStore();
-
   const [playerFormOpen, setPlayerFormOpen] = useState(false);
 
   // Local filter state
@@ -32,14 +29,15 @@ const PlayersPage = () => {
     limit: 12,
   });
 
-  // Fetch when filters change
-  useEffect(() => {
-    fetchPlayers(filters);
-  }, [filters, fetchPlayers]);
-
-  const handlePageChange = (page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
-  };
+  const {
+    players,
+    isLoading,
+    error,
+    pagination,
+    clearError,
+    handlePageChange,
+    refetch,
+  } = usePlayers(filters);
 
   if (error) {
     return (
@@ -83,7 +81,7 @@ const PlayersPage = () => {
               <PlayerForm
                 onSuccess={() => {
                   setPlayerFormOpen(false);
-                  fetchPlayers();
+                  refetch();
                 }}
                 onCancel={() => setPlayerFormOpen(false)}
               />
