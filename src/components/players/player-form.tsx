@@ -3,9 +3,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarIcon, UserPlus, Save } from "lucide-react";
+import { UserPlus, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Form,
   FormControl,
@@ -128,16 +129,16 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                 <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        type="date"
-                        disabled={isLoading}
-                        className="pl-10"
-                        max={new Date().toISOString().split("T")[0]}
-                      />
-                      <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    </div>
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => {
+                        field.onChange(
+                          date ? date.toISOString().split("T")[0] : ""
+                        );
+                      }}
+                      placeholder="Select date of birth"
+                      disabled={isLoading}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

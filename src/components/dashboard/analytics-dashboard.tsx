@@ -20,7 +20,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import SimpleDropdown from "@/components/ui/simple-dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ResponsiveContainer,
   BarChart,
@@ -149,7 +155,7 @@ const RichDashboard = () => {
             playerName: player.name,
             playerGender: player.gender,
             playerAgeGroup: player.ageGroup,
-            playerAgeCategory: getAgeCategory(player.ageGroup),
+            playerAgeCategory: player.ageGroup,
             leftHandScore,
             rightHandScore,
             forehandScore,
@@ -354,119 +360,72 @@ const RichDashboard = () => {
         <CardContent>
           <div className="flex flex-wrap gap-4">
             {/* Test Type Selection */}
-            <SimpleDropdown
-              trigger={
-                <Button variant="outline" className="gap-2">
-                  <TestTube className="h-4 w-4" />
-                  {selectedTestType === "all"
-                    ? "All Types"
-                    : selectedTestType === "60_30"
-                    ? "Super Solo (60s/30s)"
-                    : selectedTestType === "30_30"
-                    ? "Juniors Solo (30s/30s)"
-                    : selectedTestType === "30_60"
-                    ? "Speed Solo (30s/60s)"
-                    : selectedTestType}
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              }
-              options={[
-                {
-                  value: "all",
-                  label: "All Types",
-                  description: "Show all test types",
-                },
-                {
-                  value: "60_30",
-                  label: "Super Solo",
-                  description: "60-30 test format",
-                },
-                {
-                  value: "30_60",
-                  label: "Speed Solo",
-                  description: "30-60 test format",
-                },
-                {
-                  value: "30_30",
-                  label: "Juniors Solo",
-                  description: "30-30 test format",
-                },
-              ]}
-              selectedValues={[selectedTestType]}
-              onSelectionChange={(values) =>
-                setSelectedTestType(values[0] || "all")
-              }
-              multiSelect={false}
-            />
+            <Select
+              value={selectedTestType}
+              onValueChange={setSelectedTestType}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select test type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="60_30">Super Solo (60s/30s)</SelectItem>
+                <SelectItem value="30_60">Speed Solo (30s/60s)</SelectItem>
+                <SelectItem value="30_30">Juniors Solo (30s/30s)</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Test Selection */}
-            <SimpleDropdown
-              trigger={
-                <Button variant="outline" className="gap-2">
-                  <Trophy className="h-4 w-4" />
-                  Tests (
-                  {selectedTests.length === 0 ? "All" : selectedTests.length})
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              }
-              options={filteredTests.map((test) => ({
-                value: test.id,
-                label: test.name,
-                description: `${getTestTypeLabel(
-                  test.playingTime,
-                  test.recoveryTime
-                )} • ${new Date(test.dateConducted).toLocaleDateString()}`,
-              }))}
-              selectedValues={selectedTests}
-              onSelectionChange={setSelectedTests}
-              multiSelect={true}
-            />
+            <Select
+              value={selectedTests[0] || ""}
+              onValueChange={(value) => setSelectedTests([value])}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select test" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredTests.map((test) => (
+                  <SelectItem key={test.id} value={test.id}>
+                    {test.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Age Group Selection */}
-            <SimpleDropdown
-              trigger={
-                <Button variant="outline" className="gap-2">
-                  <Users className="h-4 w-4" />
-                  Age Groups ({selectedAgeGroups.length})
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              }
-              options={[
-                "Mini",
-                "U-09",
-                "U-11",
-                "U-13",
-                "U-15",
-                "U-17",
-                "U-19",
-                "U-21",
-                "Seniors",
-              ].map((ageGroup) => ({
-                value: ageGroup,
-                label: ageGroup === "Mini" ? "Mini (U-07)" : ageGroup,
-              }))}
-              selectedValues={selectedAgeGroups}
-              onSelectionChange={setSelectedAgeGroups}
-              multiSelect={true}
-            />
+            <Select
+              value={selectedAgeGroups[0] || ""}
+              onValueChange={(value) => setSelectedAgeGroups([value])}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select age group" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Mini">Mini (U-07)</SelectItem>
+                <SelectItem value="U-09">U-09</SelectItem>
+                <SelectItem value="U-11">U-11</SelectItem>
+                <SelectItem value="U-13">U-13</SelectItem>
+                <SelectItem value="U-15">U-15</SelectItem>
+                <SelectItem value="U-17">U-17</SelectItem>
+                <SelectItem value="U-19">U-19</SelectItem>
+                <SelectItem value="U-21">U-21</SelectItem>
+                <SelectItem value="Seniors">Seniors</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Gender Selection */}
-            <SimpleDropdown
-              trigger={
-                <Button variant="outline" className="gap-2">
-                  <Target className="h-4 w-4" />
-                  Gender ({selectedGenders.length})
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              }
-              options={["male", "female"].map((gender) => ({
-                value: gender,
-                label: gender === "male" ? "👨 Male" : "👩 Female",
-              }))}
-              selectedValues={selectedGenders}
-              onSelectionChange={setSelectedGenders}
-              multiSelect={true}
-            />
+            <Select
+              value={selectedGenders[0] || ""}
+              onValueChange={(value) => setSelectedGenders([value])}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">👨 Male</SelectItem>
+                <SelectItem value="female">👩 Female</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Clear Filters */}
             <Button

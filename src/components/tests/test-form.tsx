@@ -3,9 +3,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarIcon, Trophy, Save } from "lucide-react";
+import { Trophy, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Form,
   FormControl,
@@ -33,13 +34,13 @@ const testSchema = z.object({
   playingTime: z
     .number()
     .int("Playing time must be an integer")
-    .min(1, "Playing time must be at least 1 minute")
-    .max(300, "Playing time cannot exceed 300 minutes"),
+    .min(1, "Playing time must be at least 1 seconds")
+    .max(300, "Playing time cannot exceed 300 seconds"),
   recoveryTime: z
     .number()
     .int("Recovery time must be an integer")
     .min(0, "Recovery time cannot be negative")
-    .max(300, "Recovery time cannot exceed 300 minutes"),
+    .max(300, "Recovery time cannot exceed 300 seconds"),
   dateConducted: z
     .string()
     .min(1, "Date is required")
@@ -48,8 +49,8 @@ const testSchema = z.object({
       const today = new Date();
       const oneYearAgo = new Date();
       oneYearAgo.setFullYear(today.getFullYear() - 1);
-      return testDate >= oneYearAgo && testDate <= today;
-    }, "Test date must be within the last year and not in the future"),
+      return testDate >= oneYearAgo;
+    }, "Test date must be within the last year or in the future"),
   description: z
     .string()
     .max(500, "Description must be less than 500 characters")
@@ -231,16 +232,16 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
                 <FormItem>
                   <FormLabel>Date Conducted</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        type="date"
-                        disabled={isLoading}
-                        className="pl-10"
-                        max={new Date().toISOString().split("T")[0]}
-                      />
-                      <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    </div>
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onDateChange={(date) => {
+                        field.onChange(
+                          date ? date.toISOString().split("T")[0] : ""
+                        );
+                      }}
+                      placeholder="Select test date"
+                      disabled={isLoading}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

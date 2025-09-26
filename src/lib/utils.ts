@@ -1,37 +1,11 @@
-import { type ClassValue, clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-export const cn = (...inputs: ClassValue[]) => {
+export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-};
+}
 
-export const formatDate = (date: string | Date) => {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(date));
-};
-
-export const calculateAge = (dateOfBirth: string): number => {
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    age--;
-  }
-
-  return age;
-};
-
-export const getAgeGroup = (dateOfBirth: string): string => {
-  const age = calculateAge(dateOfBirth);
-
+export function getAgeCategory(age: number): string {
   if (age < 7) return "Mini";
   if (age < 9) return "U-09";
   if (age < 11) return "U-11";
@@ -41,34 +15,38 @@ export const getAgeGroup = (dateOfBirth: string): string => {
   if (age < 19) return "U-19";
   if (age < 21) return "U-21";
   return "Seniors";
-};
+}
 
-export const getAgeCategory = (ageGroup: string): string => {
-  switch (ageGroup) {
-    case "Mini":
-      return "Mini";
-    case "U-09":
-    case "U-11":
-    case "U-13":
-    case "U-15":
-      return "Juniors";
-    case "U-17":
-    case "U-19":
-    case "U-21":
-    case "Seniors":
-      return "Seniors";
-    default:
-      return "Unknown";
-  }
-};
-
-export const getTestTypeLabel = (
+export function getTestTypeLabel(
   playingTime: number,
   recoveryTime: number
-): string => {
+): string {
   if (playingTime === 60 && recoveryTime === 30) return "Super Solo (60s/30s)";
+  if (playingTime === 30 && recoveryTime === 60) return "Speed Solo (30s/60s)";
   if (playingTime === 30 && recoveryTime === 30)
     return "Juniors Solo (30s/30s)";
-  if (playingTime === 30 && recoveryTime === 60) return "Speed Solo (30s/60s)";
-  return `Custom (${playingTime}s/${recoveryTime}s)`;
-};
+  return `${playingTime}s/${recoveryTime}s`;
+}
+
+export function formatDate(date: string | Date): string {
+  const d = new Date(date);
+  return d.toLocaleDateString();
+}
+
+export function calculateAge(birthDate: string | Date): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+
+  return age;
+}
+
+export function getAgeGroup(birthDate: string | Date): string {
+  const age = calculateAge(birthDate);
+  return getAgeCategory(age);
+}
