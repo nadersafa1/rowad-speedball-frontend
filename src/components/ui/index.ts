@@ -48,3 +48,4 @@ export { Popover, PopoverContent, PopoverTrigger } from "./popover";
 export { Calendar } from "./calendar";
 export { DatePicker } from "./date-picker";
 export { default as EmptyState } from "./empty-state";
+export { default as PageHeader } from "./page-header";

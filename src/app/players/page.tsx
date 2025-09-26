@@ -3,8 +3,7 @@
 import PlayerForm from "@/components/players/player-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { EmptyState } from "@/components/ui";
+import { EmptyState, PageHeader } from "@/components/ui";
 import Pagination from "@/components/ui/pagination";
 import { authClient } from "@/lib/auth-client";
 import { Plus, Users } from "lucide-react";
@@ -58,38 +57,34 @@ const PlayersPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Users className="h-8 w-8 text-speedball-600" />
-            Players Archive
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Browse and manage all registered players
-          </p>
-        </div>
-
-        {/* Admin Add Player Button */}
-        {user && (
-          <Dialog open={playerFormOpen} onOpenChange={setPlayerFormOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 bg-rowad-600 hover:bg-rowad-700">
-                <Plus className="h-4 w-4" />
-                Add Player
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-              <PlayerForm
-                onSuccess={() => {
-                  setPlayerFormOpen(false);
-                  refetch();
-                }}
-                onCancel={() => setPlayerFormOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
+      <PageHeader
+        icon={Users}
+        title="Players Archive"
+        description="Browse and manage all registered players"
+        actionDialog={
+          user
+            ? {
+                open: playerFormOpen,
+                onOpenChange: setPlayerFormOpen,
+                trigger: (
+                  <Button className="gap-2 bg-rowad-600 hover:bg-rowad-700">
+                    <Plus className="h-4 w-4" />
+                    Add Player
+                  </Button>
+                ),
+                content: (
+                  <PlayerForm
+                    onSuccess={() => {
+                      setPlayerFormOpen(false);
+                      refetch();
+                    }}
+                    onCancel={() => setPlayerFormOpen(false)}
+                  />
+                ),
+              }
+            : undefined
+        }
+      />
 
       {/* Filters */}
       <PlayersFiltersSection filters={filters} setFilters={setFilters} />

@@ -3,8 +3,7 @@
 import TestForm from "@/components/tests/test-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { EmptyState } from "@/components/ui";
+import { EmptyState, PageHeader } from "@/components/ui";
 import Pagination from "@/components/ui/pagination";
 import { authClient } from "@/lib/auth-client";
 import { Plus, Trophy } from "lucide-react";
@@ -59,38 +58,34 @@ const TestsPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Trophy className="h-8 w-8 text-speedball-600" />
-            Tests Archive
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Browse and manage all conducted speedball tests
-          </p>
-        </div>
-
-        {/* Admin Add Test Button */}
-        {user && (
-          <Dialog open={testFormOpen} onOpenChange={setTestFormOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4" />
-                Add Test
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-              <TestForm
-                onSuccess={() => {
-                  setTestFormOpen(false);
-                  refetch();
-                }}
-                onCancel={() => setTestFormOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
+      <PageHeader
+        icon={Trophy}
+        title="Tests Archive"
+        description="Browse and manage all conducted speedball tests"
+        actionDialog={
+          user
+            ? {
+                open: testFormOpen,
+                onOpenChange: setTestFormOpen,
+                trigger: (
+                  <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4" />
+                    Add Test
+                  </Button>
+                ),
+                content: (
+                  <TestForm
+                    onSuccess={() => {
+                      setTestFormOpen(false);
+                      refetch();
+                    }}
+                    onCancel={() => setTestFormOpen(false)}
+                  />
+                ),
+              }
+            : undefined
+        }
+      />
 
       {/* Filters */}
       <TestsFiltersSection filters={filters} setFilters={setFilters} />
