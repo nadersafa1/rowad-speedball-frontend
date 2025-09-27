@@ -40,19 +40,19 @@ const resultSchema = z.object({
   leftHandScore: z
     .number()
     .min(0, "Score must be 0 or higher")
-    .max(100, "Score cannot exceed 100"),
+    .max(999, "Score cannot exceed 999"),
   rightHandScore: z
     .number()
     .min(0, "Score must be 0 or higher")
-    .max(100, "Score cannot exceed 100"),
+    .max(999, "Score cannot exceed 999"),
   forehandScore: z
     .number()
     .min(0, "Score must be 0 or higher")
-    .max(100, "Score cannot exceed 100"),
+    .max(999, "Score cannot exceed 999"),
   backhandScore: z
     .number()
     .min(0, "Score must be 0 or higher")
-    .max(100, "Score cannot exceed 100"),
+    .max(999, "Score cannot exceed 999"),
 });
 
 type ResultFormData = z.infer<typeof resultSchema>;
