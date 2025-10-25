@@ -12,17 +12,16 @@ import { requireAuth } from "@/lib/auth-middleware";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const resolvedParams = await params;
-  const parseResult = testsParamsSchema.safeParse(resolvedParams);
+  const parseResult = testsParamsSchema.safeParse(params);
 
   if (!parseResult.success) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 });
   }
 
   try {
-    const { id } = resolvedParams;
+    const { id } = params;
 
     const test = await db
       .select()
@@ -64,21 +63,23 @@ export async function GET(
     return Response.json(testWithCalculatedFields);
   } catch (error) {
     console.error("Error fetching test:", error);
-    return Response.json({ message: "Internal server error" }, { status: 500 });
+    return Response.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const resolvedParams = await params;
   const authResult = await requireAuth(request);
   if (!authResult.authenticated) {
     return authResult.response;
   }
 
-  const paramsResult = testsParamsSchema.safeParse(resolvedParams);
+  const paramsResult = testsParamsSchema.safeParse(params);
 
   if (!paramsResult.success) {
     return Response.json(z.treeifyError(paramsResult.error), { status: 400 });
@@ -92,7 +93,7 @@ export async function PATCH(
       return Response.json(z.treeifyError(bodyResult.error), { status: 400 });
     }
 
-    const { id } = resolvedParams;
+    const { id } = params;
     const updateData = bodyResult.data;
 
     const existingTest = await db
@@ -124,28 +125,30 @@ export async function PATCH(
     return Response.json(updatedTest);
   } catch (error) {
     console.error("Error updating test:", error);
-    return Response.json({ message: "Internal server error" }, { status: 500 });
+    return Response.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const authResult = await requireAuth(request);
   if (!authResult.authenticated) {
     return authResult.response;
   }
 
-  const resolvedParams = await params;
-  const parseResult = testsParamsSchema.safeParse(resolvedParams);
+  const parseResult = testsParamsSchema.safeParse(params);
 
   if (!parseResult.success) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 });
   }
 
   try {
-    const { id } = resolvedParams;
+    const { id } = params;
 
     const existingTest = await db
       .select()
@@ -162,6 +165,10 @@ export async function DELETE(
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error("Error deleting test:", error);
-    return Response.json({ message: "Internal server error" }, { status: 500 });
+    return Response.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
+
