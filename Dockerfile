@@ -1,43 +1,61 @@
-# Simple single-stage build for faster builds
-FROM oven/bun:1.2.19-alpine
-
-# Install dumb-init
-RUN apk add --no-cache dumb-init
-
-# Set working directory
+# Multi-stage build for optimal production image
+FROM node:20-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production
 
-# Copy package files first for better caching
-COPY package.json bun.lock* ./
-
-# Install dependencies
-RUN bun install --frozen-lockfile
-
-# Copy source code
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
 COPY . .
 
-# Set default build-time environment variable (can be overridden)
-ARG NEXT_PUBLIC_API_BASE_URL=https://rowad.speedballhub.com/api/v1
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+# Build Next.js (env vars injected at build time)
+ARG DATABASE_URL
+ARG BETTER_AUTH_SECRET
+ARG BETTER_AUTH_URL
+ARG GOOGLE_CLIENT_ID
+ARG GOOGLE_CLIENT_SECRET
+ARG NODEMAILER_HOST
+ARG NODEMAILER_USER
+ARG NODEMAILER_APP_PASSWORD
 
-# Build the application
-RUN bun run build
+ENV NODE_ENV=production
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Security: Install dumb-init
+RUN apk add --no-cache dumb-init
+
+ENV NODE_ENV=production
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Change ownership
-RUN chown -R nextjs:nodejs /app
+# Copy only production files
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
+
 USER nextjs
 
-# Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD bun -e "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Start the application
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["bun", "run", "start"]
+
+# Run migrations then start
+CMD ["sh", "-c", "npm run db:migrate && node server.js"]
