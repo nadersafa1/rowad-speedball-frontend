@@ -6,8 +6,17 @@ import { sendVerificationEmail } from "@/actions/emails/send-verification-email"
 import { db } from "@/lib/db";
 import * as schema from "@/db/schema";
 
+// Use placeholder secret during build time
+const isBuildTime = process.env.NEXT_PHASE === "phase-production-build";
+const secret =
+  process.env.BETTER_AUTH_SECRET ||
+  (isBuildTime
+    ? "build-time-placeholder-secret-minimum-32-characters-long"
+    : undefined);
+
 export const auth = betterAuth({
   appName: "Rowad Speedball",
+  secret,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
