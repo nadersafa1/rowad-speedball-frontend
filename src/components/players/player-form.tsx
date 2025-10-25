@@ -38,10 +38,10 @@ const playerSchema = z.object({
       "Player must be at least 4 years old"
     ),
   gender: z.enum(["male", "female"], {
-    required_error: "Gender is required",
+    message: "Gender is required",
   }),
   preferredHand: z.enum(["left", "right"], {
-    required_error: "Preferred hand is required",
+    message: "Preferred hand is required",
   }),
 });
 
