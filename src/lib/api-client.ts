@@ -3,8 +3,8 @@ export class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    // Use environment variable if available, otherwise fall back to provided baseUrl or '/api'
-    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || baseUrl || "/api";
+    // Use relative path since API is on the same server now
+    this.baseUrl = baseUrl || "/api/v1";
   }
 
   private async request<T>(
@@ -201,14 +201,5 @@ export class ApiClient {
   }
 }
 
-// Singleton instance - use environment variable only
-const defaultApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-if (!defaultApiUrl) {
-  throw new Error(
-    "NEXT_PUBLIC_API_BASE_URL environment variable is required. " +
-      "Please set it in your .env file."
-  );
-}
-
-export const apiClient = new ApiClient(defaultApiUrl);
+// Singleton instance - use relative path
+export const apiClient = new ApiClient("/api/v1");

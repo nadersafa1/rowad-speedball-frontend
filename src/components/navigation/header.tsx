@@ -6,10 +6,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Users, Trophy, BarChart3, Home, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
-import LoginForm from "@/components/auth/login-form";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -19,7 +17,6 @@ const navigation = [
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const user = session?.user || null;
@@ -29,7 +26,7 @@ const Header = () => {
 
   return (
     <header className="bg-white shadow-sm border-b">
-      <nav className="mx-auto max-w-8xl px-4 sm:px-6 lg:px-8" aria-label="Top">
+      <nav className="container mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="flex w-full items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center">
@@ -97,19 +94,11 @@ const Header = () => {
                 </Button>
               </>
             ) : (
-              <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Admin Login
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <LoginForm
-                    onSuccess={() => setLoginDialogOpen(false)}
-                    onCancel={() => setLoginDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+              <Link href="/auth/login">
+                <Button variant="outline" size="sm">
+                  Admin Login
+                </Button>
+              </Link>
             )}
           </div>
 
@@ -183,25 +172,11 @@ const Header = () => {
                   </Button>
                 </>
               ) : (
-                <Dialog
-                  open={loginDialogOpen}
-                  onOpenChange={setLoginDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Admin Login
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <LoginForm
-                      onSuccess={() => {
-                        setLoginDialogOpen(false);
-                        setMobileMenuOpen(false);
-                      }}
-                      onCancel={() => setLoginDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
+                <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Admin Login
+                  </Button>
+                </Link>
               )}
             </div>
           </div>

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/navigation/header";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,9 +17,12 @@ export const metadata: Metadata = {
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Header />
-        <main className="min-h-screen bg-gray-50">{children}</main>
+      <body className={inter.className} >
+        <TooltipProvider>
+          <Header />
+          <main className="container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">{children}</main>
+          <Toaster />
+        </TooltipProvider>
       </body>
     </html>
   );

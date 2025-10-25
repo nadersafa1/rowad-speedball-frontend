@@ -82,7 +82,7 @@ const PlayersFiltersSection = ({
 
             <div className="flex-1">
               <Label htmlFor="ageGroup" className="block mb-2">
-                Gender
+                Age Group
               </Label>
               <Select
                 name="ageGroup"
