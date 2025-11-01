@@ -62,10 +62,7 @@ export async function GET(
     return Response.json(resultWithCalculatedFields);
   } catch (error) {
     console.error("Error fetching result:", error);
-    return Response.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -131,10 +128,7 @@ export async function PATCH(
     return Response.json(updatedResult);
   } catch (error) {
     console.error("Error updating result:", error);
-    return Response.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -172,10 +166,6 @@ export async function DELETE(
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error("Error deleting result:", error);
-    return Response.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
-
