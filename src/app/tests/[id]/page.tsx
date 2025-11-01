@@ -21,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { useTestsStore } from "@/store/tests-store";
 import { useAdminPermission } from "@/hooks/use-admin-permission";
 import ResultsForm from "@/components/results/results-form";
@@ -177,16 +177,14 @@ const TestDetailPage = () => {
                           Edit Test
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-2xl">
-                        <TestForm
-                          test={selectedTest}
-                          onSuccess={() => {
-                            setEditTestFormOpen(false);
-                            fetchTest(testId, true);
-                          }}
-                          onCancel={() => setEditTestFormOpen(false)}
-                        />
-                      </DialogContent>
+                      <TestForm
+                        test={selectedTest}
+                        onSuccess={() => {
+                          setEditTestFormOpen(false);
+                          fetchTest(testId, true);
+                        }}
+                        onCancel={() => setEditTestFormOpen(false)}
+                      />
                     </Dialog>
                   )}
                 </div>
@@ -331,16 +329,14 @@ const TestDetailPage = () => {
                       Add Result
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl">
-                    <ResultsForm
-                      preselectedTestId={testId}
-                      onSuccess={() => {
-                        setResultFormOpen(false);
-                        fetchTest(testId, true);
-                      }}
-                      onCancel={() => setResultFormOpen(false)}
-                    />
-                  </DialogContent>
+                  <ResultsForm
+                    preselectedTestId={testId}
+                    onSuccess={() => {
+                      setResultFormOpen(false);
+                      fetchTest(testId, true);
+                    }}
+                    onCancel={() => setResultFormOpen(false)}
+                  />
                 </Dialog>
               )}
             </div>

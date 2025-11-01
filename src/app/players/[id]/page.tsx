@@ -21,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { usePlayersStore } from "@/store/players-store";
 import { useAdminPermission } from "@/hooks/use-admin-permission";
 import ResultsForm from "@/components/results/results-form";
@@ -198,16 +198,14 @@ const PlayerDetailPage = () => {
                     Add Result
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl">
-                  <ResultsForm
-                    preselectedPlayerId={playerId}
-                    onSuccess={() => {
-                      setResultFormOpen(false);
-                      fetchPlayer(playerId);
-                    }}
-                    onCancel={() => setResultFormOpen(false)}
-                  />
-                </DialogContent>
+                <ResultsForm
+                  preselectedPlayerId={playerId}
+                  onSuccess={() => {
+                    setResultFormOpen(false);
+                    fetchPlayer(playerId);
+                  }}
+                  onCancel={() => setResultFormOpen(false)}
+                />
               </Dialog>
             )}
           </div>

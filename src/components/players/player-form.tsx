@@ -15,13 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { usePlayersStore } from "@/store/players-store";
 import { DateOfBirthPicker } from "@/components/players/date-of-birth-picker";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui";
@@ -88,7 +81,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
   };
 
   return (
-    <DialogContent className="max-w-2xl space-y-4">
+    <DialogContent className="max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto space-y-4">
     <DialogHeader>
       <DialogTitle className="flex items-center gap-2">          <UserPlus className="h-5 w-5 text-rowad-600" />
 {isEditing ? "Edit Player" : "Add New Player"}</DialogTitle>

@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui";
 import {
   Form,
   FormControl,
@@ -101,21 +101,20 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <DialogContent className="max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto space-y-4">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-blue-600" />
           {isEditing ? "Edit Test" : "Create New Test"}
-        </CardTitle>
-        <CardDescription>
+        </DialogTitle>
+        <DialogDescription>
           {isEditing
             ? "Update test information for Rowad speedball team"
             : "Set up a new speedball test for Rowad team"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Test Name Field */}
             <FormField
               control={form.control}
@@ -286,8 +285,7 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <DialogFooter className="flex gap-3 mt-4">
               {onCancel && (
                 <Button
                   type="button"
@@ -316,11 +314,10 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
                   </div>
                 )}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+    </DialogContent>
   );
 };
 
