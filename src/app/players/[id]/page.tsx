@@ -23,15 +23,14 @@ import {
 } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { usePlayersStore } from "@/store/players-store";
-import { authClient } from "@/lib/auth-client";
+import { useAdminPermission } from "@/hooks/use-admin-permission";
 import ResultsForm from "@/components/results/results-form";
 import PlayerForm from "@/components/players/player-form";
 
 const PlayerDetailPage = () => {
   const params = useParams();
   const playerId = params.id as string;
-  const { data: session } = authClient.useSession();
-  const user = session?.user || null;
+  const { isAdmin } = useAdminPermission();
   const { selectedPlayer, fetchPlayer, isLoading } = usePlayersStore();
   const [resultFormOpen, setResultFormOpen] = useState(false);
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false);
@@ -101,7 +100,7 @@ const PlayerDetailPage = () => {
                   <h1 className="text-3xl font-bold text-gray-900">
                     {selectedPlayer.name}
                   </h1>
-                  {user && (
+                  {isAdmin && (
                     <Dialog
                       open={editPlayerFormOpen}
                       onOpenChange={setEditPlayerFormOpen}
@@ -193,7 +192,7 @@ const PlayerDetailPage = () => {
             </div>
 
             {/* Admin Add Result Button */}
-            {user && (
+            {isAdmin && (
               <Dialog open={resultFormOpen} onOpenChange={setResultFormOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2 bg-green-600 hover:bg-green-700">

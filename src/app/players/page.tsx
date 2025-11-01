@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui";
 import Pagination from "@/components/ui/pagination";
 import { authClient } from "@/lib/auth-client";
+import { useAdminPermission } from "@/hooks/use-admin-permission";
 import { Plus, Users } from "lucide-react";
 import { useState } from "react";
 import PlayerCard from "./components/player-card";
@@ -16,8 +17,7 @@ import { PlayersFilters } from "./types";
 import { AgeGroup, Gender } from "./types/enums";
 
 const PlayersPage = () => {
-  const { data: session } = authClient.useSession();
-  const user = session?.user || null;
+  const { isAdmin } = useAdminPermission();
   const [playerFormOpen, setPlayerFormOpen] = useState(false);
 
   // Local filter state
@@ -62,7 +62,7 @@ const PlayersPage = () => {
         title="Players Archive"
         description="Browse and manage all registered players"
         actionDialog={
-          user
+          isAdmin
             ? {
                 open: playerFormOpen,
                 onOpenChange: setPlayerFormOpen,

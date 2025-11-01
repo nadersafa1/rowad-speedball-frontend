@@ -8,7 +8,7 @@ import {
   resultsUpdateSchema,
 } from "@/types/api/results.schemas";
 import { resultsService } from "@/lib/services/results.service";
-import { requireAuth } from "@/lib/auth-middleware";
+import { requireAdmin } from "@/lib/auth-middleware";
 
 export async function GET(
   request: NextRequest,
@@ -70,9 +70,13 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request);
-  if (!authResult.authenticated) {
-    return authResult.response;
+  const adminResult = await requireAdmin(request);
+  if (
+    !adminResult.authenticated ||
+    !("authorized" in adminResult) ||
+    !adminResult.authorized
+  ) {
+    return adminResult.response;
   }
 
   const resolvedParams = await params;
@@ -136,9 +140,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request);
-  if (!authResult.authenticated) {
-    return authResult.response;
+  const adminResult = await requireAdmin(request);
+  if (
+    !adminResult.authenticated ||
+    !("authorized" in adminResult) ||
+    !adminResult.authorized
+  ) {
+    return adminResult.response;
   }
 
   const resolvedParams = await params;

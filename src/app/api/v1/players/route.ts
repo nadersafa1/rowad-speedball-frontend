@@ -9,7 +9,7 @@ import {
   playersQuerySchema,
 } from "@/types/api/players.schemas";
 import { createPaginatedResponse } from "@/types/api/pagination";
-import { requireAuth } from "@/lib/auth-middleware";
+import { requireAdmin } from "@/lib/auth-middleware";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -89,17 +89,18 @@ export async function GET(request: NextRequest) {
     return Response.json(paginatedResponse);
   } catch (error) {
     console.error("Error fetching players:", error);
-    return Response.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request);
-  if (!authResult.authenticated) {
-    return authResult.response;
+  const adminResult = await requireAdmin(request);
+  if (
+    !adminResult.authenticated ||
+    !("authorized" in adminResult) ||
+    !adminResult.authorized
+  ) {
+    return adminResult.response;
   }
 
   try {
@@ -131,10 +132,6 @@ export async function POST(request: NextRequest) {
     return Response.json(newPlayer, { status: 201 });
   } catch (error) {
     console.error("Error creating player:", error);
-    return Response.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
-

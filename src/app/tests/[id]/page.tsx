@@ -23,15 +23,14 @@ import {
 } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useTestsStore } from "@/store/tests-store";
-import { authClient } from "@/lib/auth-client";
+import { useAdminPermission } from "@/hooks/use-admin-permission";
 import ResultsForm from "@/components/results/results-form";
 import TestForm from "@/components/tests/test-form";
 
 const TestDetailPage = () => {
   const params = useParams();
   const testId = params.id as string;
-  const { data: session } = authClient.useSession();
-  const user = session?.user || null;
+  const { isAdmin } = useAdminPermission();
   const { selectedTest, fetchTest, isLoading } = useTestsStore();
   const [resultFormOpen, setResultFormOpen] = useState(false);
   const [editTestFormOpen, setEditTestFormOpen] = useState(false);
@@ -167,7 +166,7 @@ const TestDetailPage = () => {
                       )}
                     </span>
                   </div>
-                  {user && (
+                  {isAdmin && (
                     <Dialog
                       open={editTestFormOpen}
                       onOpenChange={setEditTestFormOpen}
@@ -324,7 +323,7 @@ const TestDetailPage = () => {
               </div>
 
               {/* Admin Add Result Button */}
-              {user && (
+              {isAdmin && (
                 <Dialog open={resultFormOpen} onOpenChange={setResultFormOpen}>
                   <DialogTrigger asChild>
                     <Button className="gap-2 bg-green-600 hover:bg-green-700">

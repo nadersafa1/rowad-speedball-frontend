@@ -9,7 +9,7 @@ import {
 } from "@/types/api/results.schemas";
 import { createPaginatedResponse } from "@/types/api/pagination";
 import { resultsService } from "@/lib/services/results.service";
-import { requireAuth } from "@/lib/auth-middleware";
+import { requireAdmin } from "@/lib/auth-middleware";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -98,8 +98,7 @@ export async function GET(request: NextRequest) {
         averageScore: resultsService.calculateAverageScore(row.result),
         highestScore: resultsService.getHighestScore(row.result),
         lowestScore: resultsService.getLowestScore(row.result),
-        performanceCategory:
-          resultsService.getPerformanceCategory(totalScore),
+        performanceCategory: resultsService.getPerformanceCategory(totalScore),
         scoreDistribution: resultsService.getScoreDistribution(row.result),
         analysis: resultsService.analyzePerformance(row.result),
         player: row.player,
@@ -128,17 +127,18 @@ export async function GET(request: NextRequest) {
     return Response.json(paginatedResponse);
   } catch (error) {
     console.error("Error fetching results:", error);
-    return Response.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request);
-  if (!authResult.authenticated) {
-    return authResult.response;
+  const adminResult = await requireAdmin(request);
+  if (
+    !adminResult.authenticated ||
+    !("authorized" in adminResult) ||
+    !adminResult.authorized
+  ) {
+    return adminResult.response;
   }
 
   try {
@@ -207,10 +207,6 @@ export async function POST(request: NextRequest) {
     return Response.json(newResult, { status: 201 });
   } catch (error) {
     console.error("Error creating result:", error);
-    return Response.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ message: "Internal server error" }, { status: 500 });
   }
 }
-

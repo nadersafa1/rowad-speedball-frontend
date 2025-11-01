@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui";
 import Pagination from "@/components/ui/pagination";
-import { authClient } from "@/lib/auth-client";
+import { useAdminPermission } from "@/hooks/use-admin-permission";
 import { Plus, Trophy } from "lucide-react";
 import { useState } from "react";
 import TestCard from "./components/test-card";
@@ -16,8 +16,7 @@ import { useTests } from "./hooks/use-tests";
 import { TestsFilters } from "./types";
 
 const TestsPage = () => {
-  const { data: session } = authClient.useSession();
-  const user = session?.user || null;
+  const { isAdmin } = useAdminPermission();
   const [testFormOpen, setTestFormOpen] = useState(false);
 
   // Local filter state
@@ -63,7 +62,7 @@ const TestsPage = () => {
         title="Tests Archive"
         description="Browse and manage all conducted speedball tests"
         actionDialog={
-          user
+          isAdmin
             ? {
                 open: testFormOpen,
                 onOpenChange: setTestFormOpen,
