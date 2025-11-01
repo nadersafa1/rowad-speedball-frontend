@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -17,9 +17,23 @@ const navigation = [
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const user = session?.user || null;
+
+  useEffect(() => {
+    if (user) {
+      authClient.admin
+        .hasPermission({ permission: { user: ["list"] } })
+        .then(({ data }) => {
+          setIsAdmin(data?.success ?? false);
+        });
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
+
   const logout = async () => {
     await authClient.signOut();
   };
@@ -76,13 +90,15 @@ const Header = () => {
             {user ? (
               <>
                 <span className="text-sm text-gray-600">
-                  Welcome, {user.email}
+                  Welcome, {user.name}
                 </span>
-                <Link href="/admin">
-                  <Button size="sm" className="bg-rowad-600 hover:bg-rowad-700">
-                    Admin Dashboard
-                  </Button>
-                </Link>
+                {isAdmin && (
+                  <Link href="/admin">
+                    <Button size="sm" className="bg-rowad-600 hover:bg-rowad-700">
+                      Admin Dashboard
+                    </Button>
+                  </Link>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -96,7 +112,7 @@ const Header = () => {
             ) : (
               <Link href="/auth/login">
                 <Button variant="outline" size="sm">
-                  Admin Login
+                  Login
                 </Button>
               </Link>
             )}
@@ -150,14 +166,16 @@ const Header = () => {
                   <span className="text-sm text-gray-600 px-3">
                     Welcome, {user.email}
                   </span>
-                  <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                    <Button
-                      size="sm"
-                      className="w-full bg-rowad-600 hover:bg-rowad-700"
-                    >
-                      Admin Dashboard
-                    </Button>
-                  </Link>
+                  {isAdmin && (
+                    <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <Button
+                        size="sm"
+                        className="w-full bg-rowad-600 hover:bg-rowad-700"
+                      >
+                        Admin Dashboard
+                      </Button>
+                    </Link>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -174,7 +192,7 @@ const Header = () => {
               ) : (
                 <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="outline" size="sm" className="w-full">
-                    Admin Login
+                   Login
                   </Button>
                 </Link>
               )}

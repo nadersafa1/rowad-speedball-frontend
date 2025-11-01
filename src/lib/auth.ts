@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins";
 import { sendPasswordResetEmail } from "@/actions/emails/send-password-reset-email";
 import { sendVerificationEmail } from "@/actions/emails/send-verification-email";
 import { db } from "@/lib/db";
@@ -50,5 +51,5 @@ export const auth = betterAuth({
       generateId: false,
     },
   },
-  plugins: [nextCookies()],
+  plugins: [nextCookies(), admin({ defaultRole: "user" })],
 });
