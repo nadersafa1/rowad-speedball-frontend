@@ -14,6 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Card,
   CardContent,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { usePlayersStore } from "@/store/players-store";
 import { DateOfBirthPicker } from "@/components/players/date-of-birth-picker";
+import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui";
 
 // Validation schema
 const playerSchema = z.object({
@@ -86,21 +88,14 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserPlus className="h-5 w-5 text-rowad-600" />
-          {isEditing ? "Edit Player" : "Add New Player"}
-        </CardTitle>
-        <CardDescription>
-          {isEditing
-            ? "Update player information for Rowad speedball team"
-            : "Register a new player for Rowad speedball team"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <DialogContent className="max-w-2xl space-y-4">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2">          <UserPlus className="h-5 w-5 text-rowad-600" />
+{isEditing ? "Edit Player" : "Add New Player"}</DialogTitle>
+      <DialogDescription>{isEditing ? "Update player information for Rowad speedball team" : "Register a new player for Rowad speedball team"}</DialogDescription>
+    </DialogHeader>
+    <Form {...form} >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" >
             {/* Name Field */}
             <FormField
               control={form.control}
@@ -146,30 +141,31 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                 <FormItem>
                   <FormLabel>Gender</FormLabel>
                   <FormControl>
-                    <div className="flex gap-4">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          value="male"
-                          checked={field.value === "male"}
-                          onChange={() => field.onChange("male")}
-                          disabled={isLoading}
-                          className="w-4 h-4 text-rowad-600 border-gray-300 focus:ring-rowad-500"
-                        />
-                        <span className="text-sm font-medium">Male</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          value="female"
-                          checked={field.value === "female"}
-                          onChange={() => field.onChange("female")}
-                          disabled={isLoading}
-                          className="w-4 h-4 text-rowad-600 border-gray-300 focus:ring-rowad-500"
-                        />
-                        <span className="text-sm font-medium">Female</span>
-                      </label>
-                    </div>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isLoading}
+                      className="flex flex-col gap-4 mt-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="male" id="gender-male" />
+                        <label
+                          htmlFor="gender-male"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Male
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="female" id="gender-female" />
+                        <label
+                          htmlFor="gender-female"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Female
+                        </label>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -183,33 +179,32 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Preferred Hand</FormLabel>
-                  <FormControl>
-                    <div className="flex gap-4">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          value="left"
-                          checked={field.value === "left"}
-                          onChange={() => field.onChange("left")}
-                          disabled={isLoading}
-                          className="w-4 h-4 text-rowad-600 border-gray-300 focus:ring-rowad-500"
-                        />
-                        <span className="text-sm font-medium">Left Handed</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          value="right"
-                          checked={field.value === "right"}
-                          onChange={() => field.onChange("right")}
-                          disabled={isLoading}
-                          className="w-4 h-4 text-rowad-600 border-gray-300 focus:ring-rowad-500"
-                        />
-                        <span className="text-sm font-medium">
+                  <FormControl >
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isLoading}
+                      className="flex flex-col gap-4 mt-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="left" id="hand-left" />
+                        <label
+                          htmlFor="hand-left"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Left Handed
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="right" id="hand-right" />
+                        <label
+                          htmlFor="hand-right"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
                           Right Handed
-                        </span>
-                      </label>
-                    </div>
+                        </label>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -222,10 +217,8 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                 <p className="text-destructive text-sm">{error}</p>
               </div>
             )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              {onCancel && (
+             <DialogFooter className="flex gap-3 mt-4">
+            {onCancel && (
                 <Button
                   type="button"
                   variant="outline"
@@ -253,11 +246,15 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                   </div>
                 )}
               </Button>
-            </div>
+            </DialogFooter>
+
+      
           </form>
         </Form>
-      </CardContent>
-    </Card>
+   
+
+    </DialogContent>
+   
   );
 };
 

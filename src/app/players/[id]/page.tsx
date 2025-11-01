@@ -111,7 +111,6 @@ const PlayerDetailPage = () => {
                           Edit Player
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-2xl">
                         <PlayerForm
                           player={selectedPlayer}
                           onSuccess={() => {
@@ -120,7 +119,6 @@ const PlayerDetailPage = () => {
                           }}
                           onCancel={() => setEditPlayerFormOpen(false)}
                         />
-                      </DialogContent>
                     </Dialog>
                   )}
                 </div>

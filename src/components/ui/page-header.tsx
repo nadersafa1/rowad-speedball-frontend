@@ -55,9 +55,7 @@ const PageHeader = ({
           onOpenChange={actionDialog.onOpenChange}
         >
           <DialogTrigger asChild>{actionDialog.trigger}</DialogTrigger>
-          <DialogContent className="sm:max-w-2xl">
             {actionDialog.content}
-          </DialogContent>
         </Dialog>
       )}
     </div>
