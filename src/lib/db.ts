@@ -1,14 +1,28 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL is not set. Please add it to your .env.local file."
-  );
+let pool: Pool | null = null;
+let dbInstance: ReturnType<typeof drizzle> | null = null;
+
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      "DATABASE_URL is not set. Please set it in your environment variables."
+    );
+  }
+
+  if (!pool) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+    dbInstance = drizzle(pool);
+  }
+
+  return dbInstance!;
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get: (_, prop) => {
+    return getDb()[prop as keyof ReturnType<typeof drizzle>];
+  },
 });
-
-export const db = drizzle(pool);
