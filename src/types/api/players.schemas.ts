@@ -24,6 +24,18 @@ export const playersQuerySchema = z
       ])
       .optional(),
     preferredHand: z.enum(["left", "right", "both"]).optional(),
+    // Sorting parameters
+    sortBy: z
+      .enum([
+        "name",
+        "dateOfBirth",
+        "createdAt",
+        "updatedAt",
+        "gender",
+        "preferredHand",
+      ])
+      .optional(),
+    sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
     // Pagination parameters
     page: z
       .string()
@@ -102,4 +114,3 @@ export type PlayersQuery = z.infer<typeof playersQuerySchema>;
 export type PlayersParams = z.infer<typeof playersParamsSchema>;
 export type PlayersCreate = z.infer<typeof playersCreateSchema>;
 export type PlayersUpdate = z.infer<typeof playersUpdateSchema>;
-

@@ -51,16 +51,23 @@ export class ApiClient {
 
   // Player methods
   async getPlayers(params?: {
-    search?: string;
+    q?: string;
     gender?: string;
     ageGroup?: string;
+    preferredHand?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
     page?: number;
     limit?: number;
   }) {
     const searchParams = new URLSearchParams();
-    if (params?.search) searchParams.set("search", params.search);
+    if (params?.q) searchParams.set("q", params.q);
     if (params?.gender) searchParams.set("gender", params.gender);
     if (params?.ageGroup) searchParams.set("ageGroup", params.ageGroup);
+    if (params?.preferredHand)
+      searchParams.set("preferredHand", params.preferredHand);
+    if (params?.sortBy) searchParams.set("sortBy", params.sortBy);
+    if (params?.sortOrder) searchParams.set("sortOrder", params.sortOrder);
     if (params?.page) searchParams.set("page", params.page.toString());
     if (params?.limit) searchParams.set("limit", params.limit.toString());
 

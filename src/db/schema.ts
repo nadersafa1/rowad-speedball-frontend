@@ -97,7 +97,7 @@ export const calculateAge = (dateOfBirth: string): number => {
 export const getAgeGroup = (dateOfBirth: string): string => {
   const age = calculateAge(dateOfBirth);
 
-  if (age <= 7) return "Mini";
+  if (age <= 7) return "mini";
   if (age <= 9) return "U-09";
   if (age <= 11) return "U-11";
   if (age <= 13) return "U-13";
