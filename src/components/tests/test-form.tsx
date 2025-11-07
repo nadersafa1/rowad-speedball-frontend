@@ -22,6 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Save, Trophy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { parseDateFromAPI } from "@/lib/date-utils";
 import { TestDatePicker } from "./test-date-picker.tsx";
 
 // Validation schema
@@ -76,7 +77,7 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
       playingTime: test?.playingTime || 30,
       recoveryTime: test?.recoveryTime || 30,
       dateConducted: test?.dateConducted
-        ? new Date(test?.dateConducted?.split("T")[0])
+        ? parseDateFromAPI(test.dateConducted)
         : new Date(),
       description: test?.description || "",
     },

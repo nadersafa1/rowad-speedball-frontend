@@ -1,6 +1,7 @@
 // Players Store - Single responsibility: Players state management
 import { create } from "zustand";
 import { apiClient } from "@/lib/api-client";
+import { formatDateForAPI } from "@/lib/date-utils";
 import type { Player, PlayerWithResults, PaginatedResponse } from "@/types";
 import { PlayersFilters } from "@/app/players/types";
 
@@ -92,12 +93,12 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   createPlayer: async (data: any) => {
     set({ isLoading: true, error: null });
     try {
-      // Convert dateOfBirth from Date to ISO string if it's a Date object
+      // Convert dateOfBirth from Date to YYYY-MM-DD string using local timezone
       const formattedData = {
         ...data,
         dateOfBirth:
           data.dateOfBirth instanceof Date
-            ? data.dateOfBirth.toISOString()
+            ? formatDateForAPI(data.dateOfBirth)
             : data.dateOfBirth,
       };
       const newPlayer = (await apiClient.createPlayer(formattedData)) as Player;
@@ -118,13 +119,13 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   updatePlayer: async (id: string, data: any) => {
     set({ isLoading: true, error: null });
     try {
-      // Convert dateOfBirth from Date to ISO string if it's a Date object
+      // Convert dateOfBirth from Date to YYYY-MM-DD string using local timezone
       const formattedData = {
         ...data,
         ...(data.dateOfBirth && {
           dateOfBirth:
             data.dateOfBirth instanceof Date
-              ? data.dateOfBirth.toISOString()
+              ? formatDateForAPI(data.dateOfBirth)
               : data.dateOfBirth,
         }),
       };

@@ -1,6 +1,7 @@
 // Tests Store - Single responsibility: Tests state management
 import { create } from "zustand";
 import { apiClient } from "@/lib/api-client";
+import { formatDateForAPI } from "@/lib/date-utils";
 import type { Test, TestWithResults, PaginatedResponse } from "@/types";
 
 interface TestsState {
@@ -98,7 +99,15 @@ export const useTestsStore = create<TestsState>((set, get) => ({
   createTest: async (data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const newTest = (await apiClient.createTest(data)) as Test;
+      // Convert dateConducted from Date to YYYY-MM-DD string using local timezone
+      const formattedData = {
+        ...data,
+        dateConducted:
+          data.dateConducted instanceof Date
+            ? formatDateForAPI(data.dateConducted)
+            : data.dateConducted,
+      };
+      const newTest = (await apiClient.createTest(formattedData)) as Test;
       set((state) => ({
         tests: [...state.tests, newTest],
         isLoading: false,
@@ -115,7 +124,20 @@ export const useTestsStore = create<TestsState>((set, get) => ({
   updateTest: async (id: string, data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedTest = (await apiClient.updateTest(id, data)) as Test;
+      // Convert dateConducted from Date to YYYY-MM-DD string using local timezone
+      const formattedData = {
+        ...data,
+        ...(data.dateConducted && {
+          dateConducted:
+            data.dateConducted instanceof Date
+              ? formatDateForAPI(data.dateConducted)
+              : data.dateConducted,
+        }),
+      };
+      const updatedTest = (await apiClient.updateTest(
+        id,
+        formattedData
+      )) as Test;
       set((state) => ({
         tests: state.tests.map((t) => (t.id === id ? updatedTest : t)),
         selectedTest:

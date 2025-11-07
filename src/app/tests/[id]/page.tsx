@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   Clock,
   Plus,
   Edit,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,18 +23,32 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useTestsStore } from "@/store/tests-store";
 import { useAdminPermission } from "@/hooks/use-admin-permission";
+import { toast } from "sonner";
 import ResultsForm from "@/components/results/results-form";
 import TestForm from "@/components/tests/test-form";
 
 const TestDetailPage = () => {
   const params = useParams();
+  const router = useRouter();
   const testId = params.id as string;
   const { isAdmin } = useAdminPermission();
-  const { selectedTest, fetchTest, isLoading } = useTestsStore();
+  const { selectedTest, fetchTest, isLoading, deleteTest } = useTestsStore();
   const [resultFormOpen, setResultFormOpen] = useState(false);
   const [editTestFormOpen, setEditTestFormOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     ageGroup: "",
     gender: "",
@@ -128,6 +143,18 @@ const TestDetailPage = () => {
     )
   ).sort();
 
+  const handleDelete = async () => {
+    try {
+      await deleteTest(testId);
+      toast.success("Test deleted successfully");
+      router.push("/tests");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete test"
+      );
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Back Navigation */}
@@ -144,18 +171,18 @@ const TestDetailPage = () => {
       <div className="mb-8">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-start gap-6">
-              <div className="bg-blue-100 rounded-full p-4">
-                <Trophy className="h-12 w-12 text-blue-600" />
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+              <div className="bg-blue-100 rounded-full p-3 sm:p-4 shrink-0">
+                <Trophy className="h-8 w-8 sm:h-12 sm:w-12 text-blue-600" />
               </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold text-gray-900">
+              <div className="flex-1 w-full min-w-0">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
                       {selectedTest.name}
                     </h1>
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${getTestTypeColor(
+                      className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getTestTypeColor(
                         selectedTest.playingTime,
                         selectedTest.recoveryTime
                       )}`}
@@ -167,25 +194,63 @@ const TestDetailPage = () => {
                     </span>
                   </div>
                   {isAdmin && (
-                    <Dialog
-                      open={editTestFormOpen}
-                      onOpenChange={setEditTestFormOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2">
-                          <Edit className="h-4 w-4" />
-                          Edit Test
-                        </Button>
-                      </DialogTrigger>
-                      <TestForm
-                        test={selectedTest}
-                        onSuccess={() => {
-                          setEditTestFormOpen(false);
-                          fetchTest(testId, true);
-                        }}
-                        onCancel={() => setEditTestFormOpen(false)}
-                      />
-                    </Dialog>
+                    <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                      <Dialog
+                        open={editTestFormOpen}
+                        onOpenChange={setEditTestFormOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                            <Edit className="h-4 w-4" />
+                            <span className="hidden sm:inline">Edit Test</span>
+                            <span className="sm:hidden">Edit</span>
+                          </Button>
+                        </DialogTrigger>
+                        <TestForm
+                          test={selectedTest}
+                          onSuccess={() => {
+                            setEditTestFormOpen(false);
+                            fetchTest(testId, true);
+                          }}
+                          onCancel={() => setEditTestFormOpen(false)}
+                        />
+                      </Dialog>
+                      <AlertDialog
+                        open={deleteDialogOpen}
+                        onOpenChange={setDeleteDialogOpen}
+                      >
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="gap-2 text-destructive hover:text-destructive w-full sm:w-auto"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="hidden sm:inline">Delete Test</span>
+                            <span className="sm:hidden">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Test</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete{" "}
+                              <strong>{selectedTest.name}</strong>? This action
+                              cannot be undone and will permanently delete all
+                              associated test results.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={handleDelete}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
@@ -310,7 +375,7 @@ const TestDetailPage = () => {
         {/* All Results */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
               <div>
                 <CardTitle>
                   Test Results ({filteredResults.length} participants)
@@ -324,7 +389,7 @@ const TestDetailPage = () => {
               {isAdmin && (
                 <Dialog open={resultFormOpen} onOpenChange={setResultFormOpen}>
                   <DialogTrigger asChild>
-                    <Button className="gap-2 bg-green-600 hover:bg-green-700">
+                    <Button className="gap-2 bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                       <Plus className="h-4 w-4" />
                       Add Result
                     </Button>
@@ -369,30 +434,30 @@ const TestDetailPage = () => {
                         key={result.id}
                         className="border rounded-lg p-4 hover:bg-gray-50"
                       >
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-lg font-bold text-gray-500">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                              <span className="text-base sm:text-lg font-bold text-gray-500">
                                 #{index + 1}
                               </span>
                               <Link
                                 href={`/players/${result.player?.id}`}
-                                className="text-lg font-semibold text-rowad-600 hover:text-rowad-700"
+                                className="text-base sm:text-lg font-semibold text-rowad-600 hover:text-rowad-700 break-words"
                               >
                                 {result.player?.name}
                               </Link>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">
                               {result.player?.gender === "male" ? "👨" : "👩"}{" "}
                               {result.player?.ageGroup} • Age{" "}
                               {result.player?.age}
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-blue-600">
+                          <div className="text-left sm:text-right shrink-0">
+                            <p className="text-xl sm:text-2xl font-bold text-blue-600">
                               {totalScore}
                             </p>
-                            <p className="text-sm text-gray-600">Total Score</p>
+                            <p className="text-xs sm:text-sm text-gray-600">Total Score</p>
                           </div>
                         </div>
 

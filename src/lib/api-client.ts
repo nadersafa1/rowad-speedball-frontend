@@ -149,7 +149,7 @@ export class ApiClient {
 
   async updateTest(id: string, data: any) {
     return this.request(`/tests/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }

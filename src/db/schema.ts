@@ -155,4 +155,3 @@ export const calculateTotalScore = (
 export type Player = typeof players.$inferSelect;
 export type Test = typeof tests.$inferSelect;
 export type TestResult = typeof testResults.$inferSelect;
-

@@ -17,6 +17,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { usePlayersStore } from "@/store/players-store";
 import { DateOfBirthPicker } from "@/components/players/date-of-birth-picker";
+import { parseDateFromAPI } from "@/lib/date-utils";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui";
 
 // Validation schema
@@ -57,8 +58,8 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
     resolver: zodResolver(playerSchema),
     defaultValues: {
       name: player?.name || "",
-      dateOfBirth: player
-        ? new Date(player?.dateOfBirth?.split("T")[0])
+      dateOfBirth: player?.dateOfBirth
+        ? parseDateFromAPI(player.dateOfBirth)
         : new Date(new Date().getFullYear() - 4, 0, 1),
       gender: player?.gender || undefined,
       preferredHand: player?.preferredHand || undefined,
