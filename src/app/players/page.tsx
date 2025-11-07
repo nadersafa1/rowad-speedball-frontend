@@ -3,15 +3,12 @@
 import PlayerForm from "@/components/players/player-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState, PageHeader } from "@/components/ui";
-import Pagination from "@/components/ui/pagination";
-import { authClient } from "@/lib/auth-client";
+import { PageHeader } from "@/components/ui";
 import { useAdminPermission } from "@/hooks/use-admin-permission";
 import { Plus, Users } from "lucide-react";
 import { useState } from "react";
-import PlayerCard from "./components/player-card";
-import PlayersFiltersSection from "./components/players-filters";
 import PlayersStats from "./components/players-stats";
+import PlayersTable from "./components/players-table";
 import { usePlayers } from "./hooks/use-players";
 import { PlayersFilters } from "./types";
 import { AgeGroup, Gender } from "./types/enums";
@@ -26,7 +23,7 @@ const PlayersPage = () => {
     gender: Gender.ALL,
     ageGroup: AgeGroup.ALL,
     page: 1,
-    limit: 12,
+    limit: 25,
   });
 
   const {
@@ -86,53 +83,43 @@ const PlayersPage = () => {
         }
       />
 
-      {/* Filters */}
-      <PlayersFiltersSection filters={filters} setFilters={setFilters} />
-
-      {/* Players Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="pt-6">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-1/2 mb-4"></div>
-                <div className="space-y-2">
-                  <div className="h-3 bg-muted rounded w-full"></div>
-                  <div className="h-3 bg-muted rounded w-2/3"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : players.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No players found"
-          description={
-            filters.q
-              ? "Try adjusting your search terms."
-              : "No players have been registered yet."
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {players.map((player) => (
-            <PlayerCard key={player.id} player={player} />
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {players.length > 0 && pagination.totalPages > 1 && (
-        <div className="mt-8">
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
+      {/* Players Table */}
+      <Card>
+        <CardContent className="pt-6">
+          <PlayersTable
+            players={players}
+            pagination={pagination}
             onPageChange={handlePageChange}
+            onPageSizeChange={(pageSize) => {
+              setFilters({ ...filters, limit: pageSize, page: 1 });
+            }}
+            onSearchChange={(search) => {
+              setFilters({ ...filters, q: search, page: 1 });
+            }}
+            searchValue={filters.q}
+            gender={filters.gender}
+            ageGroup={filters.ageGroup}
+            onGenderChange={(gender) => {
+              setFilters({ ...filters, gender, page: 1 });
+            }}
+            onAgeGroupChange={(ageGroup) => {
+              setFilters({ ...filters, ageGroup, page: 1 });
+            }}
+            sortBy={filters.sortBy}
+            sortOrder={filters.sortOrder}
+            onSortingChange={(sortBy, sortOrder) => {
+              setFilters({
+                ...filters,
+                sortBy: sortBy as PlayersFilters["sortBy"],
+                sortOrder,
+                page: 1,
+              });
+            }}
+            isLoading={isLoading}
+            onRefetch={refetch}
           />
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <PlayersStats />

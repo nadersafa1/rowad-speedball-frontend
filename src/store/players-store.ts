@@ -48,6 +48,8 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
         ageGroup: filters.ageGroup,
         page: filters.page,
         limit: filters.limit,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
       };
 
       const response = (await apiClient.getPlayers(
@@ -90,7 +92,15 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   createPlayer: async (data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const newPlayer = (await apiClient.createPlayer(data)) as Player;
+      // Convert dateOfBirth from Date to ISO string if it's a Date object
+      const formattedData = {
+        ...data,
+        dateOfBirth:
+          data.dateOfBirth instanceof Date
+            ? data.dateOfBirth.toISOString()
+            : data.dateOfBirth,
+      };
+      const newPlayer = (await apiClient.createPlayer(formattedData)) as Player;
       set((state) => ({
         players: [...state.players, newPlayer],
         isLoading: false,
@@ -108,7 +118,20 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
   updatePlayer: async (id: string, data: any) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedPlayer = (await apiClient.updatePlayer(id, data)) as Player;
+      // Convert dateOfBirth from Date to ISO string if it's a Date object
+      const formattedData = {
+        ...data,
+        ...(data.dateOfBirth && {
+          dateOfBirth:
+            data.dateOfBirth instanceof Date
+              ? data.dateOfBirth.toISOString()
+              : data.dateOfBirth,
+        }),
+      };
+      const updatedPlayer = (await apiClient.updatePlayer(
+        id,
+        formattedData
+      )) as Player;
       set((state) => ({
         players: state.players.map((p) => (p.id === id ? updatedPlayer : p)),
         selectedPlayer:

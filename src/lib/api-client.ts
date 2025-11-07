@@ -35,6 +35,17 @@ export class ApiClient {
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
+    // Handle 204 No Content responses (e.g., DELETE operations)
+    if (response.status === 204 || response.statusText === "No Content") {
+      return null as T;
+    }
+
+    // Check if response has content before parsing JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      return null as T;
+    }
+
     return response.json();
   }
 
@@ -88,7 +99,7 @@ export class ApiClient {
 
   async updatePlayer(id: string, data: any) {
     return this.request(`/players/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }

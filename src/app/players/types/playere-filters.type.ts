@@ -6,6 +6,14 @@ interface PlayersFilters {
   ageGroup?: AgeGroup;
   page?: number;
   limit?: number;
+  sortBy?:
+    | "name"
+    | "dateOfBirth"
+    | "createdAt"
+    | "updatedAt"
+    | "gender"
+    | "preferredHand";
+  sortOrder?: "asc" | "desc";
 }
 
 export type { PlayersFilters };

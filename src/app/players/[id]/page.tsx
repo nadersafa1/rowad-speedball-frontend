@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   BarChart3,
   Plus,
   Edit,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,18 +23,33 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { usePlayersStore } from "@/store/players-store";
 import { useAdminPermission } from "@/hooks/use-admin-permission";
+import { toast } from "sonner";
 import ResultsForm from "@/components/results/results-form";
 import PlayerForm from "@/components/players/player-form";
 
 const PlayerDetailPage = () => {
   const params = useParams();
+  const router = useRouter();
   const playerId = params.id as string;
   const { isAdmin } = useAdminPermission();
-  const { selectedPlayer, fetchPlayer, isLoading } = usePlayersStore();
+  const { selectedPlayer, fetchPlayer, isLoading, deletePlayer } =
+    usePlayersStore();
   const [resultFormOpen, setResultFormOpen] = useState(false);
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (playerId) {
@@ -75,6 +91,18 @@ const PlayerDetailPage = () => {
 
   const stats = calculateStats();
 
+  const handleDelete = async () => {
+    try {
+      await deletePlayer(playerId);
+      toast.success("Player deleted successfully");
+      router.push("/players");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete player"
+      );
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Back Navigation */}
@@ -91,26 +119,28 @@ const PlayerDetailPage = () => {
       <div className="mb-8">
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-start gap-6">
-              <div className="bg-rowad-100 rounded-full p-4">
-                <User className="h-12 w-12 text-rowad-600" />
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+              <div className="bg-rowad-100 rounded-full p-3 sm:p-4 shrink-0">
+                <User className="h-8 w-8 sm:h-12 sm:w-12 text-rowad-600" />
               </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900">
+              <div className="flex-1 w-full min-w-0">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-2 mb-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
                     {selectedPlayer.name}
                   </h1>
                   {isAdmin && (
-                    <Dialog
-                      open={editPlayerFormOpen}
-                      onOpenChange={setEditPlayerFormOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2">
-                          <Edit className="h-4 w-4" />
-                          Edit Player
-                        </Button>
-                      </DialogTrigger>
+                    <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                      <Dialog
+                        open={editPlayerFormOpen}
+                        onOpenChange={setEditPlayerFormOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                            <Edit className="h-4 w-4" />
+                            <span className="hidden sm:inline">Edit Player</span>
+                            <span className="sm:hidden">Edit</span>
+                          </Button>
+                        </DialogTrigger>
                         <PlayerForm
                           player={selectedPlayer}
                           onSuccess={() => {
@@ -119,7 +149,43 @@ const PlayerDetailPage = () => {
                           }}
                           onCancel={() => setEditPlayerFormOpen(false)}
                         />
-                    </Dialog>
+                      </Dialog>
+                      <AlertDialog
+                        open={deleteDialogOpen}
+                        onOpenChange={setDeleteDialogOpen}
+                      >
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="gap-2 text-destructive hover:text-destructive w-full sm:w-auto"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="hidden sm:inline">Delete Player</span>
+                            <span className="sm:hidden">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Player</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete{" "}
+                              <strong>{selectedPlayer.name}</strong>? This
+                              action cannot be undone and will permanently
+                              delete all associated test results.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={handleDelete}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
