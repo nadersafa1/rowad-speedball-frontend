@@ -106,9 +106,9 @@ const ResultsForm = ({
 
     try {
       if (isEditing) {
-        await apiClient.put(`/results/${result.id}`, data);
+        await apiClient.updateResult(result.id, data);
       } else {
-        await apiClient.post("/results", data);
+        await apiClient.createResult(data);
       }
       form.reset();
       onSuccess?.();

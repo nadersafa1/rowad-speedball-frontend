@@ -204,7 +204,7 @@ export class ApiClient {
 
   async updateResult(id: string, data: any) {
     return this.request(`/results/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
