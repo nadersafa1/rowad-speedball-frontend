@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Target, Save, Users, Trophy } from "lucide-react";
+import { Target, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -29,9 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui";
-import { usePlayersStore } from "@/store/players-store";
-import { useTestsStore } from "@/store/tests-store";
 import { apiClient } from "@/lib/api-client";
+import PlayerCombobox from "@/components/players/player-combobox";
+import TestCombobox from "@/components/tests/test-combobox";
+import ScoreInput from "@/components/results/score-input";
 
 // Validation schema
 const resultSchema = z.object({
@@ -72,8 +65,6 @@ const ResultsForm = ({
   onSuccess,
   onCancel,
 }: ResultsFormProps) => {
-  const { players, fetchPlayers } = usePlayersStore();
-  const { tests, fetchTests } = useTestsStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,22 +82,15 @@ const ResultsForm = ({
     },
   });
 
-  // Only fetch if data is completely empty (first time load)
-  useEffect(() => {
-    if (players.length === 0 && tests.length === 0) {
-      // Both stores are empty, likely first load
-      fetchPlayers();
-      fetchTests();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const onSubmit = async (data: ResultFormData) => {
     setIsLoading(true);
     setError(null);
 
     try {
       if (isEditing) {
-        await apiClient.updateResult(result.id, data);
+        // Only send score fields when editing, exclude playerId and testId
+        const { playerId, testId, ...scoreData } = data;
+        await apiClient.updateResult(result.id, scoreData);
       } else {
         await apiClient.createResult(data);
       }
@@ -124,20 +108,9 @@ const ResultsForm = ({
   const rightHandScore = form.watch("rightHandScore") || 0;
   const forehandScore = form.watch("forehandScore") || 0;
   const backhandScore = form.watch("backhandScore") || 0;
-  const playerId = form.watch("playerId");
-  const testId = form.watch("testId");
 
   const totalScore =
     leftHandScore + rightHandScore + forehandScore + backhandScore;
-
-  // Memoize selections to prevent unnecessary re-renders
-  const selectedPlayer = useCallback(() => {
-    return players.find((p) => p.id === playerId);
-  }, [players, playerId])();
-
-  const selectedTest = useCallback(() => {
-    return tests.find((t) => t.id === testId);
-  }, [tests, testId])();
 
   return (
     <DialogContent className="max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto space-y-4">
@@ -161,33 +134,15 @@ const ResultsForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Player</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoading || !!preselectedPlayerId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a player..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {players.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name} (
-                          {player.gender === "male" ? "👨" : "👩"}{" "}
-                          {player.ageGroup})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <PlayerCombobox
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isLoading || !!preselectedPlayerId}
+                      placeholder="Select a player..."
+                    />
+                  </FormControl>
                   <FormMessage />
-                  {selectedPlayer && (
-                    <div className="text-sm text-gray-600 mt-1">
-                      Age: {selectedPlayer.age} • Group:{" "}
-                      {selectedPlayer.ageGroup}
-                    </div>
-                  )}
                 </FormItem>
               )}
             />
@@ -199,48 +154,15 @@ const ResultsForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Test</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoading || !!preselectedTestId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a test..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tests.map((test) => (
-                        <SelectItem key={test.id} value={test.id}>
-                          {test.name} (
-                          {test.playingTime === 60 && test.recoveryTime === 30
-                            ? "Super Solo"
-                            : test.playingTime === 30 &&
-                              test.recoveryTime === 30
-                            ? "Juniors Solo"
-                            : "Speed Solo"}
-                          )
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <TestCombobox
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isLoading || !!preselectedTestId}
+                      placeholder="Select a test..."
+                    />
+                  </FormControl>
                   <FormMessage />
-                  {selectedTest && (
-                    <div className="text-sm text-gray-600 mt-1">
-                      Date:{" "}
-                      {new Date(
-                        selectedTest.dateConducted
-                      ).toLocaleDateString()}{" "}
-                      • Type:{" "}
-                      {selectedTest.playingTime === 60 &&
-                      selectedTest.recoveryTime === 30
-                        ? "Super Solo (60s/30s)"
-                        : selectedTest.playingTime === 30 &&
-                          selectedTest.recoveryTime === 30
-                        ? "Juniors Solo (30s/30s)"
-                        : "Speed Solo (30s/60s)"}
-                    </div>
-                  )}
                 </FormItem>
               )}
             />
@@ -254,16 +176,10 @@ const ResultsForm = ({
                   <FormItem>
                     <FormLabel>Left Hand Score</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min="0"
-                        max="100"
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 0)
-                        }
+                      <ScoreInput
+                        value={field.value}
+                        onChange={field.onChange}
                         disabled={isLoading}
-                        className="text-center"
                       />
                     </FormControl>
                     <FormMessage />
@@ -278,16 +194,10 @@ const ResultsForm = ({
                   <FormItem>
                     <FormLabel>Right Hand Score</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min="0"
-                        max="100"
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 0)
-                        }
+                      <ScoreInput
+                        value={field.value}
+                        onChange={field.onChange}
                         disabled={isLoading}
-                        className="text-center"
                       />
                     </FormControl>
                     <FormMessage />
@@ -302,16 +212,10 @@ const ResultsForm = ({
                   <FormItem>
                     <FormLabel>Forehand Score</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min="0"
-                        max="100"
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 0)
-                        }
+                      <ScoreInput
+                        value={field.value}
+                        onChange={field.onChange}
                         disabled={isLoading}
-                        className="text-center"
                       />
                     </FormControl>
                     <FormMessage />
@@ -326,16 +230,10 @@ const ResultsForm = ({
                   <FormItem>
                     <FormLabel>Backhand Score</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min="0"
-                        max="100"
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 0)
-                        }
+                      <ScoreInput
+                        value={field.value}
+                        onChange={field.onChange}
                         disabled={isLoading}
-                        className="text-center"
                       />
                     </FormControl>
                     <FormMessage />
