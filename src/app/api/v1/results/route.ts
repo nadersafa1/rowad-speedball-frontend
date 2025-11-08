@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, lte, sql } from "drizzle-orm";
 import z from "zod";
 import { db } from "@/lib/db";
 import * as schema from "@/db/schema";
@@ -10,6 +10,7 @@ import {
 import { createPaginatedResponse } from "@/types/api/pagination";
 import { resultsService } from "@/lib/services/results.service";
 import { requireAdmin } from "@/lib/auth-middleware";
+import { calculateAge, getAgeGroup } from "@/db/schema";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -24,10 +25,16 @@ export async function GET(request: NextRequest) {
     const {
       playerId,
       testId,
+      q,
+      gender,
+      ageGroup,
+      yearOfBirth,
       minScore,
       maxScore,
       dateFrom,
       dateTo,
+      sortBy,
+      sortOrder,
       page,
       limit,
     } = parseResult.data;
@@ -51,18 +58,7 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(schema.testResults.createdAt, new Date(dateTo)));
     }
 
-    const combinedCondition =
-      conditions.length > 0
-        ? conditions.reduce((acc, condition) =>
-            acc ? and(acc, condition) : condition
-          )
-        : undefined;
-
-    let countQuery = db.select({ count: count() }).from(schema.testResults);
-    if (combinedCondition) {
-      countQuery = countQuery.where(combinedCondition) as any;
-    }
-
+    // Build base query with joins
     let dataQuery = db
       .select({
         result: schema.testResults,
@@ -76,22 +72,119 @@ export async function GET(request: NextRequest) {
       )
       .leftJoin(schema.tests, eq(schema.testResults.testId, schema.tests.id));
 
+    // Add player-related filters (need to be applied after join)
+    if (q) {
+      conditions.push(ilike(schema.players.name, `%${q}%`));
+    }
+
+    if (gender && gender !== "all") {
+      conditions.push(eq(schema.players.gender, gender));
+    }
+
+    if (yearOfBirth) {
+      conditions.push(
+        sql`EXTRACT(YEAR FROM ${schema.players.dateOfBirth}) = ${yearOfBirth}`
+      );
+    }
+
+    const combinedCondition =
+      conditions.length > 0
+        ? conditions.reduce((acc, condition) =>
+            acc ? and(acc, condition) : condition
+          )
+        : undefined;
+
     if (combinedCondition) {
       dataQuery = dataQuery.where(combinedCondition) as any;
     }
 
+    // Count query - need to use same joins and conditions
+    let countQuery = db
+      .select({ count: count() })
+      .from(schema.testResults)
+      .leftJoin(
+        schema.players,
+        eq(schema.testResults.playerId, schema.players.id)
+      );
+
+    if (combinedCondition) {
+      countQuery = countQuery.where(combinedCondition) as any;
+    }
+
+    // Apply sorting
+    if (sortBy) {
+      let orderField: any;
+      const order = sortOrder === "asc" ? asc : desc;
+
+      switch (sortBy) {
+        case "totalScore":
+          // Calculate total score for sorting - we'll sort after calculating
+          // For now, sort by sum of scores in SQL
+          dataQuery = dataQuery.orderBy(
+            order(
+              sql`${schema.testResults.leftHandScore} + ${schema.testResults.rightHandScore} + ${schema.testResults.forehandScore} + ${schema.testResults.backhandScore}`
+            )
+          ) as any;
+          break;
+        case "leftHandScore":
+          orderField = schema.testResults.leftHandScore;
+          dataQuery = dataQuery.orderBy(order(orderField)) as any;
+          break;
+        case "rightHandScore":
+          orderField = schema.testResults.rightHandScore;
+          dataQuery = dataQuery.orderBy(order(orderField)) as any;
+          break;
+        case "forehandScore":
+          orderField = schema.testResults.forehandScore;
+          dataQuery = dataQuery.orderBy(order(orderField)) as any;
+          break;
+        case "backhandScore":
+          orderField = schema.testResults.backhandScore;
+          dataQuery = dataQuery.orderBy(order(orderField)) as any;
+          break;
+        case "playerName":
+          orderField = schema.players.name;
+          dataQuery = dataQuery.orderBy(order(orderField)) as any;
+          break;
+        case "ageGroup":
+          // Sort by dateOfBirth (younger = higher age group)
+          orderField = schema.players.dateOfBirth;
+          dataQuery = dataQuery.orderBy(order(orderField)) as any;
+          break;
+        case "age":
+          orderField = schema.players.dateOfBirth;
+          // For age, desc means older first (earlier birth date)
+          const ageOrder = sortOrder === "asc" ? desc : asc;
+          dataQuery = dataQuery.orderBy(ageOrder(orderField)) as any;
+          break;
+        case "createdAt":
+          orderField = schema.testResults.createdAt;
+          dataQuery = dataQuery.orderBy(order(orderField)) as any;
+          break;
+        default:
+          dataQuery = dataQuery.orderBy(desc(schema.testResults.createdAt)) as any;
+      }
+    } else {
+      // Default: sort by total score descending
+      dataQuery = dataQuery.orderBy(
+        desc(
+          sql`${schema.testResults.leftHandScore} + ${schema.testResults.rightHandScore} + ${schema.testResults.forehandScore} + ${schema.testResults.backhandScore}`
+        )
+      ) as any;
+    }
+
     const [countResult, dataResult] = await Promise.all([
       countQuery,
-      dataQuery
-        .orderBy(desc(schema.testResults.createdAt))
-        .limit(limit)
-        .offset(offset),
+      dataQuery.limit(limit).offset(offset),
     ]);
 
     const totalItems = countResult[0].count;
 
     let resultsWithCalculatedFields = dataResult.map((row) => {
       const totalScore = resultsService.calculateTotalScore(row.result);
+      const playerAge = row.player ? calculateAge(row.player.dateOfBirth) : undefined;
+      const playerAgeGroup = row.player ? getAgeGroup(row.player.dateOfBirth) : undefined;
+      
       return {
         ...row.result,
         totalScore,
@@ -101,11 +194,25 @@ export async function GET(request: NextRequest) {
         performanceCategory: resultsService.getPerformanceCategory(totalScore),
         scoreDistribution: resultsService.getScoreDistribution(row.result),
         analysis: resultsService.analyzePerformance(row.result),
-        player: row.player,
+        player: row.player
+          ? {
+              ...row.player,
+              age: playerAge,
+              ageGroup: playerAgeGroup,
+            }
+          : null,
         test: row.test,
       };
     });
 
+    // Filter by ageGroup (after calculating age groups)
+    if (ageGroup && ageGroup !== "all") {
+      resultsWithCalculatedFields = resultsWithCalculatedFields.filter(
+        (result) => result.player?.ageGroup === ageGroup
+      );
+    }
+
+    // Filter by score range (after calculating total score)
     if (minScore !== undefined || maxScore !== undefined) {
       resultsWithCalculatedFields = resultsWithCalculatedFields.filter(
         (result) =>

@@ -5,6 +5,34 @@ export const resultsQuerySchema = z
   .object({
     playerId: z.uuid("Invalid player ID format").optional(),
     testId: z.uuid("Invalid test ID format").optional(),
+    q: z
+      .string()
+      .trim()
+      .max(50, "q must be less than 50 characters")
+      .optional(),
+    gender: z.enum(["male", "female", "all"]).optional(),
+    ageGroup: z
+      .enum([
+        "mini",
+        "U-09",
+        "U-11",
+        "U-13",
+        "U-15",
+        "U-17",
+        "U-19",
+        "U-21",
+        "Seniors",
+        "all",
+      ])
+      .optional(),
+    yearOfBirth: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : undefined))
+      .refine(
+        (val) => val === undefined || (val >= 1900 && val <= 2100),
+        "Year of birth must be between 1900 and 2100"
+      ),
     minScore: z
       .string()
       .optional()
@@ -35,6 +63,21 @@ export const resultsQuerySchema = z
         (date) => !date || !isNaN(Date.parse(date)),
         "Invalid date format for dateTo"
       ),
+    // Sorting parameters
+    sortBy: z
+      .enum([
+        "totalScore",
+        "leftHandScore",
+        "rightHandScore",
+        "forehandScore",
+        "backhandScore",
+        "playerName",
+        "ageGroup",
+        "age",
+        "createdAt",
+      ])
+      .optional(),
+    sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
     // Pagination parameters
     page: z
       .string()
@@ -44,7 +87,7 @@ export const resultsQuerySchema = z
     limit: z
       .string()
       .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 10))
+      .transform((val) => (val ? parseInt(val, 10) : 25))
       .refine(
         (val) => val >= 1 && val <= 100,
         "Limit must be between 1 and 100"

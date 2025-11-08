@@ -161,8 +161,30 @@ export class ApiClient {
   }
 
   // Results methods
-  async getResults() {
-    return this.request("/results");
+  async getResults(params?: {
+    testId: string;
+    q?: string;
+    gender?: string;
+    ageGroup?: string;
+    yearOfBirth?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    page?: number;
+    limit?: number;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.testId) searchParams.set("testId", params.testId);
+    if (params?.q) searchParams.set("q", params.q);
+    if (params?.gender) searchParams.set("gender", params.gender);
+    if (params?.ageGroup) searchParams.set("ageGroup", params.ageGroup);
+    if (params?.yearOfBirth) searchParams.set("yearOfBirth", params.yearOfBirth);
+    if (params?.sortBy) searchParams.set("sortBy", params.sortBy);
+    if (params?.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+    if (params?.page) searchParams.set("page", params.page.toString());
+    if (params?.limit) searchParams.set("limit", params.limit.toString());
+
+    const query = searchParams.toString();
+    return this.request(`/results${query ? `?${query}` : ""}`);
   }
 
   async getPlayerResults(playerId: string) {
