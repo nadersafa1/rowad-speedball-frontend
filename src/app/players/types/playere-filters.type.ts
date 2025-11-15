@@ -1,9 +1,10 @@
-import { AgeGroup, Gender } from "./enums";
+import { AgeGroup, Gender, Team } from "./enums";
 
 interface PlayersFilters {
   q?: string;
   gender?: Gender;
   ageGroup?: AgeGroup;
+  team?: Team;
   page?: number;
   limit?: number;
   sortBy?:
@@ -12,7 +13,8 @@ interface PlayersFilters {
     | "createdAt"
     | "updatedAt"
     | "gender"
-    | "preferredHand";
+    | "preferredHand"
+    | "isFirstTeam";
   sortOrder?: "asc" | "desc";
 }
 

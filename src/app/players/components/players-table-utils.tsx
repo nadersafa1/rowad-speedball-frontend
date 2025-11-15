@@ -4,7 +4,8 @@ type SortableField =
   | "createdAt"
   | "updatedAt"
   | "gender"
-  | "preferredHand";
+  | "preferredHand"
+  | "isFirstTeam";
 
 export const columnToApiFieldMap: Record<string, SortableField> = {
   name: "name",

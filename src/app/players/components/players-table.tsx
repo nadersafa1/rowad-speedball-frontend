@@ -23,8 +23,10 @@ const PlayersTable = ({
   searchValue = "",
   gender,
   ageGroup,
+  team,
   onGenderChange,
   onAgeGroupChange,
+  onTeamChange,
   sortBy,
   sortOrder,
   onSortingChange,
@@ -81,8 +83,10 @@ const PlayersTable = ({
         onSearchChange={onSearchChange}
         gender={gender}
         ageGroup={ageGroup}
+        team={team}
         onGenderChange={onGenderChange}
         onAgeGroupChange={onAgeGroupChange}
+        onTeamChange={onTeamChange}
       />
       <div className="rounded-md border overflow-x-auto">
         <Table>

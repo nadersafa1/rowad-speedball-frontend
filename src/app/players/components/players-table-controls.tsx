@@ -19,7 +19,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Table } from "@tanstack/react-table";
 import { Player } from "@/types";
-import { Gender, AgeGroup } from "../types/enums";
+import { Gender, AgeGroup, Team } from "../types/enums";
 
 interface PlayersTableControlsProps {
   table: Table<Player>;
@@ -27,8 +27,10 @@ interface PlayersTableControlsProps {
   onSearchChange?: (value: string) => void;
   gender?: Gender;
   ageGroup?: AgeGroup;
+  team?: Team;
   onGenderChange?: (gender: Gender) => void;
   onAgeGroupChange?: (ageGroup: AgeGroup) => void;
+  onTeamChange?: (team: Team) => void;
 }
 
 export const PlayersTableControls = ({
@@ -37,8 +39,10 @@ export const PlayersTableControls = ({
   onSearchChange,
   gender,
   ageGroup,
+  team,
   onGenderChange,
   onAgeGroupChange,
+  onTeamChange,
 }: PlayersTableControlsProps) => {
   const getColumnLabel = (columnId: string) => {
     const labels: Record<string, string> = {
@@ -150,7 +154,26 @@ export const PlayersTableControls = ({
           </Select>
         </div>
 
-     
+        {/* Team Filter */}
+        <div className="flex-1 w-full md:w-auto">
+          <Label htmlFor="team" className="block mb-2">
+            Team
+          </Label>
+          <Select
+            name="team"
+            value={team}
+            onValueChange={(value: Team) => onTeamChange?.(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a Team" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={Team.ALL}>All Teams</SelectItem>
+              <SelectItem value={Team.FIRST_TEAM}>First Team</SelectItem>
+              <SelectItem value={Team.ROWAD_B}>Rowad B</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
