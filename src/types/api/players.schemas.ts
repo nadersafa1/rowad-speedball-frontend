@@ -109,8 +109,28 @@ export const playersUpdateSchema = z
   )
   .strict();
 
+// Query parameters for GET /players/:id/matches
+export const playerMatchesQuerySchema = z
+  .object({
+    page: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 1))
+      .refine((val) => val >= 1, "Page must be greater than 0"),
+    limit: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 5))
+      .refine(
+        (val) => val >= 1 && val <= 100,
+        "Limit must be between 1 and 100"
+      ),
+  })
+  .strict();
+
 // Inferred TypeScript types
 export type PlayersQuery = z.infer<typeof playersQuerySchema>;
 export type PlayersParams = z.infer<typeof playersParamsSchema>;
 export type PlayersCreate = z.infer<typeof playersCreateSchema>;
 export type PlayersUpdate = z.infer<typeof playersUpdateSchema>;
+export type PlayerMatchesQuery = z.infer<typeof playerMatchesQuerySchema>;

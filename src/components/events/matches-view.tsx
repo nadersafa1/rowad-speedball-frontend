@@ -70,12 +70,12 @@ const MatchesView = ({
               {matchesByRound[round].map((match) => (
                 <div
                   key={match.id}
-                  className="p-4 border rounded-lg space-y-2"
+                  className="p-3 sm:p-4 border rounded-lg space-y-3"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="font-medium text-sm sm:text-base">
                           Match {match.matchNumber}
                         </span>
                         {groupMode === 'multiple' && match.groupId && (
@@ -94,16 +94,16 @@ const MatchesView = ({
                           </Badge>
                         )}
                         {match.played && (
-                          <Badge variant="default">Completed</Badge>
+                          <Badge variant="default" className="text-xs">Completed</Badge>
                         )}
                         {match.winnerId && (
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="text-xs">
                             <Trophy className="h-3 w-3 mr-1" />
                             Winner
                           </Badge>
                         )}
                       </div>
-                      <div className="text-sm font-medium">
+                      <div className="text-sm sm:text-base font-medium break-words">
                         {formatRegistrationName(match.registration1)} vs{' '}
                         {formatRegistrationName(match.registration2)}
                       </div>
@@ -113,17 +113,18 @@ const MatchesView = ({
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedMatch(match)}
+                        className="w-full sm:w-auto min-w-[44px] min-h-[44px]"
                       >
                         <Edit className="h-4 w-4 mr-2" />
-                        Edit Results
+                        <span className="sm:inline">Edit Results</span>
                       </Button>
                     )}
                   </div>
 
                   {match.sets && match.sets.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2 text-sm">
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium break-words">
                           {formatRegistrationName(match.registration1)}
                         </p>
                         <p className="text-muted-foreground">
@@ -136,7 +137,7 @@ const MatchesView = ({
                         </p>
                       </div>
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium break-words">
                           {formatRegistrationName(match.registration2)}
                         </p>
                         <p className="text-muted-foreground">

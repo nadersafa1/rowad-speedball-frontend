@@ -192,13 +192,13 @@ const MatchResultsForm = ({
   }
 
   return (
-    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
+    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
       <DialogHeader>
-        <DialogTitle className='flex items-center gap-2'>
+        <DialogTitle className='flex items-center gap-2 text-lg sm:text-xl'>
           <Trophy className='h-5 w-5' />
           Match Results
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className='text-sm break-words'>
           {formatRegistrationName(match.registration1)} vs{' '}
           {formatRegistrationName(match.registration2)}
         </DialogDescription>
@@ -252,9 +252,9 @@ const MatchResultsForm = ({
               </div>
 
               {editingSet === set.id && !set.played ? (
-                <div className='grid grid-cols-2 gap-4'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                   <div>
-                    <label className='text-sm font-medium text-muted-foreground mb-1 block'>
+                    <label className='text-sm font-medium text-muted-foreground mb-1 block break-words'>
                       {formatRegistrationName(match.registration1)}
                     </label>
                     <Input
@@ -272,7 +272,7 @@ const MatchResultsForm = ({
                     />
                   </div>
                   <div>
-                    <label className='text-sm font-medium text-muted-foreground mb-1 block'>
+                    <label className='text-sm font-medium text-muted-foreground mb-1 block break-words'>
                       {formatRegistrationName(match.registration2)}
                     </label>
                     <Input
@@ -291,20 +291,20 @@ const MatchResultsForm = ({
                   </div>
                 </div>
               ) : (
-                <div className='grid grid-cols-2 gap-4'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                   <div className='text-center'>
-                    <p className='text-sm font-medium text-muted-foreground mb-1'>
+                    <p className='text-sm font-medium text-muted-foreground mb-1 break-words'>
                       {formatRegistrationName(match.registration1)}
                     </p>
-                    <p className='text-2xl font-bold'>
+                    <p className='text-xl sm:text-2xl font-bold'>
                       {set.registration1Score}
                     </p>
                   </div>
                   <div className='text-center'>
-                    <p className='text-sm font-medium text-muted-foreground mb-1'>
+                    <p className='text-sm font-medium text-muted-foreground mb-1 break-words'>
                       {formatRegistrationName(match.registration2)}
                     </p>
-                    <p className='text-2xl font-bold'>
+                    <p className='text-xl sm:text-2xl font-bold'>
                       {set.registration2Score}
                     </p>
                   </div>
@@ -312,13 +312,14 @@ const MatchResultsForm = ({
               )}
 
               {!set.played && !match.played && (
-                <div className='flex gap-2 mt-2'>
+                <div className='flex flex-col sm:flex-row gap-2 mt-2'>
                   {editingSet !== set.id && (
                     <>
                       <Button
                         variant='outline'
                         size='sm'
                         onClick={() => setEditingSet(set.id)}
+                        className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
                       >
                         Edit
                       </Button>
@@ -327,6 +328,7 @@ const MatchResultsForm = ({
                         size='sm'
                         onClick={() => handleMarkSetAsPlayed(set.id)}
                         disabled={!canMarkSetAsPlayed(set) || !hasMatchDate}
+                        className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
                       >
                         Mark as Played
                       </Button>
@@ -334,6 +336,7 @@ const MatchResultsForm = ({
                         variant='destructive'
                         size='sm'
                         onClick={() => handleDeleteSet(set.id)}
+                        className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
                       >
                         <X className='h-4 w-4' />
                       </Button>

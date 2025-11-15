@@ -90,13 +90,13 @@ const EventsTable = ({
         onEventTypeChange={onEventTypeChange}
         onGenderChange={onGenderChange}
       />
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="whitespace-nowrap px-2 sm:px-4">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -111,13 +111,13 @@ const EventsTable = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center px-2 sm:px-4">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : !table.getRowModel().rows?.length ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-32 text-center">
+                <TableCell colSpan={columns.length} className="h-32 text-center px-2 sm:px-4">
                   <div className="flex flex-col items-center justify-center gap-2 py-4">
                     <p className="text-lg font-medium text-muted-foreground">
                       No events found
@@ -134,7 +134,7 @@ const EventsTable = ({
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="px-2 sm:px-4 whitespace-nowrap">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

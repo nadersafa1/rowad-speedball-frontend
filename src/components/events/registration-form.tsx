@@ -106,7 +106,7 @@ const RegistrationForm = ({
   }
 
   return (
-    <DialogContent className='max-w-md'>
+    <DialogContent className='max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
       <DialogHeader>
         <DialogTitle>Register for Event</DialogTitle>
         <DialogDescription>
@@ -167,13 +167,13 @@ const RegistrationForm = ({
 
           {error && <div className='text-sm text-destructive'>{error}</div>}
 
-          <DialogFooter>
+          <DialogFooter className='flex-col sm:flex-row gap-2 sm:gap-0'>
             {onCancel && (
-              <Button type='button' variant='outline' onClick={onCancel}>
+              <Button type='button' variant='outline' onClick={onCancel} className='w-full sm:w-auto'>
                 Cancel
               </Button>
             )}
-            <Button type='submit' disabled={isLoading}>
+            <Button type='submit' disabled={isLoading} className='w-full sm:w-auto'>
               <UserPlus className='mr-2 h-4 w-4' />
               {isLoading ? 'Registering...' : 'Register'}
             </Button>

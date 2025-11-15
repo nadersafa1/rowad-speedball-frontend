@@ -84,7 +84,7 @@ const PlayersTable = ({
         onGenderChange={onGenderChange}
         onAgeGroupChange={onAgeGroupChange}
       />
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <PlayersTableHeader table={table} />
           <PlayersTableBody

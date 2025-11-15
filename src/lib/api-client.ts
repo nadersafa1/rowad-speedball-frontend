@@ -90,6 +90,20 @@ export class ApiClient {
     return this.request(`/players/${id}`)
   }
 
+  async getPlayerMatches(
+    playerId: string,
+    params?: { page?: number; limit?: number }
+  ) {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request(
+      `/players/${playerId}/matches${query ? `?${query}` : ''}`
+    )
+  }
+
   async createPlayer(data: any) {
     return this.request('/players', {
       method: 'POST',

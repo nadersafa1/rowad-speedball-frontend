@@ -100,7 +100,7 @@ const EventForm = ({
         : null,
       bestOf: event?.bestOf || 3,
       pointsPerWin: event?.pointsPerWin || 3,
-      pointsPerLoss: event?.pointsPerLoss || 0,
+      pointsPerLoss: event?.pointsPerLoss || 1,
     },
   })
 
@@ -130,7 +130,7 @@ const EventForm = ({
   }
 
   return (
-    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
+    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
       <DialogHeader>
         <DialogTitle>{isEditing ? 'Edit Event' : 'Create Event'}</DialogTitle>
         <DialogDescription>
@@ -156,7 +156,7 @@ const EventForm = ({
             )}
           />
 
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             <FormField
               control={form.control}
               name='eventType'
@@ -231,16 +231,42 @@ const EventForm = ({
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className='flex gap-6'
+                    className='flex flex-col sm:flex-row gap-4 sm:gap-6'
                     disabled={isEditing && hasPlayedSets}
                   >
                     <div className='flex items-center space-x-2'>
-                      <RadioGroupItem value='single' id='single' disabled={isEditing && hasPlayedSets} />
-                      <label htmlFor='single' className={isEditing && hasPlayedSets ? 'text-muted-foreground cursor-not-allowed' : ''}>Single Group</label>
+                      <RadioGroupItem
+                        value='single'
+                        id='single'
+                        disabled={isEditing && hasPlayedSets}
+                      />
+                      <label
+                        htmlFor='single'
+                        className={
+                          isEditing && hasPlayedSets
+                            ? 'text-muted-foreground cursor-not-allowed'
+                            : ''
+                        }
+                      >
+                        Single Group
+                      </label>
                     </div>
                     <div className='flex items-center space-x-2'>
-                      <RadioGroupItem value='multiple' id='multiple' disabled={isEditing && hasPlayedSets} />
-                      <label htmlFor='multiple' className={isEditing && hasPlayedSets ? 'text-muted-foreground cursor-not-allowed' : ''}>Multiple Groups</label>
+                      <RadioGroupItem
+                        value='multiple'
+                        id='multiple'
+                        disabled={isEditing && hasPlayedSets}
+                      />
+                      <label
+                        htmlFor='multiple'
+                        className={
+                          isEditing && hasPlayedSets
+                            ? 'text-muted-foreground cursor-not-allowed'
+                            : ''
+                        }
+                      >
+                        Multiple Groups
+                      </label>
                     </div>
                   </RadioGroup>
                 </FormControl>
@@ -264,7 +290,7 @@ const EventForm = ({
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className='flex gap-6'
+                    className='flex flex-col sm:flex-row gap-4 sm:gap-6'
                   >
                     <div className='flex items-center space-x-2'>
                       <RadioGroupItem value='public' id='public' />
@@ -281,7 +307,7 @@ const EventForm = ({
             )}
           />
 
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             <FormField
               control={form.control}
               name='registrationStartDate'
@@ -329,7 +355,7 @@ const EventForm = ({
             />
           </div>
 
-          <div className='grid grid-cols-3 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
             <FormField
               control={form.control}
               name='bestOf'
@@ -421,13 +447,22 @@ const EventForm = ({
 
           {error && <div className='text-sm text-destructive'>{error}</div>}
 
-          <DialogFooter>
+          <DialogFooter className='flex-col sm:flex-row gap-2 sm:gap-0'>
             {onCancel && (
-              <Button type='button' variant='outline' onClick={onCancel}>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={onCancel}
+                className='w-full sm:w-auto'
+              >
                 Cancel
               </Button>
             )}
-            <Button type='submit' disabled={isLoading}>
+            <Button
+              type='submit'
+              disabled={isLoading}
+              className='w-full sm:w-auto'
+            >
               <Save className='mr-2 h-4 w-4' />
               {isLoading ? 'Saving...' : isEditing ? 'Update' : 'Create'}
             </Button>

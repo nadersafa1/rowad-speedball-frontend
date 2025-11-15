@@ -10,7 +10,7 @@ interface EmptyStateProps {
 const EmptyState = ({ icon: Icon, title, description }: EmptyStateProps) => {
   return (
     <Card>
-      <CardContent className="pt-6 text-center">
+      <CardContent className="text-center">
         <Icon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
         <p className="text-muted-foreground">{description}</p>

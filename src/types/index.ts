@@ -154,3 +154,10 @@ export type Set = {
   createdAt: string
   updatedAt: string
 }
+
+export type PlayerMatch = Match & {
+  event?: Event | null
+  playerRegistration?: Registration | null
+  opponentRegistration?: Registration | null
+  playerWon?: boolean
+}

@@ -102,13 +102,13 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
   };
 
   return (
-    <DialogContent className="max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto space-y-4">
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
+        <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
           <Trophy className="h-5 w-5 text-blue-600" />
           {isEditing ? "Edit Test" : "Create New Test"}
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="text-sm">
           {isEditing
             ? "Update test information for Rowad speedball team"
             : "Set up a new speedball test for Rowad team"}
@@ -188,7 +188,7 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
             {/* Quick Presets */}
             <div className="space-y-2">
               <FormLabel>Quick Presets</FormLabel>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Button
                   type="button"
                   variant={
@@ -286,14 +286,14 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
               </div>
             )}
 
-            <DialogFooter className="flex gap-3 mt-4">
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3 mt-4">
               {onCancel && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onCancel}
                   disabled={isLoading}
-                  className="flex-1"
+                  className="w-full sm:w-auto min-w-[44px] min-h-[44px]"
                 >
                   Cancel
                 </Button>
@@ -301,7 +301,7 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className="w-full sm:w-auto min-w-[44px] min-h-[44px] bg-blue-600 hover:bg-blue-700"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">

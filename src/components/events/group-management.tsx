@@ -100,10 +100,10 @@ const GroupManagement = ({
                 return (
                   <div
                     key={group.id}
-                    className='flex items-center justify-between p-3 border rounded-lg'
+                    className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg'
                   >
-                    <div>
-                      <div className='flex items-center gap-2'>
+                    <div className='flex-1'>
+                      <div className='flex flex-wrap items-center gap-2'>
                         <h4 className='font-medium'>Group {group.name}</h4>
                         {group.completed && (
                           <Badge variant="default" className="bg-green-600">
@@ -121,6 +121,7 @@ const GroupManagement = ({
                       variant='destructive'
                       size='sm'
                       onClick={() => setDeleteGroupId(group.id)}
+                      className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
                     >
                       <Trash2 className='h-4 w-4' />
                     </Button>

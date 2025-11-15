@@ -127,25 +127,27 @@ const EventDetailPage = () => {
 
   if (eventLoading || !selectedEvent) {
     return (
-      <div className='container mx-auto px-4 py-8'>
+      <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <div className='text-center'>Loading event...</div>
       </div>
     )
   }
 
   return (
-    <div className='container mx-auto px-4 py-8'>
-      <div className='flex items-center justify-between mb-6'>
-        <div className='flex items-center gap-4'>
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6'>
+        <div className='flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4'>
           <Link href='/events'>
-            <Button variant='ghost' size='sm'>
+            <Button variant='ghost' size='sm' className='w-fit'>
               <ArrowLeft className='h-4 w-4 mr-2' />
               Back
             </Button>
           </Link>
           <div>
-            <h1 className='text-3xl font-bold'>{selectedEvent.name}</h1>
-            <div className='flex gap-2 mt-2'>
+            <h1 className='text-2xl sm:text-3xl font-bold'>
+              {selectedEvent.name}
+            </h1>
+            <div className='flex flex-wrap gap-2 mt-2'>
               <Badge variant='outline'>{selectedEvent.eventType}</Badge>
               <Badge variant='outline'>{selectedEvent.gender}</Badge>
               <Badge variant='outline'>{selectedEvent.groupMode}</Badge>
@@ -162,13 +164,18 @@ const EventDetailPage = () => {
           </div>
         </div>
         {isAdmin && (
-          <div className='flex gap-2'>
-            <Button onClick={() => setEventFormOpen(true)} variant='outline'>
+          <div className='flex flex-col sm:flex-row gap-2'>
+            <Button
+              onClick={() => setEventFormOpen(true)}
+              variant='outline'
+              className='w-full sm:w-auto'
+            >
               Edit Event
             </Button>
             <Button
               onClick={() => setDeleteEventDialogOpen(true)}
               variant='destructive'
+              className='w-full sm:w-auto'
             >
               <Trash2 className='h-4 w-4 mr-2' />
               Delete Event
@@ -182,12 +189,22 @@ const EventDetailPage = () => {
         onValueChange={handleTabChange}
         className='space-y-4'
       >
-        <TabsList>
-          <TabsTrigger value='overview'>Overview</TabsTrigger>
-          <TabsTrigger value='registrations'>Registrations</TabsTrigger>
-          <TabsTrigger value='groups'>Groups</TabsTrigger>
-          <TabsTrigger value='matches'>Matches</TabsTrigger>
-          <TabsTrigger value='standings'>Standings</TabsTrigger>
+        <TabsList className='w-full overflow-x-auto flex-nowrap sm:flex-wrap'>
+          <TabsTrigger value='overview' className='whitespace-nowrap'>
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value='registrations' className='whitespace-nowrap'>
+            Registrations
+          </TabsTrigger>
+          <TabsTrigger value='groups' className='whitespace-nowrap'>
+            Groups
+          </TabsTrigger>
+          <TabsTrigger value='matches' className='whitespace-nowrap'>
+            Matches
+          </TabsTrigger>
+          <TabsTrigger value='standings' className='whitespace-nowrap'>
+            Standings
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value='overview' className='space-y-4'>
@@ -196,7 +213,7 @@ const EventDetailPage = () => {
               <CardTitle>Event Details</CardTitle>
             </CardHeader>
             <CardContent className='space-y-2'>
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 <div>
                   <p className='text-sm text-muted-foreground'>Best Of</p>
                   <p className='font-medium'>{selectedEvent.bestOf} sets</p>
@@ -240,7 +257,7 @@ const EventDetailPage = () => {
         <TabsContent value='registrations' className='space-y-4'>
           <Card>
             <CardHeader>
-              <div className='flex items-center justify-between'>
+              <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
                 <CardTitle>Registrations ({registrations.length})</CardTitle>
                 {isAdmin && (
                   <Button
@@ -248,6 +265,7 @@ const EventDetailPage = () => {
                     disabled={matches.some((m) =>
                       m.sets?.some((s) => s.played)
                     )}
+                    className='w-full sm:w-auto'
                   >
                     <Plus className='mr-2 h-4 w-4' />
                     Add Registration
@@ -315,7 +333,7 @@ const EventDetailPage = () => {
           )}
           {!isAdmin && groups.length === 0 && (
             <Card>
-              <CardContent className='pt-6'>
+              <CardContent>
                 <p className='text-sm text-muted-foreground'>
                   No groups created yet
                 </p>

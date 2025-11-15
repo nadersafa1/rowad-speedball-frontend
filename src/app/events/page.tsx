@@ -100,7 +100,7 @@ const EventsPage = () => {
     return (
       <div className='container mx-auto px-4 py-8'>
         <Card className='border-destructive'>
-          <CardContent className='pt-6'>
+          <CardContent>
             <p className='text-destructive'>Error: {error}</p>
             <Button onClick={clearError} className='mt-4'>
               Try Again
@@ -112,7 +112,7 @@ const EventsPage = () => {
   }
 
   return (
-    <div className='container mx-auto px-4 py-8'>
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       <PageHeader
         icon={Trophy}
         title='Events'
@@ -128,8 +128,8 @@ const EventsPage = () => {
         }
       />
 
-      <Card className='mt-6'>
-        <CardContent className='pt-6'>
+      <Card className='mt-4 sm:mt-6'>
+        <CardContent>
           <EventsTable
             events={events}
             pagination={pagination}

@@ -38,45 +38,47 @@ const StandingsTable = ({ registrations }: StandingsTableProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Position</TableHead>
-              <TableHead>Player(s)</TableHead>
-              <TableHead className="text-center">Matches</TableHead>
-              <TableHead className="text-center">Sets</TableHead>
-              <TableHead className="text-center">Points</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedRegistrations.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No registrations yet
-                </TableCell>
+                <TableHead className="px-2 sm:px-4">Position</TableHead>
+                <TableHead className="px-2 sm:px-4">Player(s)</TableHead>
+                <TableHead className="text-center px-2 sm:px-4">Matches</TableHead>
+                <TableHead className="text-center px-2 sm:px-4">Sets</TableHead>
+                <TableHead className="text-center px-2 sm:px-4">Points</TableHead>
               </TableRow>
-            ) : (
-              sortedRegistrations.map((reg, index) => (
-                <TableRow key={reg.id}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell>
-                    {reg.player1?.name}
-                    {reg.player2 && ` & ${reg.player2.name}`}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {reg.matchesWon}W - {reg.matchesLost}L
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {reg.setsWon}W - {reg.setsLost}L
-                  </TableCell>
-                  <TableCell className="text-center font-bold">
-                    {reg.points}
+            </TableHeader>
+            <TableBody>
+              {sortedRegistrations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground px-2 sm:px-4">
+                    No registrations yet
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                sortedRegistrations.map((reg, index) => (
+                  <TableRow key={reg.id}>
+                    <TableCell className="font-medium px-2 sm:px-4">{index + 1}</TableCell>
+                    <TableCell className="px-2 sm:px-4 break-words">
+                      {reg.player1?.name}
+                      {reg.player2 && ` & ${reg.player2.name}`}
+                    </TableCell>
+                    <TableCell className="text-center px-2 sm:px-4 text-sm sm:text-base">
+                      {reg.matchesWon}W - {reg.matchesLost}L
+                    </TableCell>
+                    <TableCell className="text-center px-2 sm:px-4 text-sm sm:text-base">
+                      {reg.setsWon}W - {reg.setsLost}L
+                    </TableCell>
+                    <TableCell className="text-center font-bold px-2 sm:px-4 text-sm sm:text-base">
+                      {reg.points}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
