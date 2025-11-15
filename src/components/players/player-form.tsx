@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { usePlayersStore } from "@/store/players-store";
 import { DateOfBirthPicker } from "@/components/players/date-of-birth-picker";
 import { parseDateFromAPI } from "@/lib/date-utils";
@@ -39,6 +40,7 @@ const playerSchema = z.object({
   preferredHand: z.enum(["left", "right"], {
     message: "Preferred hand is required",
   }),
+  isFirstTeam: z.boolean().default(false),
 });
 
 type PlayerFormData = z.infer<typeof playerSchema>;
@@ -63,6 +65,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
         : new Date(new Date().getFullYear() - 4, 0, 1),
       gender: player?.gender || undefined,
       preferredHand: player?.preferredHand || undefined,
+      isFirstTeam: player?.isFirstTeam || false,
     },
   });
 
@@ -200,6 +203,27 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                       </div>
                     </RadioGroup>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* First Team Field */}
+            <FormField
+              control={form.control}
+              name="isFirstTeam"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer">
+                    First Team
+                  </FormLabel>
                   <FormMessage />
                 </FormItem>
               )}

@@ -24,6 +24,7 @@ export const playersQuerySchema = z
       ])
       .optional(),
     preferredHand: z.enum(["left", "right", "both"]).optional(),
+    team: z.enum(["all", "first_team", "rowad_b"]).optional(),
     // Sorting parameters
     sortBy: z
       .enum([
@@ -33,6 +34,7 @@ export const playersQuerySchema = z
         "updatedAt",
         "gender",
         "preferredHand",
+        "isFirstTeam",
       ])
       .optional(),
     sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
@@ -75,6 +77,7 @@ export const playersCreateSchema = z
     preferredHand: z.enum(["left", "right", "both"], {
       message: "Preferred hand must be left, right, or both",
     }),
+    isFirstTeam: z.boolean().optional(),
   })
   .strict();
 
@@ -102,6 +105,7 @@ export const playersUpdateSchema = z
         message: "Preferred hand must be left, right, or both",
       })
       .optional(),
+    isFirstTeam: z.boolean().optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,

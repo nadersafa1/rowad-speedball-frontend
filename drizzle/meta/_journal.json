@@ -22,6 +22,13 @@
       "when": 1763177807504,
       "tag": "0002_fresh_nehzno",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1763232997045,
+      "tag": "0003_mean_living_mummy",
+      "breakpoints": true
     }
   ]
 }

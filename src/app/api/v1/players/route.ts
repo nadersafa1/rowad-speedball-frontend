@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       gender,
       ageGroup,
       preferredHand,
+      team,
       sortBy,
       sortOrder,
       page,
@@ -45,6 +46,11 @@ export async function GET(request: NextRequest) {
 
     if (preferredHand) {
       conditions.push(eq(schema.players.preferredHand, preferredHand));
+    }
+
+    if (team && team !== "all") {
+      const isFirstTeam = team === "first_team";
+      conditions.push(eq(schema.players.isFirstTeam, isFirstTeam));
     }
 
     // AgeGroup filtering at database level
@@ -196,7 +202,7 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 });
     }
 
-    const { name, dateOfBirth, gender, preferredHand } = parseResult.data;
+    const { name, dateOfBirth, gender, preferredHand, isFirstTeam } = parseResult.data;
 
     const result = await db
       .insert(schema.players)
@@ -205,6 +211,7 @@ export async function POST(request: NextRequest) {
         dateOfBirth,
         gender,
         preferredHand,
+        isFirstTeam,
       })
       .returning();
 

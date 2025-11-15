@@ -66,6 +66,7 @@ export class ApiClient {
     gender?: string
     ageGroup?: string
     preferredHand?: string
+    team?: string
     sortBy?: string
     sortOrder?: 'asc' | 'desc'
     page?: number
@@ -77,6 +78,7 @@ export class ApiClient {
     if (params?.ageGroup) searchParams.set('ageGroup', params.ageGroup)
     if (params?.preferredHand)
       searchParams.set('preferredHand', params.preferredHand)
+    if (params?.team) searchParams.set('team', params.team)
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())

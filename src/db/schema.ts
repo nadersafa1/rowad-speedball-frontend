@@ -74,6 +74,7 @@ export const players = pgTable('players', {
   preferredHand: text('preferred_hand', {
     enum: ['left', 'right', 'both'],
   }).notNull(),
+  isFirstTeam: boolean('is_first_team').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

@@ -1,6 +1,6 @@
 import { SortableField } from "./players-table-utils";
 import { Player } from "@/types";
-import { Gender, AgeGroup } from "../types/enums";
+import { Gender, AgeGroup, Team } from "../types/enums";
 
 export interface PlayersTableProps {
   players: Player[];
@@ -16,8 +16,10 @@ export interface PlayersTableProps {
   searchValue?: string;
   gender?: Gender;
   ageGroup?: AgeGroup;
+  team?: Team;
   onGenderChange?: (gender: Gender) => void;
   onAgeGroupChange?: (ageGroup: AgeGroup) => void;
+  onTeamChange?: (team: Team) => void;
   sortBy?: SortableField;
   sortOrder?: "asc" | "desc";
   onSortingChange?: (

@@ -11,7 +11,7 @@ import PlayersStats from './components/players-stats'
 import PlayersTable from './components/players-table'
 import { usePlayers } from './hooks/use-players'
 import { PlayersFilters } from './types'
-import { AgeGroup, Gender } from './types/enums'
+import { AgeGroup, Gender, Team } from './types/enums'
 
 const PlayersPage = () => {
   const { isAdmin } = useAdminPermission()
@@ -22,6 +22,7 @@ const PlayersPage = () => {
     q: '',
     gender: Gender.ALL,
     ageGroup: AgeGroup.ALL,
+    team: Team.ALL,
     page: 1,
     limit: 25,
   })
@@ -104,6 +105,10 @@ const PlayersPage = () => {
             }}
             onAgeGroupChange={(ageGroup) => {
               setFilters({ ...filters, ageGroup, page: 1 })
+            }}
+            team={filters.team}
+            onTeamChange={(team) => {
+              setFilters({ ...filters, team, page: 1 })
             }}
             sortBy={filters.sortBy}
             sortOrder={filters.sortOrder}

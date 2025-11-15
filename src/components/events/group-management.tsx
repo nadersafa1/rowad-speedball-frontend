@@ -7,6 +7,7 @@ import { useGroupsStore } from '@/store/groups-store'
 import { useRegistrationsStore } from '@/store/registrations-store'
 import { Plus, Users, Trash2, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { Registration, Group } from '@/types'
 import {
   AlertDialog,
@@ -138,19 +139,16 @@ const GroupManagement = ({
                 {unassignedRegistrations.map((reg) => (
                   <div
                     key={reg.id}
-                    className={`p-2 border rounded cursor-pointer ${
+                    className={`p-2 border rounded ${
                       selectedRegistrations.includes(reg.id)
                         ? 'bg-primary/10 border-primary'
                         : ''
                     }`}
-                    onClick={() => toggleRegistration(reg.id)}
                   >
                     <div className='flex items-center gap-2'>
-                      <input
-                        type='checkbox'
+                      <Checkbox
                         checked={selectedRegistrations.includes(reg.id)}
-                        onChange={() => toggleRegistration(reg.id)}
-                        className='cursor-pointer'
+                        onCheckedChange={() => toggleRegistration(reg.id)}
                       />
                       <span>
                         {reg.player1?.name}
