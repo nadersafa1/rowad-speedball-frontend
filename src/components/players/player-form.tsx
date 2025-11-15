@@ -82,11 +82,11 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
   };
 
   return (
-    <DialogContent className="max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto space-y-4">
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
     <DialogHeader>
-      <DialogTitle className="flex items-center gap-2">          <UserPlus className="h-5 w-5 text-rowad-600" />
+      <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">          <UserPlus className="h-5 w-5 text-rowad-600" />
 {isEditing ? "Edit Player" : "Add New Player"}</DialogTitle>
-      <DialogDescription>{isEditing ? "Update player information for Rowad speedball team" : "Register a new player for Rowad speedball team"}</DialogDescription>
+      <DialogDescription className="text-sm">{isEditing ? "Update player information for Rowad speedball team" : "Register a new player for Rowad speedball team"}</DialogDescription>
     </DialogHeader>
     <Form {...form} >
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" >
@@ -139,7 +139,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                       onValueChange={field.onChange}
                       value={field.value}
                       disabled={isLoading}
-                      className="flex flex-col gap-4 mt-2"
+                      className="flex flex-col sm:flex-row gap-4 sm:gap-6 mt-2"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="male" id="gender-male" />
@@ -178,7 +178,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                       onValueChange={field.onChange}
                       value={field.value}
                       disabled={isLoading}
-                      className="flex flex-col gap-4 mt-2"
+                      className="flex flex-col sm:flex-row gap-4 sm:gap-6 mt-2"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="left" id="hand-left" />
@@ -211,14 +211,14 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                 <p className="text-destructive text-sm">{error}</p>
               </div>
             )}
-             <DialogFooter className="flex gap-3 mt-4">
+             <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3 mt-4">
             {onCancel && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onCancel}
                   disabled={isLoading}
-                  className="flex-1"
+                  className="w-full sm:w-auto min-w-[44px] min-h-[44px]"
                 >
                   Cancel
                 </Button>
@@ -226,7 +226,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 bg-rowad-600 hover:bg-rowad-700"
+                className="w-full sm:w-auto min-w-[44px] min-h-[44px] bg-rowad-600 hover:bg-rowad-700"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">

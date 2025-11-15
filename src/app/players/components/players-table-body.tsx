@@ -23,7 +23,7 @@ export const PlayersTableBody = ({
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={columnsCount} className="h-24 text-center">
+          <TableCell colSpan={columnsCount} className="h-24 text-center px-2 sm:px-4">
             Loading...
           </TableCell>
         </TableRow>
@@ -35,7 +35,7 @@ export const PlayersTableBody = ({
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={columnsCount} className="h-32 text-center">
+          <TableCell colSpan={columnsCount} className="h-32 text-center px-2 sm:px-4">
             <div className="flex flex-col items-center justify-center gap-2 py-4">
               <p className="text-lg font-medium text-muted-foreground">
                 No players found
@@ -60,7 +60,7 @@ export const PlayersTableBody = ({
           data-state={row.getIsSelected() && "selected"}
         >
           {row.getVisibleCells().map((cell) => (
-            <TableCell key={cell.id}>
+            <TableCell key={cell.id} className="px-2 sm:px-4 whitespace-nowrap">
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </TableCell>
           ))}

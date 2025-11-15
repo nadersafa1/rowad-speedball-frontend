@@ -15,7 +15,7 @@ const TestsStats = ({ tests, pagination }: TestsStatsProps) => {
 
   return (
     <Card className="mt-8">
-      <CardContent className="pt-6">
+      <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold">{pagination.totalItems}</p>

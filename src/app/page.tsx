@@ -107,10 +107,10 @@ const HomePage = () => {
             Admin Panel
           </Button>
           <Button variant="outline" onClick={() => router.push("/players")}>
-            Players Archive
+            Players
           </Button>
           <Button variant="outline" onClick={() => router.push("/tests")}>
-            Tests Archive
+            Tests
           </Button>
         </div>
       </header>

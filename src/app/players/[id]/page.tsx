@@ -39,6 +39,7 @@ import { useAdminPermission } from "@/hooks/use-admin-permission";
 import { toast } from "sonner";
 import ResultsForm from "@/components/results/results-form";
 import PlayerForm from "@/components/players/player-form";
+import RecentMatchesCard from "./components/recent-matches-card";
 
 const PlayerDetailPage = () => {
   const params = useParams();
@@ -59,7 +60,7 @@ const PlayerDetailPage = () => {
 
   if (isLoading || !selectedPlayer) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="h-32 bg-gray-200 rounded"></div>
@@ -104,7 +105,7 @@ const PlayerDetailPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8">
       {/* Back Navigation */}
       <div className="mb-6">
         <Link href="/players">
@@ -118,7 +119,7 @@ const PlayerDetailPage = () => {
       {/* Player Header */}
       <div className="mb-8">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
               <div className="bg-rowad-100 rounded-full p-3 sm:p-4 shrink-0">
                 <User className="h-8 w-8 sm:h-12 sm:w-12 text-rowad-600" />
@@ -215,7 +216,7 @@ const PlayerDetailPage = () => {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
-            <CardContent className="pt-6 text-center">
+            <CardContent className="text-center">
               <Trophy className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-yellow-600">
                 {stats.bestScore}
@@ -224,7 +225,7 @@ const PlayerDetailPage = () => {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6 text-center">
+            <CardContent className="text-center">
               <BarChart3 className="h-8 w-8 text-blue-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-blue-600">
                 {stats.avgScore}
@@ -233,7 +234,7 @@ const PlayerDetailPage = () => {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6 text-center">
+            <CardContent className="text-center">
               <User className="h-8 w-8 text-green-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-green-600">
                 {stats.testsCount}
@@ -243,6 +244,11 @@ const PlayerDetailPage = () => {
           </Card>
         </div>
       )}
+
+      {/* Recent Matches */}
+      <div className="mb-8">
+        <RecentMatchesCard playerId={playerId} />
+      </div>
 
       {/* Test Results History */}
       <Card>
