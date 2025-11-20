@@ -10,21 +10,37 @@ const MatchItem = ({ match }: MatchItemProps) => {
   const isPlayerReg1 = match.playerRegistration?.id === match.registration1Id
 
   const getPlayerNames = () => {
-    if (!match.playerRegistration) return ['Unknown']
-    const names = [match.playerRegistration.player1?.name]
+    if (!match.playerRegistration) return [{ name: 'Unknown', id: null }]
+    const players = [
+      {
+        name: match.playerRegistration.player1?.name || 'Unknown',
+        id: match.playerRegistration.player1?.id || null,
+      },
+    ]
     if (match.playerRegistration.player2) {
-      names.push(match.playerRegistration.player2.name)
+      players.push({
+        name: match.playerRegistration.player2.name,
+        id: match.playerRegistration.player2.id,
+      })
     }
-    return names.filter(Boolean)
+    return players
   }
 
   const getOpponentNames = () => {
-    if (!match.opponentRegistration) return ['Unknown']
-    const names = [match.opponentRegistration.player1?.name]
+    if (!match.opponentRegistration) return [{ name: 'Unknown', id: null }]
+    const players = [
+      {
+        name: match.opponentRegistration.player1?.name || 'Unknown',
+        id: match.opponentRegistration.player1?.id || null,
+      },
+    ]
     if (match.opponentRegistration.player2) {
-      names.push(match.opponentRegistration.player2.name)
+      players.push({
+        name: match.opponentRegistration.player2.name,
+        id: match.opponentRegistration.player2.id,
+      })
     }
-    return names.filter(Boolean)
+    return players
   }
 
   const getSetsResult = () => {
@@ -137,22 +153,42 @@ const MatchItem = ({ match }: MatchItemProps) => {
           {/* Player Side */}
           <div className='space-y-2'>
             <div className='space-y-1'>
-              {playerNames.map((name, idx) => (
-                <div key={idx} className='text-sm font-medium text-gray-900'>
-                  {name}
-                </div>
-              ))}
+              {playerNames.map((player, idx) =>
+                player.id ? (
+                  <Link
+                    key={idx}
+                    href={`/players/${player.id}`}
+                    className='text-sm font-medium text-gray-900 hover:text-rowad-600 transition-colors'
+                  >
+                    {player.name}
+                  </Link>
+                ) : (
+                  <div key={idx} className='text-sm font-medium text-gray-900'>
+                    {player.name}
+                  </div>
+                )
+              )}
             </div>
           </div>
 
           {/* Opponent Side */}
           <div className='space-y-2 text-right'>
             <div className='space-y-1'>
-              {opponentNames.map((name, idx) => (
-                <div key={idx} className='text-sm font-medium text-gray-900'>
-                  {name}
-                </div>
-              ))}
+              {opponentNames.map((player, idx) =>
+                player.id ? (
+                  <Link
+                    key={idx}
+                    href={`/players/${player.id}`}
+                    className='text-sm font-medium text-gray-900 hover:text-rowad-600 transition-colors'
+                  >
+                    {player.name}
+                  </Link>
+                ) : (
+                  <div key={idx} className='text-sm font-medium text-gray-900'>
+                    {player.name}
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
