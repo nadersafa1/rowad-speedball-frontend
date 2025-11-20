@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 // Pagination query parameters
 export const paginationQuerySchema = z.object({
@@ -6,36 +6,44 @@ export const paginationQuerySchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 1))
-    .refine((val) => val >= 1, "Page must be greater than 0"),
+    .refine((val) => val >= 1, 'Page must be greater than 0'),
   limit: z
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 10))
-    .refine((val) => val >= 1 && val <= 100, "Limit must be between 1 and 100"),
-});
+    .refine((val) => val >= 1 && val <= 100, 'Limit must be between 1 and 100'),
+})
 
 // Pagination parameters interface
 export interface PaginationParams {
-  page: number;
-  limit: number;
-  offset: number;
+  page: number
+  limit: number
+  offset: number
+}
+
+// Players stats interface
+export interface PlayersStats {
+  maleCount: number
+  femaleCount: number
+  ageGroupsCount: number
 }
 
 // Paginated response interface
 export interface PaginatedResponse<T> {
-  data: T[];
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
+  data: T[]
+  page: number
+  limit: number
+  totalItems: number
+  totalPages: number
+  stats?: PlayersStats
 }
 
 // Pagination metadata
 export interface PaginationMeta {
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
+  page: number
+  limit: number
+  totalItems: number
+  totalPages: number
 }
 
 // Helper function to calculate pagination parameters
@@ -43,9 +51,9 @@ export const calculatePagination = (
   page: number,
   limit: number
 ): PaginationParams => {
-  const offset = (page - 1) * limit;
-  return { page, limit, offset };
-};
+  const offset = (page - 1) * limit
+  return { page, limit, offset }
+}
 
 // Helper function to create paginated response
 export const createPaginatedResponse = <T>(
@@ -54,7 +62,7 @@ export const createPaginatedResponse = <T>(
   limit: number,
   totalItems: number
 ): PaginatedResponse<T> => {
-  const totalPages = Math.ceil(totalItems / limit);
+  const totalPages = Math.ceil(totalItems / limit)
 
   return {
     data,
@@ -62,9 +70,8 @@ export const createPaginatedResponse = <T>(
     limit,
     totalItems,
     totalPages,
-  };
-};
+  }
+}
 
 // Inferred TypeScript types
-export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
-
+export type PaginationQuery = z.infer<typeof paginationQuerySchema>
