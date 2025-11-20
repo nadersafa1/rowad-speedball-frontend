@@ -17,6 +17,11 @@ export type PaginatedResponse<T> = {
   limit: number
   totalItems: number
   totalPages: number
+  stats?: {
+    maleCount: number
+    femaleCount: number
+    ageGroupsCount: number
+  }
 }
 
 export type Test = {
