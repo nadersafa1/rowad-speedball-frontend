@@ -15,8 +15,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { usePlayersStore } from "@/store/players-store";
+import { Team } from "@/app/players/types/enums";
 import { DateOfBirthPicker } from "@/components/players/date-of-birth-picker";
 import { parseDateFromAPI } from "@/lib/date-utils";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui";
@@ -40,7 +47,9 @@ const playerSchema = z.object({
   preferredHand: z.enum(["left", "right"], {
     message: "Preferred hand is required",
   }),
-  isFirstTeam: z.boolean().default(false),
+  team: z.enum(["first_team", "rowad_b"], {
+    message: "Team is required",
+  }),
 });
 
 type PlayerFormData = z.infer<typeof playerSchema>;
@@ -65,17 +74,25 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
         : new Date(new Date().getFullYear() - 2, 0, 1),
       gender: player?.gender || undefined,
       preferredHand: player?.preferredHand || undefined,
-      isFirstTeam: player?.isFirstTeam || false,
+      team: player?.isFirstTeam ? Team.FIRST_TEAM : Team.ROWAD_B,
     },
   });
 
   const onSubmit = async (data: PlayerFormData) => {
     clearError();
     try {
+      // Transform team enum to boolean for API
+      const submitData = {
+        ...data,
+        isFirstTeam: data.team === Team.FIRST_TEAM,
+      };
+      // Remove team field as API expects isFirstTeam
+      delete (submitData as any).team;
+
       if (isEditing) {
-        await updatePlayer(player.id, data);
+        await updatePlayer(player.id, submitData);
       } else {
-        await createPlayer(data);
+        await createPlayer(submitData);
       }
       form.reset();
       onSuccess?.();
@@ -208,22 +225,28 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
               )}
             />
 
-            {/* First Team Field */}
+            {/* Team Field */}
             <FormField
               control={form.control}
-              name="isFirstTeam"
+              name="team"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                <FormItem>
+                  <FormLabel>Team</FormLabel>
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
                       disabled={isLoading}
-                    />
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={Team.FIRST_TEAM}>First Team</SelectItem>
+                        <SelectItem value={Team.ROWAD_B}>Rowad B</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
-                  <FormLabel className="cursor-pointer">
-                    First Team
-                  </FormLabel>
                   <FormMessage />
                 </FormItem>
               )}
