@@ -152,7 +152,7 @@ const MatchItem = ({ match }: MatchItemProps) => {
         <div className='grid grid-cols-2 gap-4'>
           {/* Player Side */}
           <div className='space-y-2'>
-            <div className='space-y-1'>
+            <div className='flex flex-col space-y-1'>
               {playerNames.map((player, idx) =>
                 player.id ? (
                   <Link
@@ -173,7 +173,7 @@ const MatchItem = ({ match }: MatchItemProps) => {
 
           {/* Opponent Side */}
           <div className='space-y-2 text-right'>
-            <div className='space-y-1'>
+            <div className='flex flex-col space-y-1'>
               {opponentNames.map((player, idx) =>
                 player.id ? (
                   <Link
