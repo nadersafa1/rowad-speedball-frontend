@@ -31,8 +31,8 @@ const playerSchema = z.object({
   dateOfBirth: z
     .date()
     .refine(
-      (date) => date <= new Date(new Date().getFullYear() - 4, 0, 1),
-      "Player must be at least 4 years old"
+      (date) => date <= new Date(new Date().getFullYear() - 2, 0, 1),
+      "Player must be at least 2 years old"
     ),
   gender: z.enum(["male", "female"], {
     message: "Gender is required",
@@ -62,7 +62,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
       name: player?.name || "",
       dateOfBirth: player?.dateOfBirth
         ? parseDateFromAPI(player.dateOfBirth)
-        : new Date(new Date().getFullYear() - 4, 0, 1),
+        : new Date(new Date().getFullYear() - 2, 0, 1),
       gender: player?.gender || undefined,
       preferredHand: player?.preferredHand || undefined,
       isFirstTeam: player?.isFirstTeam || false,
