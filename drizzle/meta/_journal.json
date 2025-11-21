@@ -29,6 +29,20 @@
       "when": 1763232997045,
       "tag": "0003_mean_living_mummy",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1763732903849,
+      "tag": "0004_friendly_sentinels",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1763736615607,
+      "tag": "0005_fixed_jack_power",
+      "breakpoints": true
     }
   ]
 }

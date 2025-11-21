@@ -69,3 +69,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+.clipped-header {
+  width: 1200px;
+  height: 500px;
+  background-color: lightblue;
+  clip-path: path(
+    'M 0,25 A 25,25 0,0,1 25,0 L 1175,0 A 25,25 0,0,1 1200,25 L 1200,475 A 25,25 0,0,1 1175,500 L 425,500 A 25,25 0,0,1 400,475 L 400,425 A 25,25 0,0,0 375,400 L 325,400 A 25,25 0,0,1 300,375 L 300,350 A 25,25 0,0,0 275,325 L 25, 325 A 25,25 0,0,1 0,300 Z'
+  );
+}
