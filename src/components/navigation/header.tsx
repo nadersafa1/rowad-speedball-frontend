@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, Users, Trophy, BarChart3, Home, LogOut } from "lucide-react";
+import { Menu, X, Users, Trophy, BarChart3, Home, LogOut, Calendar, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
@@ -14,6 +14,11 @@ const navigation = [
   { name: "Players", href: "/players", icon: Users },
   { name: "Tests", href: "/tests", icon: Trophy },
   { name: "Events", href: "/events", icon: Trophy },
+];
+
+const adminNavigation = [
+  { name: "Coaches", href: "/coaches", icon: UserCheck },
+  { name: "Training Sessions", href: "/training-sessions", icon: Calendar },
 ];
 
 const Header = () => {
@@ -66,6 +71,25 @@ const Header = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:space-x-8">
             {navigation.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-rowad-100 text-rowad-700"
+                      : "text-gray-600 hover:text-rowad-600 hover:bg-gray-50"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+            {isAdmin && adminNavigation.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
@@ -141,6 +165,26 @@ const Header = () => {
           <div className="md:hidden border-t pt-4 pb-4">
             <div className="space-y-1">
               {navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors",
+                      isActive
+                        ? "bg-rowad-100 text-rowad-700"
+                        : "text-gray-600 hover:text-rowad-600 hover:bg-gray-50"
+                    )}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+              {isAdmin && adminNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (

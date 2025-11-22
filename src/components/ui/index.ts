@@ -34,6 +34,7 @@ export {
 } from "./form";
 export { Input } from "./input";
 export { Label } from "./label";
+export { Textarea } from "./textarea";
 export { default as Pagination } from "./pagination";
 
 // Additional shadcn components

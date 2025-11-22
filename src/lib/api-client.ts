@@ -388,6 +388,106 @@ export class ApiClient {
     })
   }
 
+  // Coaches methods
+  async getCoaches(params?: {
+    q?: string
+    gender?: string
+    sortBy?: string
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.gender) searchParams.set('gender', params.gender)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request(`/coaches${query ? `?${query}` : ''}`)
+  }
+
+  async getCoach(id: string) {
+    return this.request(`/coaches/${id}`)
+  }
+
+  async createCoach(data: any) {
+    return this.request('/coaches', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateCoach(id: string, data: any) {
+    return this.request(`/coaches/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteCoach(id: string) {
+    return this.request(`/coaches/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Training Sessions methods
+  async getTrainingSessions(params?: {
+    q?: string
+    intensity?: string
+    type?: string
+    dateFrom?: string
+    dateTo?: string
+    ageGroup?: string
+    sortBy?: string
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.intensity) searchParams.set('intensity', params.intensity)
+    if (params?.type) searchParams.set('type', params.type)
+    if (params?.dateFrom) searchParams.set('dateFrom', params.dateFrom)
+    if (params?.dateTo) searchParams.set('dateTo', params.dateTo)
+    if (params?.ageGroup) searchParams.set('ageGroup', params.ageGroup)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request(
+      `/training-sessions${query ? `?${query}` : ''}`
+    )
+  }
+
+  async getTrainingSession(id: string) {
+    return this.request(`/training-sessions/${id}`)
+  }
+
+  async createTrainingSession(data: any) {
+    return this.request('/training-sessions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateTrainingSession(id: string, data: any) {
+    return this.request(`/training-sessions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteTrainingSession(id: string) {
+    return this.request(`/training-sessions/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
   // Generic methods for convenience
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint)

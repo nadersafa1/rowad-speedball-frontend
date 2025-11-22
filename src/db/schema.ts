@@ -7,6 +7,7 @@ import {
   text,
   integer,
   boolean,
+  pgEnum,
 } from 'drizzle-orm/pg-core'
 
 // Auth Tables
@@ -250,6 +251,53 @@ export const sets = pgTable('sets', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+// Coaches Table
+export const coaches = pgTable('coaches', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  gender: text('gender', { enum: ['male', 'female'] }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// Training Sessions Table
+export const trainingSessions = pgTable('training_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  intensity: text('intensity', {
+    enum: ['high', 'normal', 'low'],
+  })
+    .notNull()
+    .default('normal'),
+  type: text('type').array().notNull(),
+  date: date('date').notNull(),
+  description: text('description'),
+  ageGroups: text('age_groups').array().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// Training Session Coaches Junction Table
+export const trainingSessionCoaches = pgTable('training_session_coaches', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  trainingSessionId: uuid('training_session_id')
+    .notNull()
+    .references(() => trainingSessions.id, { onDelete: 'cascade' }),
+  coachId: uuid('coach_id')
+    .notNull()
+    .references(() => coaches.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Helper function to format date as "Nov 22, 2025"
+export const formatDateForSessionName = (date: Date): string => {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 // Type exports
 export type Player = typeof players.$inferSelect
 export type Test = typeof tests.$inferSelect
@@ -259,3 +307,6 @@ export type Group = typeof groups.$inferSelect
 export type Registration = typeof registrations.$inferSelect
 export type Match = typeof matches.$inferSelect
 export type Set = typeof sets.$inferSelect
+export type Coach = typeof coaches.$inferSelect
+export type TrainingSession = typeof trainingSessions.$inferSelect
+export type TrainingSessionCoach = typeof trainingSessionCoaches.$inferSelect
