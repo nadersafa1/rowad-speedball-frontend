@@ -258,16 +258,22 @@ const MatchResultsForm = ({
                       {formatRegistrationName(match.registration1)}
                     </label>
                     <Input
-                      type='number'
-                      min='0'
+                      type='text'
+                      inputMode='numeric'
                       value={set.registration1Score}
-                      onChange={(e) =>
-                        handleUpdateSet(set.id, {
-                          registration1Score: parseInt(e.target.value) || 0,
-                          registration2Score: set.registration2Score,
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value
+                        // Allow empty string or numeric values only
+                        if (value === '' || /^\d+$/.test(value)) {
+                          handleUpdateSet(set.id, {
+                            registration1Score:
+                              value === '' ? 0 : parseInt(value, 10) || 0,
+                            registration2Score: set.registration2Score,
+                          })
+                        }
+                      }}
                       onFocus={(e) => e.target.select()}
+                      onClick={(e) => e.currentTarget.select()}
                       className='text-center'
                     />
                   </div>
@@ -276,16 +282,22 @@ const MatchResultsForm = ({
                       {formatRegistrationName(match.registration2)}
                     </label>
                     <Input
-                      type='number'
-                      min='0'
+                      type='text'
+                      inputMode='numeric'
                       value={set.registration2Score}
-                      onChange={(e) =>
-                        handleUpdateSet(set.id, {
-                          registration1Score: set.registration1Score,
-                          registration2Score: parseInt(e.target.value) || 0,
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value
+                        // Allow empty string or numeric values only
+                        if (value === '' || /^\d+$/.test(value)) {
+                          handleUpdateSet(set.id, {
+                            registration1Score: set.registration1Score,
+                            registration2Score:
+                              value === '' ? 0 : parseInt(value, 10) || 0,
+                          })
+                        }
+                      }}
                       onFocus={(e) => e.target.select()}
+                      onClick={(e) => e.currentTarget.select()}
                       className='text-center'
                     />
                   </div>
@@ -360,17 +372,23 @@ const MatchResultsForm = ({
                     {formatRegistrationName(match.registration1)}
                   </label>
                   <Input
-                    type='number'
-                    min='0'
+                    type='text'
+                    inputMode='numeric'
                     placeholder='0'
                     value={newSetScores.registration1Score}
-                    onChange={(e) =>
-                      setNewSetScores({
-                        ...newSetScores,
-                        registration1Score: parseInt(e.target.value) || 0,
-                      })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Allow empty string or numeric values only
+                      if (value === '' || /^\d+$/.test(value)) {
+                        setNewSetScores({
+                          ...newSetScores,
+                          registration1Score:
+                            value === '' ? 0 : parseInt(value, 10) || 0,
+                        })
+                      }
+                    }}
                     onFocus={(e) => e.target.select()}
+                    onClick={(e) => e.currentTarget.select()}
                     className='text-center'
                   />
                 </div>
@@ -379,17 +397,23 @@ const MatchResultsForm = ({
                     {formatRegistrationName(match.registration2)}
                   </label>
                   <Input
-                    type='number'
-                    min='0'
+                    type='text'
+                    inputMode='numeric'
                     placeholder='0'
                     value={newSetScores.registration2Score}
-                    onChange={(e) =>
-                      setNewSetScores({
-                        ...newSetScores,
-                        registration2Score: parseInt(e.target.value) || 0,
-                      })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Allow empty string or numeric values only
+                      if (value === '' || /^\d+$/.test(value)) {
+                        setNewSetScores({
+                          ...newSetScores,
+                          registration2Score:
+                            value === '' ? 0 : parseInt(value, 10) || 0,
+                        })
+                      }
+                    }}
                     onFocus={(e) => e.target.select()}
+                    onClick={(e) => e.currentTarget.select()}
                     className='text-center'
                   />
                 </div>

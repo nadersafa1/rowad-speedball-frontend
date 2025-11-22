@@ -45,17 +45,98 @@ export async function GET(
       .from(schema.sets)
       .where(eq(schema.sets.matchId, id))
 
-    // Get event to get bestOf
+    // Get event data
     const event = await db
       .select()
       .from(schema.events)
       .where(eq(schema.events.id, match[0].eventId))
       .limit(1)
 
+    // Get group data if match has a groupId
+    let group = null
+    if (match[0].groupId) {
+      const groupResult = await db
+        .select()
+        .from(schema.groups)
+        .where(eq(schema.groups.id, match[0].groupId))
+        .limit(1)
+      group = groupResult[0] || null
+    }
+
+    // Fetch registration1 with player data
+    const registration1 = await db
+      .select()
+      .from(schema.registrations)
+      .where(eq(schema.registrations.id, match[0].registration1Id))
+      .limit(1)
+
+    let registration1WithPlayers = null
+    if (registration1.length > 0) {
+      const reg1 = registration1[0]
+      const player1 = await db
+        .select()
+        .from(schema.players)
+        .where(eq(schema.players.id, reg1.player1Id))
+        .limit(1)
+
+      let player2 = null
+      if (reg1.player2Id) {
+        const player2Result = await db
+          .select()
+          .from(schema.players)
+          .where(eq(schema.players.id, reg1.player2Id))
+          .limit(1)
+        player2 = player2Result[0] || null
+      }
+
+      registration1WithPlayers = {
+        ...reg1,
+        player1: player1[0] || null,
+        player2: player2,
+      }
+    }
+
+    // Fetch registration2 with player data
+    const registration2 = await db
+      .select()
+      .from(schema.registrations)
+      .where(eq(schema.registrations.id, match[0].registration2Id))
+      .limit(1)
+
+    let registration2WithPlayers = null
+    if (registration2.length > 0) {
+      const reg2 = registration2[0]
+      const player1 = await db
+        .select()
+        .from(schema.players)
+        .where(eq(schema.players.id, reg2.player1Id))
+        .limit(1)
+
+      let player2 = null
+      if (reg2.player2Id) {
+        const player2Result = await db
+          .select()
+          .from(schema.players)
+          .where(eq(schema.players.id, reg2.player2Id))
+          .limit(1)
+        player2 = player2Result[0] || null
+      }
+
+      registration2WithPlayers = {
+        ...reg2,
+        player1: player1[0] || null,
+        player2: player2,
+      }
+    }
+
     return Response.json({
       ...match[0],
       sets: matchSets,
       bestOf: event[0]?.bestOf || 3,
+      registration1: registration1WithPlayers,
+      registration2: registration2WithPlayers,
+      event: event[0] || null,
+      group: group,
     })
   } catch (error) {
     console.error('Error fetching match:', error)

@@ -147,6 +147,8 @@ export type Match = {
   bestOf?: number
   registration1?: Registration
   registration2?: Registration
+  event?: Event | null
+  group?: Group | null
 }
 
 export type Set = {
@@ -165,4 +167,46 @@ export type PlayerMatch = Match & {
   playerRegistration?: Registration | null
   opponentRegistration?: Registration | null
   playerWon?: boolean
+}
+
+// Socket event types
+export interface SetCreatedData {
+  matchId: string
+  set: {
+    id: string
+    matchId: string
+    setNumber: number
+    registration1Score: number
+    registration2Score: number
+    played: boolean
+    createdAt: Date | string
+    updatedAt: Date | string
+  }
+}
+
+export interface MatchScoreUpdatedData {
+  matchId: string
+  setId: string
+  registration1Score: number
+  registration2Score: number
+  setNumber: number
+  played: boolean
+}
+
+export interface SetCompletedData {
+  matchId: string
+  setId: string
+  setNumber: number
+}
+
+export interface MatchCompletedData {
+  matchId: string
+  winnerId: string
+}
+
+export interface MatchUpdatedData {
+  matchId: string
+  played?: boolean
+  matchDate?: string
+  winnerId?: string | null
 }

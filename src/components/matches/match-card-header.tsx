@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { Calendar, Edit } from 'lucide-react'
+import { Calendar } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import type { Match, PlayerMatch } from '@/types'
+import MatchEditDropdown from './match-edit-dropdown'
 
 interface MatchCardHeaderProps {
   match: Match | PlayerMatch
@@ -59,15 +59,10 @@ const MatchCardHeader = ({
         </div>
 
         {showEditButton && !match.played && onEditClick && (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={onEditClick}
-            className='gap-2'
-          >
-            <Edit className='h-4 w-4' />
-            <span className='hidden sm:inline'>Edit Results</span>
-          </Button>
+          <MatchEditDropdown
+            match={match as Match}
+            onArchiveModeClick={onEditClick}
+          />
         )}
       </div>
     </div>
