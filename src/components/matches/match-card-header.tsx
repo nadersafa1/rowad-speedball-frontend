@@ -10,6 +10,7 @@ interface MatchCardHeaderProps {
   groupName?: string | null
   showEditButton?: boolean
   onEditClick?: () => void
+  isLive?: boolean
 }
 
 const MatchCardHeader = ({
@@ -18,6 +19,7 @@ const MatchCardHeader = ({
   groupName,
   showEditButton = false,
   onEditClick,
+  isLive = false,
 }: MatchCardHeaderProps) => {
   return (
     <div className='bg-gray-50 px-4 py-2 border-b'>
@@ -51,6 +53,14 @@ const MatchCardHeader = ({
             </div>
           )}
 
+          {isLive && !match.played && (
+            <Badge
+              variant='default'
+              className='text-xs bg-red-600 hover:bg-red-700'
+            >
+              Live
+            </Badge>
+          )}
           {match.played && (
             <Badge variant='default' className='text-xs'>
               Completed

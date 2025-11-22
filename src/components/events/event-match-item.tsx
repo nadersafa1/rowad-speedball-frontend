@@ -8,6 +8,7 @@ interface EventMatchItemProps {
   groupName?: string | null
   onEditClick?: () => void
   showEditButton?: boolean
+  isLive?: boolean
 }
 
 const EventMatchItem = ({
@@ -15,6 +16,7 @@ const EventMatchItem = ({
   groupName,
   onEditClick,
   showEditButton = false,
+  isLive = false,
 }: EventMatchItemProps) => {
   return (
     <MatchCard
@@ -23,6 +25,7 @@ const EventMatchItem = ({
       showEditButton={showEditButton}
       onEditClick={onEditClick}
       playerPerspective={false}
+      isLive={isLive}
     />
   )
 }

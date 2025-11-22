@@ -19,6 +19,7 @@ interface MatchCardProps {
   showEditButton?: boolean
   onEditClick?: () => void
   playerPerspective?: boolean
+  isLive?: boolean
 }
 
 const MatchCard = ({
@@ -27,6 +28,7 @@ const MatchCard = ({
   showEditButton = false,
   onEditClick,
   playerPerspective = false,
+  isLive = false,
 }: MatchCardProps) => {
   const isPlayerMatch = 'playerRegistration' in match && playerPerspective
   const { getRegistration1, getRegistration2 } = getRegistrations(
@@ -64,10 +66,11 @@ const MatchCard = ({
         groupName={groupName}
         showEditButton={showEditButton}
         onEditClick={onEditClick}
+        isLive={isLive}
       />
 
       <div className='p-4'>
-        {match.played && (
+        {(match.played || (match.sets && match.sets.length > 0)) && (
           <div className='flex items-center justify-center mb-4'>
             <div
               className={`text-5xl font-bold ${getScoreColor(winnerStatus)}`}

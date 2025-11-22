@@ -47,6 +47,7 @@ export const calculateSetsResult = (
     return { reg1Sets: 0, reg2Sets: 0 }
   }
 
+  // Count sets won from played sets only
   const playedSets = sets.filter((set) => set.played)
   let reg1Sets = 0
   let reg2Sets = 0
@@ -75,8 +76,8 @@ export const getIndividualSetScores = (
     return []
   }
 
+  // Include all sets (both played and incomplete) to show live scores
   return sets
-    .filter((set) => set.played)
     .sort((a, b) => a.setNumber - b.setNumber)
     .map((set) => {
       if (isPlayerMatch && !isPlayerReg1) {
@@ -84,12 +85,14 @@ export const getIndividualSetScores = (
           reg1Score: set.registration2Score,
           reg2Score: set.registration1Score,
           setNumber: set.setNumber,
+          played: set.played,
         }
       }
       return {
         reg1Score: set.registration1Score,
         reg2Score: set.registration2Score,
         setNumber: set.setNumber,
+        played: set.played,
       }
     })
 }
