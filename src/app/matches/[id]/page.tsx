@@ -14,6 +14,7 @@ import { ArrowLeft, Loader2, Calendar, Users, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import type {
   Match,
+  Set,
   SetCreatedData,
   MatchScoreUpdatedData,
   SetCompletedData,
@@ -185,6 +186,8 @@ const MatchDetailPage = () => {
       })
     }
 
+    // Handle match completion event (only for manual match updates via socket)
+    // Note: Auto-completion is handled by REST API and updates UI via handleMarkSetAsPlayed
     const handleMatchCompleted = (data: MatchCompletedData) => {
       console.log('Match completed:', data)
       toast.success('Match completed!')
@@ -236,20 +239,43 @@ const MatchDetailPage = () => {
     [socketUpdateSetScore]
   )
 
-  const handleMarkSetAsPlayed = useCallback(
-    async (setId: string) => {
-      const set = match?.sets?.find((s) => s.id === setId)
-      if (!set) return
+  const handleMarkSetAsPlayed = useCallback(async (setId: string) => {
+    try {
+      const response = (await apiClient.markSetAsPlayed(setId)) as {
+        set: Set
+        matchCompleted: boolean
+        winnerId?: string
+      }
 
-      await socketUpdateSetScore(
-        setId,
-        set.registration1Score,
-        set.registration2Score,
-        true
-      )
-    },
-    [match, socketUpdateSetScore]
-  )
+      // Update local match state with the updated set
+      setMatch((prevMatch) => {
+        if (!prevMatch) return prevMatch
+
+        const updatedSets = (prevMatch.sets || []).map((s) =>
+          s.id === setId ? { ...response.set } : s
+        )
+
+        // If match was completed, update match state
+        if (response.matchCompleted && response.winnerId) {
+          toast.success('Match completed!')
+          return {
+            ...prevMatch,
+            sets: updatedSets,
+            played: true,
+            winnerId: response.winnerId,
+          }
+        }
+
+        return {
+          ...prevMatch,
+          sets: updatedSets,
+        }
+      })
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to mark set as played')
+      throw error
+    }
+  }, [])
 
   const handleCreateSet = useCallback(
     async (matchId: string, setNumber?: number) => {
