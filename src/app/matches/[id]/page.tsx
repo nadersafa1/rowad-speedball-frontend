@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSocket } from '@/hooks/use-socket'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useEventPermissions } from '@/hooks/use-event-permissions'
 import MatchCard from '@/components/matches/match-card'
 import LiveScoreEditor from '@/components/matches/live-score-editor'
 import AddSetButton from '@/components/matches/add-set-button'
@@ -30,41 +31,45 @@ const MatchDetailPage = () => {
 
   const [isLoadingMatch, setIsLoadingMatch] = useState(true)
   const [match, setMatch] = useState<Match | null>(null)
+  const [accessDenied, setAccessDenied] = useState(false)
 
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
-  const { isSystemAdmin } = context
+  const { isLoading: isOrganizationContextLoading } = useOrganizationContext()
+  const { canRead } = useEventPermissions(match?.event || null)
 
   useEffect(() => {
     if (isOrganizationContextLoading) return
 
-    if (!isSystemAdmin) {
-      toast.error('Admin access required')
-      router.push('/events')
-      return
-    }
-
     const loadMatch = async () => {
-      const fetchedMatch = (await apiClient.getMatch(matchId)) as Match
-      if (!fetchedMatch) {
-        toast.error('Match not found')
+      try {
+        const fetchedMatch = (await apiClient.getMatch(matchId)) as Match
+        if (!fetchedMatch) {
+          toast.error('Match not found')
+          setIsLoadingMatch(false)
+          return
+        }
+        setMatch(fetchedMatch)
         setIsLoadingMatch(false)
-        return
-      }
-      setMatch(fetchedMatch)
-      setIsLoadingMatch(false)
 
-      if (!fetchedMatch.matchDate) {
-        const today = new Date().toISOString().split('T')[0]
-        const updatedMatch = (await apiClient.updateMatch(matchId, {
-          matchDate: today,
-        })) as Match
-        setMatch(updatedMatch)
+        if (!fetchedMatch.matchDate) {
+          const today = new Date().toISOString().split('T')[0]
+          const updatedMatch = (await apiClient.updateMatch(matchId, {
+            matchDate: today,
+          })) as Match
+          setMatch(updatedMatch)
+        }
+      } catch (error: any) {
+        if (error?.status === 403 || error?.message?.includes('Forbidden')) {
+          setAccessDenied(true)
+          toast.error('You do not have permission to view this match')
+        } else {
+          toast.error('Failed to load match')
+        }
+        setIsLoadingMatch(false)
       }
     }
 
     loadMatch()
-  }, [isSystemAdmin, isOrganizationContextLoading, router, matchId])
+  }, [isOrganizationContextLoading, matchId])
 
   const {
     socket,
@@ -294,12 +299,20 @@ const MatchDetailPage = () => {
     )
   }
 
-  if (!isSystemAdmin) {
+  if (accessDenied || (match && !canRead)) {
     return (
       <div className='container mx-auto p-4'>
         <Card>
           <CardContent className='pt-6'>
-            <p>Admin access required</p>
+            <p className='text-center text-muted-foreground'>
+              You do not have permission to view this match
+            </p>
+            <div className='mt-4 flex justify-center'>
+              <Button onClick={() => router.push('/events')} variant='outline'>
+                <ArrowLeft className='h-4 w-4 mr-2' />
+                Back to Events
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

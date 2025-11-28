@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useEventPermissions } from '@/hooks/use-event-permissions'
 import { Plus, Users, Trophy, Edit, Trash2, CheckCircle2 } from 'lucide-react'
 import { useEventsStore } from '@/store/events-store'
 import { toast } from 'sonner'
@@ -35,8 +36,6 @@ const EventDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin } = context
   const eventId = params.id as string
 
   // Get tab from URL or default to 'overview'
@@ -76,6 +75,7 @@ const EventDetailPage = () => {
     isLoading: registrationsLoading,
   } = useRegistrationsStore()
   const { matches, fetchMatches, isLoading: matchesLoading } = useMatchesStore()
+  const { canUpdate, canDelete, canCreate } = useEventPermissions(selectedEvent)
 
   useEffect(() => {
     if (eventId) {
@@ -132,26 +132,30 @@ const EventDetailPage = () => {
       {/* Back Navigation with Edit/Delete Actions */}
       <div className='mb-4 sm:mb-6 flex items-center justify-between gap-2'>
         <BackButton href='/events' longText='Back to Events' />
-        {isSystemAdmin && (
+        {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
-            <Button
-              onClick={() => setEventFormOpen(true)}
-              variant='outline'
-              size='sm'
-              className='gap-2'
-            >
-              <Edit className='h-4 w-4' />
-              <span className='hidden sm:inline'>Edit Event</span>
-            </Button>
-            <Button
-              onClick={() => setDeleteEventDialogOpen(true)}
-              variant='outline'
-              size='sm'
-              className='gap-2 text-destructive hover:text-destructive'
-            >
-              <Trash2 className='h-4 w-4' />
-              <span className='hidden sm:inline'>Delete Event</span>
-            </Button>
+            {canUpdate && (
+              <Button
+                onClick={() => setEventFormOpen(true)}
+                variant='outline'
+                size='sm'
+                className='gap-2'
+              >
+                <Edit className='h-4 w-4' />
+                <span className='hidden sm:inline'>Edit Event</span>
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                onClick={() => setDeleteEventDialogOpen(true)}
+                variant='outline'
+                size='sm'
+                className='gap-2 text-destructive hover:text-destructive'
+              >
+                <Trash2 className='h-4 w-4' />
+                <span className='hidden sm:inline'>Delete Event</span>
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -250,7 +254,7 @@ const EventDetailPage = () => {
             <CardHeader>
               <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
                 <CardTitle>Registrations ({registrations.length})</CardTitle>
-                {isSystemAdmin && (
+                {canCreate && (
                   <Button
                     onClick={() => setRegistrationFormOpen(true)}
                     disabled={matches.some((m) =>
@@ -295,7 +299,7 @@ const EventDetailPage = () => {
                           </p>
                           <p className='text-sm font-bold'>{reg.points} pts</p>
                         </div>
-                        {isSystemAdmin && !reg.groupId && (
+                        {canDelete && !reg.groupId && (
                           <Button
                             variant='destructive'
                             size='sm'
@@ -314,7 +318,7 @@ const EventDetailPage = () => {
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          {isSystemAdmin && (
+          {canCreate && (
             <GroupManagement
               eventId={eventId}
               groups={groups}
@@ -322,7 +326,7 @@ const EventDetailPage = () => {
               onGroupCreated={handleRefresh}
             />
           )}
-          {!isSystemAdmin && groups.length === 0 && (
+          {!canCreate && groups.length === 0 && (
             <Card>
               <CardContent>
                 <p className='text-sm text-muted-foreground'>
@@ -338,7 +342,7 @@ const EventDetailPage = () => {
             matches={matches}
             groups={groups}
             groupMode={selectedEvent.groupMode}
-            isSystemAdmin={isSystemAdmin}
+            canUpdate={canUpdate}
             onMatchUpdate={handleRefresh}
           />
         </TabsContent>

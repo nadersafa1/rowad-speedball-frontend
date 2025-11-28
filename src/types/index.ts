@@ -96,6 +96,7 @@ export type Event = {
   pointsPerWin: number
   pointsPerLoss: number
   completed: boolean
+  organizationId?: string | null
   registrationsCount?: number
   lastMatchPlayedDate?: string | null
   organizationName?: string | null

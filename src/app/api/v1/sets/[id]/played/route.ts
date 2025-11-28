@@ -14,23 +14,13 @@ import {
   calculateSetPoints,
   updateRegistrationStandings,
 } from '@/lib/utils/points-calculation'
+import { checkEventUpdateAuthorization } from '@/lib/event-authorization-helpers'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const context = await getOrganizationContext()
-
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!context.isSystemAdmin) {
-    return Response.json(
-      { message: 'Forbidden: Admin access required' },
-      { status: 403 }
-    )
-  }
 
   try {
     const resolvedParams = await params
@@ -89,7 +79,7 @@ export async function PATCH(
       )
     }
 
-    // Get event for bestOf
+    // Get event for bestOf and authorization check
     const event = await db
       .select()
       .from(schema.events)
@@ -98,6 +88,12 @@ export async function PATCH(
 
     if (event.length === 0) {
       return Response.json({ message: 'Event not found' }, { status: 404 })
+    }
+
+    // Check authorization based on parent event (same as edit event)
+    const authError = checkEventUpdateAuthorization(context, event[0])
+    if (authError) {
+      return authError
     }
 
     // Get all sets for validation

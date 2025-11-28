@@ -41,8 +41,8 @@ export const PlayersTableActions = ({
   onRefetch,
 }: PlayersTableActionsProps) => {
   const { context } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner } = context
-  const canLinkUser = isSystemAdmin || isAdmin || isOwner
+  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
+  const canLinkUser = isSystemAdmin || isAdmin || isOwner || isCoach
 
   if (!canEdit && !canDelete && !canLinkUser) return null
 

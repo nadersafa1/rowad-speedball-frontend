@@ -20,7 +20,7 @@ interface MatchesViewProps {
   matches: Match[]
   groups?: Group[]
   groupMode?: 'single' | 'multiple'
-  isSystemAdmin?: boolean
+  canUpdate?: boolean
   onMatchUpdate?: () => void
 }
 
@@ -28,7 +28,7 @@ const MatchesView = ({
   matches,
   groups = [],
   groupMode = 'single',
-  isSystemAdmin = false,
+  canUpdate = false,
   onMatchUpdate,
 }: MatchesViewProps) => {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
@@ -309,7 +309,7 @@ const MatchesView = ({
                       ? getGroupName(match.groupId)
                       : null
                   }
-                  showEditButton={isSystemAdmin}
+                  showEditButton={canUpdate}
                   onEditClick={() => setSelectedMatch(match)}
                   isLive={liveMatchIds.has(match.id)}
                 />
