@@ -5,23 +5,13 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { groupsParamsSchema } from '@/types/api/groups.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkEventDeleteAuthorization } from '@/lib/event-authorization-helpers'
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const context = await getOrganizationContext()
-
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!context.isSystemAdmin) {
-    return Response.json(
-      { message: 'Forbidden: Admin access required' },
-      { status: 403 }
-    )
-  }
 
   try {
     const resolvedParams = await params
@@ -42,6 +32,23 @@ export async function DELETE(
 
     if (existing.length === 0) {
       return Response.json({ message: 'Group not found' }, { status: 404 })
+    }
+
+    // Get parent event for authorization check
+    const event = await db
+      .select()
+      .from(schema.events)
+      .where(eq(schema.events.id, existing[0].eventId))
+      .limit(1)
+
+    if (event.length === 0) {
+      return Response.json({ message: 'Event not found' }, { status: 404 })
+    }
+
+    // Check authorization based on parent event
+    const authError = checkEventDeleteAuthorization(context, event[0])
+    if (authError) {
+      return authError
     }
 
     // Delete group (cascade will handle matches, registrations will have groupId set to null)

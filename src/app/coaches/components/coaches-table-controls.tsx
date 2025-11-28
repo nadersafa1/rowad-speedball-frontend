@@ -139,7 +139,7 @@ export const CoachesTableControls = ({
 
         <div className='flex-1 w-full md:w-auto'>
           <Label htmlFor='organizationId' className='block mb-2'>
-            Organization
+            Club
           </Label>
           <Select
             name='organizationId'
@@ -162,13 +162,13 @@ export const CoachesTableControls = ({
             <SelectTrigger className='w-full'>
               <SelectValue
                 placeholder={
-                  isLoadingOrgs ? 'Loading...' : 'Select an Organization'
+                  isLoadingOrgs ? 'Loading...' : 'Select a Club'
                 }
               />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='all'>All Organizations</SelectItem>
-              <SelectItem value='null'>No Organization (Global)</SelectItem>
+              <SelectItem value='all'>All Clubs</SelectItem>
+              <SelectItem value='null'>No Club (Global)</SelectItem>
               {organizations.map((org) => (
                 <SelectItem key={org.id} value={org.id}>
                   {org.name}

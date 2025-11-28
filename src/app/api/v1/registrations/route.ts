@@ -13,8 +13,13 @@ import {
   validateDoublesRegistration,
   validateGenderRules,
 } from '@/lib/validations/registration-validation'
+import {
+  checkEventCreateAuthorization,
+  checkEventReadAuthorization,
+} from '@/lib/event-authorization-helpers'
 
 export async function GET(request: NextRequest) {
+  const context = await getOrganizationContext()
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
   const parseResult = registrationsQuerySchema.safeParse(queryParams)
@@ -25,6 +30,52 @@ export async function GET(request: NextRequest) {
 
   try {
     const { eventId, groupId } = parseResult.data
+
+    // If eventId is provided, check authorization for that event
+    if (eventId) {
+      const event = await db
+        .select()
+        .from(schema.events)
+        .where(eq(schema.events.id, eventId))
+        .limit(1)
+
+      if (event.length === 0) {
+        return Response.json({ message: 'Event not found' }, { status: 404 })
+      }
+
+      const authError = checkEventReadAuthorization(context, event[0])
+      if (authError) {
+        return authError
+      }
+    }
+
+    // If groupId is provided but no eventId, get eventId from group
+    if (groupId && !eventId) {
+      const group = await db
+        .select()
+        .from(schema.groups)
+        .where(eq(schema.groups.id, groupId))
+        .limit(1)
+
+      if (group.length === 0) {
+        return Response.json({ message: 'Group not found' }, { status: 404 })
+      }
+
+      const event = await db
+        .select()
+        .from(schema.events)
+        .where(eq(schema.events.id, group[0].eventId))
+        .limit(1)
+
+      if (event.length === 0) {
+        return Response.json({ message: 'Event not found' }, { status: 404 })
+      }
+
+      const authError = checkEventReadAuthorization(context, event[0])
+      if (authError) {
+        return authError
+      }
+    }
 
     const conditions: any[] = []
 
@@ -88,17 +139,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const context = await getOrganizationContext()
 
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!context.isSystemAdmin) {
-    return Response.json(
-      { message: 'Forbidden: Admin access required' },
-      { status: 403 }
-    )
-  }
-
   try {
     const body = await request.json()
     const parseResult = registrationsCreateSchema.safeParse(body)
@@ -121,6 +161,12 @@ export async function POST(request: NextRequest) {
     }
 
     const eventData = event[0]
+
+    // Check authorization based on parent event
+    const authError = checkEventCreateAuthorization(context)
+    if (authError) {
+      return authError
+    }
 
     // Check if any sets are played - cannot add registrations if sets are played
     const matches = await db

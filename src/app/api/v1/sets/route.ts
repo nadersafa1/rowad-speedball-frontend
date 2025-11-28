@@ -6,8 +6,13 @@ import * as schema from '@/db/schema'
 import { setsCreateSchema, setsQuerySchema } from '@/types/api/sets.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateSetAddition } from '@/lib/validations/match-validation'
+import {
+  checkEventCreateAuthorization,
+  checkEventReadAuthorization,
+} from '@/lib/event-authorization-helpers'
 
 export async function GET(request: NextRequest) {
+  const context = await getOrganizationContext()
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
   const parseResult = setsQuerySchema.safeParse(queryParams)
@@ -18,6 +23,34 @@ export async function GET(request: NextRequest) {
 
   try {
     const { matchId } = parseResult.data
+
+    // If matchId is provided, check authorization for the parent event
+    if (matchId) {
+      const match = await db
+        .select()
+        .from(schema.matches)
+        .where(eq(schema.matches.id, matchId))
+        .limit(1)
+
+      if (match.length === 0) {
+        return Response.json({ message: 'Match not found' }, { status: 404 })
+      }
+
+      const event = await db
+        .select()
+        .from(schema.events)
+        .where(eq(schema.events.id, match[0].eventId))
+        .limit(1)
+
+      if (event.length === 0) {
+        return Response.json({ message: 'Event not found' }, { status: 404 })
+      }
+
+      const authError = checkEventReadAuthorization(context, event[0])
+      if (authError) {
+        return authError
+      }
+    }
 
     let query = db.select().from(schema.sets)
 
@@ -36,17 +69,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const context = await getOrganizationContext()
-
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!context.isSystemAdmin) {
-    return Response.json(
-      { message: 'Forbidden: Admin access required' },
-      { status: 403 }
-    )
-  }
 
   try {
     const body = await request.json()
@@ -78,6 +100,12 @@ export async function POST(request: NextRequest) {
 
     if (event.length === 0) {
       return Response.json({ message: 'Event not found' }, { status: 404 })
+    }
+
+    // Check authorization based on parent event
+    const authError = checkEventCreateAuthorization(context)
+    if (authError) {
+      return authError
     }
 
     // Check if match date is set

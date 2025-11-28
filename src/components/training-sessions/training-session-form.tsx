@@ -471,8 +471,7 @@ const TrainingSessionForm = ({
                 </FormControl>
                 <FormDescription>
                   Select one or more coaches for this session
-                  {coachesOrganizationId &&
-                    ' (filtered by selected club)'}
+                  {coachesOrganizationId && ' (filtered by selected club)'}
                 </FormDescription>
                 <FormMessage />
               </FormItem>

@@ -15,11 +15,16 @@ import {
   updateRegistrationStandings,
 } from '@/lib/utils/points-calculation'
 import { updateEventCompletedStatus } from '@/lib/event-helpers'
+import {
+  checkEventUpdateAuthorization,
+  checkEventReadAuthorization,
+} from '@/lib/event-authorization-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await getOrganizationContext()
   const resolvedParams = await params
   const parseResult = matchesParamsSchema.safeParse(resolvedParams)
 
@@ -40,18 +45,28 @@ export async function GET(
       return Response.json({ message: 'Match not found' }, { status: 404 })
     }
 
-    // Get sets for the match
-    const matchSets = await db
-      .select()
-      .from(schema.sets)
-      .where(eq(schema.sets.matchId, id))
-
     // Get event data
     const event = await db
       .select()
       .from(schema.events)
       .where(eq(schema.events.id, match[0].eventId))
       .limit(1)
+
+    if (event.length === 0) {
+      return Response.json({ message: 'Event not found' }, { status: 404 })
+    }
+
+    // Check authorization based on parent event
+    const authError = checkEventReadAuthorization(context, event[0])
+    if (authError) {
+      return authError
+    }
+
+    // Get sets for the match
+    const matchSets = await db
+      .select()
+      .from(schema.sets)
+      .where(eq(schema.sets.matchId, id))
 
     // Get group data if match has a groupId
     let group = null
@@ -151,17 +166,6 @@ export async function PATCH(
 ) {
   const context = await getOrganizationContext()
 
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!context.isSystemAdmin) {
-    return Response.json(
-      { message: 'Forbidden: Admin access required' },
-      { status: 403 }
-    )
-  }
-
   try {
     const resolvedParams = await params
     const parseParams = matchesParamsSchema.safeParse(resolvedParams)
@@ -204,6 +208,12 @@ export async function PATCH(
     }
 
     const eventData = event[0]
+
+    // Check authorization based on parent event
+    const authError = checkEventUpdateAuthorization(context, eventData)
+    if (authError) {
+      return authError
+    }
 
     // Check if trying to update matchDate when sets exist
     if (updateData.matchDate !== undefined) {

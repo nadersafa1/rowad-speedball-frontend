@@ -4,8 +4,11 @@ import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { matchesQuerySchema } from '@/types/api/matches.schemas'
+import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkEventReadAuthorization } from '@/lib/event-authorization-helpers'
 
 export async function GET(request: NextRequest) {
+  const context = await getOrganizationContext()
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
   const parseResult = matchesQuerySchema.safeParse(queryParams)
@@ -16,6 +19,52 @@ export async function GET(request: NextRequest) {
 
   try {
     const { eventId, groupId, round } = parseResult.data
+
+    // If eventId is provided, check authorization for that event
+    if (eventId) {
+      const event = await db
+        .select()
+        .from(schema.events)
+        .where(eq(schema.events.id, eventId))
+        .limit(1)
+
+      if (event.length === 0) {
+        return Response.json({ message: 'Event not found' }, { status: 404 })
+      }
+
+      const authError = checkEventReadAuthorization(context, event[0])
+      if (authError) {
+        return authError
+      }
+    }
+
+    // If groupId is provided but no eventId, get eventId from group
+    if (groupId && !eventId) {
+      const group = await db
+        .select()
+        .from(schema.groups)
+        .where(eq(schema.groups.id, groupId))
+        .limit(1)
+
+      if (group.length === 0) {
+        return Response.json({ message: 'Group not found' }, { status: 404 })
+      }
+
+      const event = await db
+        .select()
+        .from(schema.events)
+        .where(eq(schema.events.id, group[0].eventId))
+        .limit(1)
+
+      if (event.length === 0) {
+        return Response.json({ message: 'Event not found' }, { status: 404 })
+      }
+
+      const authError = checkEventReadAuthorization(context, event[0])
+      if (authError) {
+        return authError
+      }
+    }
 
     const conditions: any[] = []
 

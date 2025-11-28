@@ -80,7 +80,7 @@ export const createBaseColumns = (
     enableHiding: false,
     header: () => (
       <SortableHeader
-        label='Organization'
+        label='Club'
         sortBy={sortBy}
         sortOrder={sortOrder}
         field='organizationId'

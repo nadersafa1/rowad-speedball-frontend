@@ -50,14 +50,14 @@ export const LinkUserDialog = ({
 }: LinkUserDialogProps) => {
   const router = useRouter()
   const { context } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, organization } = context
+  const { isSystemAdmin, isAdmin, isOwner, isCoach, organization } = context
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
-  const canLink = isSystemAdmin || isAdmin || isOwner
-  const unassignedOnly = !isSystemAdmin // Org admins/owners can only link unassigned users
+  const canLink = isSystemAdmin || isAdmin || isOwner || isCoach
+  const unassignedOnly = !isSystemAdmin // Org admins/owners/coaches can only link unassigned users
 
   useEffect(() => {
     if (isOpen && currentUserId) {
@@ -205,10 +205,7 @@ export const LinkUserDialog = ({
               <LoadingSwap isLoading={isLoading}>Unlink</LoadingSwap>
             </Button>
           )}
-          <Button
-            onClick={handleLink}
-            disabled={isLoading || !selectedUserId}
-          >
+          <Button onClick={handleLink} disabled={isLoading || !selectedUserId}>
             <LoadingSwap isLoading={isLoading}>
               {currentUserId ? 'Update Link' : 'Link'}
             </LoadingSwap>
@@ -218,4 +215,3 @@ export const LinkUserDialog = ({
     </Dialog>
   )
 }
-
