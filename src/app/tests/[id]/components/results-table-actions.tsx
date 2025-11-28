@@ -23,18 +23,20 @@ import {
 
 interface ResultsTableActionsProps {
   result: ResultWithPlayer
-  isSystemAdmin: boolean
+  canEdit: boolean
+  canDelete: boolean
   onEdit: (result: ResultWithPlayer) => void
   onDelete: (result: ResultWithPlayer) => void
 }
 
 export const ResultsTableActions = ({
   result,
-  isSystemAdmin,
+  canEdit,
+  canDelete,
   onEdit,
   onDelete,
 }: ResultsTableActionsProps) => {
-  if (!isSystemAdmin) return null
+  if (!canEdit && !canDelete) return null
 
   const playerName = result.player?.name || 'Unknown Player'
 
@@ -49,17 +51,21 @@ export const ResultsTableActions = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => onEdit(result)}>
-            <Edit className='mr-2 h-4 w-4' />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <AlertDialogTrigger asChild>
-            <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
-              <Trash2 className='mr-2 h-4 w-4' />
-              Delete
+          {canEdit && (
+            <DropdownMenuItem onClick={() => onEdit(result)}>
+              <Edit className='mr-2 h-4 w-4' />
+              Edit
             </DropdownMenuItem>
-          </AlertDialogTrigger>
+          )}
+          {canEdit && canDelete && <DropdownMenuSeparator />}
+          {canDelete && (
+            <AlertDialogTrigger asChild>
+              <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
+                <Trash2 className='mr-2 h-4 w-4' />
+                Delete
+              </DropdownMenuItem>
+            </AlertDialogTrigger>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialogContent>

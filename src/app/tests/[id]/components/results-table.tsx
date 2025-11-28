@@ -45,7 +45,13 @@ const ResultsTable = ({
   availableAgeGroups?: string[]
 }) => {
   const { context } = useOrganizationContext()
-  const { isSystemAdmin } = context
+  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
+
+  // Calculate permissions based on backend authorization logic:
+  // Can Edit: System Admin OR Org Admin OR Org Owner OR Org Coach
+  // Can Delete: System Admin OR Org Admin OR Org Owner OR Org Coach
+  const canEdit = isSystemAdmin || isAdmin || isOwner || isCoach
+  const canDelete = isSystemAdmin || isAdmin || isOwner || isCoach
 
   const {
     editResult,
@@ -85,9 +91,9 @@ const ResultsTable = ({
     ]
   )
 
-  // Add actions column
+  // Add actions column if user can edit or delete
   const columns = React.useMemo(() => {
-    if (!isSystemAdmin) return baseColumns
+    if (!canEdit && !canDelete) return baseColumns
     return [
       ...baseColumns,
       {
@@ -98,7 +104,8 @@ const ResultsTable = ({
           <div className='text-right'>
             <ResultsTableActions
               result={row.original}
-              isSystemAdmin={isSystemAdmin}
+              canEdit={canEdit}
+              canDelete={canDelete}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
@@ -106,7 +113,7 @@ const ResultsTable = ({
         ),
       },
     ]
-  }, [baseColumns, isSystemAdmin, handleEdit, handleDelete])
+  }, [baseColumns, canEdit, canDelete, handleEdit, handleDelete])
 
   const { table } = useResultsTable({
     results,
