@@ -10,6 +10,8 @@ import {
 } from '@/types/api/players.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
+import { sendOrganizationRemovalEmail } from '@/actions/emails/send-organization-removal-email'
+import { sendOrganizationWelcomeEmail } from '@/actions/emails/send-organization-welcome-email'
 
 export async function GET(
   request: NextRequest,
@@ -174,16 +176,170 @@ export async function PATCH(
       }
     }
 
-    const result = await db
-      .update(schema.players)
-      .set(finalUpdateData)
-      .where(eq(schema.players.id, id))
-      .returning()
+    let updatedPlayerData
+
+    // If userId is being unlinked, use transaction to ensure atomicity
+    if (
+      updateData.userId === null &&
+      playerData.userId &&
+      playerData.organizationId
+    ) {
+      // Store values in variables to help TypeScript understand they're non-null
+      const previousUserId = playerData.userId
+      const organizationId = playerData.organizationId
+
+      // Fetch user and organization data before transaction for email
+      const [user, organization, existingMemberBefore] = await Promise.all([
+        db.query.user.findFirst({
+          where: eq(schema.user.id, previousUserId),
+        }),
+        db.query.organization.findFirst({
+          where: eq(schema.organization.id, organizationId),
+        }),
+        db.query.member.findFirst({
+          where: and(
+            eq(schema.member.userId, previousUserId),
+            eq(schema.member.organizationId, organizationId)
+          ),
+        }),
+      ])
+
+      updatedPlayerData = await db.transaction(async (tx) => {
+        // 1. Update player userId to null
+        const result = await tx
+          .update(schema.players)
+          .set({ userId: null })
+          .where(eq(schema.players.id, id))
+          .returning()
+
+        // 2. Find and remove membership if role matches
+        const existingMember = await tx.query.member.findFirst({
+          where: and(
+            eq(schema.member.userId, previousUserId),
+            eq(schema.member.organizationId, organizationId)
+          ),
+        })
+
+        if (existingMember && existingMember.role === 'player') {
+          await tx
+            .delete(schema.member)
+            .where(eq(schema.member.id, existingMember.id))
+        }
+
+        return result[0]
+      })
+
+      // Send removal email after successful transaction
+      // Log error but don't fail the operation if email fails
+      if (
+        existingMemberBefore &&
+        existingMemberBefore.role === 'player' &&
+        user &&
+        organization
+      ) {
+        try {
+          await sendOrganizationRemovalEmail({
+            user,
+            organization,
+            role: existingMemberBefore.role,
+          })
+        } catch (error) {
+          console.error('Error sending removal email:', error)
+        }
+      }
+    } else {
+      // Normal update - use transaction if userId is being linked
+      if (
+        updateData.userId !== undefined &&
+        updateData.userId !== null &&
+        playerData.organizationId
+      ) {
+        const userId = updateData.userId
+        const organizationId = playerData.organizationId
+
+        // Fetch user and organization data before transaction for email
+        const [user, organization] = await Promise.all([
+          db.query.user.findFirst({
+            where: eq(schema.user.id, userId),
+          }),
+          db.query.organization.findFirst({
+            where: eq(schema.organization.id, organizationId),
+          }),
+        ])
+
+        updatedPlayerData = await db.transaction(async (tx) => {
+          // 1. Update player userId
+          const result = await tx
+            .update(schema.players)
+            .set(finalUpdateData)
+            .where(eq(schema.players.id, id))
+            .returning()
+
+          const updatedPlayer = result[0]
+
+          // 2. Check existing membership and add/update in transaction
+          const existingMember = await tx.query.member.findFirst({
+            where: eq(schema.member.userId, userId),
+          })
+
+          if (!existingMember) {
+            // User is not a member of any organization, create membership
+            await tx.insert(schema.member).values({
+              organizationId,
+              userId,
+              role: 'player',
+              createdAt: new Date(),
+            })
+          } else if (existingMember.organizationId !== organizationId) {
+            // User is a member of a different organization
+            await tx
+              .update(schema.member)
+              .set({
+                organizationId,
+                role: 'player',
+              })
+              .where(eq(schema.member.id, existingMember.id))
+          } else if (existingMember.role !== 'player') {
+            // User is already a member of this organization but with different role
+            await tx
+              .update(schema.member)
+              .set({ role: 'player' })
+              .where(eq(schema.member.id, existingMember.id))
+          }
+          // If user is already a member with player role, no action needed
+
+          return updatedPlayer
+        })
+
+        // After successful transaction, trigger welcome email hook
+        // Log error but don't fail the operation if email fails
+        if (user && organization) {
+          try {
+            await sendOrganizationWelcomeEmail({
+              user,
+              organization,
+              role: 'player',
+            })
+          } catch (error) {
+            console.error('Error sending welcome email:', error)
+          }
+        }
+      } else {
+        // No userId being linked, normal update without transaction
+        const result = await db
+          .update(schema.players)
+          .set(finalUpdateData)
+          .where(eq(schema.players.id, id))
+          .returning()
+
+        updatedPlayerData = result[0]
+      }
+    }
 
     const updatedPlayer = {
-      ...result[0],
-      age: calculateAge(result[0].dateOfBirth),
-      ageGroup: getAgeGroup(result[0].dateOfBirth),
+      ...updatedPlayerData,
+      age: calculateAge(updatedPlayerData.dateOfBirth),
+      ageGroup: getAgeGroup(updatedPlayerData.dateOfBirth),
     }
 
     return Response.json(updatedPlayer)
@@ -255,7 +411,69 @@ export async function DELETE(
       }
     }
 
-    await db.delete(schema.players).where(eq(schema.players.id, id))
+    // If player has a linked user with organization membership, remove membership atomically
+    if (playerData.userId && playerData.organizationId) {
+      // Store values in variables to help TypeScript understand they're non-null
+      const userId = playerData.userId
+      const organizationId = playerData.organizationId
+
+      // Fetch user, organization, and member data before transaction for email
+      const [user, organization, existingMemberBefore] = await Promise.all([
+        db.query.user.findFirst({
+          where: eq(schema.user.id, userId),
+        }),
+        db.query.organization.findFirst({
+          where: eq(schema.organization.id, organizationId),
+        }),
+        db.query.member.findFirst({
+          where: and(
+            eq(schema.member.userId, userId),
+            eq(schema.member.organizationId, organizationId)
+          ),
+        }),
+      ])
+
+      await db.transaction(async (tx) => {
+        // 1. Delete the player
+        await tx.delete(schema.players).where(eq(schema.players.id, id))
+
+        // 2. Find and remove membership if role matches
+        const existingMember = await tx.query.member.findFirst({
+          where: and(
+            eq(schema.member.userId, userId),
+            eq(schema.member.organizationId, organizationId)
+          ),
+        })
+
+        if (existingMember && existingMember.role === 'player') {
+          await tx
+            .delete(schema.member)
+            .where(eq(schema.member.id, existingMember.id))
+        }
+      })
+
+      // Send removal email after successful transaction
+      // Log error but don't fail the operation if email fails
+      if (
+        existingMemberBefore &&
+        existingMemberBefore.role === 'player' &&
+        user &&
+        organization
+      ) {
+        try {
+          await sendOrganizationRemovalEmail({
+            user,
+            organization,
+            role: existingMemberBefore.role,
+          })
+        } catch (error) {
+          console.error('Error sending removal email:', error)
+        }
+      }
+    } else {
+      // No linked user, just delete the player
+      await db.delete(schema.players).where(eq(schema.players.id, id))
+    }
 
     return new Response(null, { status: 204 })
   } catch (error) {

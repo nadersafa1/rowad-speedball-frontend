@@ -7,6 +7,7 @@ import { sendPasswordResetEmail } from '@/actions/emails/send-password-reset-ema
 import { sendVerificationEmail } from '@/actions/emails/send-verification-email'
 import { sendOrganizationInvitationEmail } from '@/actions/emails/send-organization-invitation-email'
 import { sendOrganizationWelcomeEmail } from '@/actions/emails/send-organization-welcome-email'
+import { sendOrganizationRemovalEmail } from '@/actions/emails/send-organization-removal-email'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import {
@@ -202,6 +203,20 @@ export const auth = betterAuth({
           } catch (error) {
             // Log error but don't fail member creation
             console.error('Error sending welcome email:', error)
+          }
+        },
+        afterRemoveMember: async ({ member, user, organization }) => {
+          // Send removal email when a member is removed from an organization
+          // This hook is triggered when members are removed via better-auth API
+          try {
+            await sendOrganizationRemovalEmail({
+              user,
+              organization,
+              role: member.role,
+            })
+          } catch (error) {
+            // Log error but don't fail member removal
+            console.error('Error sending removal email:', error)
           }
         },
       },

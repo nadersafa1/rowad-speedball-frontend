@@ -1,5 +1,17 @@
 import { NextRequest } from 'next/server'
-import { and, asc, count, desc, eq, gte, ilike, lte, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  lte,
+  sql,
+  isNull,
+  or,
+} from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -41,6 +53,9 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit
     const conditions: any[] = []
+
+    // Get organization context for authorization
+    const { isSystemAdmin, organization } = await getOrganizationContext()
 
     if (playerId) {
       conditions.push(eq(schema.testResults.playerId, playerId))
@@ -87,6 +102,32 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Apply organization-based filtering based on user role:
+    // 1. System admin: sees all results (unless testId filter is applied)
+    // 2. Org members: see results from their org tests + public tests + tests without org
+    // 3. Non-authenticated users: see results from public tests + tests without org
+    if (!isSystemAdmin) {
+      if (organization?.id) {
+        // Org members: can see results from tests in their organization (public + private),
+        // all public tests, and all tests without organization
+        conditions.push(
+          or(
+            isNull(schema.tests.organizationId),
+            eq(schema.tests.organizationId, organization.id),
+            eq(schema.tests.visibility, 'public')
+          )
+        )
+      } else {
+        // Non-authenticated users: can only see results from public tests and tests without organization
+        conditions.push(
+          or(
+            isNull(schema.tests.organizationId),
+            eq(schema.tests.visibility, 'public')
+          )
+        )
+      }
+    }
+
     const combinedCondition =
       conditions.length > 0
         ? conditions.reduce((acc, condition) =>
@@ -106,6 +147,7 @@ export async function GET(request: NextRequest) {
         schema.players,
         eq(schema.testResults.playerId, schema.players.id)
       )
+      .leftJoin(schema.tests, eq(schema.testResults.testId, schema.tests.id))
 
     if (combinedCondition) {
       countQuery = countQuery.where(combinedCondition) as any
@@ -251,9 +293,20 @@ export async function POST(request: NextRequest) {
     return Response.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!context.isSystemAdmin) {
+  // Authorization: Only system admins, org admins, org owners, and org coaches can create results
+  // Additionally, org members (admin/owner/coach) must have an active organization
+  if (
+    (!context.isSystemAdmin &&
+      !context.isAdmin &&
+      !context.isOwner &&
+      !context.isCoach) ||
+    (!context.isSystemAdmin && !context.organization?.id)
+  ) {
     return Response.json(
-      { message: 'Forbidden: Admin access required' },
+      {
+        message:
+          'Only system admins, club admins, club owners, and club coaches can create test results',
+      },
       { status: 403 }
     )
   }
@@ -294,6 +347,21 @@ export async function POST(request: NextRequest) {
 
     if (testExists.length === 0) {
       return Response.json({ message: 'Test not found' }, { status: 404 })
+    }
+
+    const test = testExists[0]
+
+    // Organization ownership check: org members can only create results for tests from their own organization
+    if (!context.isSystemAdmin) {
+      if (!context.organization?.id || test.organizationId !== context.organization.id) {
+        return Response.json(
+          {
+            message:
+              'You can only create test results for tests from your own organization',
+          },
+          { status: 403 }
+        )
+      }
     }
 
     const result = await db
