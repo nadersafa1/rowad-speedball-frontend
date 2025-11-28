@@ -4,17 +4,21 @@ import PlayerForm from '@/components/players/player-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
-import { useAdminPermission } from '@/hooks/use-admin-permission'
-import { Plus, Users } from 'lucide-react'
+import { Plus, Volleyball } from 'lucide-react'
 import { useState } from 'react'
 import PlayersStats from './components/players-stats'
 import PlayersTable from './components/players-table'
 import { usePlayers } from './hooks/use-players'
 import { PlayersFilters } from './types'
 import { AgeGroup, Gender, Team } from './types/enums'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import Loading from '@/components/ui/loading'
 
 const PlayersPage = () => {
-  const { isAdmin } = useAdminPermission()
+  const { context, isLoading: isOrganizationContextLoading } =
+    useOrganizationContext()
+  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
+
   const [playerFormOpen, setPlayerFormOpen] = useState(false)
 
   // Local filter state
@@ -23,6 +27,7 @@ const PlayersPage = () => {
     gender: Gender.ALL,
     ageGroup: AgeGroup.ALL,
     team: Team.ALL,
+    organizationId: undefined,
     page: 1,
     limit: 25,
   })
@@ -36,6 +41,10 @@ const PlayersPage = () => {
     handlePageChange,
     refetch,
   } = usePlayers(filters)
+
+  if (isOrganizationContextLoading) {
+    return <Loading />
+  }
 
   if (error) {
     return (
@@ -56,18 +65,18 @@ const PlayersPage = () => {
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       {/* Header */}
       <PageHeader
-        icon={Users}
+        icon={Volleyball}
         title='Players'
         description='Browse and manage all registered players'
         actionDialog={
-          isAdmin
+          isSystemAdmin || isCoach || isAdmin || isOwner
             ? {
                 open: playerFormOpen,
                 onOpenChange: setPlayerFormOpen,
                 trigger: (
                   <Button className='gap-2 bg-rowad-600 hover:bg-rowad-700'>
                     <Plus className='h-4 w-4' />
-                    Add Player
+                    Create Player
                   </Button>
                 ),
                 content: (
@@ -109,6 +118,10 @@ const PlayersPage = () => {
             team={filters.team}
             onTeamChange={(team) => {
               setFilters({ ...filters, team, page: 1 })
+            }}
+            organizationId={filters.organizationId}
+            onOrganizationChange={(organizationId) => {
+              setFilters({ ...filters, organizationId, page: 1 })
             }}
             sortBy={filters.sortBy}
             sortOrder={filters.sortOrder}

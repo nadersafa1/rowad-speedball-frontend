@@ -1,5 +1,16 @@
 import { NextRequest } from 'next/server'
-import { and, asc, count, desc, eq, gte, ilike, lte, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  lte,
+  sql,
+  isNull,
+} from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -9,9 +20,14 @@ import {
   playersQuerySchema,
 } from '@/types/api/players.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
+import { validateUserNotLinked } from '@/lib/user-linking-helpers'
 
 export async function GET(request: NextRequest) {
+  // Get organization context (no auth required - players are public)
+  // Note: We still get context for potential future filtering, but all users see all players
+  const { isSystemAdmin: isSystemAdminResult } = await getOrganizationContext()
+
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
   const parseResult = playersQuerySchema.safeParse(queryParams)
@@ -27,14 +43,23 @@ export async function GET(request: NextRequest) {
       ageGroup,
       preferredHand,
       team,
+      organizationId,
       sortBy,
       sortOrder,
       page,
       limit,
+      unassigned,
     } = parseResult.data
 
     const offset = (page - 1) * limit
     const conditions: any[] = []
+
+    // Filter unassigned players (organizationId IS NULL)
+    if (unassigned) {
+      conditions.push(isNull(schema.players.organizationId))
+    }
+
+    // All users (including coaches) can view all players - no filtering by organization
 
     if (q) {
       conditions.push(ilike(schema.players.name, `%${q}%`))
@@ -51,6 +76,16 @@ export async function GET(request: NextRequest) {
     if (team && team !== 'all') {
       const isFirstTeam = team === 'first_team'
       conditions.push(eq(schema.players.isFirstTeam, isFirstTeam))
+    }
+
+    // Organization filter
+    if (organizationId !== undefined) {
+      if (organizationId === null) {
+        // Filter for players without organization (global players)
+        conditions.push(isNull(schema.players.organizationId))
+      } else {
+        conditions.push(eq(schema.players.organizationId, organizationId))
+      }
     }
 
     // AgeGroup filtering at database level
@@ -138,43 +173,102 @@ export async function GET(request: NextRequest) {
           )
         : undefined
 
-    let countQuery = db.select({ count: count() }).from(schema.players)
+    // Organization join is only needed for sorting by organizationId or displaying organization name
+    // Count query doesn't need join when filtering by organizationId
+    const needsOrganizationJoinForCount = sortBy === 'organizationId'
+    let countQuery = needsOrganizationJoinForCount
+      ? db
+          .select({ count: count() })
+          .from(schema.players)
+          .leftJoin(
+            schema.organization,
+            eq(schema.players.organizationId, schema.organization.id)
+          )
+      : db.select({ count: count() }).from(schema.players)
     if (combinedCondition) {
       countQuery = countQuery.where(combinedCondition) as any
     }
 
-    let dataQuery = db.select().from(schema.players)
+    // Join organization, select all player fields plus organization name
+    let dataQuery = db
+      .select({
+        player: schema.players,
+        organizationName: schema.organization.name,
+      })
+      .from(schema.players)
+      .leftJoin(
+        schema.organization,
+        eq(schema.players.organizationId, schema.organization.id)
+      )
     if (combinedCondition) {
       dataQuery = dataQuery.where(combinedCondition) as any
     }
 
     // Dynamic sorting
     if (sortBy) {
-      const sortField = schema.players[sortBy]
-      const order = sortOrder === 'asc' ? asc(sortField) : desc(sortField)
-      dataQuery = dataQuery.orderBy(order) as any
+      if (sortBy === 'organizationId') {
+        // Sort by organization name
+        const order =
+          sortOrder === 'asc'
+            ? asc(schema.organization.name)
+            : desc(schema.organization.name)
+        dataQuery = dataQuery.orderBy(order) as any
+      } else {
+        const sortField = schema.players[sortBy]
+        if (sortField) {
+          const order = sortOrder === 'asc' ? asc(sortField) : desc(sortField)
+          dataQuery = dataQuery.orderBy(order) as any
+        }
+      }
     } else {
       dataQuery = dataQuery.orderBy(desc(schema.players.createdAt)) as any
     }
 
     // Stats queries - use same filters but without pagination
-    const maleCountQuery = db
-      .select({ count: count() })
-      .from(schema.players)
-      .where(
-        combinedCondition
-          ? and(combinedCondition, eq(schema.players.gender, 'male'))
-          : eq(schema.players.gender, 'male')
-      )
+    // If sorting by organizationId, join organization table
+    const maleCountQuery = needsOrganizationJoinForCount
+      ? db
+          .select({ count: count() })
+          .from(schema.players)
+          .leftJoin(
+            schema.organization,
+            eq(schema.players.organizationId, schema.organization.id)
+          )
+          .where(
+            combinedCondition
+              ? and(combinedCondition, eq(schema.players.gender, 'male'))
+              : eq(schema.players.gender, 'male')
+          )
+      : db
+          .select({ count: count() })
+          .from(schema.players)
+          .where(
+            combinedCondition
+              ? and(combinedCondition, eq(schema.players.gender, 'male'))
+              : eq(schema.players.gender, 'male')
+          )
 
-    const femaleCountQuery = db
-      .select({ count: count() })
-      .from(schema.players)
-      .where(
-        combinedCondition
-          ? and(combinedCondition, eq(schema.players.gender, 'female'))
-          : eq(schema.players.gender, 'female')
-      )
+    const femaleCountQuery = needsOrganizationJoinForCount
+      ? db
+          .select({ count: count() })
+          .from(schema.players)
+          .leftJoin(
+            schema.organization,
+            eq(schema.players.organizationId, schema.organization.id)
+          )
+          .where(
+            combinedCondition
+              ? and(combinedCondition, eq(schema.players.gender, 'female'))
+              : eq(schema.players.gender, 'female')
+          )
+      : db
+          .select({ count: count() })
+          .from(schema.players)
+          .where(
+            combinedCondition
+              ? and(combinedCondition, eq(schema.players.gender, 'female'))
+              : eq(schema.players.gender, 'female')
+          )
 
     // Get all filtered players for age groups calculation (without pagination)
     let allFilteredPlayersQuery = db.select().from(schema.players)
@@ -208,10 +302,11 @@ export async function GET(request: NextRequest) {
     )
     const ageGroupsCount = ageGroups.size
 
-    const playersWithAge = dataResult.map((player) => ({
-      ...player,
-      age: calculateAge(player.dateOfBirth),
-      ageGroup: getAgeGroup(player.dateOfBirth),
+    const playersWithAge = (dataResult as any[]).map((row) => ({
+      ...row.player,
+      organizationName: row.organizationName ?? null,
+      age: calculateAge(row.player.dateOfBirth),
+      ageGroup: getAgeGroup(row.player.dateOfBirth),
     }))
 
     const paginatedResponse = createPaginatedResponse(
@@ -236,13 +331,34 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const adminResult = await requireAdmin(request)
+  // Get organization context for authorization
+  const {
+    isSystemAdmin,
+    isAdmin,
+    isOwner,
+    isCoach,
+    organization,
+    isAuthenticated,
+  } = await getOrganizationContext()
+
+  // Require authentication
+  if (!isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Authorization: Only system admins, org admins, org owners, and org coaches can create players
+  // Additionally, org members (admin/owner/coach) must have an active organization
   if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
+    (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
+    (!isSystemAdmin && !organization?.id)
   ) {
-    return adminResult.response
+    return Response.json(
+      {
+        message:
+          'Only system admins, club admins, club owners, and club coaches can create players',
+      },
+      { status: 403 }
+    )
   }
 
   try {
@@ -253,8 +369,47 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { name, dateOfBirth, gender, preferredHand, isFirstTeam } =
-      parseResult.data
+    const {
+      name,
+      dateOfBirth,
+      gender,
+      preferredHand,
+      isFirstTeam,
+      userId,
+      organizationId: providedOrgId,
+    } = parseResult.data
+
+    // Validate user is not already linked
+    if (userId) {
+      const validationError = await validateUserNotLinked(userId)
+      if (validationError) {
+        return Response.json(
+          { message: validationError.error },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Determine final organizationId:
+    // - System admins can specify any organizationId or leave it null (for global players)
+    // - Org members (admin/owner/coach) are forced to use their active organization
+    let finalOrganizationId = providedOrgId
+    if (!isSystemAdmin) {
+      finalOrganizationId = organization?.id || null
+    } else if (providedOrgId !== undefined && providedOrgId !== null) {
+      // System admin: validate referenced organization exists if being set
+      const orgCheck = await db
+        .select()
+        .from(schema.organization)
+        .where(eq(schema.organization.id, providedOrgId))
+        .limit(1)
+      if (orgCheck.length === 0) {
+        return Response.json(
+          { message: 'Organization not found' },
+          { status: 404 }
+        )
+      }
+    }
 
     const result = await db
       .insert(schema.players)
@@ -264,6 +419,8 @@ export async function POST(request: NextRequest) {
         gender,
         preferredHand,
         isFirstTeam,
+        userId: userId || null,
+        organizationId: finalOrganizationId,
       })
       .returning()
 

@@ -4,19 +4,23 @@ import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { setsParamsSchema, setsUpdateSchema } from '@/types/api/sets.schemas'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  const context = await getOrganizationContext()
+
+  if (!context.isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!context.isSystemAdmin) {
+    return Response.json(
+      { message: 'Forbidden: Admin access required' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -94,13 +98,17 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  const context = await getOrganizationContext()
+
+  if (!context.isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!context.isSystemAdmin) {
+    return Response.json(
+      { message: 'Forbidden: Admin access required' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -153,10 +161,7 @@ export async function DELETE(
     // Delete set
     await db.delete(schema.sets).where(eq(schema.sets.id, id))
 
-    return Response.json(
-      { message: 'Set deleted successfully' },
-      { status: 200 }
-    )
+    return new Response(null, { status: 204 })
   } catch (error) {
     console.error('Error deleting set:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

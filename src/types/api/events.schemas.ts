@@ -11,6 +11,18 @@ export const eventsQuerySchema = z
     eventType: z.enum(['singles', 'doubles']).optional(),
     gender: z.enum(['male', 'female', 'mixed']).optional(),
     visibility: z.enum(['public', 'private']).optional(),
+    organizationId: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (val === 'null') return null
+        return val
+      })
+      .refine(
+        (val) =>
+          val === undefined || val === null || z.uuid().safeParse(val).success,
+        'Invalid organization ID format'
+      ),
     sortBy: z
       .enum([
         'name',
@@ -79,6 +91,10 @@ export const eventsCreateSchema = z
       ),
     pointsPerWin: z.number().int().min(0).optional().default(3),
     pointsPerLoss: z.number().int().min(0).optional().default(0),
+    organizationId: z
+      .uuid('Invalid organization ID format')
+      .nullable()
+      .optional(),
   })
   .strict()
 
@@ -126,6 +142,10 @@ export const eventsUpdateSchema = z
       .optional(),
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
+    organizationId: z
+      .uuid('Invalid organization ID format')
+      .nullable()
+      .optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,

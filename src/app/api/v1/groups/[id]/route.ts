@@ -4,19 +4,23 @@ import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { groupsParamsSchema } from '@/types/api/groups.schemas'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  const context = await getOrganizationContext()
+
+  if (!context.isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!context.isSystemAdmin) {
+    return Response.json(
+      { message: 'Forbidden: Admin access required' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -69,10 +73,7 @@ export async function DELETE(
       })
       .where(eq(schema.events.id, eventId))
 
-    return Response.json(
-      { message: 'Group deleted successfully' },
-      { status: 200 }
-    )
+    return new Response(null, { status: 204 })
   } catch (error) {
     console.error('Error deleting group:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

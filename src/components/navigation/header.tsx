@@ -1,62 +1,69 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { Menu, X, Users, Trophy, BarChart3, Home, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { authClient } from "@/lib/auth-client";
+import { Button } from '@/components/ui/button'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { authClient } from '@/lib/auth-client'
+import { cn } from '@/lib/utils'
+import {
+  Calendar,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  Table2,
+  Trophy,
+  UserCheck,
+  Volleyball,
+  X,
+} from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Players", href: "/players", icon: Users },
-  { name: "Tests", href: "/tests", icon: Trophy },
-  { name: "Events", href: "/events", icon: Trophy },
-];
+  // { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Players', href: '/players', icon: Volleyball },
+  { name: 'Tests', href: '/tests', icon: Table2 },
+  { name: 'Events', href: '/events', icon: Trophy },
+]
+
+const adminNavigation = [
+  { name: 'Coaches', href: '/coaches', icon: UserCheck },
+  { name: 'Sessions', href: '/sessions', icon: Calendar },
+  // { name: 'Clubs', href: '/clubs', icon: Building2 },
+  { name: 'Admin', href: '/admin', icon: ShieldCheck },
+]
 
 const Header = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const pathname = usePathname();
-  const { data: session } = authClient.useSession();
-  const user = session?.user || null;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      authClient.admin
-        .hasPermission({ permission: { user: ["list"] } })
-        .then(({ data }) => {
-          setIsAdmin(data?.success ?? false);
-        });
-    } else {
-      setIsAdmin(false);
-    }
-  }, [user]);
+  const { context } = useOrganizationContext()
+
+  const { isSystemAdmin, isAdmin, isOwner, isCoach, isAuthenticated } = context
+  const pathname = usePathname()
 
   const logout = async () => {
-    await authClient.signOut();
-  };
+    await authClient.signOut()
+  }
 
   return (
-    <header className="bg-white shadow-sm border-b">
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
-        <div className="flex w-full items-center justify-between py-4">
+    <header className='bg-white shadow-sm border-b'>
+      <nav className='container mx-auto px-4 sm:px-6 lg:px-8' aria-label='Top'>
+        <div className='flex w-full items-center justify-between py-4'>
           {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center">
-              <Image src="/logo.png" alt="Rowad Club" width={60} height={60} />
-              <div className="hidden sm:block">
+          <div className='flex items-center'>
+            <Link href='/' className='flex items-center'>
+              <Image src='/logo.png' alt='Rowad Club' width={60} height={60} />
+              <div className='hidden sm:block'>
                 <Image
-                  src="/logo-text.png"
-                  alt="Rowad Speedball Team"
+                  src='/logo-text.png'
+                  alt='Rowad Speedball Team'
                   width={120}
                   height={20}
                 />
               </div>
-              <div className="sm:hidden">
-                <span className="text-xl font-bold text-gray-900">
+              <div className='sm:hidden'>
+                <span className='text-xl font-bold text-gray-900'>
                   SpeedballHub
                 </span>
               </div>
@@ -64,55 +71,78 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex md:space-x-8">
+          <div className='hidden md:flex md:space-x-8'>
             {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const Icon = item.icon
+              const isActive = pathname === item.href
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                     isActive
-                      ? "bg-rowad-100 text-rowad-700"
-                      : "text-gray-600 hover:text-rowad-600 hover:bg-gray-50"
+                      ? 'bg-rowad-100 text-rowad-700'
+                      : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className='h-4 w-4' />
                   <span>{item.name}</span>
                 </Link>
-              );
+              )
             })}
+            {(isSystemAdmin || isAdmin || isOwner || isCoach) &&
+              adminNavigation.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+
+                if (
+                  item.name === 'Coaches' &&
+                  !isSystemAdmin &&
+                  !isAdmin &&
+                  !isOwner
+                ) {
+                  return null
+                }
+                if (item.name === 'Admin' && !isSystemAdmin) {
+                  return null
+                }
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-rowad-100 text-rowad-700'
+                        : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
+                    )}
+                  >
+                    <Icon className='h-4 w-4' />
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
           </div>
 
           {/* Admin Actions */}
-          <div className="hidden md:flex md:items-center md:space-x-4">
-            {user ? (
+          <div className='hidden md:flex md:items-center md:space-x-4'>
+            {isAuthenticated ? (
               <>
-                <span className="text-sm text-gray-600">
-                  Welcome, {user.name}
-                </span>
-                {isAdmin && (
-                  <Link href="/admin">
-                    <Button size="sm" className="bg-rowad-600 hover:bg-rowad-700">
-                      Admin Dashboard
-                    </Button>
-                  </Link>
-                )}
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant='outline'
+                  size='sm'
                   onClick={logout}
-                  className="gap-2"
+                  className='gap-2'
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className='h-4 w-4' />
                   Logout
                 </Button>
               </>
             ) : (
-              <Link href="/auth/login">
-                <Button variant="outline" size="sm">
+              <Link href='/auth/login'>
+                <Button variant='outline' size='sm'>
                   Login
                 </Button>
               </Link>
@@ -120,17 +150,17 @@ const Header = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className='md:hidden'>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2"
+              className='p-2'
             >
               {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
+                <X className='h-6 w-6' />
               ) : (
-                <Menu className="h-6 w-6" />
+                <Menu className='h-6 w-6' />
               )}
             </Button>
           </div>
@@ -138,62 +168,84 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t pt-4 pb-4">
-            <div className="space-y-1">
+          <div className='md:hidden border-t pt-4 pb-4'>
+            <div className='space-y-1'>
               {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const Icon = item.icon
+                const isActive = pathname === item.href
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors",
+                      'flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors',
                       isActive
-                        ? "bg-rowad-100 text-rowad-700"
-                        : "text-gray-600 hover:text-rowad-600 hover:bg-gray-50"
+                        ? 'bg-rowad-100 text-rowad-700'
+                        : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
                     )}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className='h-5 w-5' />
                     <span>{item.name}</span>
                   </Link>
-                );
+                )
               })}
-            </div>
-            <div className="mt-4 pt-4 border-t space-y-2">
-              {user ? (
-                <>
-                  <span className="text-sm text-gray-600 px-3">
-                    Welcome, {user.email}
-                  </span>
-                  {isAdmin && (
-                    <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                      <Button
-                        size="sm"
-                        className="w-full bg-rowad-600 hover:bg-rowad-700"
-                      >
-                        Admin Dashboard
-                      </Button>
+              {(isSystemAdmin || isAdmin || isOwner || isCoach) &&
+                adminNavigation.map((item) => {
+                  const Icon = item.icon
+                  const isActive = pathname === item.href
+
+                  if (
+                    item.name === 'Coaches' &&
+                    !isSystemAdmin &&
+                    !isAdmin &&
+                    !isOwner
+                  ) {
+                    return null
+                  }
+                  if (item.name === 'Admin' && !isSystemAdmin) {
+                    return null
+                  }
+
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors',
+                        isActive
+                          ? 'bg-rowad-100 text-rowad-700'
+                          : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
+                      )}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Icon className='h-5 w-5' />
+                      <span>{item.name}</span>
                     </Link>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full gap-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </Button>
-                </>
+                  )
+                })}
+            </div>
+            <div className='mt-4 pt-4 border-t space-y-2'>
+              {isAuthenticated ? (
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => {
+                    logout()
+                    setMobileMenuOpen(false)
+                  }}
+                  className='w-full gap-2'
+                >
+                  <LogOut className='h-4 w-4' />
+                  Logout
+                </Button>
               ) : (
-                <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" size="sm" className="w-full">
-                   Login
+                <Link
+                  href='/auth/login'
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button variant='outline' size='sm' className='w-full'>
+                    Login
                   </Button>
                 </Link>
               )}
@@ -202,7 +254,7 @@ const Header = () => {
         )}
       </nav>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

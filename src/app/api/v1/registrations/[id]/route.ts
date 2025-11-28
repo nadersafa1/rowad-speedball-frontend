@@ -7,19 +7,23 @@ import {
   registrationsParamsSchema,
   registrationsUpdateSchema,
 } from '@/types/api/registrations.schemas'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  const context = await getOrganizationContext()
+
+  if (!context.isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!context.isSystemAdmin) {
+    return Response.json(
+      { message: 'Forbidden: Admin access required' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -73,13 +77,17 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  const context = await getOrganizationContext()
+
+  if (!context.isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!context.isSystemAdmin) {
+    return Response.json(
+      { message: 'Forbidden: Admin access required' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -114,10 +122,7 @@ export async function DELETE(
     // When a registration is deleted, all related matches and their sets are automatically deleted
     await db.delete(schema.registrations).where(eq(schema.registrations.id, id))
 
-    return Response.json(
-      { message: 'Registration deleted successfully' },
-      { status: 200 }
-    )
+    return new Response(null, { status: 204 })
   } catch (error) {
     console.error('Error deleting registration:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

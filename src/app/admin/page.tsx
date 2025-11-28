@@ -1,90 +1,68 @@
-import { ArrowLeft, Users } from "lucide-react";
-import { headers } from "next/headers";
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import { Building2, Users, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { auth } from "@/lib/auth";
-import { UserRow } from "./_components/user-row";
+} from '@/components/ui/card'
 
-const AdminPage = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    return redirect("/auth/login");
-  }
-
-  const hasPermission = await auth.api.userHasPermission({
-    headers: await headers(),
-    body: { permission: { user: ["list"] } },
-  });
-
-  if (!hasPermission.success) {
-    return redirect("/");
-  }
-
-  const users = await auth.api.listUsers({
-    headers: await headers(),
-    query: {
-      limit: 100,
-      sortBy: "createdAt",
-      sortDirection: "desc",
-    },
-  });
-
+const AdminPage = () => {
   return (
-    <div className="mx-auto container my-6 px-4">
-      <Link href="/" className="inline-flex items-center mb-6">
-        <ArrowLeft className="size-4 mr-2" />
-        Back to Home
-      </Link>
+    <div className='mx-auto container my-6 px-4'>
+      <div className='mb-8'>
+        <h1 className='text-3xl font-bold tracking-tight'>Admin Dashboard</h1>
+        <p className='text-muted-foreground mt-2'>
+          Manage clubs and users across the platform
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Users ({users.total})
-          </CardTitle>
-          <CardDescription>
-            Manage user accounts, roles, and permissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.users.map((user) => (
-                  <UserRow key={user.id} selfId={session.user.id} user={user} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-2 items-stretch'>
+        <Link href='/admin/clubs' className='group h-full block'>
+          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
+            <CardHeader className='p-4 flex-1 flex items-center'>
+              <div className='flex items-center justify-between w-full'>
+                <div className='flex items-center gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
+                    <Building2 className='h-6 w-6 text-primary' />
+                  </div>
+                  <div>
+                    <CardTitle>Clubs</CardTitle>
+                    <CardDescription>
+                      Manage clubs and assign admins/coaches
+                    </CardDescription>
+                  </div>
+                </div>
+                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
+
+        <Link href='/admin/users' className='group h-full block'>
+          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
+            <CardHeader className='p-4 flex-1 flex items-center'>
+              <div className='flex items-center justify-between w-full'>
+                <div className='flex items-center gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
+                    <Users className='h-6 w-6 text-primary' />
+                  </div>
+                  <div>
+                    <CardTitle>Users</CardTitle>
+                    <CardDescription>
+                      Manage user accounts, roles, and permissions
+                    </CardDescription>
+                  </div>
+                </div>
+                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default AdminPage;
+export default AdminPage

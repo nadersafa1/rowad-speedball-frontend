@@ -1,4 +1,7 @@
 // API Client - Single responsibility: HTTP communication with backend
+import type { PaginatedResponse } from '@/types/api/pagination'
+import type { OrganizationContext } from '@/lib/organization-helpers'
+
 export class ApiClient {
   private baseUrl: string
 
@@ -67,10 +70,13 @@ export class ApiClient {
     ageGroup?: string
     preferredHand?: string
     team?: string
+    club?: string | null
+    organizationId?: string | null
     sortBy?: string
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
+    unassigned?: string | boolean
   }) {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
@@ -79,10 +85,30 @@ export class ApiClient {
     if (params?.preferredHand)
       searchParams.set('preferredHand', params.preferredHand)
     if (params?.team) searchParams.set('team', params.team)
+    // Support both club and organizationId, prefer organizationId
+    const orgId =
+      params?.organizationId !== undefined
+        ? params.organizationId
+        : params?.club
+    if (orgId !== undefined) {
+      if (orgId === null) {
+        searchParams.set('organizationId', 'null')
+      } else if (orgId) {
+        searchParams.set('organizationId', orgId)
+      }
+    }
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())
     if (params?.limit) searchParams.set('limit', params.limit.toString())
+    if (params?.unassigned !== undefined) {
+      searchParams.set(
+        'unassigned',
+        typeof params.unassigned === 'boolean'
+          ? params.unassigned.toString()
+          : params.unassigned
+      )
+    }
 
     const query = searchParams.toString()
     return this.request(`/players${query ? `?${query}` : ''}`)
@@ -133,6 +159,9 @@ export class ApiClient {
     recoveryTime?: number
     dateFrom?: string
     dateTo?: string
+    organizationId?: string | null
+    sortBy?: 'name' | 'dateConducted' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
   }) {
@@ -144,6 +173,15 @@ export class ApiClient {
       searchParams.set('recoveryTime', params.recoveryTime.toString())
     if (params?.dateFrom) searchParams.set('dateFrom', params.dateFrom)
     if (params?.dateTo) searchParams.set('dateTo', params.dateTo)
+    if (params?.organizationId !== undefined) {
+      if (params.organizationId === null) {
+        searchParams.set('organizationId', 'null')
+      } else {
+        searchParams.set('organizationId', params.organizationId)
+      }
+    }
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
@@ -237,6 +275,18 @@ export class ApiClient {
     eventType?: 'singles' | 'doubles'
     gender?: 'male' | 'female' | 'mixed'
     visibility?: 'public' | 'private'
+    organizationId?: string | null
+    sortBy?:
+      | 'name'
+      | 'eventType'
+      | 'gender'
+      | 'completed'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'registrationStartDate'
+      | 'registrationsCount'
+      | 'lastMatchPlayedDate'
+    sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
   }) {
@@ -245,6 +295,15 @@ export class ApiClient {
     if (params?.eventType) searchParams.set('eventType', params.eventType)
     if (params?.gender) searchParams.set('gender', params.gender)
     if (params?.visibility) searchParams.set('visibility', params.visibility)
+    if (params?.organizationId !== undefined) {
+      if (params.organizationId === null) {
+        searchParams.set('organizationId', 'null')
+      } else {
+        searchParams.set('organizationId', params.organizationId)
+      }
+    }
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
@@ -388,6 +447,127 @@ export class ApiClient {
     })
   }
 
+  // Coaches methods
+  async getCoaches(params?: {
+    q?: string
+    gender?: string
+    sortBy?: string
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+    unassigned?: string | boolean
+    organizationId?: string | null
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.gender) searchParams.set('gender', params.gender)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+    if (params?.unassigned !== undefined) {
+      searchParams.set(
+        'unassigned',
+        typeof params.unassigned === 'boolean'
+          ? params.unassigned.toString()
+          : params.unassigned
+      )
+    }
+    if (params?.organizationId !== undefined) {
+      searchParams.set(
+        'organizationId',
+        params.organizationId === null ? 'null' : params.organizationId
+      )
+    }
+
+    const query = searchParams.toString()
+    return this.request(`/coaches${query ? `?${query}` : ''}`)
+  }
+
+  async getCoach(id: string) {
+    return this.request(`/coaches/${id}`)
+  }
+
+  async createCoach(data: any) {
+    return this.request('/coaches', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateCoach(id: string, data: any) {
+    return this.request(`/coaches/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteCoach(id: string) {
+    return this.request(`/coaches/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Training Sessions methods
+  async getTrainingSessions(params?: {
+    q?: string
+    intensity?: string
+    type?: string
+    dateFrom?: string
+    dateTo?: string
+    ageGroup?: string
+    organizationId?: string | null
+    sortBy?: string
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.intensity) searchParams.set('intensity', params.intensity)
+    if (params?.type) searchParams.set('type', params.type)
+    if (params?.dateFrom) searchParams.set('dateFrom', params.dateFrom)
+    if (params?.dateTo) searchParams.set('dateTo', params.dateTo)
+    if (params?.ageGroup) searchParams.set('ageGroup', params.ageGroup)
+    if (params?.organizationId !== undefined) {
+      searchParams.set(
+        'organizationId',
+        params.organizationId === null ? 'null' : params.organizationId
+      )
+    }
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request(`/training-sessions${query ? `?${query}` : ''}`)
+  }
+
+  async getTrainingSession(id: string) {
+    return this.request(`/training-sessions/${id}`)
+  }
+
+  async createTrainingSession(data: any) {
+    return this.request('/training-sessions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateTrainingSession(id: string, data: any) {
+    return this.request(`/training-sessions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteTrainingSession(id: string) {
+    return this.request(`/training-sessions/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
   // Generic methods for convenience
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint)
@@ -410,6 +590,81 @@ export class ApiClient {
   async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'DELETE',
+    })
+  }
+
+  // Users API
+  async getUsers(params?: {
+    q?: string
+    role?: 'admin' | 'user'
+    sortBy?: 'name' | 'email' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+    unassigned?: string | boolean
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.role) searchParams.set('role', params.role)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+    if (params?.unassigned !== undefined) {
+      searchParams.set(
+        'unassigned',
+        typeof params.unassigned === 'boolean'
+          ? params.unassigned.toString()
+          : params.unassigned
+      )
+    }
+
+    return this.request<PaginatedResponse<any>>(
+      `/users?${searchParams.toString()}`
+    )
+  }
+
+  async getMyMemberships(): Promise<
+    Array<{
+      id: string
+      userId: string
+      organizationId: string
+      role: string
+      createdAt: Date
+      organization: {
+        id: string
+        name: string
+        slug: string
+      }
+    }>
+  > {
+    return this.request('/users/me/memberships')
+  }
+
+  async getMyOrganizationContext(): Promise<OrganizationContext> {
+    return this.request<OrganizationContext>('/users/me/organization-context')
+  }
+
+  // Organizations API
+  async getOrganizations(): Promise<
+    Array<{ id: string; name: string; slug: string }>
+  > {
+    return this.request<Array<{ id: string; name: string; slug: string }>>(
+      '/organizations'
+    )
+  }
+
+  async createOrganization(data: {
+    name: string
+    slug: string
+    members?: Array<{
+      userId: string
+      role: 'owner' | 'admin' | 'coach' | 'member' | 'player'
+    }>
+  }): Promise<any> {
+    return this.request<any>('/organizations', {
+      method: 'POST',
+      body: JSON.stringify(data),
     })
   }
 }

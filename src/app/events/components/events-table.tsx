@@ -1,24 +1,18 @@
-"use client";
+'use client'
 
-import * as React from "react";
-import { Table } from "@/components/ui/table";
-import { Event } from "@/types";
-import { useAdminPermission } from "@/hooks/use-admin-permission";
-import { createColumns } from "./events-table-columns";
-import { useEventsTable } from "./events-table-hooks";
-import { useEventsTableHandlers } from "./events-table-handlers";
-import { EventsTableProps } from "./events-table-types";
-import { EventsTableControls } from "./events-table-controls";
-import EventForm from "@/components/events/event-form";
-import { Dialog } from "@/components/ui/dialog";
-import { flexRender } from "@tanstack/react-table";
-import {
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
+import * as React from 'react'
+import { Table } from '@/components/ui/table'
+import { Event } from '@/types'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { createColumns } from './events-table-columns'
+import { useEventsTable } from './events-table-hooks'
+import { useEventsTableHandlers } from './events-table-handlers'
+import { EventsTableProps } from './events-table-types'
+import { EventsTableControls } from './events-table-controls'
+import { EventsTablePagination } from './events-table-pagination'
+import { EventsTableHeader } from './events-table-header'
+import { EventsTableBody } from './events-table-body'
+import { EventsTableEditDialog } from './events-table-edit-dialog'
 
 const EventsTable = ({
   events,
@@ -26,18 +20,27 @@ const EventsTable = ({
   onPageChange,
   onPageSizeChange,
   onSearchChange,
-  searchValue = "",
+  searchValue = '',
   eventType,
   gender,
+  organizationId,
   onEventTypeChange,
   onGenderChange,
+  onOrganizationChange,
   sortBy,
   sortOrder,
   onSortingChange,
   isLoading = false,
   onRefetch,
 }: EventsTableProps) => {
-  const { isAdmin } = useAdminPermission();
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
+
+  // Calculate permissions based on backend authorization logic:
+  // Can Edit: System Admin OR Org Admin OR Org Owner OR Org Coach
+  // Can Delete: System Admin OR Org Admin OR Org Owner (coaches excluded)
+  const canEdit = isSystemAdmin || isAdmin || isOwner || isCoach
+  const canDelete = isSystemAdmin || isAdmin || isOwner
 
   const {
     editEvent,
@@ -53,119 +56,75 @@ const EventsTable = ({
     onSortingChange,
     sortBy,
     sortOrder,
-  });
+  })
 
   const columns = React.useMemo(
     () =>
       createColumns(
-        isAdmin,
+        canEdit,
+        canDelete,
         handleEdit,
         handleDelete,
         sortBy,
         sortOrder,
         handleSort
       ),
-    [isAdmin, handleEdit, handleDelete, sortBy, sortOrder, handleSort]
-  );
+    [canEdit, canDelete, handleEdit, handleDelete, sortBy, sortOrder, handleSort]
+  )
 
   const { table } = useEventsTable({
     events,
     columns,
     totalPages: pagination.totalPages,
-  });
+  })
 
   const handleCancel = () => {
-    setEditDialogOpen(false);
-    setEditEvent(null);
-  };
+    setEditDialogOpen(false)
+    setEditEvent(null)
+  }
 
   return (
-    <div className="w-full space-y-4">
+    <div className='w-full space-y-4'>
       <EventsTableControls
         table={table}
         searchValue={searchValue}
         onSearchChange={onSearchChange}
         eventType={eventType}
         gender={gender}
+        organizationId={organizationId}
+        isSystemAdmin={isSystemAdmin}
         onEventTypeChange={onEventTypeChange}
         onGenderChange={onGenderChange}
+        onOrganizationChange={onOrganizationChange}
       />
-      <div className="rounded-md border overflow-x-auto">
+      <div className='rounded-md border overflow-x-auto'>
         <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap px-2 sm:px-4">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center px-2 sm:px-4">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : !table.getRowModel().rows?.length ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-32 text-center px-2 sm:px-4">
-                  <div className="flex flex-col items-center justify-center gap-2 py-4">
-                    <p className="text-lg font-medium text-muted-foreground">
-                      No events found
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {searchValue
-                        ? "Try adjusting your search terms or filters."
-                        : "No events match the current filters."}
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-2 sm:px-4 whitespace-nowrap">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
+          <EventsTableHeader table={table} />
+          <EventsTableBody
+            table={table}
+            columnsCount={columns.length}
+            isLoading={isLoading}
+            searchQuery={searchValue}
+          />
         </Table>
       </div>
 
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        {editEvent && (
-          <EventForm
-            event={editEvent}
-            onSuccess={handleEditSuccess}
-            onCancel={handleCancel}
-            hasRegistrations={(editEvent.registrations?.length || 0) > 0}
-            hasPlayedSets={
-              editEvent.matches?.some((m) =>
-                m.sets?.some((s) => s.played)
-              ) || false
-            }
-          />
-        )}
-      </Dialog>
+      <EventsTablePagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        isLoading={isLoading}
+      />
+
+      <EventsTableEditDialog
+        event={editEvent}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={handleEditSuccess}
+        onCancel={handleCancel}
+      />
     </div>
-  );
-};
+  )
+}
 
-export default EventsTable;
-
+export default EventsTable

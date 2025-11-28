@@ -6,8 +6,6 @@ import {
   EventTypeCell,
   GenderCell,
   CompletedCell,
-  DateRangeCell,
-  EventDatesCell,
   RegistrationsCountCell,
   LastMatchPlayedDateCell,
 } from "./events-table-cell-renderers";
@@ -79,19 +77,14 @@ export const createBaseColumns = (
     ),
   },
   {
-    id: "registrationDates",
-    header: () => <div>Registration Dates</div>,
+    accessorKey: "organizationName",
+    id: "organizationName",
+    header: () => <div>Club</div>,
     cell: ({ row }) => (
-      <DateRangeCell
-        startDate={row.original.registrationStartDate}
-        endDate={row.original.registrationEndDate}
-      />
+      <span className="text-sm">
+        {row.getValue("organizationName") || "—"}
+      </span>
     ),
-  },
-  {
-    id: "eventDates",
-    header: () => <div>Event Dates</div>,
-    cell: ({ row }) => <EventDatesCell dates={row.original.eventDates} />,
   },
   {
     accessorKey: "bestOf",

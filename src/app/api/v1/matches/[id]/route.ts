@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -7,13 +7,14 @@ import {
   matchesParamsSchema,
   matchesUpdateSchema,
 } from '@/types/api/matches.schemas'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateMatchCompletion } from '@/lib/validations/match-validation'
 import {
   calculateMatchPoints,
   calculateSetPoints,
   updateRegistrationStandings,
 } from '@/lib/utils/points-calculation'
+import { updateEventCompletedStatus } from '@/lib/event-helpers'
 
 export async function GET(
   request: NextRequest,
@@ -148,13 +149,17 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  const context = await getOrganizationContext()
+
+  if (!context.isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!context.isSystemAdmin) {
+    return Response.json(
+      { message: 'Forbidden: Admin access required' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -286,7 +291,7 @@ export async function PATCH(
         setResults
       )
 
-      // Check if group is completed (all matches played)
+      // Update group completed status if match belongs to a group
       if (match.groupId) {
         const groupMatches = await db
           .select()
@@ -295,51 +300,15 @@ export async function PATCH(
 
         const allMatchesPlayed = groupMatches.every((m) => m.played)
 
-        if (allMatchesPlayed) {
-          // Update group completed flag
-          await db
-            .update(schema.groups)
-            .set({ completed: true, updatedAt: new Date() })
-            .where(eq(schema.groups.id, match.groupId))
-
-          // Check if event is completed (all groups completed)
-          const eventGroups = await db
-            .select()
-            .from(schema.groups)
-            .where(eq(schema.groups.eventId, match.eventId))
-
-          const allGroupsCompleted = eventGroups.every((g) => g.completed)
-
-          if (allGroupsCompleted && eventGroups.length > 0) {
-            // Update event completed flag
-            await db
-              .update(schema.events)
-              .set({ completed: true, updatedAt: new Date() })
-              .where(eq(schema.events.id, match.eventId))
-          }
-        }
-      } else {
-        // Single group mode - check if all matches in event are played
-        const eventMatches = await db
-          .select()
-          .from(schema.matches)
-          .where(
-            and(
-              eq(schema.matches.eventId, match.eventId),
-              isNull(schema.matches.groupId)
-            )
-          )
-
-        const allMatchesPlayed = eventMatches.every((m) => m.played)
-
-        if (allMatchesPlayed && eventMatches.length > 0) {
-          // Update event completed flag
-          await db
-            .update(schema.events)
-            .set({ completed: true, updatedAt: new Date() })
-            .where(eq(schema.events.id, match.eventId))
-        }
+        // Update group completed flag
+        await db
+          .update(schema.groups)
+          .set({ completed: allMatchesPlayed, updatedAt: new Date() })
+          .where(eq(schema.groups.id, match.groupId))
       }
+
+      // Always recalculate event completion status based on all matches
+      await updateEventCompletedStatus(match.eventId)
 
       return Response.json(updatedMatch[0])
     } else if (updateData.played === false) {
@@ -354,7 +323,7 @@ export async function PATCH(
         .where(eq(schema.matches.id, id))
         .returning()
 
-      // Recalculate group and event completion when match is unmarked
+      // Update group completed status if match belongs to a group
       if (match.groupId) {
         const groupMatches = await db
           .select()
@@ -371,44 +340,10 @@ export async function PATCH(
             updatedAt: new Date(),
           })
           .where(eq(schema.groups.id, match.groupId))
-
-        // Recalculate event completion
-        const eventGroups = await db
-          .select()
-          .from(schema.groups)
-          .where(eq(schema.groups.eventId, match.eventId))
-
-        const allGroupsCompleted = eventGroups.every((g) => g.completed)
-
-        await db
-          .update(schema.events)
-          .set({
-            completed: allGroupsCompleted && eventGroups.length > 0,
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.events.id, match.eventId))
-      } else {
-        // Single group mode
-        const eventMatches = await db
-          .select()
-          .from(schema.matches)
-          .where(
-            and(
-              eq(schema.matches.eventId, match.eventId),
-              isNull(schema.matches.groupId)
-            )
-          )
-
-        const allMatchesPlayed = eventMatches.every((m) => m.played)
-
-        await db
-          .update(schema.events)
-          .set({
-            completed: allMatchesPlayed && eventMatches.length > 0,
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.events.id, match.eventId))
       }
+
+      // Always recalculate event completion status based on all matches
+      await updateEventCompletedStatus(match.eventId)
 
       return Response.json(updatedMatch[0])
     } else {

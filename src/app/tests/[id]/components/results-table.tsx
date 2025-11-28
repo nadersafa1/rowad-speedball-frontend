@@ -1,24 +1,24 @@
-"use client";
+'use client'
 
-import * as React from "react";
-import { Table } from "@/components/ui/table";
-import { flexRender } from "@tanstack/react-table";
+import * as React from 'react'
+import { Table } from '@/components/ui/table'
+import { flexRender } from '@tanstack/react-table'
 import {
   TableHead,
   TableHeader,
   TableRow,
   TableBody,
   TableCell,
-} from "@/components/ui/table";
-import { Dialog } from "@/components/ui/dialog";
-import { useAdminPermission } from "@/hooks/use-admin-permission";
-import { createColumns } from "./results-table-columns";
-import { ResultsTableControls } from "./results-table-controls";
-import { ResultsTablePagination } from "./results-table-pagination";
-import { ResultsTableActions } from "./results-table-actions";
-import { useResultsTableHandlers, useResultsTable } from "./results-table-hooks";
-import { ResultsTableProps, ResultWithPlayer } from "./results-table-types";
-import ResultsForm from "@/components/results/results-form";
+} from '@/components/ui/table'
+import { Dialog } from '@/components/ui/dialog'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { createColumns } from './results-table-columns'
+import { ResultsTableControls } from './results-table-controls'
+import { ResultsTablePagination } from './results-table-pagination'
+import { ResultsTableActions } from './results-table-actions'
+import { useResultsTableHandlers, useResultsTable } from './results-table-hooks'
+import { ResultsTableProps, ResultWithPlayer } from './results-table-types'
+import ResultsForm from '@/components/results/results-form'
 
 const ResultsTable = ({
   results,
@@ -26,7 +26,7 @@ const ResultsTable = ({
   onPageChange,
   onPageSizeChange,
   onSearchChange,
-  searchValue = "",
+  searchValue = '',
   gender,
   ageGroup,
   yearOfBirth,
@@ -41,10 +41,11 @@ const ResultsTable = ({
   availableYears = [],
   availableAgeGroups = [],
 }: ResultsTableProps & {
-  availableYears?: number[];
-  availableAgeGroups?: string[];
+  availableYears?: number[]
+  availableAgeGroups?: string[]
 }) => {
-  const { isAdmin } = useAdminPermission();
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin } = context
 
   const {
     editResult,
@@ -60,12 +61,12 @@ const ResultsTable = ({
     onSortingChange,
     sortBy,
     sortOrder,
-  });
+  })
 
   const baseColumns = React.useMemo(
     () =>
       createColumns(
-        isAdmin,
+        isSystemAdmin,
         handleEdit,
         handleDelete,
         sortBy,
@@ -73,45 +74,53 @@ const ResultsTable = ({
         handleSort,
         (pagination.page - 1) * pagination.limit + 1
       ),
-    [isAdmin, handleEdit, handleDelete, sortBy, sortOrder, handleSort, pagination]
-  );
+    [
+      isSystemAdmin,
+      handleEdit,
+      handleDelete,
+      sortBy,
+      sortOrder,
+      handleSort,
+      pagination,
+    ]
+  )
 
   // Add actions column
   const columns = React.useMemo(() => {
-    if (!isAdmin) return baseColumns;
+    if (!isSystemAdmin) return baseColumns
     return [
       ...baseColumns,
       {
-        id: "actions",
+        id: 'actions',
         enableHiding: false,
-        header: () => <div className="text-right">Actions</div>,
+        header: () => <div className='text-right'>Actions</div>,
         cell: ({ row }: { row: any }) => (
-          <div className="text-right">
+          <div className='text-right'>
             <ResultsTableActions
               result={row.original}
-              isAdmin={isAdmin}
+              isSystemAdmin={isSystemAdmin}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
           </div>
         ),
       },
-    ];
-  }, [baseColumns, isAdmin, handleEdit, handleDelete]);
+    ]
+  }, [baseColumns, isSystemAdmin, handleEdit, handleDelete])
 
   const { table } = useResultsTable({
     results,
     columns,
     totalPages: pagination.totalPages,
-  });
+  })
 
   const handleCancel = () => {
-    setEditDialogOpen(false);
-    setEditResult(null);
-  };
+    setEditDialogOpen(false)
+    setEditResult(null)
+  }
 
   return (
-    <div className="w-full space-y-4">
+    <div className='w-full space-y-4'>
       <ResultsTableControls
         table={table}
         searchValue={searchValue}
@@ -125,13 +134,16 @@ const ResultsTable = ({
         availableYears={availableYears}
         availableAgeGroups={availableAgeGroups}
       />
-      <div className="rounded-md border overflow-x-auto">
+      <div className='rounded-md border overflow-x-auto'>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap px-2 sm:px-4">
+                  <TableHead
+                    key={header.id}
+                    className='whitespace-nowrap px-2 sm:px-4'
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -148,7 +160,7 @@ const ResultsTable = ({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center px-2 sm:px-4"
+                  className='h-24 text-center px-2 sm:px-4'
                 >
                   Loading...
                 </TableCell>
@@ -159,16 +171,16 @@ const ResultsTable = ({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-32 text-center px-2 sm:px-4"
+                  className='h-32 text-center px-2 sm:px-4'
                 >
-                  <div className="flex flex-col items-center justify-center gap-2 py-4">
-                    <p className="text-lg font-medium text-muted-foreground">
+                  <div className='flex flex-col items-center justify-center gap-2 py-4'>
+                    <p className='text-lg font-medium text-muted-foreground'>
                       No results found
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className='text-sm text-muted-foreground'>
                       {searchValue
-                        ? "Try adjusting your search terms or filters."
-                        : "No results match the current filters."}
+                        ? 'Try adjusting your search terms or filters.'
+                        : 'No results match the current filters.'}
                     </p>
                   </div>
                 </TableCell>
@@ -179,10 +191,13 @@ const ResultsTable = ({
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-2 sm:px-4 whitespace-nowrap">
+                    <TableCell
+                      key={cell.id}
+                      className='px-2 sm:px-4 whitespace-nowrap'
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -212,8 +227,7 @@ const ResultsTable = ({
         </Dialog>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ResultsTable;
-
+export default ResultsTable

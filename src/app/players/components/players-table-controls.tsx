@@ -1,12 +1,12 @@
-import { ChevronDown, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ChevronDown, Search } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -15,22 +15,26 @@ import {
   SelectValue,
   SelectGroup,
   SelectLabel,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Table } from "@tanstack/react-table";
-import { Player } from "@/types";
-import { Gender, AgeGroup, Team } from "../types/enums";
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Table } from '@tanstack/react-table'
+import { Player } from '@/types'
+import { Gender, AgeGroup, Team } from '../types/enums'
+import { useEffect, useState } from 'react'
+import { apiClient } from '@/lib/api-client'
 
 interface PlayersTableControlsProps {
-  table: Table<Player>;
-  searchValue: string;
-  onSearchChange?: (value: string) => void;
-  gender?: Gender;
-  ageGroup?: AgeGroup;
-  team?: Team;
-  onGenderChange?: (gender: Gender) => void;
-  onAgeGroupChange?: (ageGroup: AgeGroup) => void;
-  onTeamChange?: (team: Team) => void;
+  table: Table<Player>
+  searchValue: string
+  onSearchChange?: (value: string) => void
+  gender?: Gender
+  ageGroup?: AgeGroup
+  team?: Team
+  organizationId?: string | null
+  onGenderChange?: (gender: Gender) => void
+  onAgeGroupChange?: (ageGroup: AgeGroup) => void
+  onTeamChange?: (team: Team) => void
+  onOrganizationChange?: (organizationId: string | null) => void
 }
 
 export const PlayersTableControls = ({
@@ -40,54 +44,77 @@ export const PlayersTableControls = ({
   gender,
   ageGroup,
   team,
+  organizationId,
   onGenderChange,
   onAgeGroupChange,
   onTeamChange,
+  onOrganizationChange,
 }: PlayersTableControlsProps) => {
+  const [organizations, setOrganizations] = useState<
+    Array<{ id: string; name: string }>
+  >([])
+  const [isLoadingOrgs, setIsLoadingOrgs] = useState(false)
+
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      setIsLoadingOrgs(true)
+      try {
+        const orgs = await apiClient.getOrganizations()
+        setOrganizations(orgs)
+      } catch (error) {
+        console.error('Failed to fetch organizations:', error)
+      } finally {
+        setIsLoadingOrgs(false)
+      }
+    }
+    fetchOrganizations()
+  }, [])
+
   const getColumnLabel = (columnId: string) => {
     const labels: Record<string, string> = {
-      preferredHand: "Preferred Hand",
-      dateOfBirth: "Date of Birth",
-      createdAt: "Created",
-    };
-    return labels[columnId] || columnId;
-  };
+      preferredHand: 'Preferred Hand',
+      dateOfBirth: 'Date of Birth',
+      createdAt: 'Created',
+    }
+    return labels[columnId] || columnId
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Row 1: Search input */}
-      <div className="flex flex-col md:flex-row gap-4">
-
-      <div className="w-full relative">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by player's name..."
-          value={searchValue}
-          onChange={(event) => onSearchChange?.(event.target.value)}
-          className="w-full md:max-w-md pl-10"
-        />
-      </div>
-         {/* Column Visibility */}
-         <div className="w-full md:w-auto md:ml-auto">
-          <Label className="block mb-2 md:invisible md:h-0 md:mb-0">
+    <div className='space-y-4'>
+      {/* Row 1: Search input and Club filter */}
+      <div className='flex flex-col md:flex-row gap-4'>
+        <div className='w-full relative'>
+          <Search className='w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground' />
+          <Input
+            placeholder="Search by player's name..."
+            value={searchValue}
+            onChange={(event) => onSearchChange?.(event.target.value)}
+            className='w-full md:max-w-md pl-10'
+          />
+        </div>
+        {/* Column Visibility */}
+        <div className='w-full md:w-auto md:ml-auto'>
+          <Label className='block mb-2 md:invisible md:h-0 md:mb-0'>
             Columns
           </Label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
+              <Button variant='outline' className='w-full md:w-auto'>
+                Columns <ChevronDown className='ml-2 h-4 w-4' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align='end'>
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
                 .map((column) => (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="capitalize"
+                    className='capitalize'
                     checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
                   >
                     {getColumnLabel(column.id)}
                   </DropdownMenuCheckboxItem>
@@ -98,19 +125,19 @@ export const PlayersTableControls = ({
       </div>
 
       {/* Row 2: Gender, Age Group, Column visibility */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className='flex flex-col md:flex-row gap-4'>
         {/* Gender Filter */}
-        <div className="flex-1 w-full md:w-auto">
-          <Label htmlFor="gender" className="block mb-2">
+        <div className='flex-1 w-full md:w-auto'>
+          <Label htmlFor='gender' className='block mb-2'>
             Gender
           </Label>
           <Select
-            name="gender"
+            name='gender'
             value={gender}
             onValueChange={(value: Gender) => onGenderChange?.(value)}
           >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a Gender" />
+            <SelectTrigger className='w-full'>
+              <SelectValue placeholder='Select a Gender' />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={Gender.MALE}>Male</SelectItem>
@@ -121,17 +148,17 @@ export const PlayersTableControls = ({
         </div>
 
         {/* Age Group Filter */}
-        <div className="flex-1 w-full md:w-auto">
-          <Label htmlFor="ageGroup" className="block mb-2">
+        <div className='flex-1 w-full md:w-auto'>
+          <Label htmlFor='ageGroup' className='block mb-2'>
             Age Group
           </Label>
           <Select
-            name="ageGroup"
+            name='ageGroup'
             value={ageGroup}
             onValueChange={(value: AgeGroup) => onAgeGroupChange?.(value)}
           >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select an Age Group" />
+            <SelectTrigger className='w-full'>
+              <SelectValue placeholder='Select an Age Group' />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={AgeGroup.ALL}>All Age Groups</SelectItem>
@@ -155,17 +182,17 @@ export const PlayersTableControls = ({
         </div>
 
         {/* Team Filter */}
-        <div className="flex-1 w-full md:w-auto">
-          <Label htmlFor="team" className="block mb-2">
+        <div className='flex-1 w-full md:w-auto'>
+          <Label htmlFor='team' className='block mb-2'>
             Team
           </Label>
           <Select
-            name="team"
+            name='team'
             value={team}
             onValueChange={(value: Team) => onTeamChange?.(value)}
           >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a Team" />
+            <SelectTrigger className='w-full'>
+              <SelectValue placeholder='Select a Team' />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={Team.ALL}>All Teams</SelectItem>
@@ -174,8 +201,47 @@ export const PlayersTableControls = ({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Organization Filter */}
+        <div className='flex-1 w-full md:w-auto'>
+          <Label htmlFor='organizationId' className='block mb-2'>
+            Organization
+          </Label>
+          <Select
+            name='organizationId'
+            value={organizationId === null ? 'null' : organizationId || 'all'}
+            onValueChange={(value: string) => {
+              // Map Select component values to filter values:
+              // - 'all' = show all (no filter) -> null
+              // - 'null' = explicitly no organization (global) -> null
+              // - otherwise = specific organization ID -> string
+              if (value === 'all') {
+                onOrganizationChange?.(null)
+              } else if (value === 'null') {
+                onOrganizationChange?.(null)
+              } else {
+                onOrganizationChange?.(value)
+              }
+            }}
+            disabled={isLoadingOrgs}
+          >
+            <SelectTrigger className='w-full'>
+              <SelectValue
+                placeholder={isLoadingOrgs ? 'Loading...' : 'Select an Organization'}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>All Organizations</SelectItem>
+              <SelectItem value='null'>No Organization (Global)</SelectItem>
+              {organizations.map((org) => (
+                <SelectItem key={org.id} value={org.id}>
+                  {org.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
-  );
-};
-
+  )
+}

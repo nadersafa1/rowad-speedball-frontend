@@ -28,6 +28,35 @@ export interface PlayersStats {
   ageGroupsCount: number
 }
 
+// Coaches stats interface
+export interface CoachesStats {
+  maleCount: number
+  femaleCount: number
+}
+
+// Tests stats interface
+export interface TestsStats {
+  totalCount: number
+  publicCount: number
+  privateCount: number
+}
+
+// Events stats interface
+export interface EventsStats {
+  totalCount: number
+  publicCount: number
+  privateCount: number
+  completedCount: number
+}
+
+// Training Sessions stats interface
+export interface TrainingSessionsStats {
+  totalCount: number
+  highIntensityCount: number
+  normalIntensityCount: number
+  lowIntensityCount: number
+}
+
 // Paginated response interface
 export interface PaginatedResponse<T> {
   data: T[]
@@ -35,7 +64,12 @@ export interface PaginatedResponse<T> {
   limit: number
   totalItems: number
   totalPages: number
-  stats?: PlayersStats
+  stats?:
+    | PlayersStats
+    | CoachesStats
+    | TestsStats
+    | EventsStats
+    | TrainingSessionsStats
 }
 
 // Pagination metadata

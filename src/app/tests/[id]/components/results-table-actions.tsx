@@ -1,6 +1,6 @@
-import { ResultWithPlayer } from "./results-table-types";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ResultWithPlayer } from './results-table-types'
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,44 +19,44 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog'
 
 interface ResultsTableActionsProps {
-  result: ResultWithPlayer;
-  isAdmin: boolean;
-  onEdit: (result: ResultWithPlayer) => void;
-  onDelete: (result: ResultWithPlayer) => void;
+  result: ResultWithPlayer
+  isSystemAdmin: boolean
+  onEdit: (result: ResultWithPlayer) => void
+  onDelete: (result: ResultWithPlayer) => void
 }
 
 export const ResultsTableActions = ({
   result,
-  isAdmin,
+  isSystemAdmin,
   onEdit,
   onDelete,
 }: ResultsTableActionsProps) => {
-  if (!isAdmin) return null;
+  if (!isSystemAdmin) return null
 
-  const playerName = result.player?.name || "Unknown Player";
+  const playerName = result.player?.name || 'Unknown Player'
 
   return (
     <AlertDialog>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
+          <Button variant='ghost' className='h-8 w-8 p-0'>
+            <span className='sr-only'>Open menu</span>
+            <MoreHorizontal className='h-4 w-4' />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => onEdit(result)}>
-            <Edit className="mr-2 h-4 w-4" />
+            <Edit className='mr-2 h-4 w-4' />
             Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <AlertDialogTrigger asChild>
-            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-              <Trash2 className="mr-2 h-4 w-4" />
+            <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
+              <Trash2 className='mr-2 h-4 w-4' />
               Delete
             </DropdownMenuItem>
           </AlertDialogTrigger>
@@ -73,7 +73,7 @@ export const ResultsTableActions = ({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             onClick={() => onDelete(result)}
           >
             Delete
@@ -81,6 +81,5 @@ export const ResultsTableActions = ({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
-};
-
+  )
+}

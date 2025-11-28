@@ -1,0 +1,1 @@
+ALTER TABLE "tests" ADD COLUMN "visibility" boolean DEFAULT true NOT NULL;

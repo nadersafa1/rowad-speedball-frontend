@@ -2,6 +2,8 @@
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
 import type { Event, PaginatedResponse } from '@/types'
+import type { EventsStats } from '@/types/api/pagination'
+import { isEventsStats } from '@/lib/utils/stats-type-guards'
 
 interface EventsState {
   events: Event[]
@@ -14,6 +16,7 @@ interface EventsState {
     totalItems: number
     totalPages: number
   }
+  stats: EventsStats | null
 
   // Actions
   fetchEvents: (filters?: {
@@ -21,6 +24,18 @@ interface EventsState {
     eventType?: 'singles' | 'doubles'
     gender?: 'male' | 'female' | 'mixed'
     visibility?: 'public' | 'private'
+    organizationId?: string | null
+    sortBy?:
+      | 'name'
+      | 'eventType'
+      | 'gender'
+      | 'completed'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'registrationStartDate'
+      | 'registrationsCount'
+      | 'lastMatchPlayedDate'
+    sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
   }) => Promise<void>
@@ -39,10 +54,11 @@ export const useEventsStore = create<EventsState>((set) => ({
   error: null,
   pagination: {
     page: 1,
-    limit: 10,
+    limit: 25,
     totalItems: 0,
     totalPages: 0,
   },
+  stats: null,
 
   fetchEvents: async (filters = {}) => {
     set({ isLoading: true, error: null })
@@ -52,8 +68,14 @@ export const useEventsStore = create<EventsState>((set) => ({
         eventType: filters.eventType || undefined,
         gender: filters.gender || undefined,
         visibility: filters.visibility || undefined,
+        organizationId:
+          filters.organizationId !== undefined
+            ? filters.organizationId
+            : undefined,
+        sortBy: filters.sortBy || undefined,
+        sortOrder: filters.sortOrder || undefined,
         page: filters.page || 1,
-        limit: filters.limit || 10,
+        limit: filters.limit || 25,
       }
 
       const response = (await apiClient.getEvents(
@@ -67,6 +89,7 @@ export const useEventsStore = create<EventsState>((set) => ({
           totalItems: response.totalItems,
           totalPages: response.totalPages,
         },
+        stats: isEventsStats(response.stats) ? response.stats : null,
         isLoading: false,
       })
     } catch (error) {

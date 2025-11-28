@@ -7,7 +7,7 @@ import {
   registrationsCreateSchema,
   registrationsQuerySchema,
 } from '@/types/api/registrations.schemas'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
   validateSinglesRegistration,
   validateDoublesRegistration,
@@ -86,13 +86,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  const context = await getOrganizationContext()
+
+  if (!context.isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!context.isSystemAdmin) {
+    return Response.json(
+      { message: 'Forbidden: Admin access required' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -131,10 +135,7 @@ export async function POST(request: NextRequest) {
           .select()
           .from(schema.sets)
           .where(
-            and(
-              eq(schema.sets.matchId, match.id),
-              eq(schema.sets.played, true)
-            )
+            and(eq(schema.sets.matchId, match.id), eq(schema.sets.played, true))
           )
           .limit(1)
 

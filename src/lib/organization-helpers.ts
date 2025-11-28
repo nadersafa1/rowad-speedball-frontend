@@ -1,0 +1,211 @@
+import { headers } from 'next/headers'
+import { auth } from './auth'
+import { db } from './db'
+import * as schema from '@/db/schema'
+import { and, eq } from 'drizzle-orm'
+import { Organization } from 'better-auth/plugins'
+
+export enum OrganizationRole {
+  ADMIN = 'admin',
+  OWNER = 'owner',
+  SUPER_ADMIN = 'super_admin',
+  COACH = 'coach',
+  PLAYER = 'player',
+  MEMBER = 'member',
+}
+
+export interface OrganizationContext {
+  organization: Organization | null
+  role: OrganizationRole | null
+  activeOrgId: string | null
+  userId: string | null
+  isSystemAdmin: boolean
+  isOwner: boolean
+  isAdmin: boolean
+  isCoach: boolean
+  isPlayer: boolean
+  isMember: boolean
+  isAuthenticated: boolean
+}
+
+const getRoleFlags = (
+  role: OrganizationRole | null
+): Pick<
+  OrganizationContext,
+  'isOwner' | 'isAdmin' | 'isCoach' | 'isPlayer' | 'isMember'
+> => {
+  return {
+    isOwner: role === OrganizationRole.OWNER,
+    isAdmin: role === OrganizationRole.ADMIN,
+    isCoach: role === OrganizationRole.COACH,
+    isPlayer: role === OrganizationRole.PLAYER,
+    isMember: role === OrganizationRole.MEMBER,
+  }
+}
+
+export async function getOrganizationContext(): Promise<OrganizationContext> {
+  const session = await auth.api.getSession({ headers: await headers() })
+
+  const activeOrgId = session?.session.activeOrganizationId ?? null
+
+  if (!session?.user) {
+    return {
+      organization: null,
+      isAuthenticated: false,
+      userId: null,
+      role: null,
+      activeOrgId: null,
+      isSystemAdmin: false,
+      ...getRoleFlags(null),
+    }
+  }
+
+  // Check permission
+  const hasAdminPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: { permission: { user: ['list'] } },
+  })
+
+  if (session.user.role === 'admin' && hasAdminPermission.success) {
+    return {
+      organization: null,
+      role: OrganizationRole.SUPER_ADMIN,
+      activeOrgId,
+      isSystemAdmin: true,
+      isAuthenticated: true,
+      userId: session.user.id,
+      ...getRoleFlags(null),
+    }
+  }
+
+  if (activeOrgId) {
+    const membership = await db.query.member.findFirst({
+      where: and(
+        eq(schema.member.userId, session.user.id),
+        eq(schema.member.organizationId, activeOrgId)
+      ),
+    })
+    const organization = await db.query.organization.findFirst({
+      where: eq(schema.organization.id, activeOrgId),
+    })
+
+    if (!membership || !organization) {
+      return {
+        organization: null,
+        isAuthenticated: true,
+        userId: session.user.id,
+        isSystemAdmin: false,
+        role: null,
+        activeOrgId: null,
+        ...getRoleFlags(null),
+      }
+    }
+
+    return {
+      organization,
+      role: membership.role as OrganizationRole,
+      activeOrgId,
+      isSystemAdmin: false,
+      isAuthenticated: true,
+      userId: session.user.id,
+      ...getRoleFlags(membership.role as OrganizationRole),
+    }
+  }
+
+  const userMemberships = await db.query.member.findMany({
+    where: eq(schema.member.userId, session.user.id),
+  })
+  if (userMemberships.length === 1) {
+    const membership = userMemberships[0]
+    const organization = await db.query.organization.findFirst({
+      where: eq(schema.organization.id, membership.organizationId),
+    })
+
+    if (!organization || !membership) {
+      return {
+        organization: null,
+        isAuthenticated: true,
+        userId: session.user.id,
+        isSystemAdmin: false,
+        role: null,
+        activeOrgId: null,
+        ...getRoleFlags(null),
+      }
+    }
+
+    return {
+      organization,
+      role: membership.role as OrganizationRole,
+      activeOrgId: membership.organizationId,
+      isSystemAdmin: false,
+      isAuthenticated: true,
+      userId: session.user.id,
+      ...getRoleFlags(membership.role as OrganizationRole),
+    }
+  }
+
+  return {
+    organization: null,
+    isAuthenticated: true,
+    userId: session.user.id,
+    isSystemAdmin: false,
+    role: null,
+    activeOrgId: null,
+    ...getRoleFlags(null),
+  }
+}
+
+/**
+ * Get all app admin users (users with role = 'admin')
+ * Returns array of user IDs
+ */
+export async function getAllAppAdmins() {
+  const adminUsers = await db
+    .select({ id: schema.user.id })
+    .from(schema.user)
+    .where(eq(schema.user.role, 'admin'))
+
+  return adminUsers.map((user) => user.id)
+}
+
+/**
+ * Add a user to all existing organizations as an admin
+ * Used when a user becomes an app admin
+ */
+export async function addUserToAllOrganizations(userId: string) {
+  try {
+    // Get all organizations
+    const organizations = await db.query.organization.findMany()
+
+    if (organizations.length === 0) {
+      return
+    }
+
+    // Get existing memberships for this user
+    const existingMemberships = await db
+      .select({ organizationId: schema.member.organizationId })
+      .from(schema.member)
+      .where(eq(schema.member.userId, userId))
+
+    const existingOrgIds = new Set(
+      existingMemberships.map((m) => m.organizationId)
+    )
+
+    // Find organizations where user is not yet a member
+    const orgsToAdd = organizations.filter((org) => !existingOrgIds.has(org.id))
+
+    if (orgsToAdd.length > 0) {
+      const memberValues = orgsToAdd.map((org) => ({
+        organizationId: org.id,
+        userId,
+        role: 'super_admin' as const,
+        createdAt: new Date(),
+      }))
+
+      await db.insert(schema.member).values(memberValues)
+    }
+  } catch (error) {
+    console.error('Error adding user to all organizations:', error)
+    throw error
+  }
+}

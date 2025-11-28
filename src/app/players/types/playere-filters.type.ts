@@ -1,21 +1,23 @@
-import { AgeGroup, Gender, Team } from "./enums";
+import { AgeGroup, Gender, Team } from './enums'
 
 interface PlayersFilters {
-  q?: string;
-  gender?: Gender;
-  ageGroup?: AgeGroup;
-  team?: Team;
-  page?: number;
-  limit?: number;
+  q?: string
+  gender?: Gender
+  ageGroup?: AgeGroup
+  team?: Team
+  organizationId?: string | null
+  page?: number
+  limit?: number
   sortBy?:
-    | "name"
-    | "dateOfBirth"
-    | "createdAt"
-    | "updatedAt"
-    | "gender"
-    | "preferredHand"
-    | "isFirstTeam";
-  sortOrder?: "asc" | "desc";
+    | 'name'
+    | 'dateOfBirth'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'gender'
+    | 'preferredHand'
+    | 'isFirstTeam'
+    | 'organizationId'
+  sortOrder?: 'asc' | 'desc'
 }
 
-export type { PlayersFilters };
+export type { PlayersFilters }

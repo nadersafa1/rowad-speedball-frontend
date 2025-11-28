@@ -4,15 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAdminPermission } from '@/hooks/use-admin-permission'
-import {
-  Plus,
-  Users,
-  Trophy,
-  ArrowLeft,
-  Trash2,
-  CheckCircle2,
-} from 'lucide-react'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { Plus, Users, Trophy, Edit, Trash2, CheckCircle2 } from 'lucide-react'
 import { useEventsStore } from '@/store/events-store'
 import { toast } from 'sonner'
 import { useGroupsStore } from '@/store/groups-store'
@@ -36,13 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import Link from 'next/link'
+import { BackButton } from '@/components/ui'
 
 const EventDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isAdmin } = useAdminPermission()
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin } = context
   const eventId = params.id as string
 
   // Get tab from URL or default to 'overview'
@@ -135,53 +129,50 @@ const EventDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6'>
-        <div className='flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4'>
-          <Link href='/events'>
-            <Button variant='ghost' size='sm' className='w-fit'>
-              <ArrowLeft className='h-4 w-4 mr-2' />
-              Back
-            </Button>
-          </Link>
-          <div>
-            <h1 className='text-2xl sm:text-3xl font-bold'>
-              {selectedEvent.name}
-            </h1>
-            <div className='flex flex-wrap gap-2 mt-2'>
-              <Badge variant='outline'>{selectedEvent.eventType}</Badge>
-              <Badge variant='outline'>{selectedEvent.gender}</Badge>
-              <Badge variant='outline'>{selectedEvent.groupMode}</Badge>
-              {selectedEvent.visibility === 'private' && (
-                <Badge variant='secondary'>Private</Badge>
-              )}
-              {selectedEvent.completed && (
-                <Badge variant='default' className='bg-green-600'>
-                  <CheckCircle2 className='h-3 w-3 mr-1' />
-                  Completed
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-        {isAdmin && (
-          <div className='flex flex-col sm:flex-row gap-2'>
+      {/* Back Navigation with Edit/Delete Actions */}
+      <div className='mb-4 sm:mb-6 flex items-center justify-between gap-2'>
+        <BackButton href='/events' longText='Back to Events' />
+        {isSystemAdmin && (
+          <div className='flex gap-2'>
             <Button
               onClick={() => setEventFormOpen(true)}
               variant='outline'
-              className='w-full sm:w-auto'
+              size='sm'
+              className='gap-2'
             >
-              Edit Event
+              <Edit className='h-4 w-4' />
+              <span className='hidden sm:inline'>Edit Event</span>
             </Button>
             <Button
               onClick={() => setDeleteEventDialogOpen(true)}
-              variant='destructive'
-              className='w-full sm:w-auto'
+              variant='outline'
+              size='sm'
+              className='gap-2 text-destructive hover:text-destructive'
             >
-              <Trash2 className='h-4 w-4 mr-2' />
-              Delete Event
+              <Trash2 className='h-4 w-4' />
+              <span className='hidden sm:inline'>Delete Event</span>
             </Button>
           </div>
         )}
+      </div>
+
+      {/* Event Header */}
+      <div className='mb-6'>
+        <h1 className='text-2xl sm:text-3xl font-bold'>{selectedEvent.name}</h1>
+        <div className='flex flex-wrap gap-2 mt-2'>
+          <Badge variant='outline'>{selectedEvent.eventType}</Badge>
+          <Badge variant='outline'>{selectedEvent.gender}</Badge>
+          <Badge variant='outline'>{selectedEvent.groupMode}</Badge>
+          {selectedEvent.visibility === 'private' && (
+            <Badge variant='secondary'>Private</Badge>
+          )}
+          {selectedEvent.completed && (
+            <Badge variant='default' className='bg-green-600'>
+              <CheckCircle2 className='h-3 w-3 mr-1' />
+              Completed
+            </Badge>
+          )}
+        </div>
       </div>
 
       <Tabs
@@ -259,7 +250,7 @@ const EventDetailPage = () => {
             <CardHeader>
               <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
                 <CardTitle>Registrations ({registrations.length})</CardTitle>
-                {isAdmin && (
+                {isSystemAdmin && (
                   <Button
                     onClick={() => setRegistrationFormOpen(true)}
                     disabled={matches.some((m) =>
@@ -304,7 +295,7 @@ const EventDetailPage = () => {
                           </p>
                           <p className='text-sm font-bold'>{reg.points} pts</p>
                         </div>
-                        {isAdmin && !reg.groupId && (
+                        {isSystemAdmin && !reg.groupId && (
                           <Button
                             variant='destructive'
                             size='sm'
@@ -323,7 +314,7 @@ const EventDetailPage = () => {
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          {isAdmin && (
+          {isSystemAdmin && (
             <GroupManagement
               eventId={eventId}
               groups={groups}
@@ -331,7 +322,7 @@ const EventDetailPage = () => {
               onGroupCreated={handleRefresh}
             />
           )}
-          {!isAdmin && groups.length === 0 && (
+          {!isSystemAdmin && groups.length === 0 && (
             <Card>
               <CardContent>
                 <p className='text-sm text-muted-foreground'>
@@ -347,7 +338,7 @@ const EventDetailPage = () => {
             matches={matches}
             groups={groups}
             groupMode={selectedEvent.groupMode}
-            isAdmin={isAdmin}
+            isSystemAdmin={isSystemAdmin}
             onMatchUpdate={handleRefresh}
           />
         </TabsContent>

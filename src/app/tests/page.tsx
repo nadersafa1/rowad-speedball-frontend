@@ -1,23 +1,30 @@
 'use client'
 
 import TestForm from '@/components/tests/test-form'
+import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { EmptyState, PageHeader } from '@/components/ui'
-import Pagination from '@/components/ui/pagination'
-import { useAdminPermission } from '@/hooks/use-admin-permission'
-import { Plus, Trophy } from 'lucide-react'
-import { useState } from 'react'
-import TestCard from './components/test-card'
-import TestTypeLegend from './components/test-type-legend'
-import TestsFiltersSection from './components/tests-filters'
-import TestsStats from './components/tests-stats'
+import Loading from '@/components/ui/loading'
+import { Dialog } from '@/components/ui/dialog'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { Plus, Table2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { type DateRange } from 'react-day-picker'
+import TestsTable from './components/tests-table'
 import { useTests } from './hooks/use-tests'
 import { TestsFilters } from './types'
+import TestsStats from './components/tests-stats'
 
 const TestsPage = () => {
-  const { isAdmin } = useAdminPermission()
+  const { context, isLoading: isOrganizationContextLoading } =
+    useOrganizationContext()
+
+  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
+
   const [testFormOpen, setTestFormOpen] = useState(false)
+
+  // Date range state (for UI)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
 
   // Local filter state
   const [filters, setFilters] = useState<TestsFilters>({
@@ -26,8 +33,25 @@ const TestsPage = () => {
     recoveryTime: undefined,
     dateFrom: '',
     dateTo: '',
+    organizationId: undefined,
+    sortBy: undefined,
+    sortOrder: undefined,
     page: 1,
+    limit: 25,
   })
+
+  // Convert DateRange to dateFrom/dateTo strings for API
+  const filtersWithDates = useMemo(() => {
+    return {
+      ...filters,
+      dateFrom: dateRange?.from
+        ? dateRange.from.toISOString().split('T')[0]
+        : undefined,
+      dateTo: dateRange?.to
+        ? dateRange.to.toISOString().split('T')[0]
+        : undefined,
+    }
+  }, [filters, dateRange])
 
   const {
     tests,
@@ -37,7 +61,55 @@ const TestsPage = () => {
     clearError,
     handlePageChange,
     refetch,
-  } = useTests(filters)
+  } = useTests(filtersWithDates)
+
+  // Filter change handlers
+  const handleSearchChange = (value: string) => {
+    const newFilters = { ...filters, q: value, page: 1 }
+    setFilters(newFilters)
+  }
+
+  const handleTestTypeChange = (testType?: {
+    playingTime: number
+    recoveryTime: number
+  }) => {
+    const newFilters = {
+      ...filters,
+      playingTime: testType?.playingTime,
+      recoveryTime: testType?.recoveryTime,
+      page: 1,
+    }
+    setFilters(newFilters)
+  }
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range)
+    setFilters({ ...filters, page: 1 })
+  }
+
+  const handleOrganizationChange = (organizationId?: string | null) => {
+    const newFilters = { ...filters, organizationId, page: 1 }
+    setFilters(newFilters)
+  }
+
+  const handlePageSizeChange = (limit: number) => {
+    const newFilters = { ...filters, page: 1, limit }
+    setFilters(newFilters)
+  }
+
+  const handleSortingChange = (
+    sortBy?: 'name' | 'dateConducted' | 'createdAt' | 'updatedAt',
+    sortOrder?: 'asc' | 'desc'
+  ) => {
+    const newFilters = { ...filters, sortBy, sortOrder, page: 1 }
+    setFilters(newFilters)
+  }
+
+  const handleRefetch = () => {
+    refetch()
+  }
+
+  if (isOrganizationContextLoading) return <Loading />
 
   if (error) {
     return (
@@ -58,87 +130,62 @@ const TestsPage = () => {
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       {/* Header */}
       <PageHeader
-        icon={Trophy}
+        icon={Table2}
         title='Tests'
         description='Browse and manage all conducted speedball tests'
-        actionDialog={
-          isAdmin
+        actionButton={
+          isSystemAdmin || isCoach || isAdmin || isOwner
             ? {
-                open: testFormOpen,
-                onOpenChange: setTestFormOpen,
-                trigger: (
-                  <Button className='gap-2 bg-blue-600 hover:bg-blue-700'>
-                    <Plus className='h-4 w-4' />
-                    Add Test
-                  </Button>
-                ),
-                content: (
-                  <TestForm
-                    onSuccess={() => {
-                      setTestFormOpen(false)
-                      refetch()
-                    }}
-                    onCancel={() => setTestFormOpen(false)}
-                  />
-                ),
+                label: 'Create Test',
+                icon: Plus,
+                onClick: () => setTestFormOpen(true),
               }
             : undefined
         }
       />
 
-      {/* Filters */}
-      <TestsFiltersSection filters={filters} setFilters={setFilters} />
-
-      {/* Tests Grid */}
-      {isLoading ? (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className='animate-pulse'>
-              <CardContent>
-                <div className='h-4 bg-muted rounded w-3/4 mb-2'></div>
-                <div className='h-3 bg-muted rounded w-1/2 mb-4'></div>
-                <div className='space-y-2'>
-                  <div className='h-3 bg-muted rounded w-full'></div>
-                  <div className='h-3 bg-muted rounded w-2/3'></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : tests.length === 0 ? (
-        <EmptyState
-          icon={Trophy}
-          title='No tests found'
-          description={
-            filters.playingTime || filters.recoveryTime
-              ? 'No tests found for the selected type.'
-              : 'No tests have been conducted yet.'
-          }
-        />
-      ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {tests.map((test) => (
-            <TestCard key={test.id} test={test} />
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {tests.length > 0 && pagination.totalPages > 1 && (
-        <div className='mt-8'>
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
+      <Card className='mt-4 sm:mt-6'>
+        <CardContent>
+          <TestsTable
+            tests={tests}
+            pagination={pagination}
             onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            onSearchChange={handleSearchChange}
+            searchValue={filters.q}
+            testType={
+              filters.playingTime && filters.recoveryTime
+                ? {
+                    playingTime: filters.playingTime,
+                    recoveryTime: filters.recoveryTime,
+                  }
+                : undefined
+            }
+            dateRange={dateRange}
+            organizationId={filters.organizationId}
+            onTestTypeChange={handleTestTypeChange}
+            onDateRangeChange={handleDateRangeChange}
+            onOrganizationChange={handleOrganizationChange}
+            sortBy={filters.sortBy}
+            sortOrder={filters.sortOrder}
+            onSortingChange={handleSortingChange}
+            isLoading={isLoading}
+            onRefetch={handleRefetch}
           />
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      {/* Test Types Legend */}
-      <TestTypeLegend />
+      <TestsStats />
 
-      {/* Stats */}
-      <TestsStats tests={tests} pagination={pagination} />
+      <Dialog open={testFormOpen} onOpenChange={setTestFormOpen}>
+        <TestForm
+          onSuccess={() => {
+            setTestFormOpen(false)
+            handleRefetch()
+          }}
+          onCancel={() => setTestFormOpen(false)}
+        />
+      </Dialog>
     </div>
   )
 }
