@@ -29,6 +29,7 @@ interface CoachesTableActionsProps {
   canDelete: boolean
   onEdit: (coach: Coach) => void
   onDelete: (coach: Coach) => void
+  onRefetch?: () => void
 }
 
 export const CoachesTableActions = ({
@@ -37,6 +38,7 @@ export const CoachesTableActions = ({
   canDelete,
   onEdit,
   onDelete,
+  onRefetch,
 }: CoachesTableActionsProps) => {
   const { context } = useOrganizationContext()
   const { isSystemAdmin, isAdmin, isOwner } = context
@@ -68,6 +70,7 @@ export const CoachesTableActions = ({
                 coachId={coach.id}
                 coachName={coach.name}
                 currentUserId={coach.userId}
+                onSuccess={onRefetch}
                 trigger={
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                     <UserPlus className='mr-2 h-4 w-4' />

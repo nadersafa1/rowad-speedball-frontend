@@ -11,7 +11,8 @@ export const createColumns = (
   onDelete: (player: Player) => void,
   sortBy?: string,
   sortOrder?: 'asc' | 'desc',
-  onSort?: (columnId: string) => void
+  onSort?: (columnId: string) => void,
+  onRefetch?: () => void
 ): ColumnDef<Player>[] => {
   const baseColumns = [
     ...createBaseColumns(sortBy, sortOrder, onSort),
@@ -36,6 +37,7 @@ export const createColumns = (
             canDelete={canDelete}
             onEdit={onEdit}
             onDelete={onDelete}
+            onRefetch={onRefetch}
           />
         </div>
       ),

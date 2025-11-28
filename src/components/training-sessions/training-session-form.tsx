@@ -177,16 +177,23 @@ const TrainingSessionForm = ({
         ? data.organizationId
         : organization?.id || null
 
-      const submitData = {
-        ...data,
-        date: formatDateForAPI(data.date),
-        name: data.name || formatDateForSessionName(data.date),
-        organizationId: finalOrganizationId,
-      }
-
       if (isEditing) {
+        // For updates, exclude organizationId as it's not allowed in the update schema
+        const { organizationId: _, ...updateData } = data
+        const submitData = {
+          ...updateData,
+          date: formatDateForAPI(data.date),
+          name: data.name || formatDateForSessionName(data.date),
+        }
         await updateTrainingSession(trainingSession.id, submitData)
       } else {
+        // For creates, include organizationId
+        const submitData = {
+          ...data,
+          date: formatDateForAPI(data.date),
+          name: data.name || formatDateForSessionName(data.date),
+          organizationId: finalOrganizationId,
+        }
         await createTrainingSession(submitData)
       }
       form.reset()

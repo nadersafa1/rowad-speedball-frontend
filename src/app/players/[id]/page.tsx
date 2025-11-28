@@ -39,6 +39,7 @@ import { toast } from 'sonner'
 import ResultsForm from '@/components/results/results-form'
 import PlayerForm from '@/components/players/player-form'
 import RecentMatchesCard from './components/recent-matches-card'
+import { formatDate } from '@/lib/utils'
 
 const PlayerDetailPage = () => {
   const params = useParams()
@@ -301,9 +302,7 @@ const PlayerDetailPage = () => {
                       </h3>
                       <p className='text-sm text-gray-600'>
                         {result.test?.dateConducted &&
-                          new Date(
-                            result.test.dateConducted
-                          ).toLocaleDateString()}
+                          formatDate(result.test.dateConducted)}
                       </p>
                     </div>
                     <div className='text-right'>

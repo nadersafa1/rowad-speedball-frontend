@@ -3,6 +3,7 @@ import { TrainingSession, Coach } from '@/db/schema'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { SortableHeader } from './training-sessions-table-sortable-header'
+import { formatDate } from '@/lib/utils'
 
 interface TrainingSessionWithCoaches extends TrainingSession {
   coaches?: Coach[]
@@ -106,7 +107,7 @@ export const createBaseColumns = (
       ),
       cell: ({ row }) => {
         const date = row.getValue('date') as string
-        return <span>{new Date(date).toLocaleDateString()}</span>
+        return <span>{formatDate(date)}</span>
       },
     },
     {

@@ -81,7 +81,7 @@ export const CreateOrganizationDialog = () => {
     })
 
     if (res.error) {
-      toast.error(res.error.message || 'Failed to create organization')
+      toast.error(res.error.message || 'Failed to create club')
     } else {
       toast.success('Club created successfully')
       form.reset()
@@ -101,7 +101,7 @@ export const CreateOrganizationDialog = () => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Organization</DialogTitle>
+          <DialogTitle>Create Club</DialogTitle>
           <DialogDescription>
             Create a new club and assign admins/coaches
           </DialogDescription>

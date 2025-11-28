@@ -31,6 +31,7 @@ import { useTrainingSessionsStore } from '@/store/training-sessions-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { toast } from 'sonner'
 import TrainingSessionForm from '@/components/training-sessions/training-session-form'
+import { formatDate } from '@/lib/utils'
 
 const TrainingSessionDetailPage = () => {
   const params = useParams()
@@ -190,78 +191,78 @@ const TrainingSessionDetailPage = () => {
               Information
             </CardTitle>
           </CardHeader>
-          <CardContent className='space-y-4'>
-            <div>
-              <p className='text-sm font-medium text-muted-foreground'>Name</p>
-              <p className='text-lg'>{selectedTrainingSession.name}</p>
-            </div>
-            <div>
-              <p className='text-sm font-medium text-muted-foreground'>
-                Intensity
-              </p>
-              <Badge
-                variant={
-                  intensityColors[selectedTrainingSession.intensity] as any
-                }
-              >
-                {selectedTrainingSession.intensity}
-              </Badge>
-            </div>
-            <div>
-              <p className='text-sm font-medium text-muted-foreground'>Type</p>
-              <div className='flex flex-wrap gap-2 mt-1'>
-                {formatType(selectedTrainingSession.type).map((t, idx) => (
-                  <Badge key={idx} variant='outline'>
-                    {t}
-                  </Badge>
-                ))}
+          <CardContent>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+              <div>
+                <p className='text-sm font-medium text-muted-foreground'>Name</p>
+                <p className='text-lg'>{selectedTrainingSession.name}</p>
               </div>
-            </div>
-            <div>
-              <p className='text-sm font-medium text-muted-foreground'>Date</p>
-              <p className='text-lg'>
-                {new Date(selectedTrainingSession.date).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className='text-sm font-medium text-muted-foreground'>
-                Age Groups
-              </p>
-              <div className='flex flex-wrap gap-2 mt-1'>
-                {selectedTrainingSession.ageGroups.map((ag, idx) => (
-                  <Badge key={idx} variant='secondary'>
-                    {ag}
-                  </Badge>
-                ))}
+              <div>
+                <p className='text-sm font-medium text-muted-foreground'>Date</p>
+                <p className='text-lg'>
+                  {formatDate(selectedTrainingSession.date)}
+                </p>
+              </div>
+              <div>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Intensity
+                </p>
+                <Badge
+                  variant={
+                    intensityColors[selectedTrainingSession.intensity] as any
+                  }
+                >
+                  {selectedTrainingSession.intensity}
+                </Badge>
+              </div>
+              <div>
+                <p className='text-sm font-medium text-muted-foreground'>Type</p>
+                <div className='flex flex-wrap gap-2 mt-1'>
+                  {formatType(selectedTrainingSession.type).map((t, idx) => (
+                    <Badge key={idx} variant='outline'>
+                      {t}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Age Groups
+                </p>
+                <div className='flex flex-wrap gap-2 mt-1'>
+                  {selectedTrainingSession.ageGroups.map((ag, idx) => (
+                    <Badge key={idx} variant='secondary'>
+                      {ag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              {selectedTrainingSession.organizationName && (
+                <div>
+                  <p className='text-sm font-medium text-muted-foreground'>
+                    Club
+                  </p>
+                  <p className='text-lg'>
+                    {selectedTrainingSession.organizationName}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Created At
+                </p>
+                <p className='text-lg'>
+                  {formatDate(selectedTrainingSession.createdAt)}
+                </p>
               </div>
             </div>
             {selectedTrainingSession.description && (
-              <div>
+              <div className='mt-4'>
                 <p className='text-sm font-medium text-muted-foreground'>
                   Description
                 </p>
                 <p className='text-lg whitespace-pre-wrap'>
                   {selectedTrainingSession.description}
-                </p>
-              </div>
-            )}
-            <div>
-              <p className='text-sm font-medium text-muted-foreground'>
-                Created At
-              </p>
-              <p className='text-lg'>
-                {new Date(
-                  selectedTrainingSession.createdAt
-                ).toLocaleDateString()}
-              </p>
-            </div>
-            {selectedTrainingSession.organizationName && (
-              <div>
-                <p className='text-sm font-medium text-muted-foreground'>
-                  Club
-                </p>
-                <p className='text-lg'>
-                  {selectedTrainingSession.organizationName}
                 </p>
               </div>
             )}
