@@ -24,7 +24,7 @@ export const useEventPermissions = (event: Event | null | undefined) => {
 
     // Check if event belongs to user's organization
     const isEventFromUserOrg =
-      organization?.id && event.organizationId === organization.id
+      !!organization?.id && event.organizationId === organization.id
 
     // Read permission: matches backend logic
     // System admin: can see all events
