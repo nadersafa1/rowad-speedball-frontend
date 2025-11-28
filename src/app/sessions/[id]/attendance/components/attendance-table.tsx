@@ -1,7 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { useReactTable, getCoreRowModel } from '@tanstack/react-table'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+} from '@tanstack/react-table'
 import { Table } from '@/components/ui/table'
 import type {
   AttendanceRecord,
@@ -10,6 +14,7 @@ import type {
 import { AttendanceTableControls } from './attendance-table-controls'
 import { AttendanceTableHeader } from './attendance-table-header'
 import { AttendanceTableBody } from './attendance-table-body'
+import { AttendanceTablePagination } from './attendance-table-pagination'
 import { createAttendanceColumns } from './attendance-table-columns'
 import type { AttendanceTableProps } from './attendance-table-types'
 import { getAgeGroup } from '@/db/schema'
@@ -43,6 +48,9 @@ export const AttendanceTable = ({
   statusFilter = 'all',
   ageGroupFilter = AgeGroup.ALL,
   genderFilter = Gender.ALL,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
   onSearchChange,
   onStatusFilterChange,
   onAgeGroupFilterChange,
@@ -89,14 +97,22 @@ export const AttendanceTable = ({
     data: filteredRecords,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: pagination ? undefined : getPaginationRowModel(),
     // Disable sorting to maintain original order
     enableSorting: false,
+    // Manual pagination if pagination prop is provided
+    manualPagination: !!pagination,
+    pageCount: pagination?.totalPages,
     // Hide gender, age group, and status (on mobile) columns initially
     initialState: {
       columnVisibility: {
         gender: false,
         ageGroup: false,
         status: !isMobile, // Hide status on mobile, show on desktop
+      },
+      pagination: {
+        pageIndex: pagination ? pagination.page - 1 : 0,
+        pageSize: pagination?.limit || 25,
       },
     },
   })
@@ -134,6 +150,16 @@ export const AttendanceTable = ({
           />
         </Table>
       </div>
+
+      {/* Pagination */}
+      {pagination && onPageChange && onPageSizeChange && (
+        <AttendanceTablePagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   )
 }

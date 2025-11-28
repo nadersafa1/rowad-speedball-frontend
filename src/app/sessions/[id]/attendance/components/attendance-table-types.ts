@@ -14,6 +14,14 @@ export interface AttendanceTableProps {
   statusFilter?: AttendanceStatus | 'all'
   ageGroupFilter?: string
   genderFilter?: string
+  pagination?: {
+    page: number
+    limit: number
+    totalItems: number
+    totalPages: number
+  }
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
   onSearchChange?: (query: string) => void
   onStatusFilterChange?: (status: AttendanceStatus | 'all') => void
   onAgeGroupFilterChange?: (ageGroup: string) => void

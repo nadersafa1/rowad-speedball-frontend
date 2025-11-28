@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { AgeGroup, Gender } from '@/app/players/types/enums'
+import { getAgeGroup } from '@/db/schema'
 
 const AttendanceManagementPage = () => {
   const params = useParams()
@@ -59,6 +60,8 @@ const AttendanceManagementPage = () => {
   )
   const [ageGroupFilter, setAgeGroupFilter] = useState<string>(AgeGroup.ALL)
   const [genderFilter, setGenderFilter] = useState<string>(Gender.ALL)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(25)
 
   useEffect(() => {
     if (
@@ -116,6 +119,56 @@ const AttendanceManagementPage = () => {
     setStatusFilter('all')
     setAgeGroupFilter(AgeGroup.ALL)
     setGenderFilter(Gender.ALL)
+    setPage(1)
+  }
+
+  // Calculate pagination
+  const filteredRecords = attendanceRecords.filter((record) => {
+    // Search filter
+    const matchesSearch =
+      searchQuery === '' ||
+      record.player.name.toLowerCase().includes(searchQuery.toLowerCase())
+
+    // Status filter
+    const matchesStatus =
+      statusFilter === 'all' || record.status === statusFilter
+
+    // Age group filter
+    const playerAgeGroup = record.player.dateOfBirth
+      ? getAgeGroup(record.player.dateOfBirth)
+      : null
+    const matchesAgeGroup =
+      ageGroupFilter === AgeGroup.ALL || playerAgeGroup === ageGroupFilter
+
+    // Gender filter
+    const matchesGender =
+      genderFilter === Gender.ALL ||
+      record.player.gender === genderFilter ||
+      (!record.player.gender && genderFilter === Gender.ALL)
+
+    return matchesSearch && matchesStatus && matchesAgeGroup && matchesGender
+  })
+
+  const totalItems = filteredRecords.length
+  const totalPages = Math.ceil(totalItems / limit)
+  const startIndex = (page - 1) * limit
+  const endIndex = startIndex + limit
+  const paginatedRecords = filteredRecords.slice(startIndex, endIndex)
+
+  const pagination = {
+    page,
+    limit,
+    totalItems,
+    totalPages: totalPages || 1,
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+  }
+
+  const handlePageSizeChange = (newLimit: number) => {
+    setLimit(newLimit)
+    setPage(1) // Reset to first page when changing page size
   }
 
   return (
@@ -179,7 +232,7 @@ const AttendanceManagementPage = () => {
           {/* Table */}
           {attendanceRecords.length > 0 && (
             <AttendanceTable
-              records={attendanceRecords}
+              records={paginatedRecords}
               onStatusChange={updateStatus}
               onDelete={deleteAttendance}
               updatingPlayerId={updatingPlayerId}
@@ -188,10 +241,25 @@ const AttendanceManagementPage = () => {
               statusFilter={statusFilter}
               ageGroupFilter={ageGroupFilter}
               genderFilter={genderFilter}
-              onSearchChange={setSearchQuery}
-              onStatusFilterChange={setStatusFilter}
-              onAgeGroupFilterChange={setAgeGroupFilter}
-              onGenderFilterChange={setGenderFilter}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={(value) => {
+                setSearchQuery(value)
+                setPage(1)
+              }}
+              onStatusFilterChange={(value) => {
+                setStatusFilter(value)
+                setPage(1)
+              }}
+              onAgeGroupFilterChange={(value) => {
+                setAgeGroupFilter(value)
+                setPage(1)
+              }}
+              onGenderFilterChange={(value) => {
+                setGenderFilter(value)
+                setPage(1)
+              }}
               onClearFilters={handleClearFilters}
             />
           )}
