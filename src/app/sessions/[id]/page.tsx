@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Dialog } from '@/components/ui/dialog'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 import { useTrainingSessionsStore } from '@/store/training-sessions-store'
@@ -194,11 +195,15 @@ const TrainingSessionDetailPage = () => {
           <CardContent>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
               <div>
-                <p className='text-sm font-medium text-muted-foreground'>Name</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Name
+                </p>
                 <p className='text-lg'>{selectedTrainingSession.name}</p>
               </div>
               <div>
-                <p className='text-sm font-medium text-muted-foreground'>Date</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Date
+                </p>
                 <p className='text-lg'>
                   {formatDate(selectedTrainingSession.date)}
                 </p>
@@ -216,7 +221,9 @@ const TrainingSessionDetailPage = () => {
                 </Badge>
               </div>
               <div>
-                <p className='text-sm font-medium text-muted-foreground'>Type</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Type
+                </p>
                 <div className='flex flex-wrap gap-2 mt-1'>
                   {formatType(selectedTrainingSession.type).map((t, idx) => (
                     <Badge key={idx} variant='outline'>
@@ -301,7 +308,7 @@ const TrainingSessionDetailPage = () => {
           )}
       </div>
 
-      {editDialogOpen && (
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <TrainingSessionForm
           trainingSession={{
             ...selectedTrainingSession,
@@ -313,7 +320,7 @@ const TrainingSessionDetailPage = () => {
           }}
           onCancel={() => setEditDialogOpen(false)}
         />
-      )}
+      </Dialog>
     </div>
   )
 }
