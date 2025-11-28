@@ -8,6 +8,7 @@ import {
   integer,
   boolean,
   pgEnum,
+  unique,
 } from 'drizzle-orm/pg-core'
 
 // Auth Tables
@@ -356,6 +357,36 @@ export const trainingSessionCoaches = pgTable('training_session_coaches', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+// Attendance Status Enum
+export const attendanceStatusEnum = pgEnum('attendance_status', [
+  'pending',
+  'present',
+  'late',
+  'absent_excused',
+  'absent_unexcused',
+  'suspended',
+])
+
+// Training Session Attendance Table
+export const trainingSessionAttendance = pgTable(
+  'training_session_attendance',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id, { onDelete: 'cascade' }),
+    trainingSessionId: uuid('training_session_id')
+      .notNull()
+      .references(() => trainingSessions.id, { onDelete: 'cascade' }),
+    status: attendanceStatusEnum('status').notNull().default('pending'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniquePlayerSession: unique().on(table.playerId, table.trainingSessionId),
+  })
+)
+
 // Federations Table
 export const federations = pgTable('federations', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -412,6 +443,8 @@ export type Set = typeof sets.$inferSelect
 export type Coach = typeof coaches.$inferSelect
 export type TrainingSession = typeof trainingSessions.$inferSelect
 export type TrainingSessionCoach = typeof trainingSessionCoaches.$inferSelect
+export type TrainingSessionAttendance =
+  typeof trainingSessionAttendance.$inferSelect
 export type Federation = typeof federations.$inferSelect
 export type Championship = typeof championships.$inferSelect
 export type FederationClub = typeof federationClubs.$inferSelect

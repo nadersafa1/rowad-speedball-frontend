@@ -103,6 +103,14 @@ export const trainingSessionsCreateSchema = z
       .uuid('Invalid organization ID format')
       .optional()
       .nullable(),
+    firstTeamFilter: z
+      .enum(['first_team_only', 'non_first_team_only', 'all'], {
+        message:
+          'First team filter must be first_team_only, non_first_team_only, or all',
+      })
+      .optional()
+      .default('all'),
+    autoCreateAttendance: z.boolean().optional().default(false),
   })
   .strict()
 
@@ -130,6 +138,43 @@ export const trainingSessionsUpdateSchema = z
   )
   .strict()
 
+// Attendance Status Enum
+export const attendanceStatusEnum = z.enum([
+  'pending',
+  'present',
+  'late',
+  'absent_excused',
+  'absent_unexcused',
+  'suspended',
+])
+
+// Attendance route parameters schema (for routes where playerId is optional)
+export const attendanceParamsSchema = z.object({
+  id: z.uuid('Invalid training session ID format'),
+  playerId: z.uuid('Invalid player ID format').optional(),
+})
+
+// Attendance route parameters schema (for routes where playerId is required)
+export const attendanceParamsWithPlayerSchema = z.object({
+  id: z.uuid('Invalid training session ID format'),
+  playerId: z.uuid('Invalid player ID format'),
+})
+
+// Create attendance schema for POST /training-sessions/:id/attendance
+export const attendanceCreateSchema = z
+  .object({
+    playerId: z.uuid('Invalid player ID format'),
+    status: attendanceStatusEnum.optional().default('pending'),
+  })
+  .strict()
+
+// Update attendance schema for PATCH /training-sessions/:id/attendance/:playerId
+export const attendanceUpdateSchema = z
+  .object({
+    status: attendanceStatusEnum,
+  })
+  .strict()
+
 // Inferred TypeScript types
 export type TrainingSessionsQuery = z.infer<typeof trainingSessionsQuerySchema>
 export type TrainingSessionsParams = z.infer<
@@ -141,3 +186,9 @@ export type TrainingSessionsCreate = z.infer<
 export type TrainingSessionsUpdate = z.infer<
   typeof trainingSessionsUpdateSchema
 >
+export type AttendanceParams = z.infer<typeof attendanceParamsSchema>
+export type AttendanceParamsWithPlayer = z.infer<
+  typeof attendanceParamsWithPlayerSchema
+>
+export type AttendanceCreate = z.infer<typeof attendanceCreateSchema>
+export type AttendanceUpdate = z.infer<typeof attendanceUpdateSchema>

@@ -153,7 +153,10 @@ export async function PATCH(
 
     // Organization ownership check: org members can only update results for tests from their own organization
     if (!context.isSystemAdmin && test) {
-      if (!context.organization?.id || test.organizationId !== context.organization.id) {
+      if (
+        !context.organization?.id ||
+        test.organizationId !== context.organization.id
+      ) {
         return Response.json(
           {
             message:
@@ -250,7 +253,10 @@ export async function DELETE(
 
     // Organization ownership check: org members can only delete results for tests from their own organization
     if (!context.isSystemAdmin && test) {
-      if (!context.organization?.id || test.organizationId !== context.organization.id) {
+      if (
+        !context.organization?.id ||
+        test.organizationId !== context.organization.id
+      ) {
         return Response.json(
           {
             message:

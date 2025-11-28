@@ -98,6 +98,12 @@ const trainingSessionSchema = z.object({
     .min(1, 'At least one age group is required'),
   coachIds: z.array(z.uuid()).optional(),
   organizationId: z.string().uuid().nullable().optional(),
+  firstTeamFilter: z
+    .enum(['first_team_only', 'non_first_team_only', 'all'], {
+      message: 'Invalid first team filter',
+    })
+    .optional(),
+  autoCreateAttendance: z.boolean().optional(),
 })
 
 type TrainingSessionFormData = z.infer<typeof trainingSessionSchema>
@@ -147,6 +153,8 @@ const TrainingSessionForm = ({
       ageGroups: trainingSession?.ageGroups || [],
       coachIds: trainingSession?.coaches?.map((c: any) => c.id) || [],
       organizationId: defaultOrganizationId,
+      firstTeamFilter: 'all',
+      autoCreateAttendance: false,
     },
   })
 
@@ -178,8 +186,14 @@ const TrainingSessionForm = ({
         : organization?.id || null
 
       if (isEditing) {
-        // For updates, exclude organizationId as it's not allowed in the update schema
-        const { organizationId: _, ...updateData } = data
+        // For updates, exclude organizationId, firstTeamFilter, and autoCreateAttendance
+        // as they're not allowed in the update schema
+        const {
+          organizationId: _,
+          firstTeamFilter: __,
+          autoCreateAttendance: ___,
+          ...updateData
+        } = data
         const submitData = {
           ...updateData,
           date: formatDateForAPI(data.date),
@@ -187,12 +201,14 @@ const TrainingSessionForm = ({
         }
         await updateTrainingSession(trainingSession.id, submitData)
       } else {
-        // For creates, include organizationId
+        // For creates, include organizationId and set defaults for new fields
         const submitData = {
           ...data,
           date: formatDateForAPI(data.date),
           name: data.name || formatDateForSessionName(data.date),
           organizationId: finalOrganizationId,
+          firstTeamFilter: data.firstTeamFilter || 'all',
+          autoCreateAttendance: data.autoCreateAttendance ?? false,
         }
         await createTrainingSession(submitData)
       }
@@ -297,56 +313,58 @@ const TrainingSessionForm = ({
                     Select one or more session types
                   </FormDescription>
                 </div>
-                {sessionTypeOptions.map((option) => (
-                  <FormField
-                    key={option.value}
-                    control={form.control}
-                    name='type'
-                    render={({ field }) => {
-                      return (
-                        <FormItem
-                          key={option.value}
-                          className='flex flex-row items-start space-x-3 space-y-0'
-                        >
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes(
-                                option.value as
-                                  | 'singles'
-                                  | 'men_doubles'
-                                  | 'women_doubles'
-                                  | 'mixed_doubles'
-                                  | 'solo'
-                                  | 'relay'
-                              )}
-                              onCheckedChange={(checked) => {
-                                return checked
-                                  ? field.onChange([
-                                      ...field.value,
-                                      option.value as
-                                        | 'singles'
-                                        | 'men_doubles'
-                                        | 'women_doubles'
-                                        | 'mixed_doubles'
-                                        | 'solo'
-                                        | 'relay',
-                                    ])
-                                  : field.onChange(
-                                      field.value?.filter(
-                                        (value) => value !== option.value
+                <div className='grid grid-cols-2 sm:grid-cols-3 gap-4'>
+                  {sessionTypeOptions.map((option) => (
+                    <FormField
+                      key={option.value}
+                      control={form.control}
+                      name='type'
+                      render={({ field }) => {
+                        return (
+                          <FormItem
+                            key={option.value}
+                            className='flex flex-row items-start space-x-3 space-y-0'
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(
+                                  option.value as
+                                    | 'singles'
+                                    | 'men_doubles'
+                                    | 'women_doubles'
+                                    | 'mixed_doubles'
+                                    | 'solo'
+                                    | 'relay'
+                                )}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([
+                                        ...field.value,
+                                        option.value as
+                                          | 'singles'
+                                          | 'men_doubles'
+                                          | 'women_doubles'
+                                          | 'mixed_doubles'
+                                          | 'solo'
+                                          | 'relay',
+                                      ])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== option.value
+                                        )
                                       )
-                                    )
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className='font-normal'>
-                            {option.label}
-                          </FormLabel>
-                        </FormItem>
-                      )
-                    }}
-                  />
-                ))}
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className='font-normal'>
+                              {option.label}
+                            </FormLabel>
+                          </FormItem>
+                        )
+                      }}
+                    />
+                  ))}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -477,6 +495,85 @@ const TrainingSessionForm = ({
               </FormItem>
             )}
           />
+
+          {/* First Team Filter - Only show when creating (not editing) */}
+          {!isEditing && (
+            <FormField
+              control={form.control}
+              name='firstTeamFilter'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Team Filter</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={isLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select filter option' />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value='all'>All Players</SelectItem>
+                      <SelectItem value='first_team_only'>
+                        First Team Only
+                      </SelectItem>
+                      <SelectItem value='non_first_team_only'>
+                        Non-First Team Only
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Filter players by first team status when auto-creating
+                    attendance
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Auto-Create Attendance - Only show when creating (not editing) */}
+          {!isEditing && (
+            <FormField
+              control={form.control}
+              name='autoCreateAttendance'
+              render={({ field }) => (
+                <FormItem>
+                  <div
+                    className='flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:bg-accent/50 transition-colors'
+                    onClick={() => {
+                      if (!isLoading) {
+                        field.onChange(!field.value)
+                      }
+                    }}
+                  >
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                    </div>
+                    <div className='space-y-1 leading-none flex-1'>
+                      <FormLabel className='cursor-pointer'>
+                        Auto-Create Attendance Records
+                      </FormLabel>
+                      <FormDescription>
+                        Automatically create attendance records with
+                        &apos;pending&apos; status for all players matching the
+                        selected age groups and first team filter
+                      </FormDescription>
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}

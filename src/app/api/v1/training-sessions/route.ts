@@ -21,6 +21,7 @@ import {
 } from '@/types/api/training-sessions.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { queryPlayersForAttendance } from '@/lib/training-session-attendance-helpers'
 
 export async function GET(request: NextRequest) {
   // Require authentication - training sessions are always private
@@ -318,6 +319,8 @@ export async function POST(request: NextRequest) {
       ageGroups,
       coachIds,
       organizationId: providedOrgId,
+      firstTeamFilter,
+      autoCreateAttendance,
     } = parseResult.data
 
     // Determine final organizationId:
@@ -344,31 +347,70 @@ export async function POST(request: NextRequest) {
     // Auto-generate name from date if not provided
     const sessionName = name || formatDateForSessionName(new Date(date))
 
-    // Insert training session
-    const result = await db
-      .insert(schema.trainingSessions)
-      .values({
-        name: sessionName,
-        intensity: intensity || 'normal',
-        type,
-        date,
-        description: description || null,
-        ageGroups,
-        organizationId: finalOrganizationId,
-      })
-      .returning()
+    // Determine first team filter (default to 'all' if not provided)
+    const finalFirstTeamFilter =
+      firstTeamFilter ||
+      ('all' as 'first_team_only' | 'non_first_team_only' | 'all')
 
-    const newSession = result[0]
+    // Use transaction for atomicity
+    const result = await db.transaction(async (tx) => {
+      // Insert training session
+      const sessionResult = await tx
+        .insert(schema.trainingSessions)
+        .values({
+          name: sessionName,
+          intensity: intensity || 'normal',
+          type,
+          date,
+          description: description || null,
+          ageGroups,
+          organizationId: finalOrganizationId,
+        })
+        .returning()
 
-    // Insert coach relationships if provided
-    if (coachIds && coachIds.length > 0) {
-      await db.insert(schema.trainingSessionCoaches).values(
-        coachIds.map((coachId) => ({
-          trainingSessionId: newSession.id,
-          coachId,
-        }))
-      )
-    }
+      const newSession = sessionResult[0]
+
+      // Insert coach relationships if provided
+      if (coachIds && coachIds.length > 0) {
+        await tx.insert(schema.trainingSessionCoaches).values(
+          coachIds.map((coachId) => ({
+            trainingSessionId: newSession.id,
+            coachId,
+          }))
+        )
+      }
+
+      // Auto-create attendance records if requested
+      let attendanceRecordsCreated = 0
+      if (autoCreateAttendance) {
+        // Query matching players
+        const matchingPlayerIds = await queryPlayersForAttendance(
+          finalOrganizationId ?? null,
+          ageGroups,
+          finalFirstTeamFilter
+        )
+
+        // Create attendance records for all matching players
+        if (matchingPlayerIds.length > 0) {
+          await tx
+            .insert(schema.trainingSessionAttendance)
+            .values(
+              matchingPlayerIds.map((playerId) => ({
+                playerId,
+                trainingSessionId: newSession.id,
+                status: 'pending' as const,
+              }))
+            )
+            .onConflictDoNothing()
+
+          attendanceRecordsCreated = matchingPlayerIds.length
+        }
+      }
+
+      return { newSession, attendanceRecordsCreated }
+    })
+
+    const { newSession, attendanceRecordsCreated } = result
 
     // Fetch coaches for response
     const coaches = await db
@@ -386,6 +428,7 @@ export async function POST(request: NextRequest) {
       {
         ...newSession,
         coaches: coaches.map((c) => c.coach),
+        attendanceRecordsCreated,
       },
       { status: 201 }
     )

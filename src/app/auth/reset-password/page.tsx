@@ -1,20 +1,20 @@
-"use client";
+'use client'
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import z from "zod";
-import { Button } from "@/components/ui/button";
+import { zodResolver } from '@hookform/resolvers/zod'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import z from 'zod'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -23,10 +23,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { LoadingSwap } from "@/components/ui/loading-swap";
-import { PasswordInput } from "@/components/ui/password-input";
-import { authClient } from "@/lib/auth-client";
+} from '@/components/ui/form'
+import { LoadingSwap } from '@/components/ui/loading-swap'
+import { PasswordInput } from '@/components/ui/password-input'
+import { authClient } from '@/lib/auth-client'
 
 const resetPasswordSchema = z.object({
   password: z
@@ -37,30 +37,30 @@ const resetPasswordSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
       {
         message:
-          "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character",
+          'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character',
       }
     ),
-});
+})
 
-type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
+type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>
 
 const ResetPasswordForm = () => {
   const form = useForm<ResetPasswordSchema>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      password: "",
+      password: '',
     },
-  });
+  })
 
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const router = useRouter();
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
+  const router = useRouter()
 
-  const { isSubmitting } = form.formState;
+  const { isSubmitting } = form.formState
 
   async function handleResetPassword(data: ResetPasswordSchema) {
     if (token == null) {
-      return;
+      return
     }
 
     await authClient.resetPassword(
@@ -70,24 +70,24 @@ const ResetPasswordForm = () => {
       },
       {
         onError: (error) => {
-          toast.error(error.error.message || "Failed to reset password");
+          toast.error(error.error.message || 'Failed to reset password')
         },
         onSuccess: () => {
-          toast.success("Password reset successful", {
-            description: "Redirection to login...",
-          });
+          toast.success('Password reset successful', {
+            description: 'Redirection to login...',
+          })
           setTimeout(() => {
-            router.push("/auth/login");
-          }, 1000);
+            router.push('/auth/login')
+          }, 1000)
         },
       }
-    );
+    )
   }
 
   if (token == null) {
     return (
-      <div className="my-6 px-4">
-        <Card className="w-full max-w-md mx-auto">
+      <div className='flex items-center justify-center min-h-[calc(90vh-80px)] py-8 px-4'>
+        <Card className='w-full max-w-md'>
           <CardHeader>
             <CardTitle>Invalid Reset Link</CardTitle>
             <CardDescription>
@@ -95,29 +95,29 @@ const ResetPasswordForm = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full">
-              <Link href="/auth/login">Back to Login</Link>
+            <Button className='w-full'>
+              <Link href='/auth/login'>Back to Login</Link>
             </Button>
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
   return (
-    <div className="flex justify-center items-center h-screen">
-      <Card className="w-full max-w-md">
+    <div className='flex items-center justify-center min-h-[calc(90vh-80px)] py-8 px-4'>
+      <Card className='w-full max-w-md'>
         <CardHeader>
           <CardTitle>Reset Password</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form
-              className="space-y-4"
+              className='space-y-4'
               onSubmit={form.handleSubmit(handleResetPassword)}
             >
               <FormField
                 control={form.control}
-                name="password"
+                name='password'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
@@ -135,9 +135,9 @@ const ResetPasswordForm = () => {
               />
 
               <Button
-                className="flex-1 mt-2"
+                className='flex-1 mt-2'
                 disabled={isSubmitting || !form.formState.isValid}
-                type="submit"
+                type='submit'
               >
                 <LoadingSwap isLoading={isSubmitting}>
                   Reset Password
@@ -148,15 +148,15 @@ const ResetPasswordForm = () => {
         </CardContent>
       </Card>
     </div>
-  );
-};
+  )
+}
 
 const ResetPasswordPage = () => {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center h-screen">
-          <Card className="w-full max-w-md">
+        <div className='flex items-center justify-center min-h-[calc(90vh-80px)] py-8 px-4'>
+          <Card className='w-full max-w-md'>
             <CardHeader>
               <CardTitle>Loading...</CardTitle>
             </CardHeader>
@@ -166,8 +166,7 @@ const ResetPasswordPage = () => {
     >
       <ResetPasswordForm />
     </Suspense>
-  );
-};
+  )
+}
 
-export default ResetPasswordPage;
-
+export default ResetPasswordPage

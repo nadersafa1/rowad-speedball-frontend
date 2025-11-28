@@ -28,6 +28,7 @@ interface PlayerComboboxProps {
   className?: string
   excludedPlayerIds?: string[]
   unassigned?: boolean
+  organizationId?: string | null
 }
 
 const PlayerCombobox = ({
@@ -38,6 +39,7 @@ const PlayerCombobox = ({
   className,
   excludedPlayerIds = [],
   unassigned = false,
+  organizationId,
 }: PlayerComboboxProps) => {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -76,6 +78,7 @@ const PlayerCombobox = ({
         q: query,
         limit: 50,
         unassigned: unassigned,
+        organizationId: organizationId,
       })) as PaginatedResponse<Player>
 
       setPlayers(response.data)

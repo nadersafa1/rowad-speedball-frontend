@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Calendar, Edit, Trash2, Users } from 'lucide-react'
+import { Calendar, Edit, Trash2, Users, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BackButton } from '@/components/ui'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Dialog } from '@/components/ui/dialog'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 import { useTrainingSessionsStore } from '@/store/training-sessions-store'
@@ -124,6 +125,16 @@ const TrainingSessionDetailPage = () => {
         <BackButton href='/sessions' longText='Back to Sessions' />
         {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
           <div className='flex gap-2'>
+            {/* Manage Attendance: system admin, org admin, org owner, or org coach */}
+            <Button
+              variant='default'
+              size='sm'
+              className='gap-2 bg-rowad-600 hover:bg-rowad-700'
+              onClick={() => router.push(`/sessions/${sessionId}/attendance`)}
+            >
+              <ClipboardList className='h-4 w-4' />
+              <span className='hidden sm:inline'>Manage Attendance</span>
+            </Button>
             {/* Edit: system admin, org admin, org owner, or org coach */}
             <Button
               variant='outline'
@@ -194,11 +205,15 @@ const TrainingSessionDetailPage = () => {
           <CardContent>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
               <div>
-                <p className='text-sm font-medium text-muted-foreground'>Name</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Name
+                </p>
                 <p className='text-lg'>{selectedTrainingSession.name}</p>
               </div>
               <div>
-                <p className='text-sm font-medium text-muted-foreground'>Date</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Date
+                </p>
                 <p className='text-lg'>
                   {formatDate(selectedTrainingSession.date)}
                 </p>
@@ -216,7 +231,9 @@ const TrainingSessionDetailPage = () => {
                 </Badge>
               </div>
               <div>
-                <p className='text-sm font-medium text-muted-foreground'>Type</p>
+                <p className='text-sm font-medium text-muted-foreground'>
+                  Type
+                </p>
                 <div className='flex flex-wrap gap-2 mt-1'>
                   {formatType(selectedTrainingSession.type).map((t, idx) => (
                     <Badge key={idx} variant='outline'>
@@ -301,7 +318,7 @@ const TrainingSessionDetailPage = () => {
           )}
       </div>
 
-      {editDialogOpen && (
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <TrainingSessionForm
           trainingSession={{
             ...selectedTrainingSession,
@@ -313,7 +330,7 @@ const TrainingSessionDetailPage = () => {
           }}
           onCancel={() => setEditDialogOpen(false)}
         />
-      )}
+      </Dialog>
     </div>
   )
 }
