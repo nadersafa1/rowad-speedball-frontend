@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import type { Organization } from 'better-auth/plugins'
+import { formatDate } from '@/lib/utils'
 
 interface OrganizationInfoProps {
   organization: Organization
@@ -55,13 +56,13 @@ export const OrganizationInfo = ({ organization }: OrganizationInfoProps) => {
         organizationId: organization.id,
       })
       if (res.error) {
-        toast.error(res.error.message || 'Failed to delete organization')
+        toast.error(res.error.message || 'Failed to delete club')
       } else {
-        toast.success('Organization deleted successfully')
+        toast.success('Club deleted successfully')
         router.push('/admin/clubs')
       }
     } catch (error) {
-      toast.error('Failed to delete organization')
+      toast.error('Failed to delete club')
     }
   }
 
@@ -70,7 +71,7 @@ export const OrganizationInfo = ({ organization }: OrganizationInfoProps) => {
       <Card>
         <CardHeader>
           <div className='flex items-center justify-between'>
-            <CardTitle>Organization Details</CardTitle>
+            <CardTitle>Club Details</CardTitle>
             <div className='flex gap-2'>
               <EditOrganizationDialog organization={organization} />
               {canDelete && !isCheckingPermission && (
@@ -83,10 +84,10 @@ export const OrganizationInfo = ({ organization }: OrganizationInfoProps) => {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Organization</AlertDialogTitle>
+                      <AlertDialogTitle>Delete Club</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete {organization.name}? This
-                        action cannot be undone.
+                        Are you sure you want to delete {organization.name}?
+                        This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -125,13 +126,10 @@ export const OrganizationInfo = ({ organization }: OrganizationInfoProps) => {
             <span className='text-sm font-medium text-muted-foreground'>
               Created:
             </span>
-            <p className='text-sm'>
-              {new Date(organization.createdAt).toLocaleDateString()}
-            </p>
+            <p className='text-sm'>{formatDate(organization.createdAt)}</p>
           </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-

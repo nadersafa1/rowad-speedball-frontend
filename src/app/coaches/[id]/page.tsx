@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
+import { formatDate } from '@/lib/utils'
 
 const CoachDetailPage = () => {
   const params = useParams()
@@ -167,7 +168,7 @@ const CoachDetailPage = () => {
                 Created At
               </p>
               <p className='text-lg'>
-                {new Date(selectedCoach.createdAt).toLocaleDateString()}
+                {formatDate(selectedCoach.createdAt)}
               </p>
             </div>
           </CardContent>
@@ -192,7 +193,7 @@ const CoachDetailPage = () => {
                     >
                       <p className='font-medium'>{session.name}</p>
                       <p className='text-sm text-muted-foreground'>
-                        {new Date(session.date).toLocaleDateString()}
+                        {formatDate(session.date)}
                       </p>
                     </Link>
                   ))}

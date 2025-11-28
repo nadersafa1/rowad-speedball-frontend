@@ -15,7 +15,8 @@ export const createColumns = (
   onDelete: (coach: Coach) => void,
   sortBy?: string,
   sortOrder?: 'asc' | 'desc',
-  onSort?: (columnId: string) => void
+  onSort?: (columnId: string) => void,
+  onRefetch?: () => void
 ): ColumnDef<CoachWithOrg>[] => {
   const baseColumns = [
     ...createBaseColumns(sortBy, sortOrder, onSort),
@@ -40,6 +41,7 @@ export const createColumns = (
             canDelete={canDelete}
             onEdit={onEdit}
             onDelete={onDelete}
+            onRefetch={onRefetch}
           />
         </div>
       ),

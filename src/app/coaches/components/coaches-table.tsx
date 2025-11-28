@@ -63,7 +63,8 @@ const CoachesTable = ({
         handleDelete,
         sortBy,
         sortOrder,
-        handleSort
+        handleSort,
+        onRefetch
       ),
     [
       canEdit,
@@ -73,6 +74,7 @@ const CoachesTable = ({
       sortBy,
       sortOrder,
       handleSort,
+      onRefetch,
     ]
   )
 

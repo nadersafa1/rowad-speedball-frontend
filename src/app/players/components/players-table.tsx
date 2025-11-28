@@ -66,7 +66,8 @@ const PlayersTable = ({
         handleDelete,
         sortBy,
         sortOrder,
-        handleSort
+        handleSort,
+        onRefetch
       ),
     [
       canEdit,
@@ -76,6 +77,7 @@ const PlayersTable = ({
       sortBy,
       sortOrder,
       handleSort,
+      onRefetch,
     ]
   )
 

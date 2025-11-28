@@ -160,9 +160,7 @@ export const LinkUserDialog = ({
           throw new Error(error.message || 'Failed to add user as member')
         }
 
-        toast.success(
-          `User added to organization as ${memberRole} successfully`
-        )
+        toast.success(`User added to club as ${memberRole} successfully`)
       }
 
       setIsOpen(false)
@@ -223,11 +221,10 @@ export const LinkUserDialog = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add User to Organization</DialogTitle>
+          <DialogTitle>Add User to Club</DialogTitle>
           <DialogDescription>
-            Link {userName} to a coach/player profile or add directly as an
-            organization member. A user can only be linked to one coach OR one
-            player.
+            Link {userName} to a coach/player profile or add directly as a club
+            member. A user can only be linked to one coach OR one player.
           </DialogDescription>
         </DialogHeader>
         <div className='space-y-4 py-4'>
@@ -236,9 +233,7 @@ export const LinkUserDialog = ({
             <Select
               value={linkType}
               onValueChange={(value) => {
-                setLinkType(
-                  value as 'coach' | 'player' | 'member' | 'none'
-                )
+                setLinkType(value as 'coach' | 'player' | 'member' | 'none')
                 if (value === 'none') {
                   setSelectedCoach('')
                   setSelectedPlayer('')
@@ -327,8 +322,8 @@ export const LinkUserDialog = ({
               {linkType === 'none'
                 ? 'Unlink'
                 : linkType === 'member'
-                  ? 'Add'
-                  : 'Link'}
+                ? 'Add'
+                : 'Link'}
             </LoadingSwap>
           </Button>
         </DialogFooter>

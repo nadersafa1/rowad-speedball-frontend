@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Pencil, Trash } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Organization } from 'better-auth/plugins'
+import { formatDate } from '@/lib/utils'
 
 interface OrganizationRowProps {
   organization: Organization & { memberCount: number }
@@ -35,9 +36,9 @@ export const OrganizationRow = ({ organization }: OrganizationRowProps) => {
       organizationId: organization.id,
     })
     if (res.error) {
-      toast.error(res.error.message || 'Failed to delete organization')
+      toast.error(res.error.message || 'Failed to delete club')
     } else {
-      toast.success('Organization deleted successfully')
+      toast.success('Club deleted successfully')
       router.refresh()
     }
   }
@@ -61,7 +62,7 @@ export const OrganizationRow = ({ organization }: OrganizationRowProps) => {
         <Badge variant='secondary'>{organization.memberCount} members</Badge>
       </TableCell>
       <TableCell>
-        {new Date(organization.createdAt).toLocaleDateString()}
+        {formatDate(organization.createdAt)}
       </TableCell>
       <TableCell>
         {canDelete && (

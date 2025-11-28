@@ -96,9 +96,9 @@ export const EditOrganizationDialog = ({
     })
 
     if (res.error) {
-      toast.error(res.error.message || 'Failed to update organization')
+      toast.error(res.error.message || 'Failed to update club')
     } else {
-      toast.success('Organization updated successfully')
+      toast.success('Club updated successfully')
       form.reset()
       setIsOpen(false)
       router.refresh()
@@ -115,10 +115,8 @@ export const EditOrganizationDialog = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Organization</DialogTitle>
-          <DialogDescription>
-            Update the organization name and slug
-          </DialogDescription>
+          <DialogTitle>Edit Club</DialogTitle>
+          <DialogDescription>Update the club name and slug</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -169,4 +167,3 @@ export const EditOrganizationDialog = ({
     </Dialog>
   )
 }
-

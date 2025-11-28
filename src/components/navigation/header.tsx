@@ -17,8 +17,19 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 const navigation = [
   // { name: 'Dashboard', href: '/', icon: Home },
@@ -36,14 +47,19 @@ const adminNavigation = [
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const router = useRouter()
 
   const { context } = useOrganizationContext()
 
   const { isSystemAdmin, isAdmin, isOwner, isCoach, isAuthenticated } = context
   const pathname = usePathname()
 
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
+
   const logout = async () => {
     await authClient.signOut()
+    router.push('/auth/login')
+    router.refresh()
   }
 
   return (
@@ -130,15 +146,35 @@ const Header = () => {
           <div className='hidden md:flex md:items-center md:space-x-4'>
             {isAuthenticated ? (
               <>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={logout}
-                  className='gap-2'
-                >
-                  <LogOut className='h-4 w-4' />
-                  Logout
-                </Button>
+                <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='gap-2'
+                    >
+                      <LogOut className='h-4 w-4' />
+                      Logout
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to logout? You will need to login again to access your account.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={logout}
+                        className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      >
+                        Logout
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             ) : (
               <Link href='/auth/login'>
@@ -227,18 +263,39 @@ const Header = () => {
             </div>
             <div className='mt-4 pt-4 border-t space-y-2'>
               {isAuthenticated ? (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => {
-                    logout()
-                    setMobileMenuOpen(false)
-                  }}
-                  className='w-full gap-2'
-                >
-                  <LogOut className='h-4 w-4' />
-                  Logout
-                </Button>
+                <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => setMobileMenuOpen(false)}
+                      className='w-full gap-2'
+                    >
+                      <LogOut className='h-4 w-4' />
+                      Logout
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to logout? You will need to login again to access your account.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          logout()
+                          setMobileMenuOpen(false)
+                        }}
+                        className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      >
+                        Logout
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : (
                 <Link
                   href='/auth/login'
