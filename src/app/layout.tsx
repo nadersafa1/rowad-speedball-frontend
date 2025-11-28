@@ -21,9 +21,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
       <body className={inter.className}>
         <TooltipProvider>
           <Header />
-          <main className='container mx-auto px-4 sm:px-6 lg:px-8 min-h-[90dvh]'>
-            {children}
-          </main>
+          <main className='min-h-[90dvh]'>{children}</main>
           <Toaster />
           <ImpersonationIndicator />
         </TooltipProvider>
