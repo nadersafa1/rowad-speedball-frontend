@@ -353,7 +353,10 @@ export async function POST(request: NextRequest) {
 
     // Organization ownership check: org members can only create results for tests from their own organization
     if (!context.isSystemAdmin) {
-      if (!context.organization?.id || test.organizationId !== context.organization.id) {
+      if (
+        !context.organization?.id ||
+        test.organizationId !== context.organization.id
+      ) {
         return Response.json(
           {
             message:
