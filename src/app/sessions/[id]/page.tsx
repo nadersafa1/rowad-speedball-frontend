@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Calendar, Edit, Trash2, Users } from 'lucide-react'
+import { Calendar, Edit, Trash2, Users, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BackButton } from '@/components/ui'
 import { Badge } from '@/components/ui/badge'
@@ -125,6 +125,16 @@ const TrainingSessionDetailPage = () => {
         <BackButton href='/sessions' longText='Back to Sessions' />
         {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
           <div className='flex gap-2'>
+            {/* Manage Attendance: system admin, org admin, org owner, or org coach */}
+            <Button
+              variant='default'
+              size='sm'
+              className='gap-2 bg-rowad-600 hover:bg-rowad-700'
+              onClick={() => router.push(`/sessions/${sessionId}/attendance`)}
+            >
+              <ClipboardList className='h-4 w-4' />
+              <span className='hidden sm:inline'>Manage Attendance</span>
+            </Button>
             {/* Edit: system admin, org admin, org owner, or org coach */}
             <Button
               variant='outline'

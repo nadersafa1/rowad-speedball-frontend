@@ -568,6 +568,54 @@ export class ApiClient {
     })
   }
 
+  // Training Session Attendance
+  async getTrainingSessionAttendance(sessionId: string) {
+    return this.request(`/training-sessions/${sessionId}/attendance`)
+  }
+
+  async getTrainingSessionAttendanceRecord(
+    sessionId: string,
+    playerId: string
+  ) {
+    return this.request(
+      `/training-sessions/${sessionId}/attendance/${playerId}`
+    )
+  }
+
+  async updateAttendanceStatus(
+    sessionId: string,
+    playerId: string,
+    status: string
+  ) {
+    return this.request(
+      `/training-sessions/${sessionId}/attendance/${playerId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }
+    )
+  }
+
+  async createAttendanceRecord(
+    sessionId: string,
+    playerId: string,
+    status: string = 'pending'
+  ) {
+    return this.request(`/training-sessions/${sessionId}/attendance`, {
+      method: 'POST',
+      body: JSON.stringify({ playerId, status }),
+    })
+  }
+
+  async deleteAttendanceRecord(sessionId: string, playerId: string) {
+    return this.request(
+      `/training-sessions/${sessionId}/attendance/${playerId}`,
+      {
+        method: 'DELETE',
+      }
+    )
+  }
+
   // Generic methods for convenience
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint)

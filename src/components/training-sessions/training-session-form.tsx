@@ -186,8 +186,14 @@ const TrainingSessionForm = ({
         : organization?.id || null
 
       if (isEditing) {
-        // For updates, exclude organizationId as it's not allowed in the update schema
-        const { organizationId: _, ...updateData } = data
+        // For updates, exclude organizationId, firstTeamFilter, and autoCreateAttendance
+        // as they're not allowed in the update schema
+        const {
+          organizationId: _,
+          firstTeamFilter: __,
+          autoCreateAttendance: ___,
+          ...updateData
+        } = data
         const submitData = {
           ...updateData,
           date: formatDateForAPI(data.date),
