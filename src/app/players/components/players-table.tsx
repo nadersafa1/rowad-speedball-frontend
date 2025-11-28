@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import * as React from "react";
-import { Table } from "@/components/ui/table";
-import { Player } from "@/types";
-import { useAdminPermission } from "@/hooks/use-admin-permission";
-import { createColumns } from "./players-table-columns";
-import { PlayersTableControls } from "./players-table-controls";
-import { PlayersTablePagination } from "./players-table-pagination";
-import { PlayersTableHeader } from "./players-table-header";
-import { PlayersTableBody } from "./players-table-body";
-import { PlayersTableEditDialog } from "./players-table-edit-dialog";
-import { usePlayersTableHandlers } from "./players-table-handlers";
-import { usePlayersTable } from "./players-table-hooks";
-import { PlayersTableProps } from "./players-table-types";
+import * as React from 'react'
+import { Table } from '@/components/ui/table'
+import { Player } from '@/types'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { createColumns } from './players-table-columns'
+import { PlayersTableControls } from './players-table-controls'
+import { PlayersTablePagination } from './players-table-pagination'
+import { PlayersTableHeader } from './players-table-header'
+import { PlayersTableBody } from './players-table-body'
+import { PlayersTableEditDialog } from './players-table-edit-dialog'
+import { usePlayersTableHandlers } from './players-table-handlers'
+import { usePlayersTable } from './players-table-hooks'
+import { PlayersTableProps } from './players-table-types'
 
 const PlayersTable = ({
   players,
@@ -20,20 +20,23 @@ const PlayersTable = ({
   onPageChange,
   onPageSizeChange,
   onSearchChange,
-  searchValue = "",
+  searchValue = '',
   gender,
   ageGroup,
   team,
+  organizationId,
   onGenderChange,
   onAgeGroupChange,
   onTeamChange,
+  onOrganizationChange,
   sortBy,
   sortOrder,
   onSortingChange,
   isLoading = false,
   onRefetch,
 }: PlayersTableProps) => {
-  const { isAdmin } = useAdminPermission();
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
 
   const {
     editPlayer,
@@ -49,34 +52,46 @@ const PlayersTable = ({
     onSortingChange,
     sortBy,
     sortOrder,
-  });
+  })
+
+  const canEdit = isSystemAdmin || isAdmin || isOwner || isCoach
+  const canDelete = isSystemAdmin || isAdmin || isOwner
 
   const columns = React.useMemo(
     () =>
       createColumns(
-        isAdmin,
+        canEdit,
+        canDelete,
         handleEdit,
         handleDelete,
         sortBy,
         sortOrder,
         handleSort
       ),
-    [isAdmin, handleEdit, handleDelete, sortBy, sortOrder, handleSort]
-  );
+    [
+      canEdit,
+      canDelete,
+      handleEdit,
+      handleDelete,
+      sortBy,
+      sortOrder,
+      handleSort,
+    ]
+  )
 
   const { table } = usePlayersTable({
     players,
     columns,
     totalPages: pagination.totalPages,
-  });
+  })
 
   const handleCancel = () => {
-    setEditDialogOpen(false);
-    setEditPlayer(null);
-  };
+    setEditDialogOpen(false)
+    setEditPlayer(null)
+  }
 
   return (
-    <div className="w-full space-y-4">
+    <div className='w-full space-y-4'>
       <PlayersTableControls
         table={table}
         searchValue={searchValue}
@@ -84,11 +99,13 @@ const PlayersTable = ({
         gender={gender}
         ageGroup={ageGroup}
         team={team}
+        organizationId={organizationId}
         onGenderChange={onGenderChange}
         onAgeGroupChange={onAgeGroupChange}
         onTeamChange={onTeamChange}
+        onOrganizationChange={onOrganizationChange}
       />
-      <div className="rounded-md border overflow-x-auto">
+      <div className='rounded-md border overflow-x-auto'>
         <Table>
           <PlayersTableHeader table={table} />
           <PlayersTableBody
@@ -113,7 +130,7 @@ const PlayersTable = ({
         onCancel={handleCancel}
       />
     </div>
-  );
-};
+  )
+}
 
-export default PlayersTable;
+export default PlayersTable

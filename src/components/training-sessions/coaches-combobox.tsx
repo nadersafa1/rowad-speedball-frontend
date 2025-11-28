@@ -28,6 +28,7 @@ interface CoachesComboboxProps {
   disabled?: boolean
   placeholder?: string
   className?: string
+  organizationId?: string | null
 }
 
 const CoachesCombobox = ({
@@ -36,6 +37,7 @@ const CoachesCombobox = ({
   disabled = false,
   placeholder = 'Select coaches...',
   className,
+  organizationId,
 }: CoachesComboboxProps) => {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -53,7 +55,13 @@ const CoachesCombobox = ({
 
     return () => clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, open])
+  }, [searchQuery, open, organizationId])
+
+  // Clear coaches list when organizationId changes
+  React.useEffect(() => {
+    setCoaches([])
+    setSelectedCoaches([])
+  }, [organizationId])
 
   // Fetch selected coaches when value changes
   React.useEffect(() => {
@@ -71,6 +79,7 @@ const CoachesCombobox = ({
       const response = (await apiClient.getCoaches({
         q: query,
         limit: 50,
+        organizationId: organizationId || undefined,
       })) as PaginatedResponse<Coach>
 
       setCoaches(response.data)

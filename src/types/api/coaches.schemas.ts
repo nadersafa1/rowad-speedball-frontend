@@ -10,9 +10,7 @@ export const coachesQuerySchema = z
       .optional(),
     gender: z.enum(['male', 'female', 'all']).optional(),
     // Sorting parameters
-    sortBy: z
-      .enum(['name', 'gender', 'createdAt', 'updatedAt'])
-      .optional(),
+    sortBy: z.enum(['name', 'gender', 'createdAt', 'updatedAt', 'organizationId']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
     // Pagination parameters
     page: z
@@ -27,6 +25,22 @@ export const coachesQuerySchema = z
       .refine(
         (val) => val >= 1 && val <= 100,
         'Limit must be between 1 and 100'
+      ),
+    unassigned: z
+      .string()
+      .optional()
+      .transform((val) => val === 'true'),
+    organizationId: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (val === 'null') return null
+        return val
+      })
+      .refine(
+        (val) =>
+          val === undefined || val === null || z.uuid().safeParse(val).success,
+        'Invalid organization ID format'
       ),
   })
   .strict()
@@ -43,6 +57,11 @@ export const coachesCreateSchema = z
     gender: z.enum(['male', 'female'], {
       message: 'Gender must be male or female',
     }),
+    userId: z.uuid('Invalid user ID format').optional().nullable(),
+    organizationId: z
+      .uuid('Invalid organization ID format')
+      .optional()
+      .nullable(),
   })
   .strict()
 
@@ -57,6 +76,11 @@ export const coachesUpdateSchema = z
     gender: z
       .enum(['male', 'female'], { message: 'Gender must be male or female' })
       .optional(),
+    userId: z.uuid('Invalid user ID format').optional().nullable(),
+    organizationId: z
+      .uuid('Invalid organization ID format')
+      .optional()
+      .nullable(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,
@@ -69,4 +93,3 @@ export type CoachesQuery = z.infer<typeof coachesQuerySchema>
 export type CoachesParams = z.infer<typeof coachesParamsSchema>
 export type CoachesCreate = z.infer<typeof coachesCreateSchema>
 export type CoachesUpdate = z.infer<typeof coachesUpdateSchema>
-

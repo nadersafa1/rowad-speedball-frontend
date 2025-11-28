@@ -8,21 +8,12 @@ import {
   trainingSessionsParamsSchema,
   trainingSessionsUpdateSchema,
 } from '@/types/api/training-sessions.schemas'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
-  }
-
   const resolvedParams = await params
   const parseResult = trainingSessionsParamsSchema.safeParse(resolvedParams)
 
@@ -31,19 +22,56 @@ export async function GET(
   }
 
   try {
-    const { id } = resolvedParams
+    const { id } = parseResult.data
 
-    const trainingSession = await db
-      .select()
+    // Check if training session exists early (terminate early if not found)
+    const row = await db
+      .select({
+        trainingSession: schema.trainingSessions,
+        organizationName: schema.organization.name,
+      })
       .from(schema.trainingSessions)
+      .leftJoin(
+        schema.organization,
+        eq(schema.trainingSessions.organizationId, schema.organization.id)
+      )
       .where(eq(schema.trainingSessions.id, id))
       .limit(1)
 
-    if (trainingSession.length === 0) {
+    if (row.length === 0) {
       return Response.json(
         { message: 'Training session not found' },
         { status: 404 }
       )
+    }
+
+    const trainingSession = row[0].trainingSession
+    const organizationName = row[0].organizationName ?? null
+
+    // Get organization context for authorization (only if training session exists)
+    const { isSystemAdmin, organization, isAuthenticated } =
+      await getOrganizationContext()
+
+    // Require authentication - training sessions are always private
+    if (!isAuthenticated) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Authorization check: matches GET all training sessions logic
+    // System admin: can see all training sessions
+    // Org members: can only see training sessions from their organization
+    if (!isSystemAdmin) {
+      if (organization?.id) {
+        // Org members: can only see training sessions from their organization
+        if (trainingSession.organizationId !== organization.id) {
+          return Response.json({ message: 'Forbidden' }, { status: 403 })
+        }
+      } else {
+        // Authenticated user without organization: can only see training sessions without organization
+        if (trainingSession.organizationId !== null) {
+          return Response.json({ message: 'Forbidden' }, { status: 403 })
+        }
+      }
     }
 
     // Get related coaches
@@ -56,12 +84,11 @@ export async function GET(
         schema.coaches,
         eq(schema.trainingSessionCoaches.coachId, schema.coaches.id)
       )
-      .where(
-        eq(schema.trainingSessionCoaches.trainingSessionId, id)
-      )
+      .where(eq(schema.trainingSessionCoaches.trainingSessionId, id))
 
     const sessionWithCoaches = {
-      ...trainingSession[0],
+      ...trainingSession,
+      organizationName: organizationName,
       coaches: coaches.map((c) => c.coach),
     }
 
@@ -76,52 +103,90 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
-  }
-
-  const resolvedParams = await params
-  const paramsResult = trainingSessionsParamsSchema.safeParse(resolvedParams)
-
-  if (!paramsResult.success) {
-    return Response.json(z.treeifyError(paramsResult.error), { status: 400 })
-  }
-
   try {
-    const body = await request.json()
-    const bodyResult = trainingSessionsUpdateSchema.safeParse(body)
-
-    if (!bodyResult.success) {
-      return Response.json(z.treeifyError(bodyResult.error), { status: 400 })
+    // Parse params and body first (quick validation, no DB calls)
+    const resolvedParams = await params
+    const parseParams = trainingSessionsParamsSchema.safeParse(resolvedParams)
+    if (!parseParams.success) {
+      return Response.json(z.treeifyError(parseParams.error), { status: 400 })
     }
 
-    const { id } = resolvedParams
-    const updateData = bodyResult.data
+    const body = await request.json()
+    const parseResult = trainingSessionsUpdateSchema.safeParse(body)
 
-    const existingSession = await db
+    if (!parseResult.success) {
+      return Response.json(z.treeifyError(parseResult.error), { status: 400 })
+    }
+
+    const { id } = parseParams.data
+    const updateData = parseResult.data
+
+    // Check if training session exists early (terminate early if not found)
+    const existing = await db
       .select()
       .from(schema.trainingSessions)
       .where(eq(schema.trainingSessions.id, id))
       .limit(1)
 
-    if (existingSession.length === 0) {
+    if (existing.length === 0) {
       return Response.json(
         { message: 'Training session not found' },
         { status: 404 }
       )
     }
 
+    const trainingSessionData = existing[0]
+
+    // Get organization context for authorization (only if training session exists)
+    const {
+      isSystemAdmin,
+      isAdmin,
+      isCoach,
+      isOwner,
+      organization,
+      isAuthenticated,
+    } = await getOrganizationContext()
+
+    // Require authentication
+    if (!isAuthenticated) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Authorization: Only system admins, org admins, org owners, and org coaches can update training sessions
+    // Additionally, org members (admin/owner/coach) must have an active organization
+    if (
+      (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
+      (!isSystemAdmin && !organization?.id)
+    ) {
+      return Response.json(
+        {
+          message:
+            'Only system admins, club admins, club owners, and club coaches can update training sessions',
+        },
+        { status: 403 }
+      )
+    }
+
+    // Organization ownership check: org members can only update training sessions from their own organization
+    if (!isSystemAdmin) {
+      if (
+        !organization?.id ||
+        trainingSessionData.organizationId !== organization.id
+      ) {
+        return Response.json(
+          {
+            message:
+              'You can only update training sessions from your own organization',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
     // Handle name auto-generation if date is updated
     const finalUpdateData: any = { ...updateData }
     if (updateData.date && !updateData.name) {
-      finalUpdateData.name = formatDateForSessionName(
-        new Date(updateData.date)
-      )
+      finalUpdateData.name = formatDateForSessionName(new Date(updateData.date))
     }
 
     // Remove coachIds from update data (handled separately)
@@ -130,7 +195,10 @@ export async function PATCH(
     // Update training session
     const result = await db
       .update(schema.trainingSessions)
-      .set(sessionUpdateData)
+      .set({
+        ...sessionUpdateData,
+        updatedAt: new Date(),
+      })
       .where(eq(schema.trainingSessions.id, id))
       .returning()
 
@@ -139,9 +207,7 @@ export async function PATCH(
       // Delete existing relationships
       await db
         .delete(schema.trainingSessionCoaches)
-        .where(
-          eq(schema.trainingSessionCoaches.trainingSessionId, id)
-        )
+        .where(eq(schema.trainingSessionCoaches.trainingSessionId, id))
 
       // Insert new relationships
       if (coachIds.length > 0) {
@@ -182,39 +248,71 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
-  }
-
-  const resolvedParams = await params
-  const parseResult = trainingSessionsParamsSchema.safeParse(resolvedParams)
-
-  if (!parseResult.success) {
-    return Response.json(z.treeifyError(parseResult.error), { status: 400 })
-  }
-
   try {
-    const { id } = resolvedParams
+    // Parse params first (quick validation, no DB calls)
+    const resolvedParams = await params
+    const parseResult = trainingSessionsParamsSchema.safeParse(resolvedParams)
 
-    const existingSession = await db
+    if (!parseResult.success) {
+      return Response.json(z.treeifyError(parseResult.error), { status: 400 })
+    }
+
+    const { id } = parseResult.data
+
+    // Check if training session exists early (terminate early if not found)
+    const existing = await db
       .select()
       .from(schema.trainingSessions)
       .where(eq(schema.trainingSessions.id, id))
       .limit(1)
 
-    if (existingSession.length === 0) {
+    if (existing.length === 0) {
       return Response.json(
         { message: 'Training session not found' },
         { status: 404 }
       )
     }
 
-    // Cascade delete will handle junction table
+    const trainingSessionData = existing[0]
+
+    // Get organization context for authorization (only if training session exists)
+    const { isSystemAdmin, isAdmin, isOwner, organization } =
+      await getOrganizationContext()
+
+    // Authorization: Only system admins, org admins, and org owners can delete training sessions
+    // Additionally, org members (admin/owner) must have an active organization
+    if (
+      (!isSystemAdmin && !isAdmin && !isOwner) ||
+      (!isSystemAdmin && !organization?.id)
+    ) {
+      return Response.json(
+        {
+          message:
+            'Only system admins, club admins, and club owners can delete training sessions',
+        },
+        { status: 403 }
+      )
+    }
+
+    // Organization ownership check: org members can only delete training sessions from their own organization
+    if (!isSystemAdmin) {
+      if (
+        !organization?.id ||
+        trainingSessionData.organizationId !== organization.id
+      ) {
+        return Response.json(
+          {
+            message:
+              'You can only delete training sessions from your own organization',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Delete training session
+    // Cascade delete behavior (configured in schema):
+    // - training_sessions -> training_session_coaches: cascade (all coach relationships deleted)
     await db
       .delete(schema.trainingSessions)
       .where(eq(schema.trainingSessions.id, id))
@@ -225,4 +323,3 @@ export async function DELETE(
     return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
-

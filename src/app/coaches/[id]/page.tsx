@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, User, Edit, Trash2 } from 'lucide-react'
+import { User, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BackButton } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -24,45 +25,36 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useCoachesStore } from '@/store/coaches-store'
-import { useAdminPermission } from '@/hooks/use-admin-permission'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
+import Loading from '@/components/ui/loading'
+import Unauthorized from '@/components/ui/unauthorized'
 
 const CoachDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const coachId = params.id as string
-  const { isAdmin, isLoading: isAdminLoading } = useAdminPermission()
+  const { context, isLoading: isOrganizationContextLoading } =
+    useOrganizationContext()
+  const { isSystemAdmin, isAdmin, isOwner, isAuthenticated } = context
   const { selectedCoach, fetchCoach, isLoading, deleteCoach } =
     useCoachesStore()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   useEffect(() => {
-    if (!isAdminLoading && !isAdmin) {
-      router.push('/')
-    }
-  }, [isAdmin, isAdminLoading, router])
-
-  useEffect(() => {
-    if (coachId && isAdmin) {
+    if (coachId && isAuthenticated) {
       fetchCoach(coachId)
     }
-  }, [coachId, fetchCoach, isAdmin])
+  }, [coachId, fetchCoach, isAuthenticated])
 
-  if (isAdminLoading) {
-    return (
-      <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-        <div className='animate-pulse space-y-6'>
-          <div className='h-8 bg-gray-200 rounded w-1/3'></div>
-          <div className='h-32 bg-gray-200 rounded'></div>
-        </div>
-      </div>
-    )
+  if (isOrganizationContextLoading) {
+    return <Loading />
   }
 
-  if (!isAdmin) {
-    return null
+  if (!isAuthenticated) {
+    return <Unauthorized />
   }
 
   if (isLoading || !selectedCoach) {
@@ -90,58 +82,62 @@ const CoachDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      <div className='mb-6'>
-        <Link href='/coaches'>
-          <Button variant='ghost' className='mb-4'>
-            <ArrowLeft className='mr-2 h-4 w-4' />
-            Back to Coaches
-          </Button>
-        </Link>
-
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold'>{selectedCoach.name}</h1>
-            <p className='text-muted-foreground mt-1'>
-              Coach Details
-            </p>
-          </div>
-          {isAdmin && (
-            <div className='flex gap-2'>
-              <Button
-                variant='outline'
-                onClick={() => setEditDialogOpen(true)}
-              >
-                <Edit className='mr-2 h-4 w-4' />
-                Edit
-              </Button>
-              <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button variant='destructive'>
-                    <Trash2 className='mr-2 h-4 w-4' />
+      {/* Back Navigation with Edit/Delete Actions */}
+      <div className='mb-6 flex items-center justify-between gap-2'>
+        <BackButton href='/coaches' longText='Back to Coaches' />
+        {(isSystemAdmin || isAdmin || isOwner) && (
+          <div className='flex gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              className='gap-2'
+              onClick={() => setEditDialogOpen(true)}
+            >
+              <Edit className='h-4 w-4' />
+              <span className='hidden sm:inline'>Edit Coach</span>
+            </Button>
+            <AlertDialog
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+            >
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='gap-2 text-destructive hover:text-destructive'
+                >
+                  <Trash2 className='h-4 w-4' />
+                  <span className='hidden sm:inline'>Delete Coach</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Coach</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {selectedCoach.name}? This
+                    action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                    onClick={handleDelete}
+                  >
                     Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Coach</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete {selectedCoach.name}? This
-                      action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+      </div>
+
+      {/* Coach Header */}
+      <div className='mb-8'>
+        <div>
+          <h1 className='text-3xl font-bold'>{selectedCoach.name}</h1>
+          <p className='text-muted-foreground mt-1'>Coach Details</p>
         </div>
       </div>
 
@@ -191,7 +187,7 @@ const CoachDetailPage = () => {
                   {selectedCoach.trainingSessions.map((session: any) => (
                     <Link
                       key={session.id}
-                      href={`/training-sessions/${session.id}`}
+                      href={`/sessions/${session.id}`}
                       className='block p-3 border rounded-lg hover:bg-accent'
                     >
                       <p className='font-medium'>{session.name}</p>
@@ -221,4 +217,3 @@ const CoachDetailPage = () => {
 }
 
 export default CoachDetailPage
-

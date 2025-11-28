@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { eq } from 'drizzle-orm'
+import { and, eq, not } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -7,19 +7,19 @@ import {
   coachesParamsSchema,
   coachesUpdateSchema,
 } from '@/types/api/coaches.schemas'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
+import { validateUserNotLinked } from '@/lib/user-linking-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  // Get organization context (all authenticated users can view coaches)
+  const { isAuthenticated } = await getOrganizationContext()
+
+  // Require authentication
+  if (!isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
   const resolvedParams = await params
@@ -73,13 +73,36 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
+  // Get organization context for authorization
+  const {
+    isSystemAdmin,
+    isAdmin,
+    isOwner,
+    isCoach,
+    organization,
+    isAuthenticated,
+  } = await getOrganizationContext()
+
+  // Require authentication
+  if (!isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Authorization: Only system admins, org admins, and org owners can update coaches
+  // Coaches CANNOT update other coaches
+  // Additionally, org members (admin/owner) must have an active organization
   if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
+    (!isSystemAdmin && !isAdmin && !isOwner) ||
+    (!isSystemAdmin && !organization?.id) ||
+    isCoach
   ) {
-    return adminResult.response
+    return Response.json(
+      {
+        message:
+          'Only system admins, club admins, and club owners can update coaches',
+      },
+      { status: 403 }
+    )
   }
 
   const resolvedParams = await params
@@ -110,9 +133,45 @@ export async function PATCH(
       return Response.json({ message: 'Coach not found' }, { status: 404 })
     }
 
+    const coachData = existingCoach[0]
+
+    // Organization ownership check: org members can only update coaches from their org
+    if (!isSystemAdmin) {
+      if (!organization?.id || coachData.organizationId !== organization.id) {
+        return Response.json(
+          {
+            message: 'You can only update coaches from your own organization',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
+    // System admins can change organizationId, org members cannot
+    let finalUpdateData = updateData
+    if (!isSystemAdmin && 'organizationId' in updateData) {
+      const { organizationId, ...rest } = updateData
+      finalUpdateData = rest
+    }
+
+    // Validate user is not already linked (if userId is being updated)
+    if (updateData.userId !== undefined) {
+      const validationError = await validateUserNotLinked(
+        updateData.userId,
+        undefined,
+        id
+      )
+      if (validationError) {
+        return Response.json(
+          { message: validationError.error },
+          { status: 400 }
+        )
+      }
+    }
+
     const result = await db
       .update(schema.coaches)
-      .set(updateData)
+      .set(finalUpdateData)
       .where(eq(schema.coaches.id, id))
       .returning()
 
@@ -127,13 +186,36 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
+  // Get organization context for authorization
+  const {
+    isSystemAdmin,
+    isAdmin,
+    isOwner,
+    isCoach,
+    organization,
+    isAuthenticated,
+  } = await getOrganizationContext()
+
+  // Require authentication
+  if (!isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Authorization: Only system admins, org admins, and org owners can delete coaches
+  // Coaches CANNOT delete other coaches
+  // Additionally, org members (admin/owner) must have an active organization
   if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
+    (!isSystemAdmin && !isAdmin && !isOwner) ||
+    (!isSystemAdmin && !organization?.id) ||
+    isCoach
   ) {
-    return adminResult.response
+    return Response.json(
+      {
+        message:
+          'Only system admins, club admins, and club owners can delete coaches',
+      },
+      { status: 403 }
+    )
   }
 
   const resolvedParams = await params
@@ -156,6 +238,20 @@ export async function DELETE(
       return Response.json({ message: 'Coach not found' }, { status: 404 })
     }
 
+    const coachData = existingCoach[0]
+
+    // Organization ownership check: org members can only delete coaches from their org
+    if (!isSystemAdmin) {
+      if (!organization?.id || coachData.organizationId !== organization.id) {
+        return Response.json(
+          {
+            message: 'You can only delete coaches from your own organization',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
     await db.delete(schema.coaches).where(eq(schema.coaches.id, id))
 
     return new Response(null, { status: 204 })
@@ -164,4 +260,3 @@ export async function DELETE(
     return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
-

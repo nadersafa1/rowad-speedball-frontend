@@ -7,7 +7,9 @@ type SortableField =
   | "createdAt"
   | "updatedAt"
   | "gender"
-  | "preferredHand";
+  | "preferredHand"
+  | "club"
+  | "organizationId";
 
 interface SortableHeaderProps {
   label: string;

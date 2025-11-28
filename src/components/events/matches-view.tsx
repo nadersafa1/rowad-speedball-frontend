@@ -20,7 +20,7 @@ interface MatchesViewProps {
   matches: Match[]
   groups?: Group[]
   groupMode?: 'single' | 'multiple'
-  isAdmin?: boolean
+  isSystemAdmin?: boolean
   onMatchUpdate?: () => void
 }
 
@@ -28,7 +28,7 @@ const MatchesView = ({
   matches,
   groups = [],
   groupMode = 'single',
-  isAdmin = false,
+  isSystemAdmin = false,
   onMatchUpdate,
 }: MatchesViewProps) => {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
@@ -257,15 +257,17 @@ const MatchesView = ({
 
   // Cleanup: leave all rooms and clear timeouts on unmount
   useEffect(() => {
+    const joinedRooms = joinedRoomsRef.current
+    const liveTimeouts = liveTimeoutsRef.current
     return () => {
-      joinedRoomsRef.current.forEach((matchId) => {
+      joinedRooms.forEach((matchId) => {
         leaveMatch(matchId)
       })
-      joinedRoomsRef.current.clear()
-      liveTimeoutsRef.current.forEach((timeout) => {
+      joinedRooms.clear()
+      liveTimeouts.forEach((timeout) => {
         clearTimeout(timeout)
       })
-      liveTimeoutsRef.current.clear()
+      liveTimeouts.clear()
     }
   }, [leaveMatch])
 
@@ -307,7 +309,7 @@ const MatchesView = ({
                       ? getGroupName(match.groupId)
                       : null
                   }
-                  showEditButton={isAdmin}
+                  showEditButton={isSystemAdmin}
                   onEditClick={() => setSelectedMatch(match)}
                   isLive={liveMatchIds.has(match.id)}
                 />

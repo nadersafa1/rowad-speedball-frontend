@@ -25,6 +25,42 @@ export const user = pgTable('user', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+// Organization Plugin Tables (managed by better-auth but defined here for TypeScript references)
+export const organization = pgTable('organization', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  logo: text('logo'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  metadata: text('metadata'),
+})
+
+export const member = pgTable('member', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  role: text('role').default('member').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const invitation = pgTable('invitation', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  role: text('role'),
+  status: text('status').default('pending').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  inviterId: uuid('inviter_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+})
+
 export const session = pgTable('session', {
   id: uuid('id').primaryKey().defaultRandom(),
   expiresAt: timestamp('expires_at').notNull(),
@@ -35,6 +71,10 @@ export const session = pgTable('session', {
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
   impersonatedBy: text('impersonated_by'),
+  activeOrganizationId: uuid('active_organization_id').references(
+    () => organization.id,
+    { onDelete: 'set null' }
+  ),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -76,6 +116,12 @@ export const players = pgTable('players', {
     enum: ['left', 'right', 'both'],
   }).notNull(),
   isFirstTeam: boolean('is_first_team').notNull().default(false),
+  userId: uuid('user_id')
+    .references(() => user.id, { onDelete: 'set null' })
+    .unique(),
+  organizationId: uuid('organization_id').references(() => organization.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -118,6 +164,12 @@ export const tests = pgTable('tests', {
   recoveryTime: integer('recovery_time').notNull(),
   dateConducted: date('date_conducted').notNull(),
   description: text('description'),
+  visibility: text('visibility', { enum: ['public', 'private'] })
+    .notNull()
+    .default('public'),
+  organizationId: uuid('organization_id').references(() => organization.id, {
+    onDelete: 'cascade',
+  }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -170,6 +222,12 @@ export const events = pgTable('events', {
   pointsPerWin: integer('points_per_win').notNull().default(3),
   pointsPerLoss: integer('points_per_loss').notNull().default(0),
   completed: boolean('completed').notNull().default(false),
+  championshipId: uuid('championship_id').references(() => championships.id, {
+    onDelete: 'cascade',
+  }),
+  organizationId: uuid('organization_id').references(() => organization.id, {
+    onDelete: 'cascade',
+  }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -256,6 +314,12 @@ export const coaches = pgTable('coaches', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
   gender: text('gender', { enum: ['male', 'female'] }).notNull(),
+  userId: uuid('user_id')
+    .references(() => user.id, { onDelete: 'set null' })
+    .unique(),
+  organizationId: uuid('organization_id').references(() => organization.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -273,6 +337,9 @@ export const trainingSessions = pgTable('training_sessions', {
   date: date('date').notNull(),
   description: text('description'),
   ageGroups: text('age_groups').array().notNull(),
+  organizationId: uuid('organization_id').references(() => organization.id, {
+    onDelete: 'cascade',
+  }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -287,6 +354,41 @@ export const trainingSessionCoaches = pgTable('training_session_coaches', {
     .notNull()
     .references(() => coaches.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Federations Table
+export const federations = pgTable('federations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// Federation Clubs Junction Table (many-to-many)
+export const federationClubs = pgTable('federation_clubs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  federationId: uuid('federation_id')
+    .notNull()
+    .references(() => federations.id, { onDelete: 'cascade' }),
+  organizationId: uuid('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Championships Table
+export const championships = pgTable('championships', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  federationId: uuid('federation_id')
+    .notNull()
+    .references(() => federations.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  startDate: date('start_date'),
+  endDate: date('end_date'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
 // Helper function to format date as "Nov 22, 2025"
@@ -310,3 +412,9 @@ export type Set = typeof sets.$inferSelect
 export type Coach = typeof coaches.$inferSelect
 export type TrainingSession = typeof trainingSessions.$inferSelect
 export type TrainingSessionCoach = typeof trainingSessionCoaches.$inferSelect
+export type Federation = typeof federations.$inferSelect
+export type Championship = typeof championships.$inferSelect
+export type FederationClub = typeof federationClubs.$inferSelect
+export type Organization = typeof organization.$inferSelect
+export type Member = typeof member.$inferSelect
+export type Invitation = typeof invitation.$inferSelect

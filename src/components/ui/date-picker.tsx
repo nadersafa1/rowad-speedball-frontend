@@ -19,13 +19,14 @@ export function DatePicker({
   placeholder = "Pick a date",
   disabled = false,
   className,
+  ...props
 }: {
   date?: Date;
   onDateChange?: (date: Date | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-}) {
+} & Omit<React.ComponentProps<typeof Button>, 'date' | 'onDateChange'>) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,9 +35,11 @@ export function DatePicker({
           className={cn(
             "w-full justify-start text-left font-normal",
             !date && "text-muted-foreground",
+            "aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
             className
           )}
           disabled={disabled}
+          {...props}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? format(date, "PPP") : <span>{placeholder}</span>}

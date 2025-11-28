@@ -1,77 +1,94 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { Player } from "@/types";
-import { SortableHeader } from "./players-table-sortable-header";
+import { ColumnDef } from '@tanstack/react-table'
+import { Player } from '@/types'
+import { SortableHeader } from './players-table-sortable-header'
 import {
   NameCell,
   GenderCell,
   AgeGroupCell,
   PreferredHandCell,
-} from "./players-table-cell-renderers";
+  ClubCell,
+} from './players-table-cell-renderers'
 
 export const createBaseColumns = (
   sortBy?: string,
-  sortOrder?: "asc" | "desc",
+  sortOrder?: 'asc' | 'desc',
   onSort?: (columnId: string) => void
 ): ColumnDef<Player>[] => [
   {
-    accessorKey: "name",
-    id: "name",
+    accessorKey: 'name',
+    id: 'name',
     header: () => (
       <SortableHeader
-        label="Name"
+        label='Name'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="name"
+        field='name'
         onSort={onSort}
       />
     ),
     cell: ({ row }) => (
-      <NameCell player={row.original} name={row.getValue("name")} />
+      <NameCell player={row.original} name={row.getValue('name')} />
     ),
   },
   {
-    accessorKey: "gender",
-    id: "gender",
+    accessorKey: 'gender',
+    id: 'gender',
     header: () => (
       <SortableHeader
-        label="Gender"
+        label='Gender'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="gender"
+        field='gender'
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => <GenderCell gender={row.getValue("gender")} />,
+    cell: ({ row }) => <GenderCell gender={row.getValue('gender')} />,
   },
   {
-    accessorKey: "ageGroup",
-    id: "ageGroup",
+    accessorKey: 'ageGroup',
+    id: 'ageGroup',
     header: () => (
       <SortableHeader
-        label="Age Group"
+        label='Age Group'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="dateOfBirth"
-        onSort={() => onSort?.("ageGroup")}
+        field='dateOfBirth'
+        onSort={() => onSort?.('ageGroup')}
       />
     ),
-    cell: ({ row }) => <AgeGroupCell ageGroup={row.getValue("ageGroup")} />,
+    cell: ({ row }) => <AgeGroupCell ageGroup={row.getValue('ageGroup')} />,
   },
   {
-    accessorKey: "preferredHand",
-    id: "preferredHand",
+    accessorKey: 'preferredHand',
+    id: 'preferredHand',
     header: () => (
       <SortableHeader
-        label="Preferred Hand"
+        label='Preferred Hand'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="preferredHand"
+        field='preferredHand'
         onSort={onSort}
       />
     ),
     cell: ({ row }) => (
-      <PreferredHandCell hand={row.getValue("preferredHand")} />
+      <PreferredHandCell hand={row.getValue('preferredHand')} />
     ),
   },
-];
-
+  {
+    accessorKey: 'organizationName',
+    id: 'organizationId',
+    enableHiding: false,
+    header: () => (
+      <SortableHeader
+        label='Organization'
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        field='organizationId'
+        onSort={onSort}
+      />
+    ),
+    cell: ({ row }) => (
+      <ClubCell organizationName={row.original.organizationName} />
+    ),
+  },
+]

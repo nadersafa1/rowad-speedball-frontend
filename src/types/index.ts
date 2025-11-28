@@ -9,6 +9,7 @@ export type Player = {
   ageGroup: string
   createdAt: string
   updatedAt: string
+  organizationName?: string | null
 }
 
 export type PaginatedResponse<T> = {
@@ -37,6 +38,7 @@ export type Test = {
   totalTime?: number
   formattedTotalTime?: string
   status?: string
+  organizationName?: string | null
 }
 
 export type TestResult = {
@@ -96,6 +98,7 @@ export type Event = {
   completed: boolean
   registrationsCount?: number
   lastMatchPlayedDate?: string | null
+  organizationName?: string | null
   createdAt: string
   updatedAt: string
   groups?: Group[]

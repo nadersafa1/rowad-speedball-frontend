@@ -1,5 +1,16 @@
 import { NextRequest } from 'next/server'
-import { and, asc, count, desc, eq, gte, ilike, lte, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  lte,
+  sql,
+  isNull,
+} from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -9,16 +20,13 @@ import {
   trainingSessionsQuerySchema,
 } from '@/types/api/training-sessions.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 
 export async function GET(request: NextRequest) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
+  // Require authentication - training sessions are always private
+  const { isAuthenticated } = await getOrganizationContext()
+  if (!isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
   const { searchParams } = new URL(request.url)
@@ -37,6 +45,7 @@ export async function GET(request: NextRequest) {
       dateFrom,
       dateTo,
       ageGroup,
+      organizationId,
       sortBy,
       sortOrder,
       page,
@@ -46,20 +55,41 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
     const conditions: any[] = []
 
+    // Get organization context for authorization
+    const { isSystemAdmin, organization } = await getOrganizationContext()
+
+    // Organization filter (only for system admins)
+    // Only apply if organizationId is explicitly provided and user is system admin
+    if (organizationId !== undefined && isSystemAdmin) {
+      if (organizationId === null) {
+        // Filter for training sessions without organization (global sessions)
+        conditions.push(isNull(schema.trainingSessions.organizationId))
+      } else {
+        // Filter for specific organization
+        conditions.push(
+          eq(schema.trainingSessions.organizationId, organizationId)
+        )
+      }
+    }
+
+    // Text search filter
     if (q) {
       conditions.push(ilike(schema.trainingSessions.name, `%${q}%`))
     }
 
+    // Intensity filter
     if (intensity && intensity !== 'all') {
       conditions.push(eq(schema.trainingSessions.intensity, intensity))
     }
 
+    // Type filter
     if (type) {
       conditions.push(
         sql`${schema.trainingSessions.type} @> ARRAY[${type}]::text[]`
       )
     }
 
+    // Date filters
     if (dateFrom) {
       conditions.push(gte(schema.trainingSessions.date, dateFrom))
     }
@@ -68,10 +98,26 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(schema.trainingSessions.date, dateTo))
     }
 
+    // Age group filter
     if (ageGroup) {
       conditions.push(
         sql`${schema.trainingSessions.ageGroups} @> ARRAY[${ageGroup}]::text[]`
       )
+    }
+
+    // Apply organization-based filtering:
+    // 1. System admin: sees all training sessions
+    // 2. Org members: see only their org's training sessions
+    if (!isSystemAdmin) {
+      if (organization?.id) {
+        // Org members: can only see training sessions from their organization
+        conditions.push(
+          eq(schema.trainingSessions.organizationId, organization.id)
+        )
+      } else {
+        // Authenticated user without organization: can only see training sessions without organization
+        conditions.push(isNull(schema.trainingSessions.organizationId))
+      }
     }
 
     const combinedCondition =
@@ -81,39 +127,103 @@ export async function GET(request: NextRequest) {
           )
         : undefined
 
-    let countQuery = db
-      .select({ count: count() })
-      .from(schema.trainingSessions)
+    let countQuery = db.select({ count: count() }).from(schema.trainingSessions)
     if (combinedCondition) {
       countQuery = countQuery.where(combinedCondition) as any
     }
 
-    let dataQuery = db.select().from(schema.trainingSessions)
+    let dataQuery = db
+      .select({
+        trainingSession: schema.trainingSessions,
+        organizationName: schema.organization.name,
+      })
+      .from(schema.trainingSessions)
+      .leftJoin(
+        schema.organization,
+        eq(schema.trainingSessions.organizationId, schema.organization.id)
+      )
+
     if (combinedCondition) {
       dataQuery = dataQuery.where(combinedCondition) as any
     }
 
     // Dynamic sorting
     if (sortBy) {
-      const sortField = schema.trainingSessions[sortBy]
-      const order = sortOrder === 'asc' ? asc(sortField) : desc(sortField)
-      dataQuery = dataQuery.orderBy(order) as any
+      const sortFieldMap: Record<string, any> = {
+        name: schema.trainingSessions.name,
+        intensity: schema.trainingSessions.intensity,
+        date: schema.trainingSessions.date,
+        createdAt: schema.trainingSessions.createdAt,
+        updatedAt: schema.trainingSessions.updatedAt,
+      }
+
+      const sortField = sortFieldMap[sortBy]
+      if (sortField) {
+        const order = sortOrder === 'asc' ? asc(sortField) : desc(sortField)
+        dataQuery = dataQuery.orderBy(order) as any
+      }
     } else {
       dataQuery = dataQuery.orderBy(
         desc(schema.trainingSessions.createdAt)
       ) as any
     }
 
-    const [countResult, dataResult] = await Promise.all([
+    // Stats queries - use same filters but without pagination
+    const highIntensityCountQuery = db
+      .select({ count: count() })
+      .from(schema.trainingSessions)
+      .where(
+        combinedCondition
+          ? and(
+              combinedCondition,
+              eq(schema.trainingSessions.intensity, 'high')
+            )
+          : eq(schema.trainingSessions.intensity, 'high')
+      )
+
+    const normalIntensityCountQuery = db
+      .select({ count: count() })
+      .from(schema.trainingSessions)
+      .where(
+        combinedCondition
+          ? and(
+              combinedCondition,
+              eq(schema.trainingSessions.intensity, 'normal')
+            )
+          : eq(schema.trainingSessions.intensity, 'normal')
+      )
+
+    const lowIntensityCountQuery = db
+      .select({ count: count() })
+      .from(schema.trainingSessions)
+      .where(
+        combinedCondition
+          ? and(combinedCondition, eq(schema.trainingSessions.intensity, 'low'))
+          : eq(schema.trainingSessions.intensity, 'low')
+      )
+
+    const [
+      countResult,
+      dataResult,
+      highIntensityCountResult,
+      normalIntensityCountResult,
+      lowIntensityCountResult,
+    ] = await Promise.all([
       countQuery,
       dataQuery.limit(limit).offset(offset),
+      highIntensityCountQuery,
+      normalIntensityCountQuery,
+      lowIntensityCountQuery,
     ])
 
     const totalItems = countResult[0].count
+    const highIntensityCount = highIntensityCountResult[0].count
+    const normalIntensityCount = normalIntensityCountResult[0].count
+    const lowIntensityCount = lowIntensityCountResult[0].count
 
     // Get coaches for each training session
     const sessionsWithCoaches = await Promise.all(
-      dataResult.map(async (session) => {
+      dataResult.map(async (row) => {
         const coaches = await db
           .select({
             coach: schema.coaches,
@@ -126,12 +236,13 @@ export async function GET(request: NextRequest) {
           .where(
             eq(
               schema.trainingSessionCoaches.trainingSessionId,
-              session.id
+              row.trainingSession.id
             )
           )
 
         return {
-          ...session,
+          ...row.trainingSession,
+          organizationName: row.organizationName ?? null,
           coaches: coaches.map((c) => c.coach),
         }
       })
@@ -144,6 +255,14 @@ export async function GET(request: NextRequest) {
       totalItems
     )
 
+    // Add stats to response
+    paginatedResponse.stats = {
+      totalCount: totalItems,
+      highIntensityCount,
+      normalIntensityCount,
+      lowIntensityCount,
+    }
+
     return Response.json(paginatedResponse)
   } catch (error) {
     console.error('Error fetching training sessions:', error)
@@ -152,13 +271,34 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const adminResult = await requireAdmin(request)
+  // Get organization context for authorization and organization assignment
+  const {
+    isSystemAdmin,
+    isAdmin,
+    isCoach,
+    isOwner,
+    organization,
+    isAuthenticated,
+  } = await getOrganizationContext()
+
+  // Require authentication
+  if (!isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Authorization: Only system admins, org admins, org owners, and org coaches can create training sessions
+  // Additionally, org members (admin/owner/coach) must have an active organization
   if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
+    (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
+    (!isSystemAdmin && !organization?.id)
   ) {
-    return adminResult.response
+    return Response.json(
+      {
+        message:
+          'Only system admins, club admins, club owners, and club coaches can create training sessions',
+      },
+      { status: 403 }
+    )
   }
 
   try {
@@ -169,12 +309,40 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { name, intensity, type, date, description, ageGroups, coachIds } =
-      parseResult.data
+    const {
+      name,
+      intensity,
+      type,
+      date,
+      description,
+      ageGroups,
+      coachIds,
+      organizationId: providedOrgId,
+    } = parseResult.data
+
+    // Determine final organizationId:
+    // - System admins can specify any organizationId or leave it null (for global training sessions)
+    // - Org members (admin/owner/coach) are forced to use their active organization
+    let finalOrganizationId = providedOrgId
+    if (!isSystemAdmin) {
+      finalOrganizationId = organization?.id
+    } else if (providedOrgId !== undefined && providedOrgId !== null) {
+      // System admin: validate referenced organization exists if being set
+      const orgCheck = await db
+        .select()
+        .from(schema.organization)
+        .where(eq(schema.organization.id, providedOrgId))
+        .limit(1)
+      if (orgCheck.length === 0) {
+        return Response.json(
+          { message: 'Organization not found' },
+          { status: 404 }
+        )
+      }
+    }
 
     // Auto-generate name from date if not provided
-    const sessionName =
-      name || formatDateForSessionName(new Date(date))
+    const sessionName = name || formatDateForSessionName(new Date(date))
 
     // Insert training session
     const result = await db
@@ -186,6 +354,7 @@ export async function POST(request: NextRequest) {
         date,
         description: description || null,
         ageGroups,
+        organizationId: finalOrganizationId,
       })
       .returning()
 
@@ -211,9 +380,7 @@ export async function POST(request: NextRequest) {
         schema.coaches,
         eq(schema.trainingSessionCoaches.coachId, schema.coaches.id)
       )
-      .where(
-        eq(schema.trainingSessionCoaches.trainingSessionId, newSession.id)
-      )
+      .where(eq(schema.trainingSessionCoaches.trainingSessionId, newSession.id))
 
     return Response.json(
       {
@@ -227,4 +394,3 @@ export async function POST(request: NextRequest) {
     return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
-

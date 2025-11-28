@@ -11,14 +11,18 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { useMemo } from 'react'
+import { cn } from '@/lib/utils'
 
 export function DateOfBirthPicker({
   date,
   onDateChange,
+  className,
+  ...props
 }: {
   date: Date
   onDateChange: (date: Date) => void
-}) {
+  className?: string
+} & Omit<React.ComponentProps<typeof Button>, 'date' | 'onDateChange'>) {
   const today = useMemo(() => new Date(), [])
 
   const twoYearsAgo = useMemo(() => {
@@ -31,7 +35,12 @@ export function DateOfBirthPicker({
         <Button
           variant='outline'
           data-empty={!date}
-          className='data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal'
+          className={cn(
+            'data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal',
+            'aria-invalid:ring-destructive/20 aria-invalid:border-destructive',
+            className
+          )}
+          {...props}
         >
           <CalendarIcon />
           {date ? format(date, 'PPP') : <span>Pick a date</span>}

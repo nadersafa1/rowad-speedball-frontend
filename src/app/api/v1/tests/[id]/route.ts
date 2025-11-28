@@ -1,37 +1,65 @@
-import { NextRequest } from "next/server";
-import { desc, eq } from "drizzle-orm";
-import z from "zod";
-import { db } from "@/lib/db";
-import * as schema from "@/db/schema";
-import {
-  testsParamsSchema,
-  testsUpdateSchema,
-} from "@/types/api/tests.schemas";
-import { testsService } from "@/lib/services/tests.service";
-import { requireAdmin } from "@/lib/auth-middleware";
+import { NextRequest } from 'next/server'
+import { desc, eq } from 'drizzle-orm'
+import z from 'zod'
+import { db } from '@/lib/db'
+import * as schema from '@/db/schema'
+import { testsParamsSchema, testsUpdateSchema } from '@/types/api/tests.schemas'
+import { testsService } from '@/lib/services/tests.service'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const resolvedParams = await params;
-  const parseResult = testsParamsSchema.safeParse(resolvedParams);
+  const resolvedParams = await params
+  const parseResult = testsParamsSchema.safeParse(resolvedParams)
 
   if (!parseResult.success) {
-    return Response.json(z.treeifyError(parseResult.error), { status: 400 });
+    return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
 
   try {
-    const { id } = resolvedParams;
+    const { id } = resolvedParams
 
-    const test = await db
-      .select()
+    // Check if test exists early (terminate early if not found)
+    const row = await db
+      .select({
+        test: schema.tests,
+        organizationName: schema.organization.name,
+      })
       .from(schema.tests)
+      .leftJoin(
+        schema.organization,
+        eq(schema.tests.organizationId, schema.organization.id)
+      )
       .where(eq(schema.tests.id, id))
-      .limit(1);
+      .limit(1)
 
-    if (test.length === 0) {
-      return Response.json({ message: "Test not found" }, { status: 404 });
+    if (row.length === 0) {
+      return Response.json({ message: 'Test not found' }, { status: 404 })
+    }
+
+    const test = row[0].test
+    const organizationName = row[0].organizationName ?? null
+
+    // Get organization context for authorization (only if test exists)
+    const { isSystemAdmin, organization } = await getOrganizationContext()
+
+    // Authorization check: matches GET all tests logic
+    // System admin: can see all tests
+    // Org members: can see their org tests (public + private) + public tests + tests without org
+    // Non-authenticated: can see public tests + tests without org
+    if (!isSystemAdmin) {
+      const isPublic = test.visibility === 'public'
+      const hasNoOrganization = test.organizationId === null
+      const isFromUserOrg =
+        organization?.id && test.organizationId === organization.id
+
+      // Allow if: public OR no organization OR from user's org
+      // Block if: private AND has organization AND not from user's org
+      if (!isPublic && !hasNoOrganization && !isFromUserOrg) {
+        return Response.json({ message: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const testResults = await db
@@ -45,26 +73,27 @@ export async function GET(
         eq(schema.testResults.playerId, schema.players.id)
       )
       .where(eq(schema.testResults.testId, id))
-      .orderBy(desc(schema.testResults.createdAt));
+      .orderBy(desc(schema.testResults.createdAt))
 
     const resultsWithTotal = testResults.map((row) => ({
       ...row.result,
       totalScore: testsService.calculateTotalScore(row.result),
       player: row.player,
-    }));
+    }))
 
     const testWithCalculatedFields = {
-      ...test[0],
-      totalTime: testsService.calculateTotalTime(test[0]),
-      formattedTotalTime: testsService.formatTotalTime(test[0]),
-      status: testsService.getTestStatus(test[0].dateConducted),
+      ...test,
+      organizationName: organizationName,
+      totalTime: testsService.calculateTotalTime(test),
+      formattedTotalTime: testsService.formatTotalTime(test),
+      status: testsService.getTestStatus(test.dateConducted),
       testResults: resultsWithTotal,
-    };
+    }
 
-    return Response.json(testWithCalculatedFields);
+    return Response.json(testWithCalculatedFields)
   } catch (error) {
-    console.error("Error fetching test:", error);
-    return Response.json({ message: "Internal server error" }, { status: 500 });
+    console.error('Error fetching test:', error)
+    return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -72,63 +101,128 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request);
-  if (
-    !adminResult.authenticated ||
-    !("authorized" in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response;
-  }
-
-  const resolvedParams = await params;
-  const paramsResult = testsParamsSchema.safeParse(resolvedParams);
-
-  if (!paramsResult.success) {
-    return Response.json(z.treeifyError(paramsResult.error), { status: 400 });
-  }
-
   try {
-    const body = await request.json();
-    const bodyResult = testsUpdateSchema.safeParse(body);
+    // Parse params and body first (quick validation, no DB calls)
+  const resolvedParams = await params
+    const parseParams = testsParamsSchema.safeParse(resolvedParams)
+    if (!parseParams.success) {
+      return Response.json(z.treeifyError(parseParams.error), { status: 400 })
+  }
 
-    if (!bodyResult.success) {
-      return Response.json(z.treeifyError(bodyResult.error), { status: 400 });
+    const body = await request.json()
+    const parseResult = testsUpdateSchema.safeParse(body)
+
+    if (!parseResult.success) {
+      return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { id } = resolvedParams;
-    const updateData = bodyResult.data;
+    const { id } = parseParams.data
+    const updateData = parseResult.data
 
-    const existingTest = await db
+    // Check if test exists early (terminate early if not found)
+    const existing = await db
       .select()
       .from(schema.tests)
       .where(eq(schema.tests.id, id))
-      .limit(1);
+      .limit(1)
 
-    if (existingTest.length === 0) {
-      return Response.json({ message: "Test not found" }, { status: 404 });
+    if (existing.length === 0) {
+      return Response.json({ message: 'Test not found' }, { status: 404 })
+    }
+
+    const testData = existing[0]
+
+    // Get organization context for authorization (only if test exists)
+    const {
+      isSystemAdmin,
+      isAdmin,
+      isCoach,
+      isOwner,
+      organization,
+      isAuthenticated,
+    } = await getOrganizationContext()
+
+    // Require authentication
+    if (!isAuthenticated) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Authorization: Only system admins, org admins, org owners, and org coaches can update tests
+    // Additionally, org members (admin/owner/coach) must have an active organization
+    if (
+      (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
+      (!isSystemAdmin && !organization?.id)
+    ) {
+      return Response.json(
+        {
+          message:
+            'Only system admins, club admins, club owners, and club coaches can update tests',
+        },
+        { status: 403 }
+      )
+    }
+
+    // Organization ownership check: org members can only update tests from their own organization
+    if (!isSystemAdmin) {
+      if (!organization?.id || testData.organizationId !== organization.id) {
+        return Response.json(
+          {
+            message: 'You can only update tests from your own organization',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Handle organizationId updates:
+    // - System admins can change organizationId to any organization or null
+    // - Org members cannot change organizationId (must remain their organization)
+    let finalUpdateData: typeof updateData
+    if (!isSystemAdmin) {
+      // Remove organizationId from update if org member tries to change it
+      const { organizationId, ...rest } = updateData
+      finalUpdateData = rest
+    } else {
+      // System admin: validate referenced organization exists if being updated
+      if (
+        updateData.organizationId !== undefined &&
+        updateData.organizationId !== null
+      ) {
+        const orgCheck = await db
+          .select()
+          .from(schema.organization)
+          .where(eq(schema.organization.id, updateData.organizationId))
+          .limit(1)
+        if (orgCheck.length === 0) {
+          return Response.json(
+            { message: 'Organization not found' },
+            { status: 404 }
+          )
+        }
+      }
+      finalUpdateData = updateData
     }
 
     const result = await db
       .update(schema.tests)
       .set({
-        ...updateData,
+        ...finalUpdateData,
         updatedAt: new Date(),
       })
       .where(eq(schema.tests.id, id))
-      .returning();
+      .returning()
 
     const updatedTest = {
       ...result[0],
       totalTime: testsService.calculateTotalTime(result[0]),
       formattedTotalTime: testsService.formatTotalTime(result[0]),
       status: testsService.getTestStatus(result[0].dateConducted),
-    };
+    }
 
-    return Response.json(updatedTest);
+    return Response.json(updatedTest)
   } catch (error) {
-    console.error("Error updating test:", error);
-    return Response.json({ message: "Internal server error" }, { status: 500 });
+    console.error('Error updating test:', error)
+    return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -136,40 +230,69 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request);
-  if (
-    !adminResult.authenticated ||
-    !("authorized" in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response;
-  }
-
-  const resolvedParams = await params;
-  const parseResult = testsParamsSchema.safeParse(resolvedParams);
+  try {
+    // Parse params first (quick validation, no DB calls)
+  const resolvedParams = await params
+  const parseResult = testsParamsSchema.safeParse(resolvedParams)
 
   if (!parseResult.success) {
-    return Response.json(z.treeifyError(parseResult.error), { status: 400 });
+    return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
 
-  try {
-    const { id } = resolvedParams;
+    const { id } = parseResult.data
 
-    const existingTest = await db
+    // Check if test exists early (terminate early if not found)
+    const existing = await db
       .select()
       .from(schema.tests)
       .where(eq(schema.tests.id, id))
-      .limit(1);
+      .limit(1)
 
-    if (existingTest.length === 0) {
-      return Response.json({ message: "Test not found" }, { status: 404 });
+    if (existing.length === 0) {
+      return Response.json({ message: 'Test not found' }, { status: 404 })
     }
 
-    await db.delete(schema.tests).where(eq(schema.tests.id, id));
+    const testData = existing[0]
 
-    return new Response(null, { status: 204 });
+    // Get organization context for authorization (only if test exists)
+    const { isSystemAdmin, isAdmin, isOwner, organization } =
+      await getOrganizationContext()
+
+    // Authorization: Only system admins, org admins, and org owners can delete tests
+    // Additionally, org members (admin/owner) must have an active organization
+    if (
+      (!isSystemAdmin && !isAdmin && !isOwner) ||
+      (!isSystemAdmin && !organization?.id)
+    ) {
+      return Response.json(
+        {
+          message:
+            'Only system admins, club admins, and club owners can delete tests',
+        },
+        { status: 403 }
+      )
+    }
+
+    // Organization ownership check: org members can only delete tests from their own organization
+    if (!isSystemAdmin) {
+      if (!organization?.id || testData.organizationId !== organization.id) {
+        return Response.json(
+          {
+            message: 'You can only delete tests from your own organization',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Delete test
+    // Cascade delete behavior (configured in schema):
+    // - tests -> test_results: cascade (all test results deleted)
+    await db.delete(schema.tests).where(eq(schema.tests.id, id))
+
+    return new Response(null, { status: 204 })
   } catch (error) {
-    console.error("Error deleting test:", error);
-    return Response.json({ message: "Internal server error" }, { status: 500 });
+    console.error('Error deleting test:', error)
+    return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }

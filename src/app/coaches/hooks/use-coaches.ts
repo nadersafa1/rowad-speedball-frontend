@@ -12,21 +12,21 @@ export const useCoaches = (filters: CoachesFilters) => {
     clearError,
   } = useCoachesStore()
 
+  // Fetch coaches when filters change
   useEffect(() => {
     fetchCoaches(filters)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchCoaches, filters.q, filters.gender, filters.page, filters.limit, filters.sortBy, filters.sortOrder])
+  }, [filters, fetchCoaches])
 
   const handlePageChange = useCallback(
-    (newPage: number) => {
-      fetchCoaches({ ...filters, page: newPage })
+    (page: number) => {
+      fetchCoaches({ ...filters, page })
     },
-    [fetchCoaches, filters]
+    [filters, fetchCoaches]
   )
 
   const refetch = useCallback(() => {
     fetchCoaches(filters)
-  }, [fetchCoaches, filters])
+  }, [filters, fetchCoaches])
 
   return {
     coaches,

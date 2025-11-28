@@ -2,19 +2,12 @@
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
 import type { Coach } from '@/db/schema'
-import type { PaginatedResponse } from '@/types/api/pagination'
+import type { PaginatedResponse, CoachesStats } from '@/types/api/pagination'
+import { CoachesFilters } from '@/app/coaches/types'
+import { isCoachesStats } from '@/lib/utils/stats-type-guards'
 
 interface CoachWithSessions extends Coach {
   trainingSessions?: any[]
-}
-
-interface CoachesFilters {
-  q?: string
-  gender?: 'male' | 'female' | 'all'
-  sortBy?: 'name' | 'gender' | 'createdAt' | 'updatedAt'
-  sortOrder?: 'asc' | 'desc'
-  page?: number
-  limit?: number
 }
 
 interface CoachesState {
@@ -28,6 +21,7 @@ interface CoachesState {
     totalItems: number
     totalPages: number
   }
+  stats: CoachesStats | null
 
   // Actions
   fetchCoaches: (filters?: CoachesFilters) => Promise<void>
@@ -50,18 +44,24 @@ export const useCoachesStore = create<CoachesState>((set, get) => ({
     totalItems: 0,
     totalPages: 0,
   },
+  stats: null,
 
   fetchCoaches: async (filters = {}) => {
     set({ isLoading: true, error: null })
 
     try {
-      const params = {
+      const params: any = {
         q: filters.q,
         gender: filters.gender as any,
         page: filters.page,
         limit: filters.limit,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
+      }
+
+      // Include organizationId filter if provided
+      if (filters.organizationId !== undefined) {
+        params.organizationId = filters.organizationId
       }
 
       const response = (await apiClient.getCoaches(
@@ -76,6 +76,7 @@ export const useCoachesStore = create<CoachesState>((set, get) => ({
           totalItems: response.totalItems,
           totalPages: response.totalPages,
         },
+        stats: isCoachesStats(response.stats) ? response.stats : null,
         isLoading: false,
       })
     } catch (error) {
@@ -94,8 +95,7 @@ export const useCoachesStore = create<CoachesState>((set, get) => ({
       set({ selectedCoach: coach, isLoading: false })
     } catch (error) {
       set({
-        error:
-          error instanceof Error ? error.message : 'Failed to fetch coach',
+        error: error instanceof Error ? error.message : 'Failed to fetch coach',
         isLoading: false,
       })
     }
@@ -122,10 +122,7 @@ export const useCoachesStore = create<CoachesState>((set, get) => ({
   updateCoach: async (id: string, data: any) => {
     set({ isLoading: true, error: null })
     try {
-      const updatedCoach = (await apiClient.updateCoach(
-        id,
-        data
-      )) as Coach
+      const updatedCoach = (await apiClient.updateCoach(id, data)) as Coach
       set((state) => ({
         coaches: state.coaches.map((c) => (c.id === id ? updatedCoach : c)),
         selectedCoach:
@@ -170,4 +167,3 @@ export const useCoachesStore = create<CoachesState>((set, get) => ({
   clearError: () => set({ error: null }),
   clearSelectedCoach: () => set({ selectedCoach: null }),
 }))
-

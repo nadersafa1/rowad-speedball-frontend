@@ -1,11 +1,7 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Save, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Form,
   FormControl,
@@ -14,6 +10,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   Select,
   SelectContent,
@@ -21,8 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useEventsStore } from '@/store/events-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Save } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import {
   DialogContent,
   DialogDescription,
@@ -30,38 +31,47 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui'
-import { DatePicker } from '@/components/ui/date-picker'
+import ClubCombobox from '@/components/organizations/club-combobox'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 
-// Validation schema
-const eventSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name is required')
-    .min(3, 'Name must be at least 3 characters')
-    .max(255, 'Name must be less than 255 characters'),
-  eventType: z.enum(['singles', 'doubles'], {
-    message: 'Event type is required',
-  }),
-  gender: z.enum(['male', 'female', 'mixed'], {
-    message: 'Gender is required',
-  }),
-  groupMode: z.enum(['single', 'multiple'], {
-    message: 'Group mode is required',
-  }),
-  visibility: z.enum(['public', 'private']).default('public'),
-  registrationStartDate: z.date().optional().nullable(),
-  registrationEndDate: z.date().optional().nullable(),
-  bestOf: z
-    .number()
-    .int('bestOf must be an integer')
-    .positive('bestOf must be positive')
-    .refine(
-      (val) => val % 2 === 1,
-      'bestOf must be an odd number (1, 3, 5, 7, etc.)'
-    ),
-  pointsPerWin: z.number().int().min(0).default(3),
-  pointsPerLoss: z.number().int().min(0).default(0),
-})
+// Validation schema - matches backend schema exactly
+const eventSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
+    eventType: z.enum(['singles', 'doubles'], {
+      message: 'Event type is required',
+    }),
+    gender: z.enum(['male', 'female', 'mixed'], {
+      message: 'Gender is required',
+    }),
+    groupMode: z.enum(['single', 'multiple'], {
+      message: 'Group mode is required',
+    }),
+    visibility: z.enum(['public', 'private']),
+    registrationStartDate: z.date('Invalid date format'),
+    registrationEndDate: z.date('Invalid date format'),
+    bestOf: z
+      .number()
+      .int('bestOf must be an integer')
+      .positive('bestOf must be positive')
+      .refine(
+        (val) => val % 2 === 1,
+        'bestOf must be an odd number (1, 3, 5, 7, etc.)'
+      ),
+    pointsPerWin: z.number().int().min(0),
+    pointsPerLoss: z.number().int().min(0),
+    organizationId: z.string().uuid().nullable().optional(),
+  })
+  .refine(
+    (data) => {
+      // End date must be after start date
+      return data.registrationEndDate >= data.registrationStartDate
+    },
+    {
+      message: 'End date must be after start date',
+      path: ['registrationEndDate'],
+    }
+  )
 
 type EventFormData = z.infer<typeof eventSchema>
 
@@ -80,8 +90,9 @@ const EventForm = ({
   hasRegistrations = false,
   hasPlayedSets = false,
 }: EventFormProps) => {
-  const { createEvent, updateEvent, isLoading, error, clearError } =
-    useEventsStore()
+  const { createEvent, updateEvent, error, clearError } = useEventsStore()
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin } = context
   const isEditing = !!event
 
   const form = useForm<EventFormData>({
@@ -94,27 +105,30 @@ const EventForm = ({
       visibility: event?.visibility || 'public',
       registrationStartDate: event?.registrationStartDate
         ? new Date(event.registrationStartDate)
-        : null,
+        : undefined,
       registrationEndDate: event?.registrationEndDate
         ? new Date(event.registrationEndDate)
-        : null,
+        : undefined,
       bestOf: event?.bestOf || 3,
       pointsPerWin: event?.pointsPerWin || 3,
       pointsPerLoss: event?.pointsPerLoss || 1,
+      organizationId: event?.organizationId || null,
     },
   })
 
+  const { isSubmitting } = form.formState
+
   const onSubmit = async (data: EventFormData) => {
+    clearError()
     try {
-      clearError()
       const formattedData = {
         ...data,
         registrationStartDate: data.registrationStartDate
-          ? data.registrationStartDate.toISOString().split('T')[0]
-          : null,
+          .toISOString()
+          .split('T')[0],
         registrationEndDate: data.registrationEndDate
-          ? data.registrationEndDate.toISOString().split('T')[0]
-          : null,
+          .toISOString()
+          .split('T')[0],
       }
 
       if (isEditing) {
@@ -123,9 +137,11 @@ const EventForm = ({
         await createEvent(formattedData)
       }
 
+      form.reset()
       onSuccess?.()
     } catch (err) {
       console.error('Error submitting event form:', err)
+      // Error is handled by the store
     }
   }
 
@@ -165,7 +181,7 @@ const EventForm = ({
                   <FormLabel>Event Type</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     disabled={isEditing && hasRegistrations}
                   >
                     <FormControl>
@@ -196,7 +212,7 @@ const EventForm = ({
                   <FormLabel>Gender</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     disabled={isEditing && hasRegistrations}
                   >
                     <FormControl>
@@ -230,7 +246,7 @@ const EventForm = ({
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     className='flex flex-col sm:flex-row gap-4 sm:gap-6'
                     disabled={isEditing && hasPlayedSets}
                   >
@@ -289,7 +305,7 @@ const EventForm = ({
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     className='flex flex-col sm:flex-row gap-4 sm:gap-6'
                   >
                     <div className='flex items-center space-x-2'>
@@ -445,6 +461,28 @@ const EventForm = ({
             />
           </div>
 
+          {/* Club Field - Only for System Admins */}
+          {isSystemAdmin && (
+            <FormField
+              control={form.control}
+              name='organizationId'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Club</FormLabel>
+                  <FormControl>
+                    <ClubCombobox
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isSubmitting}
+                      placeholder='Select a club (optional)'
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           {error && <div className='text-sm text-destructive'>{error}</div>}
 
           <DialogFooter className='flex-col sm:flex-row gap-2 sm:gap-0'>
@@ -453,6 +491,7 @@ const EventForm = ({
                 type='button'
                 variant='outline'
                 onClick={onCancel}
+                disabled={isSubmitting}
                 className='w-full sm:w-auto'
               >
                 Cancel
@@ -460,11 +499,11 @@ const EventForm = ({
             )}
             <Button
               type='submit'
-              disabled={isLoading}
+              disabled={isSubmitting}
               className='w-full sm:w-auto'
             >
               <Save className='mr-2 h-4 w-4' />
-              {isLoading ? 'Saving...' : isEditing ? 'Update' : 'Create'}
+              {isSubmitting ? 'Saving...' : isEditing ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
         </form>

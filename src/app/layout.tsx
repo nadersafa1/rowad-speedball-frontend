@@ -4,6 +4,7 @@ import './globals.css'
 import Header from '@/components/navigation/header'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { ImpersonationIndicator } from '@/components/auth/impersonation-indicator'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,10 +21,11 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
       <body className={inter.className}>
         <TooltipProvider>
           <Header />
-          <main className='container mx-auto px-4 sm:px-6 lg:px-8 min-h-screen'>
+          <main className='container mx-auto px-4 sm:px-6 lg:px-8 min-h-[90dvh]'>
             {children}
           </main>
           <Toaster />
+          <ImpersonationIndicator />
         </TooltipProvider>
       </body>
     </html>

@@ -2,10 +2,15 @@
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
 import type { TrainingSession, Coach } from '@/db/schema'
-import type { PaginatedResponse } from '@/types/api/pagination'
+import type {
+  PaginatedResponse,
+  TrainingSessionsStats,
+} from '@/types/api/pagination'
+import { isTrainingSessionsStats } from '@/lib/utils/stats-type-guards'
 
 interface TrainingSessionWithCoaches extends TrainingSession {
   coaches?: Coach[]
+  organizationName?: string | null
 }
 
 interface TrainingSessionsFilters {
@@ -15,6 +20,7 @@ interface TrainingSessionsFilters {
   dateFrom?: string
   dateTo?: string
   ageGroup?: string
+  organizationId?: string | null
   sortBy?: 'name' | 'intensity' | 'date' | 'createdAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
   page?: number
@@ -32,11 +38,10 @@ interface TrainingSessionsState {
     totalItems: number
     totalPages: number
   }
+  stats: TrainingSessionsStats | null
 
   // Actions
-  fetchTrainingSessions: (
-    filters?: TrainingSessionsFilters
-  ) => Promise<void>
+  fetchTrainingSessions: (filters?: TrainingSessionsFilters) => Promise<void>
   fetchTrainingSession: (id: string) => Promise<void>
   createTrainingSession: (data: any) => Promise<void>
   updateTrainingSession: (id: string, data: any) => Promise<void>
@@ -53,10 +58,11 @@ export const useTrainingSessionsStore = create<TrainingSessionsState>(
     error: null,
     pagination: {
       page: 1,
-      limit: 10,
+      limit: 25,
       totalItems: 0,
       totalPages: 0,
     },
+    stats: null,
 
     fetchTrainingSessions: async (filters = {}) => {
       set({ isLoading: true, error: null })
@@ -69,6 +75,7 @@ export const useTrainingSessionsStore = create<TrainingSessionsState>(
           dateFrom: filters.dateFrom,
           dateTo: filters.dateTo,
           ageGroup: filters.ageGroup,
+          organizationId: filters.organizationId,
           page: filters.page,
           limit: filters.limit,
           sortBy: filters.sortBy,
@@ -87,6 +94,7 @@ export const useTrainingSessionsStore = create<TrainingSessionsState>(
             totalItems: response.totalItems,
             totalPages: response.totalPages,
           },
+          stats: isTrainingSessionsStats(response.stats) ? response.stats : null,
           isLoading: false,
         })
       } catch (error) {
@@ -197,4 +205,3 @@ export const useTrainingSessionsStore = create<TrainingSessionsState>(
     clearSelectedTrainingSession: () => set({ selectedTrainingSession: null }),
   })
 )
-

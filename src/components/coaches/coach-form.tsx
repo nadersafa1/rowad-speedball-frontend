@@ -23,6 +23,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui'
+import ClubCombobox from '@/components/organizations/club-combobox'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 
 const coachSchema = z.object({
   name: z
@@ -33,6 +35,7 @@ const coachSchema = z.object({
   gender: z.enum(['male', 'female'], {
     message: 'Gender is required',
   }),
+  organizationId: z.string().uuid().nullable().optional(),
 })
 
 type CoachFormData = z.infer<typeof coachSchema>
@@ -46,6 +49,8 @@ interface CoachFormProps {
 const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
   const { createCoach, updateCoach, isLoading, error, clearError } =
     useCoachesStore()
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin } = context
   const isEditing = !!coach
 
   const form = useForm<CoachFormData>({
@@ -53,8 +58,11 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
     defaultValues: {
       name: coach?.name || '',
       gender: coach?.gender || undefined,
+      organizationId: coach?.organizationId || null,
     },
   })
+
+  const { isSubmitting } = form.formState
 
   const onSubmit = async (data: CoachFormData) => {
     clearError()
@@ -96,7 +104,7 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
                   <Input
                     {...field}
                     placeholder='Enter coach full name'
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />
@@ -114,7 +122,7 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
                   <RadioGroup
                     onValueChange={field.onChange}
                     value={field.value}
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     className='flex flex-col sm:flex-row gap-4 sm:gap-6 mt-2'
                   >
                     <div className='flex items-center space-x-2'>
@@ -142,6 +150,28 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
             )}
           />
 
+          {/* Club Field - Only for System Admins */}
+          {isSystemAdmin && (
+            <FormField
+              control={form.control}
+              name='organizationId'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Club</FormLabel>
+                  <FormControl>
+                    <ClubCombobox
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isSubmitting}
+                      placeholder='Select a club (optional)'
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           {error && (
             <div className='bg-destructive/10 border border-destructive/20 rounded-md p-3'>
               <p className='text-destructive text-sm'>{error}</p>
@@ -154,18 +184,19 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
                 type='button'
                 variant='outline'
                 onClick={onCancel}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
               >
                 Cancel
               </Button>
             )}
+
             <Button
               type='submit'
-              disabled={isLoading}
+              disabled={isSubmitting}
               className='w-full sm:w-auto min-w-[44px] min-h-[44px] bg-rowad-600 hover:bg-rowad-700'
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <div className='flex items-center gap-2'>
                   <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
                   {isEditing ? 'Updating...' : 'Creating...'}
@@ -173,7 +204,7 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
               ) : (
                 <div className='flex items-center gap-2'>
                   <Save className='h-4 w-4' />
-                  {isEditing ? 'Update Coach' : 'Add Coach'}
+                  {isEditing ? 'Update Coach' : 'Create Coach'}
                 </div>
               )}
             </Button>

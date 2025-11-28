@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSocket } from '@/hooks/use-socket'
-import { useAdminPermission } from '@/hooks/use-admin-permission'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 import MatchCard from '@/components/matches/match-card'
 import LiveScoreEditor from '@/components/matches/live-score-editor'
 import AddSetButton from '@/components/matches/add-set-button'
@@ -30,12 +30,14 @@ const MatchDetailPage = () => {
   const [isLoadingMatch, setIsLoadingMatch] = useState(true)
   const [match, setMatch] = useState<Match | null>(null)
 
-  const { isAdmin, isLoading: isAdminLoading } = useAdminPermission()
+  const { context, isLoading: isOrganizationContextLoading } =
+    useOrganizationContext()
+  const { isSystemAdmin } = context
 
   useEffect(() => {
-    if (isAdminLoading) return
+    if (isOrganizationContextLoading) return
 
-    if (!isAdmin) {
+    if (!isSystemAdmin) {
       toast.error('Admin access required')
       router.push('/events')
       return
@@ -61,7 +63,7 @@ const MatchDetailPage = () => {
     }
 
     loadMatch()
-  }, [isAdmin, isAdminLoading, router, matchId])
+  }, [isSystemAdmin, isOrganizationContextLoading, router, matchId])
 
   const {
     socket,
@@ -258,7 +260,7 @@ const MatchDetailPage = () => {
     [socketCreateSet]
   )
 
-  if (isAdminLoading || isLoadingMatch) {
+  if (isOrganizationContextLoading || isLoadingMatch) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <Loader2 className='h-8 w-8 animate-spin' />
@@ -266,7 +268,7 @@ const MatchDetailPage = () => {
     )
   }
 
-  if (!isAdmin) {
+  if (!isSystemAdmin) {
     return (
       <div className='container mx-auto p-4'>
         <Card>

@@ -51,6 +51,7 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
         gender: filters.gender as any,
         ageGroup: filters.ageGroup,
         team: filters.team as any,
+        organizationId: filters.organizationId,
         page: filters.page,
         limit: filters.limit,
         sortBy: filters.sortBy,

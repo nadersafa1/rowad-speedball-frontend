@@ -1,23 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import EventForm from '@/components/events/event-form'
+import { Dialog, PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { EmptyState, PageHeader, Dialog } from '@/components/ui'
-import Pagination from '@/components/ui/pagination'
-import { useAdminPermission } from '@/hooks/use-admin-permission'
-import { Plus, Trophy } from 'lucide-react'
+import Loading from '@/components/ui/loading'
+import Unauthorized from '@/components/ui/unauthorized'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { useEventsStore } from '@/store/events-store'
-import EventForm from '@/components/events/event-form'
+import { Plus, Trophy } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import EventsTable from './components/events-table'
+import EventsStats from './components/events-stats'
 
 const EventsPage = () => {
-  const { isAdmin } = useAdminPermission()
+  const { context, isLoading: isOrganizationContextLoading } =
+    useOrganizationContext()
+
+  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
+
   const [eventFormOpen, setEventFormOpen] = useState(false)
   const [filters, setFilters] = useState({
     q: '',
     eventType: undefined as 'singles' | 'doubles' | undefined,
     gender: undefined as 'male' | 'female' | 'mixed' | undefined,
+    organizationId: undefined as string | null | undefined,
     sortBy: undefined as
       | 'name'
       | 'eventType'
@@ -41,6 +48,8 @@ const EventsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  if (isOrganizationContextLoading) return <Loading />
+
   const handlePageChange = (page: number) => {
     fetchEvents({
       ...filters,
@@ -57,10 +66,23 @@ const EventsPage = () => {
     })
   }
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (
+    key: string,
+    value: string | null | undefined
+  ) => {
     // Convert "all" back to undefined for API
     const filterValue = value === 'all' ? undefined : value
     const newFilters = { ...filters, [key]: filterValue, page: 1 }
+    setFilters(newFilters)
+    fetchEvents({
+      ...newFilters,
+      page: 1,
+      limit: pagination.limit,
+    })
+  }
+
+  const handleOrganizationChange = (organizationId?: string | null) => {
+    const newFilters = { ...filters, organizationId, page: 1 }
     setFilters(newFilters)
     fetchEvents({
       ...newFilters,
@@ -118,7 +140,7 @@ const EventsPage = () => {
         title='Events'
         description='Manage round robin tournaments'
         actionButton={
-          isAdmin
+          isSystemAdmin || isCoach || isAdmin || isOwner
             ? {
                 label: 'Create Event',
                 icon: Plus,
@@ -145,22 +167,18 @@ const EventsPage = () => {
             onGenderChange={(value) =>
               handleFilterChange('gender', value || 'all')
             }
+            organizationId={filters.organizationId}
+            onOrganizationChange={handleOrganizationChange}
             sortBy={filters.sortBy}
             sortOrder={filters.sortOrder}
             onSortingChange={handleSortingChange}
             isLoading={isLoading}
             onRefetch={handleRefetch}
           />
-
-          {!isLoading && events.length > 0 && (
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={handlePageChange}
-            />
-          )}
         </CardContent>
       </Card>
+
+      <EventsStats />
 
       <Dialog open={eventFormOpen} onOpenChange={setEventFormOpen}>
         <EventForm

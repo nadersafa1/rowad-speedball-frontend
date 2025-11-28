@@ -25,18 +25,21 @@ import { Event } from "@/types";
 
 interface EventsTableActionsProps {
   event: Event;
-  isAdmin: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   onEdit: (event: Event) => void;
   onDelete: (event: Event) => void;
 }
 
 export const EventsTableActions = ({
   event,
-  isAdmin,
+  canEdit,
+  canDelete,
   onEdit,
   onDelete,
 }: EventsTableActionsProps) => {
-  if (!isAdmin) return null;
+  // Return null if user can neither edit nor delete
+  if (!canEdit && !canDelete) return null;
 
   return (
     <AlertDialog>
@@ -49,17 +52,23 @@ export const EventsTableActions = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => onEdit(event)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <AlertDialogTrigger asChild>
-            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+          {canEdit && (
+            <DropdownMenuItem onClick={() => onEdit(event)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
             </DropdownMenuItem>
-          </AlertDialogTrigger>
+          )}
+          {canDelete && (
+            <>
+              {canEdit && <DropdownMenuSeparator />}
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialogContent>

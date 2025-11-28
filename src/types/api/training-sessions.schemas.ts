@@ -42,6 +42,18 @@ export const trainingSessionsQuerySchema = z
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
       .optional(),
     ageGroup: ageGroupEnum.optional(),
+    organizationId: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (val === 'null') return null
+        return val
+      })
+      .refine(
+        (val) =>
+          val === undefined || val === null || z.uuid().safeParse(val).success,
+        'Invalid organization ID format'
+      ),
     // Sorting parameters
     sortBy: z
       .enum(['name', 'intensity', 'date', 'createdAt', 'updatedAt'])
@@ -87,6 +99,10 @@ export const trainingSessionsCreateSchema = z
       .array(ageGroupEnum)
       .min(1, 'At least one age group is required'),
     coachIds: z.array(z.uuid()).optional(),
+    organizationId: z
+      .uuid('Invalid organization ID format')
+      .optional()
+      .nullable(),
   })
   .strict()
 
@@ -115,9 +131,7 @@ export const trainingSessionsUpdateSchema = z
   .strict()
 
 // Inferred TypeScript types
-export type TrainingSessionsQuery = z.infer<
-  typeof trainingSessionsQuerySchema
->
+export type TrainingSessionsQuery = z.infer<typeof trainingSessionsQuerySchema>
 export type TrainingSessionsParams = z.infer<
   typeof trainingSessionsParamsSchema
 >
@@ -127,4 +141,3 @@ export type TrainingSessionsCreate = z.infer<
 export type TrainingSessionsUpdate = z.infer<
   typeof trainingSessionsUpdateSchema
 >
-

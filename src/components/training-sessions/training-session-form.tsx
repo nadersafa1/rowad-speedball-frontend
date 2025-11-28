@@ -37,7 +37,9 @@ import {
   DialogTitle,
 } from '../ui'
 import CoachesCombobox from './coaches-combobox'
-import { SessionType, AgeGroup } from '@/app/training-sessions/types/enums'
+import ClubCombobox from '@/components/organizations/club-combobox'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { SessionType, AgeGroup } from '@/app/sessions/types/enums'
 
 const sessionTypeOptions = [
   { value: SessionType.SINGLES, label: 'Singles' },
@@ -66,16 +68,36 @@ const trainingSessionSchema = z.object({
     message: 'Intensity is required',
   }),
   type: z
-    .array(z.enum(['singles', 'men_doubles', 'women_doubles', 'mixed_doubles', 'solo', 'relay']))
+    .array(
+      z.enum([
+        'singles',
+        'men_doubles',
+        'women_doubles',
+        'mixed_doubles',
+        'solo',
+        'relay',
+      ])
+    )
     .min(1, 'At least one type is required'),
   date: z.date(),
   description: z.string().optional(),
   ageGroups: z
     .array(
-      z.enum(['mini', 'U-09', 'U-11', 'U-13', 'U-15', 'U-17', 'U-19', 'U-21', 'Seniors'])
+      z.enum([
+        'mini',
+        'U-09',
+        'U-11',
+        'U-13',
+        'U-15',
+        'U-17',
+        'U-19',
+        'U-21',
+        'Seniors',
+      ])
     )
     .min(1, 'At least one age group is required'),
-  coachIds: z.array(z.string().uuid()).optional(),
+  coachIds: z.array(z.uuid()).optional(),
+  organizationId: z.string().uuid().nullable().optional(),
 })
 
 type TrainingSessionFormData = z.infer<typeof trainingSessionSchema>
@@ -98,10 +120,17 @@ const TrainingSessionForm = ({
     error,
     clearError,
   } = useTrainingSessionsStore()
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin, organization } = context
   const isEditing = !!trainingSession
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+
+  // For non-admin users, use their active organization
+  const defaultOrganizationId = isSystemAdmin
+    ? trainingSession?.organizationId || null
+    : organization?.id || null
 
   const form = useForm<TrainingSessionFormData>({
     resolver: zodResolver(trainingSessionSchema),
@@ -110,18 +139,27 @@ const TrainingSessionForm = ({
       intensity: trainingSession?.intensity || 'normal',
       type: trainingSession?.type || [],
       date: trainingSession?.date
-        ? (typeof trainingSession.date === 'string'
-            ? new Date(trainingSession.date)
-            : new Date(trainingSession.date))
+        ? typeof trainingSession.date === 'string'
+          ? new Date(trainingSession.date)
+          : new Date(trainingSession.date)
         : today,
       description: trainingSession?.description || '',
       ageGroups: trainingSession?.ageGroups || [],
       coachIds: trainingSession?.coaches?.map((c: any) => c.id) || [],
+      organizationId: defaultOrganizationId,
     },
   })
 
   const watchedDate = form.watch('date')
   const watchedName = form.watch('name')
+  const watchedOrganizationId = form.watch('organizationId')
+
+  // Determine which organizationId to use for filtering coaches
+  // - System admin: use selected organizationId (can be null for global)
+  // - Non-admin: use their active organization (always filtered)
+  const coachesOrganizationId = isSystemAdmin
+    ? watchedOrganizationId
+    : organization?.id || null
 
   // Auto-generate name from date if name is empty
   React.useEffect(() => {
@@ -134,10 +172,16 @@ const TrainingSessionForm = ({
   const onSubmit = async (data: TrainingSessionFormData) => {
     clearError()
     try {
+      // For non-admin users, ensure organizationId is set to their active organization
+      const finalOrganizationId = isSystemAdmin
+        ? data.organizationId
+        : organization?.id || null
+
       const submitData = {
         ...data,
         date: formatDateForAPI(data.date),
         name: data.name || formatDateForSessionName(data.date),
+        organizationId: finalOrganizationId,
       }
 
       if (isEditing) {
@@ -259,10 +303,27 @@ const TrainingSessionForm = ({
                         >
                           <FormControl>
                             <Checkbox
-                              checked={field.value?.includes(option.value as 'singles' | 'men_doubles' | 'women_doubles' | 'mixed_doubles' | 'solo' | 'relay')}
+                              checked={field.value?.includes(
+                                option.value as
+                                  | 'singles'
+                                  | 'men_doubles'
+                                  | 'women_doubles'
+                                  | 'mixed_doubles'
+                                  | 'solo'
+                                  | 'relay'
+                              )}
                               onCheckedChange={(checked) => {
                                 return checked
-                                  ? field.onChange([...field.value, option.value as 'singles' | 'men_doubles' | 'women_doubles' | 'mixed_doubles' | 'solo' | 'relay'])
+                                  ? field.onChange([
+                                      ...field.value,
+                                      option.value as
+                                        | 'singles'
+                                        | 'men_doubles'
+                                        | 'women_doubles'
+                                        | 'mixed_doubles'
+                                        | 'solo'
+                                        | 'relay',
+                                    ])
                                   : field.onChange(
                                       field.value?.filter(
                                         (value) => value !== option.value
@@ -309,10 +370,33 @@ const TrainingSessionForm = ({
                           >
                             <FormControl>
                               <Checkbox
-                                checked={field.value?.includes(option.value as 'mini' | 'U-09' | 'U-11' | 'U-13' | 'U-15' | 'U-17' | 'U-19' | 'U-21' | 'Seniors')}
+                                checked={field.value?.includes(
+                                  option.value as
+                                    | 'mini'
+                                    | 'U-09'
+                                    | 'U-11'
+                                    | 'U-13'
+                                    | 'U-15'
+                                    | 'U-17'
+                                    | 'U-19'
+                                    | 'U-21'
+                                    | 'Seniors'
+                                )}
                                 onCheckedChange={(checked) => {
                                   return checked
-                                    ? field.onChange([...field.value, option.value as 'mini' | 'U-09' | 'U-11' | 'U-13' | 'U-15' | 'U-17' | 'U-19' | 'U-21' | 'Seniors'])
+                                    ? field.onChange([
+                                        ...field.value,
+                                        option.value as
+                                          | 'mini'
+                                          | 'U-09'
+                                          | 'U-11'
+                                          | 'U-13'
+                                          | 'U-15'
+                                          | 'U-17'
+                                          | 'U-19'
+                                          | 'U-21'
+                                          | 'Seniors',
+                                      ])
                                     : field.onChange(
                                         field.value?.filter(
                                           (value) => value !== option.value
@@ -335,6 +419,35 @@ const TrainingSessionForm = ({
             )}
           />
 
+          {/* Club Field - Only for System Admin */}
+          {isSystemAdmin && (
+            <FormField
+              control={form.control}
+              name='organizationId'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Club</FormLabel>
+                  <FormControl>
+                    <ClubCombobox
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value)
+                        // Clear coaches when club changes
+                        form.setValue('coachIds', [])
+                      }}
+                      disabled={isLoading}
+                      placeholder='Select a club...'
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Select the club for this training session
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name='coachIds'
@@ -346,10 +459,13 @@ const TrainingSessionForm = ({
                     value={field.value}
                     onValueChange={field.onChange}
                     disabled={isLoading}
+                    organizationId={coachesOrganizationId}
                   />
                 </FormControl>
                 <FormDescription>
                   Select one or more coaches for this session
+                  {coachesOrganizationId &&
+                    ' (filtered by selected club)'}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -418,4 +534,3 @@ const TrainingSessionForm = ({
 }
 
 export default TrainingSessionForm
-

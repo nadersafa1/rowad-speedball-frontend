@@ -7,7 +7,7 @@ import {
   eventsParamsSchema,
   eventsUpdateSchema,
 } from '@/types/api/events.schemas'
-import { requireAdmin, requireAuth } from '@/lib/auth-middleware'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 import { and } from 'drizzle-orm'
 
 export async function GET(
@@ -24,49 +24,63 @@ export async function GET(
   try {
     const { id } = parseResult.data
 
-    const event = await db
-      .select()
+    // Check if event exists early (terminate early if not found)
+    const row = await db
+      .select({
+        event: schema.events,
+        organizationName: schema.organization.name,
+      })
       .from(schema.events)
+      .leftJoin(
+        schema.organization,
+        eq(schema.events.organizationId, schema.organization.id)
+      )
       .where(eq(schema.events.id, id))
       .limit(1)
 
-    if (event.length === 0) {
+    if (row.length === 0) {
       return Response.json({ message: 'Event not found' }, { status: 404 })
     }
 
-    // Check visibility
-    const authResult = await requireAuth(request)
-    const isAuthenticated = authResult.authenticated
-    const isAdmin =
-      isAuthenticated &&
-      'authorized' in authResult &&
-      authResult.authorized === true
+    const event = row[0].event
+    const organizationName = row[0].organizationName ?? null
 
-    if (event[0].visibility === 'private' && !isAdmin) {
-      return Response.json({ message: 'Forbidden' }, { status: 403 })
+    // Get organization context for authorization (only if event exists)
+    const { isSystemAdmin, organization } = await getOrganizationContext()
+
+    // Authorization check: matches GET all events logic
+    // System admin: can see all events
+    // Org members: can see their org events (public + private) + public events + events without org
+    // Non-authenticated: can see public events + events without org
+    if (!isSystemAdmin) {
+      const isPublic = event.visibility === 'public'
+      const hasNoOrganization = event.organizationId === null
+      const isFromUserOrg =
+        organization?.id && event.organizationId === organization.id
+
+      // Allow if: public OR no organization OR from user's org
+      // Block if: private AND has organization AND not from user's org
+      if (!isPublic && !hasNoOrganization && !isFromUserOrg) {
+        return Response.json({ message: 'Forbidden' }, { status: 403 })
+      }
     }
 
-    // Get related data
-    const groups = await db
-      .select()
-      .from(schema.groups)
-      .where(eq(schema.groups.eventId, id))
-
-    const registrations = await db
-      .select()
-      .from(schema.registrations)
-      .where(eq(schema.registrations.eventId, id))
-
-    const matches = await db
-      .select()
-      .from(schema.matches)
-      .where(eq(schema.matches.eventId, id))
+    // Get related data in parallel for better performance
+    const [groups, registrations, matches] = await Promise.all([
+      db.select().from(schema.groups).where(eq(schema.groups.eventId, id)),
+      db
+        .select()
+        .from(schema.registrations)
+        .where(eq(schema.registrations.eventId, id)),
+      db.select().from(schema.matches).where(eq(schema.matches.eventId, id)),
+    ])
 
     return Response.json({
-      ...event[0],
+      ...event,
       groups,
       registrations,
       matches,
+      organizationName: organizationName,
     })
   } catch (error) {
     console.error('Error fetching event:', error)
@@ -78,16 +92,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
-  }
-
   try {
+    // Parse params and body first (quick validation, no DB calls)
     const resolvedParams = await params
     const parseParams = eventsParamsSchema.safeParse(resolvedParams)
     if (!parseParams.success) {
@@ -104,7 +110,7 @@ export async function PATCH(
     const { id } = parseParams.data
     const updateData = parseResult.data
 
-    // Check if event exists
+    // Check if event exists early (terminate early if not found)
     const existing = await db
       .select()
       .from(schema.events)
@@ -117,42 +123,96 @@ export async function PATCH(
 
     const eventData = existing[0]
 
-    // Check if registrations exist
-    const registrations = await db
-      .select()
-      .from(schema.registrations)
-      .where(eq(schema.registrations.eventId, id))
-      .limit(1)
+    // Get organization context for authorization (only if event exists)
+    const {
+      isSystemAdmin,
+      isAdmin,
+      isCoach,
+      isOwner,
+      organization,
+      isAuthenticated,
+    } = await getOrganizationContext()
 
-    const hasRegistrations = registrations.length > 0
+    // Require authentication
+    if (!isAuthenticated) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Check if any sets are played
-    const matches = await db
-      .select()
-      .from(schema.matches)
-      .where(eq(schema.matches.eventId, id))
+    // Authorization: Only system admins, org admins, org owners, and org coaches can update events
+    // Additionally, org members (admin/owner/coach) must have an active organization
+    if (
+      (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
+      (!isSystemAdmin && !organization?.id)
+    ) {
+      return Response.json(
+        {
+          message:
+            'Only system admins, club admins, club owners, and club coaches can update events',
+        },
+        { status: 403 }
+      )
+    }
 
-    let hasPlayedSets = false
-    if (matches.length > 0) {
-      // Check each match for played sets
-      for (const match of matches) {
-        const playedSets = await db
-          .select()
-          .from(schema.sets)
-          .where(
-            and(
-              eq(schema.sets.matchId, match.id),
-              eq(schema.sets.played, true)
-            )
-          )
-          .limit(1)
-
-        if (playedSets.length > 0) {
-          hasPlayedSets = true
-          break
-        }
+    // Organization ownership check: org members can only update events from their own organization
+    if (!isSystemAdmin) {
+      if (!organization?.id || eventData.organizationId !== organization.id) {
+        return Response.json(
+          {
+            message: 'You can only update events from your own organization',
+          },
+          { status: 403 }
+        )
       }
     }
+
+    // Handle organizationId updates:
+    // - System admins can change organizationId to any organization or null
+    // - Org members cannot change organizationId (must remain their organization)
+    let finalUpdateData: typeof updateData
+    if (!isSystemAdmin) {
+      // Remove organizationId from update if org member tries to change it
+      const { organizationId, ...rest } = updateData
+      finalUpdateData = rest
+    } else {
+      // System admin: validate referenced organization exists if being updated
+      if (
+        updateData.organizationId !== undefined &&
+        updateData.organizationId !== null
+      ) {
+        const orgCheck = await db
+          .select()
+          .from(schema.organization)
+          .where(eq(schema.organization.id, updateData.organizationId))
+          .limit(1)
+        if (orgCheck.length === 0) {
+          return Response.json(
+            { message: 'Organization not found' },
+            { status: 404 }
+          )
+        }
+      }
+      finalUpdateData = updateData
+    }
+
+    // Check if registrations exist and if any sets are played (optimized with single queries)
+    const [registrations, playedSets] = await Promise.all([
+      db
+        .select()
+        .from(schema.registrations)
+        .where(eq(schema.registrations.eventId, id))
+        .limit(1),
+      db
+        .select({ id: schema.sets.id })
+        .from(schema.sets)
+        .innerJoin(schema.matches, eq(schema.sets.matchId, schema.matches.id))
+        .where(
+          and(eq(schema.matches.eventId, id), eq(schema.sets.played, true))
+        )
+        .limit(1),
+    ])
+
+    const hasRegistrations = registrations.length > 0
+    const hasPlayedSets = playedSets.length > 0
 
     // Validate: Cannot change eventType or gender if registrations exist
     if (hasRegistrations) {
@@ -211,7 +271,10 @@ export async function PATCH(
         updateData.registrationStartDate !== eventData.registrationStartDate
       ) {
         return Response.json(
-          { message: 'Cannot change registration start date once sets are played' },
+          {
+            message:
+              'Cannot change registration start date once sets are played',
+          },
           { status: 400 }
         )
       }
@@ -220,7 +283,9 @@ export async function PATCH(
         updateData.registrationEndDate !== eventData.registrationEndDate
       ) {
         return Response.json(
-          { message: 'Cannot change registration end date once sets are played' },
+          {
+            message: 'Cannot change registration end date once sets are played',
+          },
           { status: 400 }
         )
       }
@@ -238,7 +303,7 @@ export async function PATCH(
     const result = await db
       .update(schema.events)
       .set({
-        ...updateData,
+        ...finalUpdateData,
         updatedAt: new Date(),
       })
       .where(eq(schema.events.id, id))
@@ -255,16 +320,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminResult = await requireAdmin(request)
-  if (
-    !adminResult.authenticated ||
-    !('authorized' in adminResult) ||
-    !adminResult.authorized
-  ) {
-    return adminResult.response
-  }
-
   try {
+    // Parse params first (quick validation, no DB calls)
     const resolvedParams = await params
     const parseResult = eventsParamsSchema.safeParse(resolvedParams)
 
@@ -274,7 +331,7 @@ export async function DELETE(
 
     const { id } = parseResult.data
 
-    // Check if event exists
+    // Check if event exists early (terminate early if not found)
     const existing = await db
       .select()
       .from(schema.events)
@@ -283,6 +340,39 @@ export async function DELETE(
 
     if (existing.length === 0) {
       return Response.json({ message: 'Event not found' }, { status: 404 })
+    }
+
+    const eventData = existing[0]
+
+    // Get organization context for authorization (only if event exists)
+    const { isSystemAdmin, isAdmin, isOwner, organization } =
+      await getOrganizationContext()
+
+    // Authorization: Only system admins, org admins, and org owners can delete events
+    // Additionally, org members (admin/owner) must have an active organization
+    if (
+      (!isSystemAdmin && !isAdmin && !isOwner) ||
+      (!isSystemAdmin && !organization?.id)
+    ) {
+      return Response.json(
+        {
+          message:
+            'Only system admins, club admins, and club owners can delete events',
+        },
+        { status: 403 }
+      )
+    }
+
+    // Organization ownership check: org members can only delete events from their own organization
+    if (!isSystemAdmin) {
+      if (!organization?.id || eventData.organizationId !== organization.id) {
+        return Response.json(
+          {
+            message: 'You can only delete events from your own organization',
+          },
+          { status: 403 }
+        )
+      }
     }
 
     // Delete event
@@ -295,10 +385,7 @@ export async function DELETE(
     // When an event is deleted, all related groups, registrations, matches, and sets are automatically deleted
     await db.delete(schema.events).where(eq(schema.events.id, id))
 
-    return Response.json(
-      { message: 'Event deleted successfully' },
-      { status: 200 }
-    )
+    return new Response(null, { status: 204 })
   } catch (error) {
     console.error('Error deleting event:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

@@ -5,7 +5,6 @@ import * as React from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft,
   Trophy,
   Calendar,
   Users,
@@ -15,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BackButton } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -35,7 +35,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useTestsStore } from '@/store/tests-store'
-import { useAdminPermission } from '@/hooks/use-admin-permission'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { toast } from 'sonner'
 import ResultsForm from '@/components/results/results-form'
 import TestForm from '@/components/tests/test-form'
@@ -46,7 +46,8 @@ const TestDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const testId = params.id as string
-  const { isAdmin } = useAdminPermission()
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
   const {
     selectedTest,
     fetchTest,
@@ -176,14 +177,66 @@ const TestDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Back Navigation */}
-      <div className='mb-4 sm:mb-6'>
-        <Link href='/tests'>
-          <Button variant='outline' className='gap-2'>
-            <ArrowLeft className='h-4 w-4' />
-            Back to Tests
-          </Button>
-        </Link>
+      {/* Back Navigation with Edit/Delete Actions */}
+      <div className='mb-4 sm:mb-6 flex items-center justify-between gap-2'>
+        <BackButton href='/tests' longText='Back to Tests' />
+        {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
+          <div className='flex gap-2'>
+            <Dialog open={editTestFormOpen} onOpenChange={setEditTestFormOpen}>
+              <DialogTrigger asChild>
+                <Button variant='outline' size='sm' className='gap-2'>
+                  <Edit className='h-4 w-4' />
+                  <span className='hidden sm:inline'>Edit Test</span>
+                </Button>
+              </DialogTrigger>
+              <TestForm
+                test={selectedTest}
+                onSuccess={() => {
+                  setEditTestFormOpen(false)
+                  fetchTest(testId, true)
+                }}
+                onCancel={() => setEditTestFormOpen(false)}
+              />
+            </Dialog>
+            {(isSystemAdmin || isAdmin || isOwner) && (
+              <AlertDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='gap-2 text-destructive hover:text-destructive'
+                  >
+                    <Trash2 className='h-4 w-4' />
+                    <span className='hidden sm:inline'>Delete Test</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Test</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete{' '}
+                      <strong>{selectedTest.name}</strong>? This action cannot
+                      be undone and will permanently delete all associated test
+                      results.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Test Header */}
@@ -195,7 +248,7 @@ const TestDetailPage = () => {
                 <Trophy className='h-8 w-8 sm:h-12 sm:w-12 text-blue-600' />
               </div>
               <div className='flex-1 w-full min-w-0'>
-                <div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-2 mb-2'>
+                <div className='mb-2'>
                   <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
                     <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 break-words'>
                       {selectedTest.name}
@@ -212,70 +265,6 @@ const TestDetailPage = () => {
                       )}
                     </span>
                   </div>
-                  {isAdmin && (
-                    <div className='flex flex-col sm:flex-row gap-2 shrink-0'>
-                      <Dialog
-                        open={editTestFormOpen}
-                        onOpenChange={setEditTestFormOpen}
-                      >
-                        <DialogTrigger asChild>
-                          <Button
-                            variant='outline'
-                            className='gap-2 w-full sm:w-auto'
-                          >
-                            <Edit className='h-4 w-4' />
-                            <span className='hidden sm:inline'>Edit Test</span>
-                            <span className='sm:hidden'>Edit</span>
-                          </Button>
-                        </DialogTrigger>
-                        <TestForm
-                          test={selectedTest}
-                          onSuccess={() => {
-                            setEditTestFormOpen(false)
-                            fetchTest(testId, true)
-                          }}
-                          onCancel={() => setEditTestFormOpen(false)}
-                        />
-                      </Dialog>
-                      <AlertDialog
-                        open={deleteDialogOpen}
-                        onOpenChange={setDeleteDialogOpen}
-                      >
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant='outline'
-                            className='gap-2 text-destructive hover:text-destructive w-full sm:w-auto'
-                          >
-                            <Trash2 className='h-4 w-4' />
-                            <span className='hidden sm:inline'>
-                              Delete Test
-                            </span>
-                            <span className='sm:hidden'>Delete</span>
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Test</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete{' '}
-                              <strong>{selectedTest.name}</strong>? This action
-                              cannot be undone and will permanently delete all
-                              associated test results.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                              onClick={handleDelete}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  )}
                 </div>
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4'>
                   <div className='flex items-center gap-2'>
@@ -327,8 +316,8 @@ const TestDetailPage = () => {
                 </CardDescription>
               </div>
 
-              {/* Admin Add Result Button */}
-              {isAdmin && (
+              {/* Add Result Button */}
+              {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
                 <Dialog open={resultFormOpen} onOpenChange={setResultFormOpen}>
                   <DialogTrigger asChild>
                     <Button className='gap-2 bg-green-600 hover:bg-green-700 w-full sm:w-auto'>
