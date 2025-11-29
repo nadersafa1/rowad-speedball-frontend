@@ -4,29 +4,9 @@ import { db } from './db'
 import * as schema from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { Organization } from 'better-auth/plugins'
+import { OrganizationRole, OrganizationContext } from '@/types/organization'
 
-export enum OrganizationRole {
-  ADMIN = 'admin',
-  OWNER = 'owner',
-  SUPER_ADMIN = 'super_admin',
-  COACH = 'coach',
-  PLAYER = 'player',
-  MEMBER = 'member',
-}
-
-export interface OrganizationContext {
-  organization: Organization | null
-  role: OrganizationRole | null
-  activeOrgId: string | null
-  userId: string | null
-  isSystemAdmin: boolean
-  isOwner: boolean
-  isAdmin: boolean
-  isCoach: boolean
-  isPlayer: boolean
-  isMember: boolean
-  isAuthenticated: boolean
-}
+export { OrganizationRole, OrganizationContext }
 
 const getRoleFlags = (
   role: OrganizationRole | null

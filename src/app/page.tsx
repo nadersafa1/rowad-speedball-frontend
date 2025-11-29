@@ -11,7 +11,10 @@ import {
   BarChart3,
   ArrowRight,
   CheckCircle2,
+  User,
 } from 'lucide-react'
+import { authClient } from '@/lib/auth-client'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 
 const features = [
   {
@@ -62,6 +65,12 @@ const benefits = [
 ]
 
 export default function LandingPage() {
+  const { data: session } = authClient.useSession()
+  const { isLoading: isContextLoading } = useOrganizationContext()
+  const isAuthenticated = !!session?.user
+
+  const isLoading = isContextLoading
+
   return (
     <div className='min-h-screen bg-gradient-to-b from-gray-50 to-white'>
       {/* Hero Section */}
@@ -77,22 +86,48 @@ export default function LandingPage() {
             Streamline your speedball team management with comprehensive tools
             for players, coaches, training sessions, and events.
           </p>
-          <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-            <Button asChild size='lg' className='text-lg px-8 py-6'>
-              <Link href='/auth/login'>
-                Get Started
-                <ArrowRight className='ml-2 h-5 w-5' />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant='outline'
-              size='lg'
-              className='text-lg px-8 py-6'
-            >
-              <Link href='/auth/login'>Sign In</Link>
-            </Button>
-          </div>
+          {!isLoading && (
+            <div className='flex flex-col sm:flex-row gap-4 justify-center'>
+              {isAuthenticated ? (
+                <>
+                  <Button asChild size='lg' className='text-lg px-8 py-6'>
+                    <Link href='/players'>
+                      View Players
+                      <ArrowRight className='ml-2 h-5 w-5' />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant='outline'
+                    size='lg'
+                    className='text-lg px-8 py-6'
+                  >
+                    <Link href='/profile'>
+                      <User className='mr-2 h-5 w-5' />
+                      My Profile
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild size='lg' className='text-lg px-8 py-6'>
+                    <Link href='/auth/login'>
+                      Get Started
+                      <ArrowRight className='ml-2 h-5 w-5' />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant='outline'
+                    size='lg'
+                    className='text-lg px-8 py-6'
+                  >
+                    <Link href='/auth/login'>Sign In</Link>
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -158,23 +193,54 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24'>
-        <div className='max-w-3xl mx-auto text-center bg-rowad-50 rounded-2xl p-8 sm:p-12'>
-          <h2 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-4'>
-            Ready to Get Started?
-          </h2>
-          <p className='text-lg text-gray-600 mb-8'>
-            Join teams already using Rowad Speedball Platform to manage their
-            players and events.
-          </p>
-          <Button asChild size='lg' className='text-lg px-8 py-6'>
-            <Link href='/auth/login'>
-              Sign In to Your Account
-              <ArrowRight className='ml-2 h-5 w-5' />
-            </Link>
-          </Button>
-        </div>
-      </section>
+      {!isLoading && (
+        <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24'>
+          <div className='max-w-3xl mx-auto text-center bg-rowad-50 rounded-2xl p-8 sm:p-12'>
+            {isAuthenticated ? (
+              <>
+                <h2 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-4'>
+                  Welcome back, {session?.user?.name || 'User'}!
+                </h2>
+                <p className='text-lg text-gray-600 mb-8'>
+                  Continue managing your team with our comprehensive platform.
+                </p>
+                <div className='flex flex-col sm:flex-row gap-4 justify-center'>
+                  <Button asChild size='lg' className='text-lg px-8 py-6'>
+                    <Link href='/players'>
+                      View Players
+                      <ArrowRight className='ml-2 h-5 w-5' />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant='outline'
+                    size='lg'
+                    className='text-lg px-8 py-6'
+                  >
+                    <Link href='/events'>View Events</Link>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-4'>
+                  Ready to Get Started?
+                </h2>
+                <p className='text-lg text-gray-600 mb-8'>
+                  Join teams already using Rowad Speedball Platform to manage
+                  their players and events.
+                </p>
+                <Button asChild size='lg' className='text-lg px-8 py-6'>
+                  <Link href='/auth/login'>
+                    Sign In to Your Account
+                    <ArrowRight className='ml-2 h-5 w-5' />
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className='border-t border-gray-200 bg-white'>

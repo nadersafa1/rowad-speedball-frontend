@@ -693,6 +693,32 @@ export class ApiClient {
     return this.request<OrganizationContext>('/users/me/organization-context')
   }
 
+  async getMyProfile(): Promise<{
+    user: any
+    player: any | null
+    coach: any | null
+  }> {
+    return this.request('/users/me')
+  }
+
+  async updateMyPlayer(data: {
+    name?: string
+    preferredHand?: 'left' | 'right' | 'both'
+    isFirstTeam?: boolean
+  }): Promise<any> {
+    return this.request('/users/me/player', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateMyCoach(data: { name?: string }): Promise<any> {
+    return this.request('/users/me/coach', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
   // Organizations API
   async getOrganizations(): Promise<
     Array<{ id: string; name: string; slug: string }>
