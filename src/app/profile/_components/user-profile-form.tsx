@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { LoadingSwap } from '@/components/ui/loading-swap'
 import { authClient } from '@/lib/auth-client'
+import ProfileImageUpload from './profile-image-upload'
 
 const updateProfileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -79,6 +80,9 @@ const UserProfileForm = ({ user }: { user: User }) => {
   return (
     <Form {...form}>
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="pb-4 border-b">
+          <ProfileImageUpload user={user} />
+        </div>
         <FormField
           control={form.control}
           name="name"
