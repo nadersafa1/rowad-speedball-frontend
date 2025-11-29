@@ -4,9 +4,10 @@ import { db } from './db'
 import * as schema from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { Organization } from 'better-auth/plugins'
-import { OrganizationRole, OrganizationContext } from '@/types/organization'
+import { OrganizationRole, type OrganizationContext } from '@/types/organization'
 
-export { OrganizationRole, OrganizationContext }
+export { OrganizationRole }
+export type { OrganizationContext }
 
 const getRoleFlags = (
   role: OrganizationRole | null

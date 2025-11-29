@@ -72,17 +72,17 @@ export default function LandingPage() {
   const isLoading = isContextLoading
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-gray-50 to-white'>
+    <div className='min-h-screen bg-gradient-to-b from-background to-card'>
       {/* Hero Section */}
       <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24'>
         <div className='max-w-4xl mx-auto text-center'>
-          <h1 className='text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6'>
+          <h1 className='text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6'>
             Rowad Speedball
-            <span className='block text-rowad-600 mt-2'>
+            <span className='block text-rowad-600 dark:text-rowad-400 mt-2'>
               Management Platform
             </span>
           </h1>
-          <p className='text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto'>
+          <p className='text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto'>
             Streamline your speedball team management with comprehensive tools
             for players, coaches, training sessions, and events.
           </p>
@@ -132,13 +132,13 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 bg-white'>
+      <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 bg-card'>
         <div className='max-w-6xl mx-auto'>
           <div className='text-center mb-12 sm:mb-16'>
-            <h2 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-4'>
+            <h2 className='text-3xl sm:text-4xl font-bold text-foreground mb-4'>
               Everything You Need to Manage Your Team
             </h2>
-            <p className='text-lg text-gray-600 max-w-2xl mx-auto'>
+            <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>
               Powerful features designed to help you manage players, track
               attendance, organize events, and monitor performance.
             </p>
@@ -150,15 +150,15 @@ export default function LandingPage() {
               return (
                 <div
                   key={index}
-                  className='p-6 rounded-lg border border-gray-200 hover:border-rowad-300 hover:shadow-lg transition-all duration-200'
+                  className='p-6 rounded-lg border border-border hover:border-rowad-300 dark:hover:border-rowad-700 hover:shadow-lg transition-all duration-200 bg-background'
                 >
-                  <div className='bg-rowad-50 rounded-lg p-3 w-fit mb-4'>
-                    <Icon className='h-6 w-6 text-rowad-600' />
+                  <div className='bg-rowad-50 dark:bg-rowad-900/30 rounded-lg p-3 w-fit mb-4'>
+                    <Icon className='h-6 w-6 text-rowad-600 dark:text-rowad-400' />
                   </div>
-                  <h3 className='text-xl font-semibold text-gray-900 mb-2'>
+                  <h3 className='text-xl font-semibold text-foreground mb-2'>
                     {feature.title}
                   </h3>
-                  <p className='text-gray-600'>{feature.description}</p>
+                  <p className='text-muted-foreground'>{feature.description}</p>
                 </div>
               )
             })}
@@ -167,13 +167,13 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 bg-gray-50'>
+      <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 bg-muted/50'>
         <div className='max-w-4xl mx-auto'>
           <div className='text-center mb-12'>
-            <h2 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-4'>
+            <h2 className='text-3xl sm:text-4xl font-bold text-foreground mb-4'>
               Why Choose Rowad Speedball Platform?
             </h2>
-            <p className='text-lg text-gray-600'>
+            <p className='text-lg text-muted-foreground'>
               Built for speedball teams and organizations of all sizes
             </p>
           </div>
@@ -182,10 +182,10 @@ export default function LandingPage() {
             {benefits.map((benefit, index) => (
               <div
                 key={index}
-                className='flex items-start gap-3 p-4 bg-white rounded-lg border border-gray-200'
+                className='flex items-start gap-3 p-4 bg-card rounded-lg border border-border'
               >
-                <CheckCircle2 className='h-5 w-5 text-rowad-600 flex-shrink-0 mt-0.5' />
-                <p className='text-gray-700'>{benefit}</p>
+                <CheckCircle2 className='h-5 w-5 text-rowad-600 dark:text-rowad-400 flex-shrink-0 mt-0.5' />
+                <p className='text-foreground'>{benefit}</p>
               </div>
             ))}
           </div>
@@ -195,13 +195,13 @@ export default function LandingPage() {
       {/* CTA Section */}
       {!isLoading && (
         <section className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24'>
-          <div className='max-w-3xl mx-auto text-center bg-rowad-50 rounded-2xl p-8 sm:p-12'>
+          <div className='max-w-3xl mx-auto text-center bg-rowad-50 dark:bg-rowad-900/30 rounded-2xl p-8 sm:p-12 border border-border'>
             {isAuthenticated ? (
               <>
-                <h2 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-4'>
+                <h2 className='text-3xl sm:text-4xl font-bold text-foreground mb-4'>
                   Welcome back, {session?.user?.name || 'User'}!
                 </h2>
-                <p className='text-lg text-gray-600 mb-8'>
+                <p className='text-lg text-muted-foreground mb-8'>
                   Continue managing your team with our comprehensive platform.
                 </p>
                 <div className='flex flex-col sm:flex-row gap-4 justify-center'>
@@ -223,10 +223,10 @@ export default function LandingPage() {
               </>
             ) : (
               <>
-                <h2 className='text-3xl sm:text-4xl font-bold text-gray-900 mb-4'>
+                <h2 className='text-3xl sm:text-4xl font-bold text-foreground mb-4'>
                   Ready to Get Started?
                 </h2>
-                <p className='text-lg text-gray-600 mb-8'>
+                <p className='text-lg text-muted-foreground mb-8'>
                   Join teams already using Rowad Speedball Platform to manage
                   their players and events.
                 </p>
@@ -243,9 +243,9 @@ export default function LandingPage() {
       )}
 
       {/* Footer */}
-      <footer className='border-t border-gray-200 bg-white'>
+      <footer className='border-t border-border bg-card'>
         <div className='container mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-          <div className='text-center text-gray-600'>
+          <div className='text-center text-muted-foreground'>
             <p>
               © {new Date().getFullYear()} Rowad Speedball Platform. All rights
               reserved.

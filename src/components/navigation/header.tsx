@@ -20,7 +20,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { OrganizationRole } from '@/types/organization'
+import ThemeToggle from '@/components/ui/theme-toggle'
+import { useTheme } from 'next-themes'
 
 const navigation = [
   // { name: 'Dashboard', href: '/', icon: Home },
@@ -59,10 +61,19 @@ const adminNavigation = [
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
 
   const { context } = useOrganizationContext()
   const { data: session } = authClient.useSession()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Determine if we're in dark mode (only after mount to prevent hydration mismatch)
+  const isDarkMode = mounted && resolvedTheme === 'dark'
 
   const {
     isSystemAdmin,
@@ -103,23 +114,38 @@ const Header = () => {
   }
 
   return (
-    <header className='bg-white shadow-sm border-b'>
+    <header className='bg-background shadow-sm border-b border-border'>
       <nav className='container mx-auto px-4 sm:px-6 lg:px-8' aria-label='Top'>
         <div className='flex w-full items-center justify-between py-4'>
           {/* Logo */}
           <div className='flex items-center'>
             <Link href='/' className='flex items-center'>
-              <Image src='/logo.png' alt='Rowad Club' width={60} height={60} />
+              {mounted ? (
+                <Image
+                  src={isDarkMode ? '/logo-white.png' : '/logo.png'}
+                  alt='Rowad Club'
+                  width={60}
+                  height={60}
+                />
+              ) : (
+                <Image
+                  src='/logo.png'
+                  alt='Rowad Club'
+                  width={60}
+                  height={60}
+                />
+              )}
               <div className='hidden sm:block'>
                 <Image
                   src='/logo-text.png'
                   alt='Rowad Speedball Team'
                   width={120}
                   height={20}
+                  className='dark:invert'
                 />
               </div>
               <div className='sm:hidden'>
-                <span className='text-xl font-bold text-gray-900'>
+                <span className='text-xl font-bold text-foreground'>
                   SpeedballHub
                 </span>
               </div>
@@ -138,8 +164,8 @@ const Header = () => {
                   className={cn(
                     'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-rowad-100 text-rowad-700'
-                      : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
+                      ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
+                      : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
                   )}
                 >
                   <Icon className='h-4 w-4' />
@@ -171,8 +197,8 @@ const Header = () => {
                     className={cn(
                       'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-rowad-100 text-rowad-700'
-                        : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
+                        ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
+                        : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
                     )}
                   >
                     <Icon className='h-4 w-4' />
@@ -184,12 +210,13 @@ const Header = () => {
 
           {/* User Actions */}
           <div className='hidden md:flex md:items-center md:space-x-4'>
+            <ThemeToggle />
             {isAuthenticated && session?.user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant='ghost'
-                    className='flex items-center gap-2 h-auto py-2 px-3 hover:bg-gray-50'
+                    className='flex items-center gap-2 h-auto py-2 px-3 hover:bg-accent'
                   >
                     <Avatar className='h-8 w-8'>
                       <AvatarImage
@@ -201,14 +228,14 @@ const Header = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className='flex flex-col items-start text-left'>
-                      <span className='text-sm font-medium text-gray-900'>
+                      <span className='text-sm font-medium text-foreground'>
                         {session.user.name || 'User'}
                       </span>
-                      <span className='text-xs text-gray-500'>
+                      <span className='text-xs text-muted-foreground'>
                         {organization?.name || getUserRoleLabel()}
                       </span>
                     </div>
-                    <ChevronDown className='h-4 w-4 text-gray-500' />
+                    <ChevronDown className='h-4 w-4 text-muted-foreground' />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end' className='w-56'>
@@ -317,8 +344,8 @@ const Header = () => {
                     className={cn(
                       'flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors',
                       isActive
-                        ? 'bg-rowad-100 text-rowad-700'
-                        : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
+                        ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
+                        : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
                     )}
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -362,7 +389,11 @@ const Header = () => {
                   )
                 })}
             </div>
-            <div className='mt-4 pt-4 border-t space-y-2'>
+            <div className='mt-4 pt-4 border-t border-border space-y-2'>
+              <div className='flex items-center justify-between px-3 py-2'>
+                <span className='text-sm font-medium text-foreground'>Theme</span>
+                <ThemeToggle />
+              </div>
               {isAuthenticated && session?.user ? (
                 <>
                   <div className='flex items-center gap-3 px-3 py-2'>
@@ -376,10 +407,10 @@ const Header = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className='flex flex-col flex-1 min-w-0'>
-                      <span className='text-sm font-medium text-gray-900 truncate'>
+                      <span className='text-sm font-medium text-foreground truncate'>
                         {session.user.name || 'User'}
                       </span>
-                      <span className='text-xs text-gray-500 truncate'>
+                      <span className='text-xs text-muted-foreground truncate'>
                         {organization?.name || getUserRoleLabel()}
                       </span>
                     </div>
@@ -387,7 +418,7 @@ const Header = () => {
                   <Link
                     href='/profile'
                     onClick={() => setMobileMenuOpen(false)}
-                    className='flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
+                    className='flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
                   >
                     <User className='h-5 w-5' />
                     <span>Profile</span>
