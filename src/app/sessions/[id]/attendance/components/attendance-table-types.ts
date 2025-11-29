@@ -27,6 +27,8 @@ export interface AttendanceTableProps {
   onAgeGroupFilterChange?: (ageGroup: string) => void
   onGenderFilterChange?: (gender: string) => void
   onClearFilters?: () => void
+  bulkUpdateStatus?: (playerIds: string[], status: AttendanceStatus) => void
+  bulkDeleteAttendance?: (playerIds: string[]) => void
 }
 
 export interface AttendanceTableHandlers {

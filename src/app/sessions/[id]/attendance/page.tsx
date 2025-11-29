@@ -48,6 +48,8 @@ const AttendanceManagementPage = () => {
     deleteAttendance,
     addPlayer,
     initializeAttendance,
+    bulkUpdateStatus,
+    bulkDeleteAttendance,
     summary,
   } = useTrainingSessionAttendance({
     sessionId,
@@ -261,6 +263,8 @@ const AttendanceManagementPage = () => {
                 setPage(1)
               }}
               onClearFilters={handleClearFilters}
+              bulkUpdateStatus={bulkUpdateStatus}
+              bulkDeleteAttendance={bulkDeleteAttendance}
             />
           )}
         </CardContent>

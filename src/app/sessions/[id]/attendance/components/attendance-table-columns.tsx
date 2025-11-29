@@ -10,12 +10,31 @@ import { AttendanceTableActions } from './attendance-table-actions'
 import Link from 'next/link'
 import { getAgeGroup } from '@/db/schema'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export const createAttendanceColumns = (
   onStatusChange: (playerId: string, status: AttendanceStatus) => void,
   onDelete: (playerId: string) => void,
   updatingPlayerId: string | null
 ): ColumnDef<AttendanceRecord>[] => [
+  {
+    id: 'select',
+    enableHiding: false,
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='Select all'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='Select row'
+      />
+    ),
+  },
   {
     accessorKey: 'player.name',
     id: 'name',

@@ -15,6 +15,7 @@ import { AttendanceTableControls } from './attendance-table-controls'
 import { AttendanceTableHeader } from './attendance-table-header'
 import { AttendanceTableBody } from './attendance-table-body'
 import { AttendanceTablePagination } from './attendance-table-pagination'
+import { BulkActionsToolbar } from './bulk-actions-toolbar'
 import { createAttendanceColumns } from './attendance-table-columns'
 import type { AttendanceTableProps } from './attendance-table-types'
 import { getAgeGroup } from '@/db/schema'
@@ -56,7 +57,13 @@ export const AttendanceTable = ({
   onAgeGroupFilterChange,
   onGenderFilterChange,
   onClearFilters,
+  bulkUpdateStatus,
+  bulkDeleteAttendance,
 }: AttendanceTableProps) => {
+  // Row selection state
+  const [rowSelection, setRowSelection] = React.useState<
+    Record<string, boolean>
+  >({})
   // Filter records based on search, status, age group, and gender
   const filteredRecords = React.useMemo(() => {
     return records.filter((record) => {
@@ -100,6 +107,12 @@ export const AttendanceTable = ({
     getPaginationRowModel: pagination ? undefined : getPaginationRowModel(),
     // Disable sorting to maintain original order
     enableSorting: false,
+    // Enable row selection
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      rowSelection,
+    },
     // Manual pagination if pagination prop is provided
     manualPagination: !!pagination,
     pageCount: pagination?.totalPages,
@@ -117,6 +130,11 @@ export const AttendanceTable = ({
     },
   })
 
+  // Update columns when table instance changes (for selection column)
+  React.useEffect(() => {
+    // This ensures columns are recreated when table instance is available
+  }, [table])
+
   // Update column visibility when screen size changes
   React.useEffect(() => {
     table.setColumnVisibility((prev) => ({
@@ -124,6 +142,18 @@ export const AttendanceTable = ({
       status: !isMobile,
     }))
   }, [isMobile, table])
+
+  // Get selected row IDs
+  const selectedRowIds = React.useMemo(() => {
+    return Object.keys(rowSelection).filter(
+      (key) => rowSelection[key as string]
+    )
+  }, [rowSelection])
+
+  // Clear selection handler
+  const handleClearSelection = React.useCallback(() => {
+    setRowSelection({})
+  }, [])
 
   return (
     <div className='w-full space-y-4'>
@@ -139,6 +169,28 @@ export const AttendanceTable = ({
         onGenderFilterChange={onGenderFilterChange || (() => {})}
         onClearFilters={onClearFilters || (() => {})}
       />
+      {/* Bulk Actions Toolbar */}
+      {selectedRowIds.length > 0 &&
+        (bulkUpdateStatus || bulkDeleteAttendance) && (
+          <BulkActionsToolbar
+            selectedCount={selectedRowIds.length}
+            selectedPlayerIds={selectedRowIds
+              .map((rowId) => filteredRecords[parseInt(rowId)]?.playerId)
+              .filter((id): id is string => Boolean(id))}
+            onStatusChange={(status) => {
+              const playerIds = selectedRowIds
+                .map((rowId) => filteredRecords[parseInt(rowId)]?.playerId)
+                .filter((id): id is string => Boolean(id))
+              bulkUpdateStatus?.(playerIds, status)
+              handleClearSelection()
+            }}
+            onDelete={(playerIds) => {
+              bulkDeleteAttendance?.(playerIds)
+              handleClearSelection()
+            }}
+            onClearSelection={handleClearSelection}
+          />
+        )}
       <div className='rounded-md border overflow-x-auto'>
         <Table>
           <AttendanceTableHeader table={table} />

@@ -273,6 +273,175 @@ export const useTrainingSessionAttendance = ({
     [sessionId, fetchAttendance]
   )
 
+  // Bulk delete attendance records with optimistic updates
+  const bulkDeleteAttendance = useCallback(
+    async (playerIds: string[]) => {
+      if (!sessionId || playerIds.length === 0) return
+
+      // Store original records for rollback
+      const originalRecords = attendanceRecords.filter((r) =>
+        playerIds.includes(r.playerId)
+      )
+      const originalRecordsMap = new Map(
+        originalRecords.map((r) => [r.playerId, r])
+      )
+
+      // Get player names for toast notification
+      const playerNames = originalRecords.map((r) => r.player.name)
+
+      // Optimistic update: remove from UI immediately
+      setAttendanceRecords((prev) =>
+        prev.filter((r) => !playerIds.includes(r.playerId))
+      )
+
+      try {
+        // Call bulk delete API
+        await apiClient.bulkDeleteAttendanceRecords(sessionId, playerIds)
+
+        toast.success(
+          `Removed ${playerIds.length} player${
+            playerIds.length > 1 ? 's' : ''
+          } from training session`
+        )
+      } catch (err) {
+        // Rollback on error
+        setAttendanceRecords((prev) => {
+          const restored = [...prev]
+          originalRecords.forEach((record) => {
+            if (!restored.find((r) => r.playerId === record.playerId)) {
+              restored.push(record)
+            }
+          })
+          return restored
+        })
+
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : 'Failed to remove attendance records'
+        setError(errorMessage)
+        toast.error(errorMessage)
+      }
+    },
+    [sessionId, attendanceRecords]
+  )
+
+  // Bulk update attendance status with optimistic updates
+  const bulkUpdateStatus = useCallback(
+    async (playerIds: string[], status: AttendanceStatus) => {
+      if (!sessionId || playerIds.length === 0) return
+
+      // Store original records for rollback
+      const originalRecords = attendanceRecords.filter((r) =>
+        playerIds.includes(r.playerId)
+      )
+      const originalRecordsMap = new Map(
+        originalRecords.map((r) => [r.playerId, r])
+      )
+
+      // Get player names for toast notification
+      const playerNames = originalRecords.map((r) => r.player.name)
+
+      // Optimistic update: update UI immediately
+      const optimisticRecords: AttendanceRecord[] = playerIds.map(
+        (playerId) => {
+          const existingRecord = attendanceRecords.find(
+            (r) => r.playerId === playerId
+          )
+          if (existingRecord) {
+            return {
+              ...existingRecord,
+              status,
+              updatedAt: new Date().toISOString(),
+            }
+          }
+          // If record doesn't exist, create optimistic one
+          const player = attendanceRecords.find((r) => r.playerId === playerId)
+            ?.player || {
+            id: playerId,
+            name: 'Player',
+          }
+          return {
+            id: `temp-${playerId}`,
+            playerId,
+            trainingSessionId: sessionId,
+            status,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            player,
+          }
+        }
+      )
+
+      // Update state optimistically
+      setAttendanceRecords((prev) => {
+        const updated = prev.map((record) => {
+          const optimistic = optimisticRecords.find(
+            (r) => r.playerId === record.playerId
+          )
+          return optimistic || record
+        })
+
+        // Add any new records that don't exist yet
+        const existingPlayerIds = new Set(prev.map((r) => r.playerId))
+        const newRecords = optimisticRecords.filter(
+          (r) => !existingPlayerIds.has(r.playerId)
+        )
+
+        return [...updated, ...newRecords]
+      })
+
+      try {
+        // Call bulk update API
+        const updates = playerIds.map((playerId) => ({ playerId, status }))
+        const result = (await apiClient.bulkUpdateAttendanceStatus(
+          sessionId,
+          updates
+        )) as AttendanceRecord[]
+
+        // Update records with server response
+        setAttendanceRecords((prev) => {
+          const resultMap = new Map(result.map((r) => [r.playerId, r]))
+          return prev.map((record) => {
+            const updated = resultMap.get(record.playerId)
+            return updated || record
+          })
+        })
+
+        toast.success(
+          `Updated attendance status for ${playerIds.length} player${
+            playerIds.length > 1 ? 's' : ''
+          }`
+        )
+      } catch (err) {
+        // Rollback on error
+        setAttendanceRecords((prev) => {
+          return prev.map((record) => {
+            const original = originalRecordsMap.get(record.playerId)
+            return original || record
+          })
+        })
+
+        // Remove any records that were added optimistically
+        setAttendanceRecords((prev) =>
+          prev.filter(
+            (r) =>
+              !playerIds.includes(r.playerId) ||
+              originalRecordsMap.has(r.playerId)
+          )
+        )
+
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : 'Failed to update attendance status'
+        setError(errorMessage)
+        toast.error(errorMessage)
+      }
+    },
+    [sessionId, attendanceRecords]
+  )
+
   useEffect(() => {
     fetchAttendance()
   }, [fetchAttendance])
@@ -301,6 +470,8 @@ export const useTrainingSessionAttendance = ({
     deleteAttendance,
     addPlayer,
     initializeAttendance,
+    bulkUpdateStatus,
+    bulkDeleteAttendance,
     refetch: fetchAttendance,
     summary,
   }

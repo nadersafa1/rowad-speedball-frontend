@@ -175,6 +175,29 @@ export const attendanceUpdateSchema = z
   })
   .strict()
 
+// Bulk update attendance schema for PATCH /training-sessions/:id/attendance/bulk
+export const attendanceBulkUpdateSchema = z
+  .object({
+    updates: z
+      .array(
+        z.object({
+          playerId: z.uuid('Invalid player ID format'),
+          status: attendanceStatusEnum,
+        })
+      )
+      .min(1, 'At least one update is required'),
+  })
+  .strict()
+
+// Bulk delete attendance schema for DELETE /training-sessions/:id/attendance/bulk
+export const attendanceBulkDeleteSchema = z
+  .object({
+    playerIds: z
+      .array(z.uuid('Invalid player ID format'))
+      .min(1, 'At least one player ID is required'),
+  })
+  .strict()
+
 // Inferred TypeScript types
 export type TrainingSessionsQuery = z.infer<typeof trainingSessionsQuerySchema>
 export type TrainingSessionsParams = z.infer<
@@ -192,3 +215,5 @@ export type AttendanceParamsWithPlayer = z.infer<
 >
 export type AttendanceCreate = z.infer<typeof attendanceCreateSchema>
 export type AttendanceUpdate = z.infer<typeof attendanceUpdateSchema>
+export type AttendanceBulkUpdate = z.infer<typeof attendanceBulkUpdateSchema>
+export type AttendanceBulkDelete = z.infer<typeof attendanceBulkDeleteSchema>

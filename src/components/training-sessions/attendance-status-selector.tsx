@@ -47,8 +47,11 @@ export const AttendanceStatusSelector = ({
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger className='w-full min-w-[180px] flex items-center gap-2'>
-        <SelectValue placeholder='Select status' />
-        {selectedOption && <AttendanceStatusBadge status={value} />}
+        {selectedOption ? (
+          <AttendanceStatusBadge status={value} />
+        ) : (
+          <SelectValue placeholder='Select status' />
+        )}
       </SelectTrigger>
       <SelectContent>
         {statusOptions.map((option) => (

@@ -616,6 +616,32 @@ export class ApiClient {
     )
   }
 
+  async bulkUpdateAttendanceStatus(
+    sessionId: string,
+    updates: Array<{ playerId: string; status: string }>
+  ) {
+    return this.request(
+      `/training-sessions/${sessionId}/attendance/bulk`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ updates }),
+      }
+    )
+  }
+
+  async bulkDeleteAttendanceRecords(
+    sessionId: string,
+    playerIds: string[]
+  ) {
+    return this.request(
+      `/training-sessions/${sessionId}/attendance/bulk`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ playerIds }),
+      }
+    )
+  }
+
   // Generic methods for convenience
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint)
