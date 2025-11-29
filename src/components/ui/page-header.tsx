@@ -29,7 +29,7 @@ const PageHeader = ({
   actionDialog,
 }: PageHeaderProps) => {
   return (
-    <div className='flex items-center justify-between mb-8'>
+    <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8'>
       <div>
         <h1 className='text-3xl font-bold flex items-center gap-3'>
           <Icon className='h-8 w-8 text-speedball-600' />
@@ -41,7 +41,9 @@ const PageHeader = ({
       {/* Action Button or Dialog */}
       {actionButton && (
         <Button
-          className={`gap-2 ${actionButton.buttonClassName || ''}`}
+          className={`gap-2 w-full md:w-auto ${
+            actionButton.buttonClassName || ''
+          }`}
           onClick={actionButton.onClick}
         >
           <actionButton.icon className='h-4 w-4' />
@@ -54,7 +56,9 @@ const PageHeader = ({
           open={actionDialog.open}
           onOpenChange={actionDialog.onOpenChange}
         >
-          <DialogTrigger asChild>{actionDialog.trigger}</DialogTrigger>
+          <DialogTrigger asChild className='w-full md:w-auto'>
+            {actionDialog.trigger}
+          </DialogTrigger>
           {actionDialog.content}
         </Dialog>
       )}
