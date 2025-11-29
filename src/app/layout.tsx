@@ -5,6 +5,7 @@ import Header from '@/components/navigation/header'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ImpersonationIndicator } from '@/components/auth/impersonation-indicator'
+import { ThemeProvider } from '@/components/ui/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,14 +18,16 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang='en'>
+    <html lang='en' suppressHydrationWarning>
       <body className={inter.className}>
-        <TooltipProvider>
-          <Header />
-          <main className='min-h-[90dvh]'>{children}</main>
-          <Toaster />
-          <ImpersonationIndicator />
-        </TooltipProvider>
+        <ThemeProvider attribute='class' defaultTheme='light' enableSystem>
+          <TooltipProvider>
+            <Header />
+            <main className='min-h-[90dvh]'>{children}</main>
+            <Toaster />
+            <ImpersonationIndicator />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

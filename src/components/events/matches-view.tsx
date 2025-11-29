@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type {
   Match,
   Group,
@@ -291,10 +292,35 @@ const MatchesView = ({
     .map(Number)
     .sort((a, b) => a - b)
 
+  const scrollToRound = (round: number) => {
+    const element = document.getElementById(`round-${round}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <div className='space-y-6'>
+      {rounds.length > 0 && (
+        <div className='sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-2 pt-2'>
+          <div className='flex flex-wrap gap-2'>
+            {rounds.map((round) => (
+              <Button
+                key={round}
+                variant='outline'
+                size='sm'
+                onClick={() => scrollToRound(round)}
+                className='text-sm'
+              >
+                <span className='md:hidden'>R{round}</span>
+                <span className='hidden md:inline'>Round {round}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
       {rounds.map((round) => (
-        <Card key={round}>
+        <Card key={round} id={`round-${round}`}>
           <CardHeader>
             <CardTitle>Round {round}</CardTitle>
           </CardHeader>
