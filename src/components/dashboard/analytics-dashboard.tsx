@@ -46,7 +46,7 @@ import {
 } from "recharts";
 import { usePlayersStore } from "@/store/players-store";
 import { useTestsStore } from "@/store/tests-store";
-import { getAgeCategory, getTestTypeLabel } from "@/lib/utils";
+import { getTestTypeLabel } from "@/lib/utils";
 import type { Test, Player } from "@/types";
 
 // Color schemes for charts
