@@ -1,9 +1,9 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Save, UserPlus } from 'lucide-react'
+import { Plus, Trash2, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -24,26 +24,36 @@ import {
   DialogTitle,
 } from '../ui'
 
-// Validation schema
-const registrationSchema = z.object({
-  player1Id: z.string().uuid('Invalid player ID'),
-  player2Id: z.string().uuid('Invalid player ID').nullable().optional(),
-})
+// Dynamic validation schema based on min/max players
+const createRegistrationSchema = (minPlayers: number, maxPlayers: number) => {
+  return z.object({
+    players: z
+      .array(
+        z.object({
+          playerId: z.string().uuid('Invalid player ID'),
+        })
+      )
+      .min(minPlayers, `At least ${minPlayers} player(s) required`)
+      .max(maxPlayers, `Maximum ${maxPlayers} players allowed`),
+  })
+}
 
-type RegistrationFormData = z.infer<typeof registrationSchema>
+type RegistrationFormData = { players: { playerId: string }[] }
 
 interface RegistrationFormProps {
   eventId: string
-  eventType: 'singles' | 'doubles'
   eventGender: 'male' | 'female' | 'mixed'
+  minPlayers: number
+  maxPlayers: number
   onSuccess?: () => void
   onCancel?: () => void
 }
 
 const RegistrationForm = ({
   eventId,
-  eventType,
   eventGender,
+  minPlayers,
+  maxPlayers,
   onSuccess,
   onCancel,
 }: RegistrationFormProps) => {
@@ -56,12 +66,24 @@ const RegistrationForm = ({
     fetchRegistrations,
   } = useRegistrationsStore()
 
+
+  const schema = useMemo(
+    () => createRegistrationSchema(minPlayers, maxPlayers),
+    [minPlayers, maxPlayers]
+  )
+
   const form = useForm<RegistrationFormData>({
-    resolver: zodResolver(registrationSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
-      player1Id: '',
-      player2Id: null,
+      players: Array(minPlayers)
+        .fill(null)
+        .map(() => ({ playerId: '' })),
     },
+  })
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'players',
   })
 
   // Fetch existing registrations to exclude already-registered players
@@ -69,40 +91,53 @@ const RegistrationForm = ({
     fetchRegistrations(eventId)
   }, [eventId, fetchRegistrations])
 
-  const player1Id = form.watch('player1Id')
+  const watchedPlayers = form.watch('players')
 
-  // Calculate excluded player IDs based on existing registrations
+  // Calculate excluded player IDs based on existing registrations and current form
   const excludedPlayerIds = useMemo(() => {
     const excluded: string[] = []
+
+    // Exclude players from existing registrations
     registrations.forEach((reg) => {
-      if (eventType === 'singles') {
-        // For singles, exclude player1Id from all registrations
-        if (reg.player1Id) excluded.push(reg.player1Id)
+      // Use new players array if available, fallback to player1Id/player2Id
+      if (reg.players && reg.players.length > 0) {
+        reg.players.forEach((p) => excluded.push(p.id))
       } else {
-        // For doubles, exclude both player1Id and player2Id from all registrations
         if (reg.player1Id) excluded.push(reg.player1Id)
         if (reg.player2Id) excluded.push(reg.player2Id)
       }
     })
-    // Also exclude player1Id from player2 selection
-    if (player1Id && eventType === 'doubles') {
-      excluded.push(player1Id)
-    }
+
     return excluded
-  }, [registrations, eventType, player1Id])
+  }, [registrations])
+
+  // Get excluded IDs for each player slot (excluding currently selected in other slots)
+  const getExcludedIdsForSlot = (slotIndex: number) => {
+    const selectedInOtherSlots = watchedPlayers
+      .filter((_, idx) => idx !== slotIndex)
+      .map((p) => p.playerId)
+      .filter(Boolean)
+
+    return [...excludedPlayerIds, ...selectedInOtherSlots]
+  }
 
   const onSubmit = async (data: RegistrationFormData) => {
     try {
       clearError()
-      await createRegistration({
-        eventId,
-        player1Id: data.player1Id,
-        player2Id: eventType === 'doubles' ? data.player2Id || null : null,
-      })
+      const playerIds = data.players.map((p) => p.playerId)
+      await createRegistration({ eventId, playerIds })
       onSuccess?.()
     } catch (err) {
       console.error('Error submitting registration form:', err)
     }
+  }
+
+  const canAddPlayer = fields.length < maxPlayers
+  const canRemovePlayer = fields.length > minPlayers
+
+  const getPlayerLabel = (index: number) => {
+    if (maxPlayers === 1) return 'Player'
+    return `Player ${index + 1}`
   }
 
   return (
@@ -110,70 +145,80 @@ const RegistrationForm = ({
       <DialogHeader>
         <DialogTitle>Register for Event</DialogTitle>
         <DialogDescription>
-          Select {eventType === 'singles' ? 'a player' : 'players'} to register.
+          Select {maxPlayers === 1 ? 'a player' : 'players'} to register
+          {minPlayers !== maxPlayers && ` (${minPlayers}-${maxPlayers} players)`}
+          .
         </DialogDescription>
       </DialogHeader>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-          <FormField
-            control={form.control}
-            name='player1Id'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {eventType === 'singles' ? 'Player' : 'Player 1'}
-                </FormLabel>
-                <FormControl>
-                  <PlayerCombobox
-                    value={field.value || undefined}
-                    onValueChange={field.onChange}
-                    placeholder={
-                      eventType === 'singles'
-                        ? 'Select player'
-                        : 'Select player 1'
-                    }
-                    excludedPlayerIds={excludedPlayerIds.filter(
-                      (id) => id !== player1Id
-                    )}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {eventType === 'doubles' && (
+          {fields.map((field, index) => (
             <FormField
+              key={field.id}
               control={form.control}
-              name='player2Id'
-              render={({ field }) => (
+              name={`players.${index}.playerId`}
+              render={({ field: formField }) => (
                 <FormItem>
-                  <FormLabel>Player 2</FormLabel>
+                  <div className='flex items-center justify-between'>
+                    <FormLabel>{getPlayerLabel(index)}</FormLabel>
+                    {canRemovePlayer && index >= minPlayers && (
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => remove(index)}
+                        className='h-6 w-6 p-0 text-destructive'
+                      >
+                        <Trash2 className='h-4 w-4' />
+                      </Button>
+                    )}
+                  </div>
                   <FormControl>
                     <PlayerCombobox
-                      value={field.value || undefined}
-                      onValueChange={field.onChange}
-                      placeholder='Select player 2'
-                      disabled={!player1Id}
-                      excludedPlayerIds={excludedPlayerIds}
+                      value={formField.value || undefined}
+                      onValueChange={formField.onChange}
+                      placeholder={`Select ${getPlayerLabel(index).toLowerCase()}`}
+                      excludedPlayerIds={getExcludedIdsForSlot(index)}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          ))}
+
+          {canAddPlayer && (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() => append({ playerId: '' })}
+              className='w-full'
+            >
+              <Plus className='mr-2 h-4 w-4' />
+              Add Player
+            </Button>
           )}
 
           {error && <div className='text-sm text-destructive'>{error}</div>}
 
           <DialogFooter className='flex-col sm:flex-row gap-2 sm:gap-0'>
             {onCancel && (
-              <Button type='button' variant='outline' onClick={onCancel} className='w-full sm:w-auto'>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={onCancel}
+                className='w-full sm:w-auto'
+              >
                 Cancel
               </Button>
             )}
-            <Button type='submit' disabled={isLoading} className='w-full sm:w-auto'>
+            <Button
+              type='submit'
+              disabled={isLoading}
+              className='w-full sm:w-auto'
+            >
               <UserPlus className='mr-2 h-4 w-4' />
               {isLoading ? 'Registering...' : 'Register'}
             </Button>

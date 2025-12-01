@@ -1,11 +1,12 @@
 import { NextRequest } from 'next/server'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, SQL } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { matchesQuerySchema } from '@/types/api/matches.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventReadAuthorization } from '@/lib/event-authorization-helpers'
+import { enrichRegistrationWithPlayers } from '@/lib/registration-helpers'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   try {
     const { eventId, groupId, round } = parseResult.data
 
-    // If eventId is provided, check authorization for that event
+    // Authorization checks
     if (eventId) {
       const event = await db
         .select()
@@ -33,12 +34,9 @@ export async function GET(request: NextRequest) {
       }
 
       const authError = checkEventReadAuthorization(context, event[0])
-      if (authError) {
-        return authError
-      }
+      if (authError) return authError
     }
 
-    // If groupId is provided but no eventId, get eventId from group
     if (groupId && !eventId) {
       const group = await db
         .select()
@@ -61,41 +59,30 @@ export async function GET(request: NextRequest) {
       }
 
       const authError = checkEventReadAuthorization(context, event[0])
-      if (authError) {
-        return authError
-      }
+      if (authError) return authError
     }
 
-    const conditions: any[] = []
-
-    if (eventId) {
-      conditions.push(eq(schema.matches.eventId, eventId))
-    }
-
-    if (groupId) {
-      conditions.push(eq(schema.matches.groupId, groupId))
-    }
-
-    if (round) {
-      conditions.push(eq(schema.matches.round, round))
-    }
+    // Build query conditions
+    const conditions: ReturnType<typeof eq>[] = []
+    if (eventId) conditions.push(eq(schema.matches.eventId, eventId))
+    if (groupId) conditions.push(eq(schema.matches.groupId, groupId))
+    if (round) conditions.push(eq(schema.matches.round, round))
 
     const combinedCondition =
       conditions.length > 0
-        ? conditions.reduce((acc, condition) =>
-            acc ? and(acc, condition) : condition
+        ? conditions.reduce<SQL<unknown> | undefined>(
+            (acc, cond) => (acc ? and(acc, cond) : cond),
+            undefined
           )
         : undefined
 
     let query = db.select().from(schema.matches)
-
-    if (combinedCondition) {
-      query = query.where(combinedCondition) as any
-    }
+    if (combinedCondition)
+      query = query.where(combinedCondition) as typeof query
 
     const matches = await query
 
-    // Get sets and registration data for each match
+    // Enrich matches with sets and registration data
     const matchesWithData = await Promise.all(
       matches.map(async (match) => {
         const matchSets = await db
@@ -103,71 +90,26 @@ export async function GET(request: NextRequest) {
           .from(schema.sets)
           .where(eq(schema.sets.matchId, match.id))
 
-        // Fetch registration1 with player data
+        // Fetch registrations with players from junction table
         const registration1 = await db
           .select()
           .from(schema.registrations)
           .where(eq(schema.registrations.id, match.registration1Id))
           .limit(1)
 
-        let registration1WithPlayers = null
-        if (registration1.length > 0) {
-          const reg1 = registration1[0]
-          const player1 = await db
-            .select()
-            .from(schema.players)
-            .where(eq(schema.players.id, reg1.player1Id))
-            .limit(1)
-
-          let player2 = null
-          if (reg1.player2Id) {
-            const player2Result = await db
-              .select()
-              .from(schema.players)
-              .where(eq(schema.players.id, reg1.player2Id))
-              .limit(1)
-            player2 = player2Result[0] || null
-          }
-
-          registration1WithPlayers = {
-            ...reg1,
-            player1: player1[0] || null,
-            player2: player2,
-          }
-        }
-
-        // Fetch registration2 with player data
         const registration2 = await db
           .select()
           .from(schema.registrations)
           .where(eq(schema.registrations.id, match.registration2Id))
           .limit(1)
 
-        let registration2WithPlayers = null
-        if (registration2.length > 0) {
-          const reg2 = registration2[0]
-          const player1 = await db
-            .select()
-            .from(schema.players)
-            .where(eq(schema.players.id, reg2.player1Id))
-            .limit(1)
+        const registration1WithPlayers = registration1[0]
+          ? await enrichRegistrationWithPlayers(registration1[0])
+          : null
 
-          let player2 = null
-          if (reg2.player2Id) {
-            const player2Result = await db
-              .select()
-              .from(schema.players)
-              .where(eq(schema.players.id, reg2.player2Id))
-              .limit(1)
-            player2 = player2Result[0] || null
-          }
-
-          registration2WithPlayers = {
-            ...reg2,
-            player1: player1[0] || null,
-            player2: player2,
-          }
-        }
+        const registration2WithPlayers = registration2[0]
+          ? await enrichRegistrationWithPlayers(registration2[0])
+          : null
 
         return {
           ...match,

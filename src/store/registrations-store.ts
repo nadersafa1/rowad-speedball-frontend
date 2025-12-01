@@ -12,7 +12,10 @@ interface RegistrationsState {
   fetchRegistrations: (eventId?: string, groupId?: string) => Promise<void>
   createRegistration: (data: {
     eventId: string
-    player1Id: string
+    // New format: array of player IDs (preferred)
+    playerIds?: string[]
+    // @deprecated Legacy format for backward compatibility
+    player1Id?: string
     player2Id?: string | null
   }) => Promise<void>
   updateRegistration: (id: string, data: any) => Promise<void>

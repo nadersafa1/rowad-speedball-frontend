@@ -1,4 +1,5 @@
 import { Event } from "@/types";
+import type { EventType } from "@/types/event-types";
 
 type SortableField =
   | "name"
@@ -20,10 +21,10 @@ export interface EventsTableProps {
   onPageSizeChange: (pageSize: number) => void;
   onSearchChange?: (value: string) => void;
   searchValue?: string;
-  eventType?: "singles" | "doubles";
+  eventType?: EventType;
   gender?: "male" | "female" | "mixed";
   organizationId?: string | null;
-  onEventTypeChange?: (eventType?: "singles" | "doubles") => void;
+  onEventTypeChange?: (eventType?: EventType) => void;
   onGenderChange?: (gender?: "male" | "female" | "mixed") => void;
   onOrganizationChange?: (organizationId?: string | null) => void;
   sortBy?: SortableField;

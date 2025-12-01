@@ -3,6 +3,11 @@ import { Event } from "@/types";
 import Link from "next/link";
 import { format } from "date-fns";
 import { CheckCircle2, XCircle } from "lucide-react";
+import {
+  EVENT_TYPE_LABELS,
+  isSinglePlayerEventType,
+  type EventType,
+} from "@/types/event-types";
 
 export const NameCell = ({ event }: { event: Event }) => {
   return (
@@ -16,9 +21,10 @@ export const NameCell = ({ event }: { event: Event }) => {
 };
 
 export const EventTypeCell = ({ eventType }: { eventType: string }) => {
+  const isSinglePlayer = isSinglePlayerEventType(eventType as EventType);
   return (
-    <Badge variant={eventType === "singles" ? "default" : "secondary"}>
-      {eventType === "singles" ? "Singles" : "Doubles"}
+    <Badge variant={isSinglePlayer ? "default" : "secondary"}>
+      {EVENT_TYPE_LABELS[eventType as EventType] || eventType}
     </Badge>
   );
 };

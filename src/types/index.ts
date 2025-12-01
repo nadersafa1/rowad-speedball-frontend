@@ -1,3 +1,12 @@
+// Re-export event types from centralized location
+export {
+  EVENT_TYPES,
+  UI_EVENT_TYPES,
+  EVENT_TYPE_LABELS,
+  isSinglePlayerEventType,
+} from './event-types'
+export type { EventType, UIEventType } from './event-types'
+
 // Re-export types from the backend API contract
 export type Player = {
   id: string
@@ -83,13 +92,17 @@ export type AuthResponse = {
 }
 
 // Events types
+import type { EventType } from './event-types'
+
 export type Event = {
   id: string
   name: string
-  eventType: 'singles' | 'doubles'
+  eventType: EventType
   gender: 'male' | 'female' | 'mixed'
   groupMode: 'single' | 'multiple'
   visibility: 'public' | 'private'
+  minPlayers: number
+  maxPlayers: number
   registrationStartDate?: string | null
   registrationEndDate?: string | null
   eventDates?: string[]
@@ -121,7 +134,9 @@ export type Registration = {
   id: string
   eventId: string
   groupId?: string | null
-  player1Id: string
+  // @deprecated - Use players array instead
+  player1Id?: string | null
+  // @deprecated - Use players array instead
   player2Id?: string | null
   matchesWon: number
   matchesLost: number
@@ -131,8 +146,12 @@ export type Registration = {
   qualified: boolean
   createdAt: string
   updatedAt: string
-  player1?: Player
+  // @deprecated - Use players array instead
+  player1?: Player | null
+  // @deprecated - Use players array instead
   player2?: Player | null
+  // New unified players array (ordered by position)
+  players?: Player[]
 }
 
 export type Match = {

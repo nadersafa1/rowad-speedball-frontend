@@ -19,16 +19,17 @@ import { Table } from '@tanstack/react-table'
 import { Event } from '@/types'
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
+import { UI_EVENT_TYPES, EVENT_TYPE_LABELS, type EventType } from '@/types/event-types'
 
 interface EventsTableControlsProps {
   table: Table<Event>
   searchValue: string
   onSearchChange?: (value: string) => void
-  eventType?: 'singles' | 'doubles'
+  eventType?: EventType
   gender?: 'male' | 'female' | 'mixed'
   organizationId?: string | null
   isSystemAdmin?: boolean
-  onEventTypeChange?: (eventType?: 'singles' | 'doubles') => void
+  onEventTypeChange?: (eventType?: EventType) => void
   onGenderChange?: (gender?: 'male' | 'female' | 'mixed') => void
   onOrganizationChange?: (organizationId?: string | null) => void
 }
@@ -137,7 +138,7 @@ export const EventsTableControls = ({
             value={eventType || 'all'}
             onValueChange={(value) =>
               onEventTypeChange?.(
-                value === 'all' ? undefined : (value as 'singles' | 'doubles')
+                value === 'all' ? undefined : (value as EventType)
               )
             }
           >
@@ -146,8 +147,11 @@ export const EventsTableControls = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value='all'>All Types</SelectItem>
-              <SelectItem value='singles'>Singles</SelectItem>
-              <SelectItem value='doubles'>Doubles</SelectItem>
+              {UI_EVENT_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {EVENT_TYPE_LABELS[type]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
