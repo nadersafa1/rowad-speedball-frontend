@@ -134,7 +134,8 @@ export const seedPlayers = async (
 
   for (const dist of ageGroupDistribution) {
     for (let i = 0; i < dist.count; i++) {
-      const playerData = playerNamesWithRtl[nameIndex % playerNamesWithRtl.length]
+      const playerData =
+        playerNamesWithRtl[nameIndex % playerNamesWithRtl.length]
       const { name, nameRtl } = playerData
       const isFemale = name.match(
         /^(Fatma|Nour|Sara|Layla|Hana|Mariam|Yasmin|Dina|Rana|Mona|Noha|Aya|Salma|Reem|Jana|Lina|Farida|Nada|Malak|Heba)/
@@ -151,8 +152,7 @@ export const seedPlayers = async (
         playerIndex++
       } else {
         // Assign to random organization without user link
-        organizationId =
-          organizations[nameIndex % organizations.length].id
+        organizationId = organizations[nameIndex % organizations.length].id
       }
 
       const [createdPlayer] = await db
@@ -165,7 +165,10 @@ export const seedPlayers = async (
           preferredHand: ['left', 'right', 'both'][
             Math.floor(Math.random() * 3)
           ] as 'left' | 'right' | 'both',
-          isFirstTeam: dist.group === 'Seniors' || dist.group === 'U-21',
+          teamLevel:
+            dist.group === 'Seniors' || dist.group === 'U-21'
+              ? 'team_a'
+              : 'team_c',
           userId,
           organizationId,
         })
@@ -189,4 +192,3 @@ export const seedPlayers = async (
   console.log(`✅ Created ${seededPlayers.length} players`)
   return seededPlayers
 }
-

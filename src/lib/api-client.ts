@@ -2,6 +2,7 @@
 import type { PaginatedResponse } from '@/types/api/pagination'
 import type { OrganizationContext } from '@/lib/organization-helpers'
 import type { EventType } from '@/types/event-types'
+import type { TeamLevel } from '@/types/team-level'
 
 export class ApiClient {
   private baseUrl: string
@@ -617,26 +618,17 @@ export class ApiClient {
     sessionId: string,
     updates: Array<{ playerId: string; status: string }>
   ) {
-    return this.request(
-      `/training-sessions/${sessionId}/attendance/bulk`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ updates }),
-      }
-    )
+    return this.request(`/training-sessions/${sessionId}/attendance/bulk`, {
+      method: 'PATCH',
+      body: JSON.stringify({ updates }),
+    })
   }
 
-  async bulkDeleteAttendanceRecords(
-    sessionId: string,
-    playerIds: string[]
-  ) {
-    return this.request(
-      `/training-sessions/${sessionId}/attendance/bulk`,
-      {
-        method: 'DELETE',
-        body: JSON.stringify({ playerIds }),
-      }
-    )
+  async bulkDeleteAttendanceRecords(sessionId: string, playerIds: string[]) {
+    return this.request(`/training-sessions/${sessionId}/attendance/bulk`, {
+      method: 'DELETE',
+      body: JSON.stringify({ playerIds }),
+    })
   }
 
   // Generic methods for convenience
@@ -727,7 +719,7 @@ export class ApiClient {
   async updateMyPlayer(data: {
     name?: string
     preferredHand?: 'left' | 'right' | 'both'
-    isFirstTeam?: boolean
+    teamLevel?: TeamLevel
   }): Promise<any> {
     return this.request('/users/me/player', {
       method: 'PATCH',

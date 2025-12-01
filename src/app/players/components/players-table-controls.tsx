@@ -19,7 +19,13 @@ import {
 import { Label } from '@/components/ui/label'
 import { Table } from '@tanstack/react-table'
 import { Player } from '@/types'
-import { Gender, AgeGroup, Team } from '../types/enums'
+import {
+  Gender,
+  AgeGroup,
+  Team,
+  TEAM_LEVELS,
+  TEAM_LEVEL_LABELS,
+} from '../types/enums'
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 
@@ -184,7 +190,7 @@ export const PlayersTableControls = ({
         {/* Team Filter */}
         <div className='flex-1 w-full md:w-auto'>
           <Label htmlFor='team' className='block mb-2'>
-            Team
+            Team Level
           </Label>
           <Select
             name='team'
@@ -192,12 +198,15 @@ export const PlayersTableControls = ({
             onValueChange={(value: Team) => onTeamChange?.(value)}
           >
             <SelectTrigger className='w-full'>
-              <SelectValue placeholder='Select a Team' />
+              <SelectValue placeholder='Select a Team Level' />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={Team.ALL}>All Teams</SelectItem>
-              <SelectItem value={Team.FIRST_TEAM}>First Team</SelectItem>
-              <SelectItem value={Team.ROWAD_B}>Rowad B</SelectItem>
+              {TEAM_LEVELS.map((level) => (
+                <SelectItem key={level} value={level}>
+                  {TEAM_LEVEL_LABELS[level]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

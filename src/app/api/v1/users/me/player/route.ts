@@ -5,6 +5,7 @@ import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { auth } from '@/lib/auth'
+import { TEAM_LEVELS } from '@/types/team-level'
 
 // Restricted schema for users updating their own player data
 const myPlayerUpdateSchema = z
@@ -19,7 +20,7 @@ const myPlayerUpdateSchema = z
         message: 'Preferred hand must be left, right, or both',
       })
       .optional(),
-    isFirstTeam: z.boolean().optional(),
+    teamLevel: z.enum(TEAM_LEVELS).optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,
@@ -77,4 +78,3 @@ export async function PATCH(request: NextRequest) {
     return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
-

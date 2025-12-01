@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import { TEAM_LEVELS } from '@/types/team-level'
+
+// Team level enum for validation
+const teamLevelEnum = z.enum(TEAM_LEVELS)
 
 // Session type enum values
 const sessionTypeEnum = z.enum([
@@ -98,18 +102,19 @@ export const trainingSessionsCreateSchema = z
     ageGroups: z
       .array(ageGroupEnum)
       .min(1, 'At least one age group is required'),
-    coachIds: z.array(z.uuid()).optional(),
+    coachIds: z
+      .array(z.uuid('Invalid coach ID format'))
+      .min(1, 'At least one coach is required'),
     organizationId: z
       .uuid('Invalid organization ID format')
       .optional()
       .nullable(),
-    firstTeamFilter: z
-      .enum(['first_team_only', 'non_first_team_only', 'all'], {
-        message:
-          'First team filter must be first_team_only, non_first_team_only, or all',
-      })
+    teamLevels: z
+      .array(teamLevelEnum)
       .optional()
-      .default('all'),
+      .describe(
+        'Array of team levels to filter players by. Empty or omitted means all team levels.'
+      ),
     autoCreateAttendance: z.boolean().optional().default(false),
   })
   .strict()
@@ -130,7 +135,10 @@ export const trainingSessionsUpdateSchema = z
       .optional(),
     description: z.string().optional().nullable(),
     ageGroups: z.array(ageGroupEnum).optional(),
-    coachIds: z.array(z.uuid()).optional(),
+    coachIds: z
+      .array(z.uuid('Invalid coach ID format'))
+      .min(1, 'At least one coach is required')
+      .optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,
