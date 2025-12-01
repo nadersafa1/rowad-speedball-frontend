@@ -91,7 +91,6 @@ export const checkPlayersAlreadyRegistered = async (
 
 /**
  * Enriches a registration with player data from the junction table
- * Also maintains backward compatibility with player1/player2
  */
 export const enrichRegistrationWithPlayers = async (
   registration: typeof schema.registrations.$inferSelect
@@ -101,8 +100,5 @@ export const enrichRegistrationWithPlayers = async (
   return {
     ...registration,
     players,
-    // Backward compatibility
-    player1: players[0] || null,
-    player2: players[1] || null,
   }
 }

@@ -267,14 +267,6 @@ export const registrations = pgTable('registrations', {
   groupId: uuid('group_id').references(() => groups.id, {
     onDelete: 'set null',
   }),
-  // @deprecated - Use registrationPlayers junction table instead
-  player1Id: uuid('player1_id').references(() => players.id, {
-    onDelete: 'cascade',
-  }),
-  // @deprecated - Use registrationPlayers junction table instead
-  player2Id: uuid('player2_id').references(() => players.id, {
-    onDelete: 'cascade',
-  }),
   matchesWon: integer('matches_won').notNull().default(0),
   matchesLost: integer('matches_lost').notNull().default(0),
   setsWon: integer('sets_won').notNull().default(0),

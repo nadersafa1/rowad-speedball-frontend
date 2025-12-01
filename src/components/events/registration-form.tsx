@@ -99,12 +99,8 @@ const RegistrationForm = ({
 
     // Exclude players from existing registrations
     registrations.forEach((reg) => {
-      // Use new players array if available, fallback to player1Id/player2Id
       if (reg.players && reg.players.length > 0) {
         reg.players.forEach((p) => excluded.push(p.id))
-      } else {
-        if (reg.player1Id) excluded.push(reg.player1Id)
-        if (reg.player2Id) excluded.push(reg.player2Id)
       }
     })
 

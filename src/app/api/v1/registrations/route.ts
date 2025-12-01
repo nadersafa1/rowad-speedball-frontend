@@ -83,11 +83,15 @@ export async function GET(request: NextRequest) {
 
     const combinedCondition =
       conditions.length > 0
-        ? conditions.reduce<SQL<unknown> | undefined>((acc, cond) => (acc ? and(acc, cond) : cond), undefined)
+        ? conditions.reduce<SQL<unknown> | undefined>(
+            (acc, cond) => (acc ? and(acc, cond) : cond),
+            undefined
+          )
         : undefined
 
     let query = db.select().from(schema.registrations)
-    if (combinedCondition) query = query.where(combinedCondition) as typeof query
+    if (combinedCondition)
+      query = query.where(combinedCondition) as typeof query
 
     const registrations = await query
 
@@ -114,20 +118,7 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { eventId, playerIds, player1Id, player2Id } = parseResult.data
-
-    // Normalize to playerIds array (support both new and legacy format)
-    let normalizedPlayerIds: string[]
-    if (playerIds && playerIds.length > 0) {
-      normalizedPlayerIds = playerIds
-    } else if (player1Id) {
-      normalizedPlayerIds = player2Id ? [player1Id, player2Id] : [player1Id]
-    } else {
-      return Response.json(
-        { message: 'At least one player is required' },
-        { status: 400 }
-      )
-    }
+    const { eventId, playerIds } = parseResult.data
 
     // Get event
     const event = await db
@@ -156,7 +147,9 @@ export async function POST(request: NextRequest) {
       const playedSets = await db
         .select()
         .from(schema.sets)
-        .where(and(eq(schema.sets.matchId, match.id), eq(schema.sets.played, true)))
+        .where(
+          and(eq(schema.sets.matchId, match.id), eq(schema.sets.played, true))
+        )
         .limit(1)
 
       if (playedSets.length > 0) {
@@ -169,8 +162,14 @@ export async function POST(request: NextRequest) {
 
     // Validate player count based on min/max configuration
     const countValidation = validateRegistrationPlayerCount(
-      eventData.eventType as 'solo' | 'singles' | 'doubles' | 'singles-teams' | 'solo-teams' | 'relay',
-      normalizedPlayerIds.length,
+      eventData.eventType as
+        | 'solo'
+        | 'singles'
+        | 'doubles'
+        | 'singles-teams'
+        | 'solo-teams'
+        | 'relay',
+      playerIds.length,
       eventData.minPlayers,
       eventData.maxPlayers
     )
@@ -179,8 +178,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate player IDs
-    const uniquePlayerIds = new Set(normalizedPlayerIds)
-    if (uniquePlayerIds.size !== normalizedPlayerIds.length) {
+    const uniquePlayerIds = new Set(playerIds)
+    if (uniquePlayerIds.size !== playerIds.length) {
       return Response.json(
         { message: 'Duplicate player IDs are not allowed' },
         { status: 400 }
@@ -189,7 +188,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch all players
     const playersData = await Promise.all(
-      normalizedPlayerIds.map(async (playerId) => {
+      playerIds.map(async (playerId) => {
         const player = await db
           .select()
           .from(schema.players)
@@ -213,7 +212,13 @@ export async function POST(request: NextRequest) {
     const genderValidation = validateGenderRulesForPlayers(
       eventData.gender as 'male' | 'female' | 'mixed',
       genders,
-      eventData.eventType as 'solo' | 'singles' | 'doubles' | 'singles-teams' | 'solo-teams' | 'relay'
+      eventData.eventType as
+        | 'solo'
+        | 'singles'
+        | 'doubles'
+        | 'singles-teams'
+        | 'solo-teams'
+        | 'relay'
     )
     if (!genderValidation.valid) {
       return Response.json({ message: genderValidation.error }, { status: 400 })
@@ -222,7 +227,7 @@ export async function POST(request: NextRequest) {
     // Check for duplicate registrations
     const duplicateCheck = await checkPlayersAlreadyRegistered(
       eventId,
-      normalizedPlayerIds
+      playerIds
     )
     if (duplicateCheck.registered) {
       return Response.json(
@@ -231,7 +236,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create registration (without player1Id/player2Id - use junction table)
+    // Create registration
     const result = await db
       .insert(schema.registrations)
       .values({ eventId })
@@ -240,10 +245,12 @@ export async function POST(request: NextRequest) {
     const registration = result[0]
 
     // Add players to junction table
-    await addPlayersToRegistration(registration.id, normalizedPlayerIds)
+    await addPlayersToRegistration(registration.id, playerIds)
 
     // Return enriched registration
-    const enrichedRegistration = await enrichRegistrationWithPlayers(registration)
+    const enrichedRegistration = await enrichRegistrationWithPlayers(
+      registration
+    )
 
     return Response.json(enrichedRegistration, { status: 201 })
   } catch (error) {
