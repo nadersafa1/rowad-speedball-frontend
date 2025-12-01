@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 
 type SortableField =
   | "name"
+  | "nameRtl"
   | "dateOfBirth"
   | "createdAt"
   | "updatedAt"

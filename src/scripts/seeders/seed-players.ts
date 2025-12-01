@@ -7,48 +7,48 @@ import type {
   SeededPlayer,
 } from './types'
 
-// Arabic/Egyptian player names
-const playerNames = [
-  'Ahmed Hassan',
-  'Mohamed Ali',
-  'Omar Mahmoud',
-  'Youssef Ibrahim',
-  'Khaled Samir',
-  'Mahmoud Fathy',
-  'Hassan Mostafa',
-  'Ali Kamal',
-  'Amr Adel',
-  'Tamer Hosny',
-  'Fatma Ahmed',
-  'Nour El-Din',
-  'Sara Mohamed',
-  'Layla Hassan',
-  'Hana Ibrahim',
-  'Mariam Khaled',
-  'Yasmin Omar',
-  'Dina Mahmoud',
-  'Rana Fathy',
-  'Mona Ali',
-  'Kareem Saeed',
-  'Waleed Nabil',
-  'Sherif Gamal',
-  'Tarek Essam',
-  'Hazem Emad',
-  'Ramy Ashraf',
-  'Wael Magdy',
-  'Bassem Yousry',
-  'Hesham Kamal',
-  'Ayman Reda',
-  'Noha Samir',
-  'Aya Mostafa',
-  'Salma Adel',
-  'Reem Hassan',
-  'Jana Mohamed',
-  'Lina Omar',
-  'Farida Ali',
-  'Nada Khaled',
-  'Malak Ibrahim',
-  'Heba Mahmoud',
+// Arabic/Egyptian player names with RTL versions
+const playerNamesWithRtl = [
+  { name: 'Ahmed Hassan', nameRtl: 'أحمد حسن' },
+  { name: 'Mohamed Ali', nameRtl: 'محمد علي' },
+  { name: 'Omar Mahmoud', nameRtl: 'عمر محمود' },
+  { name: 'Youssef Ibrahim', nameRtl: 'يوسف إبراهيم' },
+  { name: 'Khaled Samir', nameRtl: 'خالد سمير' },
+  { name: 'Mahmoud Fathy', nameRtl: 'محمود فتحي' },
+  { name: 'Hassan Mostafa', nameRtl: 'حسن مصطفى' },
+  { name: 'Ali Kamal', nameRtl: 'علي كمال' },
+  { name: 'Amr Adel', nameRtl: 'عمرو عادل' },
+  { name: 'Tamer Hosny', nameRtl: 'تامر حسني' },
+  { name: 'Fatma Ahmed', nameRtl: 'فاطمة أحمد' },
+  { name: 'Nour El-Din', nameRtl: 'نور الدين' },
+  { name: 'Sara Mohamed', nameRtl: 'سارة محمد' },
+  { name: 'Layla Hassan', nameRtl: 'ليلى حسن' },
+  { name: 'Hana Ibrahim', nameRtl: 'هنا إبراهيم' },
+  { name: 'Mariam Khaled', nameRtl: 'مريم خالد' },
+  { name: 'Yasmin Omar', nameRtl: 'ياسمين عمر' },
+  { name: 'Dina Mahmoud', nameRtl: 'دينا محمود' },
+  { name: 'Rana Fathy', nameRtl: 'رنا فتحي' },
+  { name: 'Mona Ali', nameRtl: 'منى علي' },
+  { name: 'Kareem Saeed', nameRtl: 'كريم سعيد' },
+  { name: 'Waleed Nabil', nameRtl: 'وليد نبيل' },
+  { name: 'Sherif Gamal', nameRtl: 'شريف جمال' },
+  { name: 'Tarek Essam', nameRtl: 'طارق عصام' },
+  { name: 'Hazem Emad', nameRtl: 'حازم عماد' },
+  { name: 'Ramy Ashraf', nameRtl: 'رامي أشرف' },
+  { name: 'Wael Magdy', nameRtl: 'وائل مجدي' },
+  { name: 'Bassem Yousry', nameRtl: 'باسم يسري' },
+  { name: 'Hesham Kamal', nameRtl: 'هشام كمال' },
+  { name: 'Ayman Reda', nameRtl: 'أيمن رضا' },
+  { name: 'Noha Samir', nameRtl: 'نهى سمير' },
+  { name: 'Aya Mostafa', nameRtl: 'آية مصطفى' },
+  { name: 'Salma Adel', nameRtl: 'سلمى عادل' },
+  { name: 'Reem Hassan', nameRtl: 'ريم حسن' },
+  { name: 'Jana Mohamed', nameRtl: 'جنى محمد' },
+  { name: 'Lina Omar', nameRtl: 'لينا عمر' },
+  { name: 'Farida Ali', nameRtl: 'فريدة علي' },
+  { name: 'Nada Khaled', nameRtl: 'ندى خالد' },
+  { name: 'Malak Ibrahim', nameRtl: 'ملك إبراهيم' },
+  { name: 'Heba Mahmoud', nameRtl: 'هبة محمود' },
 ]
 
 // Generate date of birth for different age groups
@@ -134,7 +134,8 @@ export const seedPlayers = async (
 
   for (const dist of ageGroupDistribution) {
     for (let i = 0; i < dist.count; i++) {
-      const name = playerNames[nameIndex % playerNames.length]
+      const playerData = playerNamesWithRtl[nameIndex % playerNamesWithRtl.length]
+      const { name, nameRtl } = playerData
       const isFemale = name.match(
         /^(Fatma|Nour|Sara|Layla|Hana|Mariam|Yasmin|Dina|Rana|Mona|Noha|Aya|Salma|Reem|Jana|Lina|Farida|Nada|Malak|Heba)/
       )
@@ -158,6 +159,7 @@ export const seedPlayers = async (
         .insert(players)
         .values({
           name,
+          nameRtl,
           dateOfBirth: generateDateOfBirth(dist.group),
           gender: isFemale ? 'female' : 'male',
           preferredHand: ['left', 'right', 'both'][
@@ -172,6 +174,7 @@ export const seedPlayers = async (
       seededPlayers.push({
         id: createdPlayer.id,
         name: createdPlayer.name,
+        nameRtl: createdPlayer.nameRtl,
         userId: createdPlayer.userId,
         organizationId: createdPlayer.organizationId,
         gender: createdPlayer.gender as 'male' | 'female',

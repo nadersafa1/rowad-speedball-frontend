@@ -10,7 +10,7 @@ export const coachesQuerySchema = z
       .optional(),
     gender: z.enum(['male', 'female', 'all']).optional(),
     // Sorting parameters
-    sortBy: z.enum(['name', 'gender', 'createdAt', 'updatedAt', 'organizationId']).optional(),
+    sortBy: z.enum(['name', 'nameRtl', 'gender', 'createdAt', 'updatedAt', 'organizationId']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
     // Pagination parameters
     page: z
@@ -54,6 +54,7 @@ export const coachesParamsSchema = z.object({
 export const coachesCreateSchema = z
   .object({
     name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
+    nameRtl: z.string().max(255, 'RTL Name is too long').optional().nullable(),
     gender: z.enum(['male', 'female'], {
       message: 'Gender must be male or female',
     }),
@@ -73,6 +74,7 @@ export const coachesUpdateSchema = z
       .min(1, 'Name is required')
       .max(255, 'Name is too long')
       .optional(),
+    nameRtl: z.string().max(255, 'RTL Name is too long').optional().nullable(),
     gender: z
       .enum(['male', 'female'], { message: 'Gender must be male or female' })
       .optional(),

@@ -1,5 +1,6 @@
 type SortableField =
   | 'name'
+  | 'nameRtl'
   | 'gender'
   | 'createdAt'
   | 'updatedAt'
@@ -7,6 +8,7 @@ type SortableField =
 
 export const columnToApiFieldMap: Record<string, SortableField> = {
   name: 'name',
+  nameRtl: 'nameRtl',
   gender: 'gender',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',

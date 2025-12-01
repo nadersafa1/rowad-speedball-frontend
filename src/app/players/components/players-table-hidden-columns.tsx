@@ -9,6 +9,25 @@ export const createHiddenColumns = (
   onSort?: (columnId: string) => void
 ): ColumnDef<Player>[] => [
   {
+    accessorKey: "nameRtl",
+    id: "nameRtl",
+    header: () => (
+      <SortableHeader
+        label="RTL Name"
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        field="nameRtl"
+        onSort={onSort}
+      />
+    ),
+    cell: ({ row }) => (
+      <div dir="rtl" className="text-right">
+        {row.getValue("nameRtl") || "-"}
+      </div>
+    ),
+    enableHiding: true,
+  },
+  {
     accessorKey: "age",
     id: "age",
     header: () => (

@@ -8,6 +8,7 @@ import {
   gte,
   ilike,
   lte,
+  or,
   sql,
   isNull,
 } from 'drizzle-orm'
@@ -62,7 +63,12 @@ export async function GET(request: NextRequest) {
     // All users (including coaches) can view all players - no filtering by organization
 
     if (q) {
-      conditions.push(ilike(schema.players.name, `%${q}%`))
+      conditions.push(
+        or(
+          ilike(schema.players.name, `%${q}%`),
+          ilike(schema.players.nameRtl, `%${q}%`)
+        )
+      )
     }
 
     if (gender && gender !== 'all') {
@@ -371,6 +377,7 @@ export async function POST(request: NextRequest) {
 
     const {
       name,
+      nameRtl,
       dateOfBirth,
       gender,
       preferredHand,
@@ -415,6 +422,7 @@ export async function POST(request: NextRequest) {
       .insert(schema.players)
       .values({
         name,
+        nameRtl: nameRtl || null,
         dateOfBirth,
         gender,
         preferredHand,

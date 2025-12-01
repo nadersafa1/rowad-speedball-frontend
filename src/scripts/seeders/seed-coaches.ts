@@ -7,14 +7,14 @@ import type {
   SeededCoach,
 } from './types'
 
-// Arabic/Egyptian coach names
-const coachNames = [
-  { name: 'Captain Ahmed Farouk', gender: 'male' as const },
-  { name: 'Coach Mohamed Saad', gender: 'male' as const },
-  { name: 'Captain Khaled Anwar', gender: 'male' as const },
-  { name: 'Coach Tarek Nour', gender: 'male' as const },
-  { name: 'Captain Hossam Hassan', gender: 'male' as const },
-  { name: 'Coach Amira Mostafa', gender: 'female' as const },
+// Arabic/Egyptian coach names with RTL versions
+const coachNamesWithRtl = [
+  { name: 'Captain Ahmed Farouk', nameRtl: 'كابتن أحمد فاروق', gender: 'male' as const },
+  { name: 'Coach Mohamed Saad', nameRtl: 'مدرب محمد سعد', gender: 'male' as const },
+  { name: 'Captain Khaled Anwar', nameRtl: 'كابتن خالد أنور', gender: 'male' as const },
+  { name: 'Coach Tarek Nour', nameRtl: 'مدرب طارق نور', gender: 'male' as const },
+  { name: 'Captain Hossam Hassan', nameRtl: 'كابتن حسام حسن', gender: 'male' as const },
+  { name: 'Coach Amira Mostafa', nameRtl: 'مدربة أميرة مصطفى', gender: 'female' as const },
 ]
 
 export const seedCoaches = async (
@@ -30,8 +30,8 @@ export const seedCoaches = async (
   // Find users who are members with 'coach' role
   const coachMembers = members.filter((m) => m.role === 'coach')
 
-  for (let i = 0; i < coachNames.length; i++) {
-    const coachData = coachNames[i]
+  for (let i = 0; i < coachNamesWithRtl.length; i++) {
+    const coachData = coachNamesWithRtl[i]
     let userId: string | null = null
     let organizationId: string | null = null
 
@@ -49,6 +49,7 @@ export const seedCoaches = async (
       .insert(coaches)
       .values({
         name: coachData.name,
+        nameRtl: coachData.nameRtl,
         gender: coachData.gender,
         userId,
         organizationId,
@@ -58,6 +59,7 @@ export const seedCoaches = async (
     seededCoaches.push({
       id: createdCoach.id,
       name: createdCoach.name,
+      nameRtl: createdCoach.nameRtl,
       userId: createdCoach.userId,
       organizationId: createdCoach.organizationId,
       gender: createdCoach.gender as 'male' | 'female',
