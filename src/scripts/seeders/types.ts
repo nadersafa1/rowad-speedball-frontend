@@ -24,6 +24,7 @@ export interface SeededMember {
 export interface SeededPlayer {
   id: string
   name: string
+  nameRtl: string | null
   userId: string | null
   organizationId: string | null
   gender: 'male' | 'female'
@@ -34,6 +35,7 @@ export interface SeededPlayer {
 export interface SeededCoach {
   id: string
   name: string
+  nameRtl: string | null
   userId: string | null
   organizationId: string | null
   gender: 'male' | 'female'

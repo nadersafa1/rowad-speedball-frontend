@@ -41,6 +41,7 @@ export const playersQuerySchema = z
     sortBy: z
       .enum([
         'name',
+        'nameRtl',
         'dateOfBirth',
         'createdAt',
         'updatedAt',
@@ -81,6 +82,7 @@ export const playersParamsSchema = z.object({
 export const playersCreateSchema = z
   .object({
     name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
+    nameRtl: z.string().max(255, 'RTL Name is too long').optional().nullable(),
     dateOfBirth: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -111,6 +113,7 @@ export const playersUpdateSchema = z
       .min(1, 'Name is required')
       .max(255, 'Name is too long')
       .optional(),
+    nameRtl: z.string().max(255, 'RTL Name is too long').optional().nullable(),
     dateOfBirth: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')

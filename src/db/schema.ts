@@ -111,6 +111,7 @@ export const verification = pgTable('verification', {
 export const players = pgTable('players', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
+  nameRtl: varchar('name_rtl', { length: 255 }),
   dateOfBirth: date('date_of_birth').notNull(),
   gender: text('gender', { enum: ['male', 'female'] }).notNull(),
   preferredHand: text('preferred_hand', {
@@ -314,6 +315,7 @@ export const sets = pgTable('sets', {
 export const coaches = pgTable('coaches', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
+  nameRtl: varchar('name_rtl', { length: 255 }),
   gender: text('gender', { enum: ['male', 'female'] }).notNull(),
   userId: uuid('user_id')
     .references(() => user.id, { onDelete: 'set null' })

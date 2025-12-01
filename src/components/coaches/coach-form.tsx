@@ -32,6 +32,11 @@ const coachSchema = z.object({
     .min(1, 'Name is required')
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be less than 100 characters'),
+  nameRtl: z
+    .string()
+    .max(255, 'RTL Name must be less than 255 characters')
+    .optional()
+    .nullable(),
   gender: z.enum(['male', 'female'], {
     message: 'Gender is required',
   }),
@@ -57,6 +62,7 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
     resolver: zodResolver(coachSchema),
     defaultValues: {
       name: coach?.name || '',
+      nameRtl: coach?.nameRtl || '',
       gender: coach?.gender || undefined,
       organizationId: coach?.organizationId || null,
     },
@@ -105,6 +111,27 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
                     {...field}
                     placeholder='Enter coach full name'
                     disabled={isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='nameRtl'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>RTL Name (Optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={field.value || ''}
+                    placeholder="Enter coach's name in Arabic"
+                    disabled={isSubmitting}
+                    dir='rtl'
+                    className='text-right'
                   />
                 </FormControl>
                 <FormMessage />

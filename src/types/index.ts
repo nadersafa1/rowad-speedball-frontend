@@ -2,6 +2,7 @@
 export type Player = {
   id: string
   name: string
+  nameRtl?: string | null
   dateOfBirth: string
   gender: 'male' | 'female'
   preferredHand: 'left' | 'right'

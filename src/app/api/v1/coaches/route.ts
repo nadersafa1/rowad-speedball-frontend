@@ -70,7 +70,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (q) {
-      conditions.push(ilike(schema.coaches.name, `%${q}%`))
+      conditions.push(
+        or(
+          ilike(schema.coaches.name, `%${q}%`),
+          ilike(schema.coaches.nameRtl, `%${q}%`)
+        )
+      )
     }
 
     if (gender && gender !== 'all') {
@@ -260,6 +265,7 @@ export async function POST(request: NextRequest) {
 
     const {
       name,
+      nameRtl,
       gender,
       userId,
       organizationId: providedOrgId,
@@ -301,6 +307,7 @@ export async function POST(request: NextRequest) {
       .insert(schema.coaches)
       .values({
         name,
+        nameRtl: nameRtl || null,
         gender,
         userId: userId || null,
         organizationId: finalOrganizationId || null,

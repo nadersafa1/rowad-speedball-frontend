@@ -43,6 +43,11 @@ const playerSchema = z.object({
     .min(1, 'Name is required')
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be less than 100 characters'),
+  nameRtl: z
+    .string()
+    .max(255, 'RTL Name must be less than 255 characters')
+    .optional()
+    .nullable(),
   dateOfBirth: z
     .date()
     .refine(
@@ -79,6 +84,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
     resolver: zodResolver(playerSchema),
     defaultValues: {
       name: player?.name || '',
+      nameRtl: player?.nameRtl || '',
       dateOfBirth: player?.dateOfBirth
         ? parseDateFromAPI(player.dateOfBirth)
         : new Date(new Date().getFullYear() - 2, 0, 1),
@@ -141,6 +147,28 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                     {...field}
                     placeholder="Enter player's full name"
                     disabled={isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* RTL Name Field */}
+          <FormField
+            control={form.control}
+            name='nameRtl'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>RTL Name (Optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={field.value || ''}
+                    placeholder="Enter player's name in Arabic"
+                    disabled={isSubmitting}
+                    dir='rtl'
+                    className='text-right'
                   />
                 </FormControl>
                 <FormMessage />
