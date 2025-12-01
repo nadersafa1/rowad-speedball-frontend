@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
       ageGroups,
       coachIds,
       organizationId: providedOrgId,
-      firstTeamFilter,
+      teamLevels,
       autoCreateAttendance,
     } = parseResult.data
 
@@ -346,11 +346,6 @@ export async function POST(request: NextRequest) {
 
     // Auto-generate name from date if not provided
     const sessionName = name || formatDateForSessionName(new Date(date))
-
-    // Determine first team filter (default to 'all' if not provided)
-    const finalFirstTeamFilter =
-      firstTeamFilter ||
-      ('all' as 'first_team_only' | 'non_first_team_only' | 'all')
 
     // Use transaction for atomicity
     const result = await db.transaction(async (tx) => {
@@ -387,7 +382,7 @@ export async function POST(request: NextRequest) {
         const matchingPlayerIds = await queryPlayersForAttendance(
           finalOrganizationId ?? null,
           ageGroups,
-          finalFirstTeamFilter
+          teamLevels
         )
 
         // Create attendance records for all matching players

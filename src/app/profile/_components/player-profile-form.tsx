@@ -26,6 +26,11 @@ import {
 import { LoadingSwap } from '@/components/ui/loading-swap'
 import { apiClient } from '@/lib/api-client'
 import { formatDate } from '@/lib/utils'
+import {
+  TEAM_LEVELS,
+  TEAM_LEVEL_LABELS,
+  DEFAULT_TEAM_LEVEL,
+} from '@/types/team-level'
 
 const playerProfileSchema = z.object({
   name: z
@@ -36,7 +41,9 @@ const playerProfileSchema = z.object({
   preferredHand: z.enum(['left', 'right', 'both'], {
     message: 'Preferred hand is required',
   }),
-  isFirstTeam: z.boolean(),
+  teamLevel: z.enum(TEAM_LEVELS, {
+    message: 'Team level is required',
+  }),
 })
 
 type PlayerProfileSchema = z.infer<typeof playerProfileSchema>
@@ -49,7 +56,7 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
     defaultValues: {
       name: player?.name || '',
       preferredHand: player?.preferredHand || 'right',
-      isFirstTeam: player?.isFirstTeam || false,
+      teamLevel: player?.teamLevel || DEFAULT_TEAM_LEVEL,
     },
   })
 
@@ -58,13 +65,15 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
       await apiClient.updateMyPlayer({
         name: data.name,
         preferredHand: data.preferredHand,
-        isFirstTeam: data.isFirstTeam,
+        teamLevel: data.teamLevel,
       })
       toast.success('Player profile updated successfully')
       router.refresh()
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Failed to update player profile'
+        error instanceof Error
+          ? error.message
+          : 'Failed to update player profile'
       )
     }
   }
@@ -73,10 +82,10 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
 
   return (
     <Form {...form}>
-      <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+      <form className='space-y-4' onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
-          name="name"
+          name='name'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Name</FormLabel>
@@ -88,19 +97,19 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
           )}
         />
 
-        <div className="space-y-2">
+        <div className='space-y-2'>
           <FormLabel>Date of Birth</FormLabel>
           <Input
             value={player?.dateOfBirth ? formatDate(player.dateOfBirth) : ''}
             disabled
-            className="bg-muted"
+            className='bg-muted'
           />
-          <p className="text-sm text-muted-foreground">
+          <p className='text-sm text-muted-foreground'>
             Date of birth cannot be changed
           </p>
         </div>
 
-        <div className="space-y-2">
+        <div className='space-y-2'>
           <FormLabel>Gender</FormLabel>
           <Input
             value={
@@ -109,16 +118,16 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
                 : ''
             }
             disabled
-            className="bg-muted"
+            className='bg-muted'
           />
-          <p className="text-sm text-muted-foreground">
+          <p className='text-sm text-muted-foreground'>
             Gender cannot be changed
           </p>
         </div>
 
         <FormField
           control={form.control}
-          name="preferredHand"
+          name='preferredHand'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Preferred Hand</FormLabel>
@@ -127,31 +136,31 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
                   onValueChange={field.onChange}
                   value={field.value}
                   disabled={isSubmitting}
-                  className="flex flex-row gap-6"
+                  className='flex flex-row gap-6'
                 >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="left" id="hand-left" />
+                  <div className='flex items-center space-x-2'>
+                    <RadioGroupItem value='left' id='hand-left' />
                     <label
-                      htmlFor="hand-left"
-                      className="text-sm font-medium leading-none cursor-pointer"
+                      htmlFor='hand-left'
+                      className='text-sm font-medium leading-none cursor-pointer'
                     >
                       Left
                     </label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="right" id="hand-right" />
+                  <div className='flex items-center space-x-2'>
+                    <RadioGroupItem value='right' id='hand-right' />
                     <label
-                      htmlFor="hand-right"
-                      className="text-sm font-medium leading-none cursor-pointer"
+                      htmlFor='hand-right'
+                      className='text-sm font-medium leading-none cursor-pointer'
                     >
                       Right
                     </label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="both" id="hand-both" />
+                  <div className='flex items-center space-x-2'>
+                    <RadioGroupItem value='both' id='hand-both' />
                     <label
-                      htmlFor="hand-both"
-                      className="text-sm font-medium leading-none cursor-pointer"
+                      htmlFor='hand-both'
+                      className='text-sm font-medium leading-none cursor-pointer'
                     >
                       Both
                     </label>
@@ -165,22 +174,25 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
 
         <FormField
           control={form.control}
-          name="isFirstTeam"
+          name='teamLevel'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Team</FormLabel>
+              <FormLabel>Team Level</FormLabel>
               <FormControl>
                 <Select
-                  onValueChange={(value) => field.onChange(value === 'true')}
-                  value={field.value ? 'true' : 'false'}
+                  onValueChange={field.onChange}
+                  value={field.value}
                   disabled={isSubmitting}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true">First Team</SelectItem>
-                    <SelectItem value="false">Rowad B</SelectItem>
+                    {TEAM_LEVELS.map((level) => (
+                      <SelectItem key={level} value={level}>
+                        {TEAM_LEVEL_LABELS[level]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -189,8 +201,10 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
           )}
         />
 
-        <Button className="w-full mt-2" disabled={isSubmitting} type="submit">
-          <LoadingSwap isLoading={isSubmitting}>Update Player Profile</LoadingSwap>
+        <Button className='w-full mt-2' disabled={isSubmitting} type='submit'>
+          <LoadingSwap isLoading={isSubmitting}>
+            Update Player Profile
+          </LoadingSwap>
         </Button>
       </form>
     </Form>
@@ -198,4 +212,3 @@ const PlayerProfileForm = ({ player }: { player: any }) => {
 }
 
 export default PlayerProfileForm
-

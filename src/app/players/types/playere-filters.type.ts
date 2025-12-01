@@ -15,7 +15,7 @@ interface PlayersFilters {
     | 'updatedAt'
     | 'gender'
     | 'preferredHand'
-    | 'isFirstTeam'
+    | 'teamLevel'
     | 'organizationId'
   sortOrder?: 'asc' | 'desc'
 }

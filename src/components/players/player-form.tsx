@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { usePlayersStore } from '@/store/players-store'
-import { Team } from '@/app/players/types/enums'
 import { DateOfBirthPicker } from '@/components/players/date-of-birth-picker'
 import { parseDateFromAPI } from '@/lib/date-utils'
 import {
@@ -35,6 +34,11 @@ import {
 } from '../ui'
 import ClubCombobox from '@/components/organizations/club-combobox'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import {
+  TEAM_LEVELS,
+  TEAM_LEVEL_LABELS,
+  DEFAULT_TEAM_LEVEL,
+} from '@/types/team-level'
 
 // Validation schema
 const playerSchema = z.object({
@@ -60,8 +64,8 @@ const playerSchema = z.object({
   preferredHand: z.enum(['left', 'right'], {
     message: 'Preferred hand is required',
   }),
-  team: z.enum(['first_team', 'rowad_b'], {
-    message: 'Team is required',
+  teamLevel: z.enum(TEAM_LEVELS, {
+    message: 'Team level is required',
   }),
   organizationId: z.string().uuid().nullable().optional(),
 })
@@ -90,7 +94,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
         : new Date(new Date().getFullYear() - 2, 0, 1),
       gender: player?.gender || undefined,
       preferredHand: player?.preferredHand || undefined,
-      team: player?.isFirstTeam ? Team.FIRST_TEAM : Team.ROWAD_B,
+      teamLevel: player?.teamLevel || DEFAULT_TEAM_LEVEL,
       organizationId: player?.organizationId || null,
     },
   })
@@ -100,18 +104,10 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
   const onSubmit = async (data: PlayerFormData) => {
     clearError()
     try {
-      // Transform team enum to boolean for API
-      const submitData = {
-        ...data,
-        isFirstTeam: data.team === Team.FIRST_TEAM,
-      }
-      // Remove team field as API expects isFirstTeam
-      delete (submitData as any).team
-
       if (isEditing) {
-        await updatePlayer(player.id, submitData)
+        await updatePlayer(player.id, data)
       } else {
-        await createPlayer(submitData)
+        await createPlayer(data)
       }
       form.reset()
       onSuccess?.()
@@ -272,13 +268,13 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
             )}
           />
 
-          {/* Team Field */}
+          {/* Team Level Field */}
           <FormField
             control={form.control}
-            name='team'
+            name='teamLevel'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Team</FormLabel>
+                <FormLabel>Team Level</FormLabel>
                 <FormControl>
                   <Select
                     onValueChange={field.onChange}
@@ -286,13 +282,14 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                     disabled={isSubmitting}
                   >
                     <SelectTrigger className='w-full'>
-                      <SelectValue placeholder='Select a team' />
+                      <SelectValue placeholder='Select a team level' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={Team.FIRST_TEAM}>
-                        First Team
-                      </SelectItem>
-                      <SelectItem value={Team.ROWAD_B}>Rowad B</SelectItem>
+                      {TEAM_LEVELS.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {TEAM_LEVEL_LABELS[level]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </FormControl>

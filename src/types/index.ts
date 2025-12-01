@@ -7,6 +7,15 @@ export {
 } from './event-types'
 export type { EventType, UIEventType } from './event-types'
 
+// Re-export team level types from centralized location
+export {
+  TEAM_LEVELS,
+  TEAM_LEVEL_LABELS,
+  DEFAULT_TEAM_LEVEL,
+  TEAM_LEVEL_FILTER_OPTIONS,
+} from './team-level'
+export type { TeamLevel, TeamLevelFilter } from './team-level'
+
 // Re-export types from the backend API contract
 export type Player = {
   id: string

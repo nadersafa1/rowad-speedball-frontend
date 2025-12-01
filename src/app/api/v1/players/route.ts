@@ -80,8 +80,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (team && team !== 'all') {
-      const isFirstTeam = team === 'first_team'
-      conditions.push(eq(schema.players.isFirstTeam, isFirstTeam))
+      conditions.push(eq(schema.players.teamLevel, team))
     }
 
     // Organization filter
@@ -381,7 +380,7 @@ export async function POST(request: NextRequest) {
       dateOfBirth,
       gender,
       preferredHand,
-      isFirstTeam,
+      teamLevel,
       userId,
       organizationId: providedOrgId,
     } = parseResult.data
@@ -426,7 +425,7 @@ export async function POST(request: NextRequest) {
         dateOfBirth,
         gender,
         preferredHand,
-        isFirstTeam,
+        teamLevel,
         userId: userId || null,
         organizationId: finalOrganizationId,
       })

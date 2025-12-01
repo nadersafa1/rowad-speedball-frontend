@@ -1,25 +1,24 @@
 type SortableField =
-  | "name"
-  | "nameRtl"
-  | "dateOfBirth"
-  | "createdAt"
-  | "updatedAt"
-  | "gender"
-  | "preferredHand"
-  | "isFirstTeam"
-  | "organizationId";
+  | 'name'
+  | 'nameRtl'
+  | 'dateOfBirth'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'gender'
+  | 'preferredHand'
+  | 'teamLevel'
+  | 'organizationId'
 
 export const columnToApiFieldMap: Record<string, SortableField> = {
-  name: "name",
-  nameRtl: "nameRtl",
-  gender: "gender",
-  ageGroup: "dateOfBirth",
-  preferredHand: "preferredHand",
-  age: "dateOfBirth",
-  dateOfBirth: "dateOfBirth",
-  createdAt: "createdAt",
-  organizationId: "organizationId",
-};
+  name: 'name',
+  nameRtl: 'nameRtl',
+  gender: 'gender',
+  ageGroup: 'dateOfBirth',
+  preferredHand: 'preferredHand',
+  age: 'dateOfBirth',
+  dateOfBirth: 'dateOfBirth',
+  createdAt: 'createdAt',
+  organizationId: 'organizationId',
+}
 
-export type { SortableField };
-
+export type { SortableField }

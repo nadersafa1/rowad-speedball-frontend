@@ -1,4 +1,9 @@
 import { z } from 'zod'
+import { TEAM_LEVELS, TEAM_LEVEL_FILTER_OPTIONS } from '@/types/team-level'
+
+// Team level enum for validation
+const teamLevelEnum = z.enum(TEAM_LEVELS)
+const teamLevelFilterEnum = z.enum(TEAM_LEVEL_FILTER_OPTIONS)
 
 // Query parameters for GET /players
 export const playersQuerySchema = z
@@ -24,7 +29,7 @@ export const playersQuerySchema = z
       ])
       .optional(),
     preferredHand: z.enum(['left', 'right', 'both']).optional(),
-    team: z.enum(['all', 'first_team', 'rowad_b']).optional(),
+    team: teamLevelFilterEnum.optional(),
     organizationId: z
       .string()
       .optional()
@@ -47,7 +52,7 @@ export const playersQuerySchema = z
         'updatedAt',
         'gender',
         'preferredHand',
-        'isFirstTeam',
+        'teamLevel',
         'organizationId',
       ])
       .optional(),
@@ -96,7 +101,7 @@ export const playersCreateSchema = z
     preferredHand: z.enum(['left', 'right', 'both'], {
       message: 'Preferred hand must be left, right, or both',
     }),
-    isFirstTeam: z.boolean().optional(),
+    teamLevel: teamLevelEnum.optional(),
     userId: z.uuid('Invalid user ID format').optional().nullable(),
     organizationId: z
       .uuid('Invalid organization ID format')
@@ -130,7 +135,7 @@ export const playersUpdateSchema = z
         message: 'Preferred hand must be left, right, or both',
       })
       .optional(),
-    isFirstTeam: z.boolean().optional(),
+    teamLevel: teamLevelEnum.optional(),
     userId: z.uuid('Invalid user ID format').optional().nullable(),
     organizationId: z
       .uuid('Invalid organization ID format')

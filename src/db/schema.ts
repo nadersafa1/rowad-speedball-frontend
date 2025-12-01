@@ -117,7 +117,11 @@ export const players = pgTable('players', {
   preferredHand: text('preferred_hand', {
     enum: ['left', 'right', 'both'],
   }).notNull(),
-  isFirstTeam: boolean('is_first_team').notNull().default(false),
+  teamLevel: text('team_level', {
+    enum: ['team_a', 'team_b', 'team_c'],
+  })
+    .notNull()
+    .default('team_c'),
   userId: uuid('user_id')
     .references(() => user.id, { onDelete: 'set null' })
     .unique(),

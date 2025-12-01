@@ -40,6 +40,11 @@ import CoachesCombobox from './coaches-combobox'
 import ClubCombobox from '@/components/organizations/club-combobox'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { SessionType, AgeGroup } from '@/app/sessions/types/enums'
+import {
+  TEAM_LEVELS,
+  TEAM_LEVEL_LABELS,
+  type TeamLevel,
+} from '@/types/team-level'
 
 const sessionTypeOptions = [
   { value: SessionType.SINGLES, label: 'Singles' },
@@ -96,13 +101,9 @@ const trainingSessionSchema = z.object({
       ])
     )
     .min(1, 'At least one age group is required'),
-  coachIds: z.array(z.uuid()).optional(),
+  coachIds: z.array(z.uuid()).min(1, 'At least one coach is required'),
   organizationId: z.string().uuid().nullable().optional(),
-  firstTeamFilter: z
-    .enum(['first_team_only', 'non_first_team_only', 'all'], {
-      message: 'Invalid first team filter',
-    })
-    .optional(),
+  teamLevels: z.array(z.enum(TEAM_LEVELS)).optional(),
   autoCreateAttendance: z.boolean().optional(),
 })
 
@@ -153,13 +154,11 @@ const TrainingSessionForm = ({
       ageGroups: trainingSession?.ageGroups || [],
       coachIds: trainingSession?.coaches?.map((c: any) => c.id) || [],
       organizationId: defaultOrganizationId,
-      firstTeamFilter: 'all',
+      teamLevels: [],
       autoCreateAttendance: false,
     },
   })
 
-  const watchedDate = form.watch('date')
-  const watchedName = form.watch('name')
   const watchedOrganizationId = form.watch('organizationId')
 
   // Determine which organizationId to use for filtering coaches
@@ -169,13 +168,30 @@ const TrainingSessionForm = ({
     ? watchedOrganizationId
     : organization?.id || null
 
-  // Auto-generate name from date if name is empty
-  React.useEffect(() => {
-    if (!watchedName && watchedDate) {
-      const autoName = formatDateForSessionName(watchedDate)
-      form.setValue('name', autoName, { shouldValidate: false })
+  // Generate session name from date, team levels, and age groups
+  const generateSessionName = (
+    date: Date,
+    teamLevels: TeamLevel[] | undefined,
+    ageGroups: string[]
+  ): string => {
+    const parts: string[] = []
+
+    // Add formatted date
+    parts.push(formatDateForSessionName(date))
+
+    // Add team levels if any selected
+    if (teamLevels && teamLevels.length > 0) {
+      const teamLabels = teamLevels.map((level) => TEAM_LEVEL_LABELS[level])
+      parts.push(teamLabels.join(', '))
     }
-  }, [watchedDate, watchedName, form])
+
+    // Add age groups if any selected
+    if (ageGroups && ageGroups.length > 0) {
+      parts.push(ageGroups.join(', '))
+    }
+
+    return parts.join(' - ')
+  }
 
   const onSubmit = async (data: TrainingSessionFormData) => {
     clearError()
@@ -185,19 +201,24 @@ const TrainingSessionForm = ({
         ? data.organizationId
         : organization?.id || null
 
+      // Generate name if not provided
+      const sessionName =
+        data.name?.trim() ||
+        generateSessionName(data.date, data.teamLevels, data.ageGroups)
+
       if (isEditing) {
-        // For updates, exclude organizationId, firstTeamFilter, and autoCreateAttendance
+        // For updates, exclude organizationId, teamLevels, and autoCreateAttendance
         // as they're not allowed in the update schema
         const {
           organizationId: _,
-          firstTeamFilter: __,
+          teamLevels: __,
           autoCreateAttendance: ___,
           ...updateData
         } = data
         const submitData = {
           ...updateData,
           date: formatDateForAPI(data.date),
-          name: data.name || formatDateForSessionName(data.date),
+          name: sessionName,
         }
         await updateTrainingSession(trainingSession.id, submitData)
       } else {
@@ -205,9 +226,9 @@ const TrainingSessionForm = ({
         const submitData = {
           ...data,
           date: formatDateForAPI(data.date),
-          name: data.name || formatDateForSessionName(data.date),
+          name: sessionName,
           organizationId: finalOrganizationId,
-          firstTeamFilter: data.firstTeamFilter || 'all',
+          teamLevels: data.teamLevels,
           autoCreateAttendance: data.autoCreateAttendance ?? false,
         }
         await createTrainingSession(submitData)
@@ -294,9 +315,7 @@ const TrainingSessionForm = ({
                     disabled={isLoading}
                   />
                 </FormControl>
-                <FormDescription>
-                  Leave empty to auto-generate from date
-                </FormDescription>
+                <FormDescription>Leave empty to auto-generate</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -496,38 +515,52 @@ const TrainingSessionForm = ({
             )}
           />
 
-          {/* First Team Filter - Only show when creating (not editing) */}
+          {/* Team Levels - Only show when creating (not editing) */}
           {!isEditing && (
             <FormField
               control={form.control}
-              name='firstTeamFilter'
-              render={({ field }) => (
+              name='teamLevels'
+              render={() => (
                 <FormItem>
-                  <FormLabel>First Team Filter</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select filter option' />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value='all'>All Players</SelectItem>
-                      <SelectItem value='first_team_only'>
-                        First Team Only
-                      </SelectItem>
-                      <SelectItem value='non_first_team_only'>
-                        Non-First Team Only
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Team Levels</FormLabel>
                   <FormDescription>
-                    Filter players by first team status when auto-creating
-                    attendance
+                    Select team levels to include when auto-creating attendance.
+                    Leave empty to include all team levels.
                   </FormDescription>
+                  <div className='grid grid-cols-3 gap-4 mt-2'>
+                    {TEAM_LEVELS.map((level) => (
+                      <FormField
+                        key={level}
+                        control={form.control}
+                        name='teamLevels'
+                        render={({ field }) => (
+                          <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(level)}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || []
+                                  if (checked) {
+                                    field.onChange([...currentValue, level])
+                                  } else {
+                                    field.onChange(
+                                      currentValue.filter(
+                                        (v: TeamLevel) => v !== level
+                                      )
+                                    )
+                                  }
+                                }}
+                                disabled={isLoading}
+                              />
+                            </FormControl>
+                            <FormLabel className='font-normal cursor-pointer'>
+                              {TEAM_LEVEL_LABELS[level]}
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -565,7 +598,7 @@ const TrainingSessionForm = ({
                       <FormDescription>
                         Automatically create attendance records with
                         &apos;pending&apos; status for all players matching the
-                        selected age groups and first team filter
+                        selected age groups and team levels
                       </FormDescription>
                     </div>
                   </div>

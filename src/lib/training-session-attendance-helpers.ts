@@ -1,8 +1,9 @@
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, inArray } from 'drizzle-orm'
 import { db } from './db'
 import * as schema from '@/db/schema'
 import { OrganizationContext } from './organization-helpers'
 import { getAgeGroup } from '@/db/schema'
+import type { TeamLevel } from '@/types/team-level'
 
 /**
  * Validates that a user can access attendance for a training session
@@ -136,9 +137,7 @@ export async function validatePlayerSessionOrgMatch(
  * @param context - Organization context from getOrganizationContext()
  * @returns True if user can modify attendance, false otherwise
  */
-export function canModifyAttendance(
-  context: OrganizationContext
-): boolean {
+export function canModifyAttendance(context: OrganizationContext): boolean {
   const { isSystemAdmin, isAdmin, isOwner, isCoach, isAuthenticated } = context
 
   if (!isAuthenticated) {
@@ -159,13 +158,13 @@ export function canModifyAttendance(
  * Queries players matching the specified criteria for auto-creating attendance
  * @param organizationId - The organization ID to filter by (can be null)
  * @param ageGroups - Array of age groups to match (e.g., ['U-15', 'U-17'])
- * @param firstTeamFilter - Filter by first team status: 'first_team_only', 'non_first_team_only', or 'all'
+ * @param teamLevels - Array of team levels to filter by (empty or undefined means all)
  * @returns Array of player IDs matching the criteria
  */
 export async function queryPlayersForAttendance(
   organizationId: string | null,
   ageGroups: string[],
-  firstTeamFilter: 'first_team_only' | 'non_first_team_only' | 'all'
+  teamLevels?: TeamLevel[]
 ): Promise<string[]> {
   // Build query conditions
   const conditions: any[] = []
@@ -177,15 +176,13 @@ export async function queryPlayersForAttendance(
     conditions.push(eq(schema.players.organizationId, organizationId))
   }
 
-  // Filter by first team status
-  if (firstTeamFilter === 'first_team_only') {
-    conditions.push(eq(schema.players.isFirstTeam, true))
-  } else if (firstTeamFilter === 'non_first_team_only') {
-    conditions.push(eq(schema.players.isFirstTeam, false))
+  // Filter by team levels (if specified and not empty)
+  if (teamLevels && teamLevels.length > 0) {
+    conditions.push(inArray(schema.players.teamLevel, teamLevels))
   }
-  // If 'all', don't add any filter for isFirstTeam
+  // If empty or undefined, include all team levels
 
-  // Query all players matching organization and first team filter
+  // Query all players matching organization and team level filter
   const players = await db
     .select()
     .from(schema.players)
@@ -199,4 +196,3 @@ export async function queryPlayersForAttendance(
 
   return matchingPlayers.map((player) => player.id)
 }
-
