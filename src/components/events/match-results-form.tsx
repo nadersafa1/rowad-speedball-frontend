@@ -31,17 +31,10 @@ const MatchResultsForm = ({
   // Helper function to format player names from a registration
   const formatRegistrationName = (registration: Match['registration1']) => {
     if (!registration) return 'Unknown'
-    // Use new players array if available
     if (registration.players && registration.players.length > 0) {
       return registration.players.map((p) => p.name || 'Unknown').join(' & ')
     }
-    // Fallback to legacy player1/player2 format
-    if (registration.player2) {
-      return `${registration.player1?.name || 'Unknown'} & ${
-        registration.player2?.name || 'Unknown'
-      }`
-    }
-    return registration.player1?.name || 'Unknown'
+    return 'Unknown'
   }
   const {
     createSet,

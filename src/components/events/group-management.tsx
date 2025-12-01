@@ -137,10 +137,9 @@ const GroupManagement = ({
               <h4 className='font-medium'>Unassigned Registrations</h4>
               <div className='space-y-2 max-h-60 overflow-y-auto'>
                 {unassignedRegistrations.map((reg) => {
-                  // Use new players array if available, fallback to player1/player2
                   const playerNames = reg.players && reg.players.length > 0
                     ? reg.players.map((p) => p.name).join(' & ')
-                    : [reg.player1?.name, reg.player2?.name].filter(Boolean).join(' & ') || 'Unknown'
+                    : 'Unknown'
                   
                   return (
                     <div

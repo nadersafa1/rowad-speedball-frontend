@@ -282,8 +282,7 @@ const EventDetailPage = () => {
                     >
                       <div>
                         <p className='font-medium'>
-                          {reg.player1?.name}
-                          {reg.player2 && ` & ${reg.player2.name}`}
+                          {reg.players?.map((p) => p.name).join(' & ') || 'Unknown'}
                         </p>
                         {reg.groupId && (
                           <p className='text-sm text-muted-foreground'>

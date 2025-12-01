@@ -4,46 +4,6 @@ import type { EventType } from '@/types/event-types'
 type ValidationResult = { valid: boolean; error?: string }
 
 /**
- * @deprecated Use validateRegistrationPlayerCount instead
- * Validates that a singles registration has exactly 1 player
- */
-export const validateSinglesRegistration = (
-  player1Id: string | null,
-  player2Id: string | null
-): ValidationResult => {
-  if (!player1Id) {
-    return {
-      valid: false,
-      error: 'Player 1 is required for singles registration',
-    }
-  }
-  if (player2Id) {
-    return {
-      valid: false,
-      error: 'Singles registration can only have 1 player',
-    }
-  }
-  return { valid: true }
-}
-
-/**
- * @deprecated Use validateRegistrationPlayerCount instead
- * Validates that a doubles registration has exactly 2 players
- */
-export const validateDoublesRegistration = (
-  player1Id: string | null,
-  player2Id: string | null
-): ValidationResult => {
-  if (!player1Id || !player2Id) {
-    return { valid: false, error: 'Doubles registration requires 2 players' }
-  }
-  if (player1Id === player2Id) {
-    return { valid: false, error: 'A player cannot be paired with themselves' }
-  }
-  return { valid: true }
-}
-
-/**
  * Validates player count based on min/max configuration
  */
 export const validateRegistrationPlayerCount = (
@@ -59,34 +19,22 @@ export const validateRegistrationPlayerCount = (
   if (playerCount < minPlayers) {
     return {
       valid: false,
-      error: `This event requires at least ${minPlayers} player${minPlayers > 1 ? 's' : ''}`,
+      error: `This event requires at least ${minPlayers} player${
+        minPlayers > 1 ? 's' : ''
+      }`,
     }
   }
 
   if (playerCount > maxPlayers) {
     return {
       valid: false,
-      error: `This event allows maximum ${maxPlayers} player${maxPlayers > 1 ? 's' : ''}`,
+      error: `This event allows maximum ${maxPlayers} player${
+        maxPlayers > 1 ? 's' : ''
+      }`,
     }
   }
 
   return { valid: true }
-}
-
-/**
- * @deprecated Use validateGenderRulesForPlayers instead
- * Validates gender rules for event registrations
- */
-export const validateGenderRules = (
-  eventGender: 'male' | 'female' | 'mixed',
-  player1Gender: 'male' | 'female',
-  player2Gender: 'male' | 'female' | null,
-  eventType: 'singles' | 'doubles'
-): ValidationResult => {
-  const genders = player2Gender
-    ? [player1Gender, player2Gender]
-    : [player1Gender]
-  return validateGenderRulesForPlayers(eventGender, genders, eventType)
 }
 
 /**
@@ -118,7 +66,10 @@ export const validateGenderRulesForPlayers = (
   // For doubles and team events (doubles, singles-teams, solo-teams, relay)
   if (eventGender === 'male') {
     if (femaleCount > 0) {
-      return { valid: false, error: "Men's event requires all players to be male" }
+      return {
+        valid: false,
+        error: "Men's event requires all players to be male",
+      }
     }
   } else if (eventGender === 'female') {
     if (maleCount > 0) {

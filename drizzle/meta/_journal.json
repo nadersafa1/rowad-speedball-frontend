@@ -106,6 +106,13 @@
       "when": 1764565697025,
       "tag": "0014_registration_players",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1764571559226,
+      "tag": "0015_wealthy_thunderbird",
+      "breakpoints": true
     }
   ]
 }

@@ -134,10 +134,6 @@ export type Registration = {
   id: string
   eventId: string
   groupId?: string | null
-  // @deprecated - Use players array instead
-  player1Id?: string | null
-  // @deprecated - Use players array instead
-  player2Id?: string | null
   matchesWon: number
   matchesLost: number
   setsWon: number
@@ -146,11 +142,6 @@ export type Registration = {
   qualified: boolean
   createdAt: string
   updatedAt: string
-  // @deprecated - Use players array instead
-  player1?: Player | null
-  // @deprecated - Use players array instead
-  player2?: Player | null
-  // New unified players array (ordered by position)
   players?: Player[]
 }
 

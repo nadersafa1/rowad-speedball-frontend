@@ -365,14 +365,7 @@ export class ApiClient {
     return this.request(`/registrations${query ? `?${query}` : ''}`)
   }
 
-  async createRegistration(data: {
-    eventId: string
-    // New format: array of player IDs (preferred)
-    playerIds?: string[]
-    // @deprecated Legacy format for backward compatibility
-    player1Id?: string
-    player2Id?: string | null
-  }) {
+  async createRegistration(data: { eventId: string; playerIds: string[] }) {
     return this.request('/registrations', {
       method: 'POST',
       body: JSON.stringify(data),

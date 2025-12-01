@@ -32,7 +32,6 @@ export const getRegistrations = (
 export const getPlayersFromRegistration = (registration?: Registration) => {
   if (!registration) return [{ name: 'Unknown', id: null }]
 
-  // Use new players array if available
   if (registration.players && registration.players.length > 0) {
     return registration.players.map((player) => ({
       name: player.name || 'Unknown',
@@ -40,20 +39,7 @@ export const getPlayersFromRegistration = (registration?: Registration) => {
     }))
   }
 
-  // Fallback to legacy player1/player2 format
-  const players = [
-    {
-      name: registration.player1?.name || 'Unknown',
-      id: registration.player1?.id || null,
-    },
-  ]
-  if (registration.player2) {
-    players.push({
-      name: registration.player2.name,
-      id: registration.player2.id,
-    })
-  }
-  return players
+  return [{ name: 'Unknown', id: null }]
 }
 
 export const calculateSetsResult = (
