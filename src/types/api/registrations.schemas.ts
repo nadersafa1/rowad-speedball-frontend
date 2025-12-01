@@ -14,13 +14,25 @@ export const registrationsParamsSchema = z.object({
 })
 
 // Create registration schema for POST /registrations
+// Supports both old format (player1Id, player2Id) and new format (playerIds array)
 export const registrationsCreateSchema = z
   .object({
     eventId: z.uuid('Invalid event ID format'),
-    player1Id: z.uuid('Invalid player ID format'),
+    // New format: array of player IDs (preferred)
+    playerIds: z
+      .array(z.uuid('Invalid player ID format'))
+      .min(1, 'At least one player is required')
+      .max(4, 'Maximum 4 players per registration')
+      .optional(),
+    // @deprecated - Legacy format for backward compatibility
+    player1Id: z.uuid('Invalid player ID format').optional(),
+    // @deprecated - Legacy format for backward compatibility
     player2Id: z.uuid('Invalid player ID format').nullable().optional(),
   })
-  .strict()
+  .refine(
+    (data) => data.playerIds || data.player1Id,
+    'Either playerIds array or player1Id must be provided'
+  )
 
 // Update registration schema for PATCH /registrations/:id
 export const registrationsUpdateSchema = z

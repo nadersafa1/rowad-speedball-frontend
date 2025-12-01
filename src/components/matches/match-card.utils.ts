@@ -5,14 +5,22 @@ export const getRegistrations = (
   isPlayerMatch: boolean
 ) => {
   const getRegistration1 = (): Registration | undefined => {
-    if (isPlayerMatch && 'playerRegistration' in match && match.playerRegistration) {
+    if (
+      isPlayerMatch &&
+      'playerRegistration' in match &&
+      match.playerRegistration
+    ) {
       return match.playerRegistration
     }
     return match.registration1
   }
 
   const getRegistration2 = (): Registration | undefined => {
-    if (isPlayerMatch && 'opponentRegistration' in match && match.opponentRegistration) {
+    if (
+      isPlayerMatch &&
+      'opponentRegistration' in match &&
+      match.opponentRegistration
+    ) {
       return match.opponentRegistration
     }
     return match.registration2
@@ -23,6 +31,16 @@ export const getRegistrations = (
 
 export const getPlayersFromRegistration = (registration?: Registration) => {
   if (!registration) return [{ name: 'Unknown', id: null }]
+
+  // Use new players array if available
+  if (registration.players && registration.players.length > 0) {
+    return registration.players.map((player) => ({
+      name: player.name || 'Unknown',
+      id: player.id || null,
+    }))
+  }
+
+  // Fallback to legacy player1/player2 format
   const players = [
     {
       name: registration.player1?.name || 'Unknown',
@@ -130,4 +148,3 @@ export const getScoreColor = (winnerStatus: string | null) => {
   }
   return 'text-gray-600'
 }
-

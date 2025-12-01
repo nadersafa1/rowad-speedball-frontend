@@ -208,15 +208,27 @@ export const calculateTotalScore = (
 }
 
 // Events Table
+// NOTE: eventType enum values must match EVENT_TYPES in src/types/event-types.ts
 export const events = pgTable('events', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
-  eventType: text('event_type', { enum: ['singles', 'doubles'] }).notNull(),
+  eventType: text('event_type', {
+    enum: [
+      'solo',
+      'singles',
+      'doubles',
+      'singles-teams',
+      'solo-teams',
+      'relay',
+    ],
+  }).notNull(),
   gender: text('gender', { enum: ['male', 'female', 'mixed'] }).notNull(),
   groupMode: text('group_mode', { enum: ['single', 'multiple'] }).notNull(),
   visibility: text('visibility', { enum: ['public', 'private'] })
     .notNull()
     .default('public'),
+  minPlayers: integer('min_players').notNull().default(1),
+  maxPlayers: integer('max_players').notNull().default(2),
   registrationStartDate: date('registration_start_date'),
   registrationEndDate: date('registration_end_date'),
   eventDates: text('event_dates').array(), // Array of date strings
@@ -255,12 +267,14 @@ export const registrations = pgTable('registrations', {
   groupId: uuid('group_id').references(() => groups.id, {
     onDelete: 'set null',
   }),
-  player1Id: uuid('player1_id')
-    .notNull()
-    .references(() => players.id, { onDelete: 'cascade' }),
+  // @deprecated - Use registrationPlayers junction table instead
+  player1Id: uuid('player1_id').references(() => players.id, {
+    onDelete: 'cascade',
+  }),
+  // @deprecated - Use registrationPlayers junction table instead
   player2Id: uuid('player2_id').references(() => players.id, {
     onDelete: 'cascade',
-  }), // Nullable for doubles
+  }),
   matchesWon: integer('matches_won').notNull().default(0),
   matchesLost: integer('matches_lost').notNull().default(0),
   setsWon: integer('sets_won').notNull().default(0),
@@ -270,6 +284,25 @@ export const registrations = pgTable('registrations', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+// Registration Players Junction Table (many-to-many)
+export const registrationPlayers = pgTable(
+  'registration_players',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(), // 1, 2, 3, 4... for play order
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueRegistrationPlayer: unique().on(table.registrationId, table.playerId),
+  })
+)
 
 // Matches Table
 export const matches = pgTable('matches', {
@@ -440,6 +473,7 @@ export type TestResult = typeof testResults.$inferSelect
 export type Event = typeof events.$inferSelect
 export type Group = typeof groups.$inferSelect
 export type Registration = typeof registrations.$inferSelect
+export type RegistrationPlayer = typeof registrationPlayers.$inferSelect
 export type Match = typeof matches.$inferSelect
 export type Set = typeof sets.$inferSelect
 export type Coach = typeof coaches.$inferSelect

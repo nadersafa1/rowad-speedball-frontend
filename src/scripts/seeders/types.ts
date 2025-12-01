@@ -1,4 +1,5 @@
 // Seeder Types
+import type { EventType } from '@/types/event-types'
 
 export interface SeededUser {
   id: string
@@ -66,15 +67,14 @@ export interface SeededEvent {
   id: string
   name: string
   organizationId: string | null
-  eventType: 'singles' | 'doubles'
+  eventType: EventType
   gender: 'male' | 'female' | 'mixed'
 }
 
 export interface SeededRegistration {
   id: string
   eventId: string
-  player1Id: string
-  player2Id: string | null
+  playerIds: string[]
 }
 
 // JSON output structure

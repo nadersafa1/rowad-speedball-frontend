@@ -33,12 +33,13 @@ import {
 } from '../ui'
 import ClubCombobox from '@/components/organizations/club-combobox'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { UI_EVENT_TYPES, EVENT_TYPE_LABELS } from '@/types/event-types'
 
 // Validation schema - matches backend schema exactly
 const eventSchema = z
   .object({
     name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
-    eventType: z.enum(['singles', 'doubles'], {
+    eventType: z.enum(UI_EVENT_TYPES, {
       message: 'Event type is required',
     }),
     gender: z.enum(['male', 'female', 'mixed'], {
@@ -48,6 +49,8 @@ const eventSchema = z
       message: 'Group mode is required',
     }),
     visibility: z.enum(['public', 'private']),
+    minPlayers: z.number().int().min(1, 'Must be at least 1'),
+    maxPlayers: z.number().int().min(1, 'Must be at least 1'),
     registrationStartDate: z.date('Invalid date format'),
     registrationEndDate: z.date('Invalid date format'),
     bestOf: z
@@ -70,6 +73,13 @@ const eventSchema = z
     {
       message: 'End date must be after start date',
       path: ['registrationEndDate'],
+    }
+  )
+  .refine(
+    (data) => data.minPlayers <= data.maxPlayers,
+    {
+      message: 'Min players must be less than or equal to max players',
+      path: ['minPlayers'],
     }
   )
 
@@ -103,6 +113,8 @@ const EventForm = ({
       gender: event?.gender || 'male',
       groupMode: event?.groupMode || 'single',
       visibility: event?.visibility || 'public',
+      minPlayers: event?.minPlayers || 1,
+      maxPlayers: event?.maxPlayers || 2,
       registrationStartDate: event?.registrationStartDate
         ? new Date(event.registrationStartDate)
         : undefined,
@@ -190,8 +202,11 @@ const EventForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value='singles'>Singles</SelectItem>
-                      <SelectItem value='doubles'>Doubles</SelectItem>
+                      {UI_EVENT_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {EVENT_TYPE_LABELS[type]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   {isEditing && hasRegistrations && (
@@ -229,6 +244,66 @@ const EventForm = ({
                   {isEditing && hasRegistrations && (
                     <p className='text-xs text-muted-foreground'>
                       Cannot change gender once registrations exist
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            <FormField
+              control={form.control}
+              name='minPlayers'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Min Players per Team</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      placeholder='1'
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 1)
+                      }
+                      onFocus={(e) => e.target.select()}
+                      min={1}
+                      disabled={isEditing && hasRegistrations}
+                    />
+                  </FormControl>
+                  {isEditing && hasRegistrations && (
+                    <p className='text-xs text-muted-foreground'>
+                      Cannot change once registrations exist
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='maxPlayers'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Max Players per Team</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      placeholder='2'
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value) || 2)
+                      }
+                      onFocus={(e) => e.target.select()}
+                      min={1}
+                      disabled={isEditing && hasRegistrations}
+                    />
+                  </FormControl>
+                  {isEditing && hasRegistrations && (
+                    <p className='text-xs text-muted-foreground'>
+                      Cannot change once registrations exist
                     </p>
                   )}
                   <FormMessage />

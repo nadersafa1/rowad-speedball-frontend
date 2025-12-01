@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { and, count, desc, eq, inArray, or, sql } from 'drizzle-orm'
+import { and, count, eq, inArray, or, sql } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -8,6 +8,7 @@ import {
   playerMatchesQuerySchema,
 } from '@/types/api/players.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
+import { enrichRegistrationWithPlayers } from '@/lib/registration-helpers'
 
 export async function GET(
   request: NextRequest,
@@ -33,25 +34,21 @@ export async function GET(
     const { page, limit } = queryResult.data
     const offset = (page - 1) * limit
 
-    // First, find all registrations for this player
-    const playerRegistrations = await db
-      .select()
-      .from(schema.registrations)
-      .where(
-        or(
-          eq(schema.registrations.player1Id, id),
-          eq(schema.registrations.player2Id, id)
-        )
-      )
+    // First, find all registrations for this player via junction table
+    const playerRegistrationJunctions = await db
+      .select({ registrationId: schema.registrationPlayers.registrationId })
+      .from(schema.registrationPlayers)
+      .where(eq(schema.registrationPlayers.playerId, id))
 
-    if (playerRegistrations.length === 0) {
-      return Response.json(
-        createPaginatedResponse([], page, limit, 0),
-        { status: 200 }
-      )
+    if (playerRegistrationJunctions.length === 0) {
+      return Response.json(createPaginatedResponse([], page, limit, 0), {
+        status: 200,
+      })
     }
 
-    const registrationIds = playerRegistrations.map((reg) => reg.id)
+    const registrationIds = playerRegistrationJunctions.map(
+      (rp) => rp.registrationId
+    )
 
     // Find all matches where player's registrations are involved and match is played
     const matchConditions: any[] = [
@@ -84,10 +81,7 @@ export async function GET(
       .limit(limit)
       .offset(offset)
 
-    const [countResult, matches] = await Promise.all([
-      countQuery,
-      dataQuery,
-    ])
+    const [countResult, matches] = await Promise.all([countQuery, dataQuery])
 
     const totalItems = countResult[0].count
 
@@ -114,73 +108,30 @@ export async function GET(
             regId === match.registration1Id || regId === match.registration2Id
         )
 
-        const isPlayerRegistration1 = match.registration1Id === playerRegistrationId
+        const isPlayerRegistration1 =
+          match.registration1Id === playerRegistrationId
 
-        // Get registration1 with players
+        // Get registration1 with players from junction table
         const registration1 = await db
           .select()
           .from(schema.registrations)
           .where(eq(schema.registrations.id, match.registration1Id))
           .limit(1)
 
-        let registration1WithPlayers = null
-        if (registration1.length > 0) {
-          const reg1 = registration1[0]
-          const player1 = await db
-            .select()
-            .from(schema.players)
-            .where(eq(schema.players.id, reg1.player1Id))
-            .limit(1)
+        const registration1WithPlayers = registration1[0]
+          ? await enrichRegistrationWithPlayers(registration1[0])
+          : null
 
-          let player2 = null
-          if (reg1.player2Id) {
-            const player2Result = await db
-              .select()
-              .from(schema.players)
-              .where(eq(schema.players.id, reg1.player2Id))
-              .limit(1)
-            player2 = player2Result[0] || null
-          }
-
-          registration1WithPlayers = {
-            ...reg1,
-            player1: player1[0] || null,
-            player2: player2,
-          }
-        }
-
-        // Get registration2 with players
+        // Get registration2 with players from junction table
         const registration2 = await db
           .select()
           .from(schema.registrations)
           .where(eq(schema.registrations.id, match.registration2Id))
           .limit(1)
 
-        let registration2WithPlayers = null
-        if (registration2.length > 0) {
-          const reg2 = registration2[0]
-          const player1 = await db
-            .select()
-            .from(schema.players)
-            .where(eq(schema.players.id, reg2.player1Id))
-            .limit(1)
-
-          let player2 = null
-          if (reg2.player2Id) {
-            const player2Result = await db
-              .select()
-              .from(schema.players)
-              .where(eq(schema.players.id, reg2.player2Id))
-              .limit(1)
-            player2 = player2Result[0] || null
-          }
-
-          registration2WithPlayers = {
-            ...reg2,
-            player1: player1[0] || null,
-            player2: player2,
-          }
-        }
+        const registration2WithPlayers = registration2[0]
+          ? await enrichRegistrationWithPlayers(registration2[0])
+          : null
 
         // Determine opponent registration
         const playerRegistration = isPlayerRegistration1
@@ -217,4 +168,3 @@ export async function GET(
     return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
-

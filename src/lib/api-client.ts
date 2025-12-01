@@ -1,6 +1,7 @@
 // API Client - Single responsibility: HTTP communication with backend
 import type { PaginatedResponse } from '@/types/api/pagination'
 import type { OrganizationContext } from '@/lib/organization-helpers'
+import type { EventType } from '@/types/event-types'
 
 export class ApiClient {
   private baseUrl: string
@@ -272,7 +273,7 @@ export class ApiClient {
   // Events methods
   async getEvents(params?: {
     q?: string
-    eventType?: 'singles' | 'doubles'
+    eventType?: EventType
     gender?: 'male' | 'female' | 'mixed'
     visibility?: 'public' | 'private'
     organizationId?: string | null
@@ -366,7 +367,10 @@ export class ApiClient {
 
   async createRegistration(data: {
     eventId: string
-    player1Id: string
+    // New format: array of player IDs (preferred)
+    playerIds?: string[]
+    // @deprecated Legacy format for backward compatibility
+    player1Id?: string
     player2Id?: string | null
   }) {
     return this.request('/registrations', {

@@ -1,12 +1,13 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { events, registrations } from '@/db/schema'
+import { events, registrations, registrationPlayers } from '@/db/schema'
 import type { SeededOrganization, SeededPlayer } from './types'
+import type { EventType } from '@/types/event-types'
 
 export interface SeededEvent {
   id: string
   name: string
   organizationId: string | null
-  eventType: 'singles' | 'doubles'
+  eventType: EventType
   gender: 'male' | 'female' | 'mixed'
   bestOf: number
 }
@@ -14,17 +15,18 @@ export interface SeededEvent {
 export interface SeededRegistration {
   id: string
   eventId: string
-  player1Id: string
-  player2Id: string | null
+  playerIds: string[]
 }
 
-// Event templates
+// Event templates - only singles, doubles, and singles-teams
 const eventTemplates: Array<{
   name: string
-  eventType: 'singles' | 'doubles'
+  eventType: EventType
   gender: 'male' | 'female' | 'mixed'
   groupMode: 'single' | 'multiple'
   bestOf: number
+  minPlayers: number
+  maxPlayers: number
 }> = [
   {
     name: 'Men Singles Championship',
@@ -32,6 +34,8 @@ const eventTemplates: Array<{
     gender: 'male',
     groupMode: 'multiple',
     bestOf: 3,
+    minPlayers: 1,
+    maxPlayers: 1,
   },
   {
     name: 'Women Singles Championship',
@@ -39,6 +43,8 @@ const eventTemplates: Array<{
     gender: 'female',
     groupMode: 'single',
     bestOf: 3,
+    minPlayers: 1,
+    maxPlayers: 1,
   },
   {
     name: 'Men Doubles Tournament',
@@ -46,6 +52,8 @@ const eventTemplates: Array<{
     gender: 'male',
     groupMode: 'multiple',
     bestOf: 3,
+    minPlayers: 2,
+    maxPlayers: 2,
   },
   {
     name: 'Women Doubles Tournament',
@@ -53,6 +61,8 @@ const eventTemplates: Array<{
     gender: 'female',
     groupMode: 'single',
     bestOf: 3,
+    minPlayers: 2,
+    maxPlayers: 2,
   },
   {
     name: 'Mixed Doubles Tournament',
@@ -60,6 +70,17 @@ const eventTemplates: Array<{
     gender: 'mixed',
     groupMode: 'multiple',
     bestOf: 5,
+    minPlayers: 2,
+    maxPlayers: 2,
+  },
+  {
+    name: 'Men Singles Teams Championship',
+    eventType: 'singles-teams',
+    gender: 'male',
+    groupMode: 'multiple',
+    bestOf: 3,
+    minPlayers: 2,
+    maxPlayers: 4,
   },
 ]
 
@@ -91,6 +112,33 @@ const generateRegistrationDates = (
   return {
     start: regStart.toISOString().split('T')[0],
     end: regEnd.toISOString().split('T')[0],
+  }
+}
+
+// Helper to create registration with players in junction table
+const createRegistrationWithPlayers = async (
+  db: NodePgDatabase,
+  eventId: string,
+  playerIds: string[]
+): Promise<SeededRegistration> => {
+  const [createdReg] = await db
+    .insert(registrations)
+    .values({ eventId })
+    .returning()
+
+  // Insert players into junction table
+  await db.insert(registrationPlayers).values(
+    playerIds.map((playerId, index) => ({
+      registrationId: createdReg.id,
+      playerId,
+      position: index + 1,
+    }))
+  )
+
+  return {
+    id: createdReg.id,
+    eventId,
+    playerIds,
   }
 }
 
@@ -135,6 +183,8 @@ export const seedEvents = async (
           pointsPerLoss: 0,
           completed: false,
           organizationId: org.id,
+          minPlayers: template.minPlayers,
+          maxPlayers: template.maxPlayers,
         })
         .returning()
 
@@ -142,13 +192,13 @@ export const seedEvents = async (
         id: createdEvent.id,
         name: createdEvent.name,
         organizationId: createdEvent.organizationId,
-        eventType: createdEvent.eventType as 'singles' | 'doubles',
+        eventType: createdEvent.eventType as SeededEvent['eventType'],
         gender: createdEvent.gender as 'male' | 'female' | 'mixed',
         bestOf: createdEvent.bestOf,
       })
 
-      if (template.eventType === 'singles') {
-        // Singles: filter by gender
+      // Single player events: solo, singles
+      if (template.maxPlayers === 1) {
         const eligiblePlayers =
           template.gender === 'male' ? malePlayers : femalePlayers
 
@@ -167,66 +217,61 @@ export const seedEvents = async (
         const selectedPlayers = shuffledPlayers.slice(0, registrationCount)
 
         for (const player of selectedPlayers) {
-          const [createdReg] = await db
-            .insert(registrations)
-            .values({
-              eventId: createdEvent.id,
-              player1Id: player.id,
-              player2Id: null,
-            })
-            .returning()
-
-          seededRegistrations.push({
-            id: createdReg.id,
-            eventId: createdEvent.id,
-            player1Id: player.id,
-            player2Id: null,
-          })
+          const seededReg = await createRegistrationWithPlayers(
+            db,
+            createdEvent.id,
+            [player.id]
+          )
+          seededRegistrations.push(seededReg)
         }
       } else {
-        // Doubles: handle based on gender type
+        // Multi-player events: doubles, singles-teams, solo-teams, relay
         if (template.gender === 'mixed') {
-          // Mixed doubles: pair 1 male + 1 female
+          // Mixed events: need equal distribution of males and females
+          // For doubles (2 players): 1 male + 1 female
+          // For relay (4 players): 2 males + 2 females, etc.
           const shuffledMales = [...malePlayers].sort(() => Math.random() - 0.5)
           const shuffledFemales = [...femalePlayers].sort(
             () => Math.random() - 0.5
           )
 
-          // Number of pairs is limited by the smaller group
-          const maxPairs = Math.min(
-            shuffledMales.length,
-            shuffledFemales.length
+          // For mixed events, we need equal number of males and females per team
+          const playersPerGender = Math.ceil(template.maxPlayers / 2)
+          const maxTeams = Math.min(
+            Math.floor(shuffledMales.length / playersPerGender),
+            Math.floor(shuffledFemales.length / playersPerGender)
           )
           const minRegs = 5
-          const maxRegs = Math.min(25, maxPairs)
-          const pairCount =
+          const maxRegs = Math.min(25, maxTeams)
+          const teamCount =
             maxRegs >= minRegs
               ? minRegs + Math.floor(Math.random() * (maxRegs - minRegs + 1))
-              : maxPairs
+              : maxTeams
 
-          for (let i = 0; i < pairCount; i++) {
-            const male = shuffledMales[i]
-            const female = shuffledFemales[i]
-            if (male && female) {
-              const [createdReg] = await db
-                .insert(registrations)
-                .values({
-                  eventId: createdEvent.id,
-                  player1Id: male.id,
-                  player2Id: female.id,
-                })
-                .returning()
-
-              seededRegistrations.push({
-                id: createdReg.id,
-                eventId: createdEvent.id,
-                player1Id: male.id,
-                player2Id: female.id,
-              })
+          for (let i = 0; i < teamCount; i++) {
+            const teamPlayers = []
+            // Add males
+            for (let j = 0; j < playersPerGender; j++) {
+              const male = shuffledMales[i * playersPerGender + j]
+              if (male) teamPlayers.push(male)
+            }
+            // Add females
+            for (let j = 0; j < playersPerGender; j++) {
+              const female = shuffledFemales[i * playersPerGender + j]
+              if (female) teamPlayers.push(female)
+            }
+            // Only create registration if we have enough players
+            if (teamPlayers.length === template.maxPlayers) {
+              const seededReg = await createRegistrationWithPlayers(
+                db,
+                createdEvent.id,
+                teamPlayers.map((p) => p.id)
+              )
+              seededRegistrations.push(seededReg)
             }
           }
         } else {
-          // Men doubles or Women doubles: same gender pairs
+          // Same gender multi-player events: doubles, singles-teams, solo-teams, relay
           const eligiblePlayers =
             template.gender === 'male' ? malePlayers : femalePlayers
 
@@ -234,34 +279,33 @@ export const seedEvents = async (
             () => Math.random() - 0.5
           )
 
-          // Number of pairs (need 2 players per pair)
-          const maxPairs = Math.floor(shuffledPlayers.length / 2)
+          // Number of teams (need maxPlayers players per team)
+          const maxTeams = Math.floor(
+            shuffledPlayers.length / template.maxPlayers
+          )
           const minRegs = 5
-          const maxRegs = Math.min(25, maxPairs)
-          const pairCount =
+          const maxRegs = Math.min(25, maxTeams)
+          const teamCount =
             maxRegs >= minRegs
               ? minRegs + Math.floor(Math.random() * (maxRegs - minRegs + 1))
-              : maxPairs
+              : maxTeams
 
-          for (let i = 0; i < pairCount; i++) {
-            const player1 = shuffledPlayers[i * 2]
-            const player2 = shuffledPlayers[i * 2 + 1]
-            if (player1 && player2) {
-              const [createdReg] = await db
-                .insert(registrations)
-                .values({
-                  eventId: createdEvent.id,
-                  player1Id: player1.id,
-                  player2Id: player2.id,
-                })
-                .returning()
-
-              seededRegistrations.push({
-                id: createdReg.id,
-                eventId: createdEvent.id,
-                player1Id: player1.id,
-                player2Id: player2.id,
-              })
+          for (let i = 0; i < teamCount; i++) {
+            const teamPlayers = []
+            for (let j = 0; j < template.maxPlayers; j++) {
+              const player = shuffledPlayers[i * template.maxPlayers + j]
+              if (player) {
+                teamPlayers.push(player)
+              }
+            }
+            // Only create registration if we have enough players for the team
+            if (teamPlayers.length >= template.minPlayers) {
+              const seededReg = await createRegistrationWithPlayers(
+                db,
+                createdEvent.id,
+                teamPlayers.map((p) => p.id)
+              )
+              seededRegistrations.push(seededReg)
             }
           }
         }

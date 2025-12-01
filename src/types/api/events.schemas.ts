@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { EVENT_TYPES } from '../event-types'
 
 // Query parameters for GET /events
 export const eventsQuerySchema = z
@@ -8,7 +9,7 @@ export const eventsQuerySchema = z
       .trim()
       .max(50, 'q must be less than 50 characters')
       .optional(),
-    eventType: z.enum(['singles', 'doubles']).optional(),
+    eventType: z.enum(EVENT_TYPES).optional(),
     gender: z.enum(['male', 'female', 'mixed']).optional(),
     visibility: z.enum(['public', 'private']).optional(),
     organizationId: z
@@ -62,8 +63,9 @@ export const eventsParamsSchema = z.object({
 export const eventsCreateSchema = z
   .object({
     name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
-    eventType: z.enum(['singles', 'doubles'], {
-      message: 'Event type must be singles or doubles',
+    eventType: z.enum(EVENT_TYPES, {
+      message:
+        'Event type must be solo, singles, doubles, singles-teams, solo-teams, or relay',
     }),
     gender: z.enum(['male', 'female', 'mixed'], {
       message: 'Gender must be male, female, or mixed',
@@ -72,6 +74,18 @@ export const eventsCreateSchema = z
       message: 'Group mode must be single or multiple',
     }),
     visibility: z.enum(['public', 'private']).optional().default('public'),
+    minPlayers: z
+      .number()
+      .int('minPlayers must be an integer')
+      .min(1, 'minPlayers must be at least 1')
+      .optional()
+      .default(1),
+    maxPlayers: z
+      .number()
+      .int('maxPlayers must be an integer')
+      .min(1, 'maxPlayers must be at least 1')
+      .optional()
+      .default(2),
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -97,6 +111,10 @@ export const eventsCreateSchema = z
       .optional(),
   })
   .strict()
+  .refine((data) => data.minPlayers <= data.maxPlayers, {
+    message: 'minPlayers must be less than or equal to maxPlayers',
+    path: ['minPlayers'],
+  })
 
 // Update event schema for PATCH /events/:id
 export const eventsUpdateSchema = z
@@ -107,8 +125,9 @@ export const eventsUpdateSchema = z
       .max(255, 'Name is too long')
       .optional(),
     eventType: z
-      .enum(['singles', 'doubles'], {
-        message: 'Event type must be singles or doubles',
+      .enum(EVENT_TYPES, {
+        message:
+          'Event type must be solo, singles, doubles, singles-teams, solo-teams, or relay',
       })
       .optional(),
     gender: z
@@ -122,6 +141,16 @@ export const eventsUpdateSchema = z
       })
       .optional(),
     visibility: z.enum(['public', 'private']).optional(),
+    minPlayers: z
+      .number()
+      .int('minPlayers must be an integer')
+      .min(1, 'minPlayers must be at least 1')
+      .optional(),
+    maxPlayers: z
+      .number()
+      .int('maxPlayers must be an integer')
+      .min(1, 'maxPlayers must be at least 1')
+      .optional(),
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -147,11 +176,23 @@ export const eventsUpdateSchema = z
       .nullable()
       .optional(),
   })
+  .strict()
   .refine(
     (data) => Object.keys(data).length > 0,
     'At least one field must be provided for update'
   )
-  .strict()
+  .refine(
+    (data) => {
+      if (data.minPlayers !== undefined && data.maxPlayers !== undefined) {
+        return data.minPlayers <= data.maxPlayers
+      }
+      return true
+    },
+    {
+      message: 'minPlayers must be less than or equal to maxPlayers',
+      path: ['minPlayers'],
+    }
+  )
 
 // Inferred TypeScript types
 export type EventsQuery = z.infer<typeof eventsQuerySchema>

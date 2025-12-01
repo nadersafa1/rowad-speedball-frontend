@@ -136,27 +136,31 @@ const GroupManagement = ({
             <div className='space-y-2'>
               <h4 className='font-medium'>Unassigned Registrations</h4>
               <div className='space-y-2 max-h-60 overflow-y-auto'>
-                {unassignedRegistrations.map((reg) => (
-                  <div
-                    key={reg.id}
-                    className={`p-2 border rounded ${
-                      selectedRegistrations.includes(reg.id)
-                        ? 'bg-primary/10 border-primary'
-                        : ''
-                    }`}
-                  >
-                    <div className='flex items-center gap-2'>
-                      <Checkbox
-                        checked={selectedRegistrations.includes(reg.id)}
-                        onCheckedChange={() => toggleRegistration(reg.id)}
-                      />
-                      <span>
-                        {reg.player1?.name}
-                        {reg.player2 && ` & ${reg.player2.name}`}
-                      </span>
+                {unassignedRegistrations.map((reg) => {
+                  // Use new players array if available, fallback to player1/player2
+                  const playerNames = reg.players && reg.players.length > 0
+                    ? reg.players.map((p) => p.name).join(' & ')
+                    : [reg.player1?.name, reg.player2?.name].filter(Boolean).join(' & ') || 'Unknown'
+                  
+                  return (
+                    <div
+                      key={reg.id}
+                      className={`p-2 border rounded ${
+                        selectedRegistrations.includes(reg.id)
+                          ? 'bg-primary/10 border-primary'
+                          : ''
+                      }`}
+                    >
+                      <div className='flex items-center gap-2'>
+                        <Checkbox
+                          checked={selectedRegistrations.includes(reg.id)}
+                          onCheckedChange={() => toggleRegistration(reg.id)}
+                        />
+                        <span>{playerNames}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <Button
                 onClick={handleCreateGroup}

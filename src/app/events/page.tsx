@@ -12,6 +12,7 @@ import { Plus, Trophy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import EventsTable from './components/events-table'
 import EventsStats from './components/events-stats'
+import type { EventType } from '@/types/event-types'
 
 const EventsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
@@ -22,7 +23,7 @@ const EventsPage = () => {
   const [eventFormOpen, setEventFormOpen] = useState(false)
   const [filters, setFilters] = useState({
     q: '',
-    eventType: undefined as 'singles' | 'doubles' | undefined,
+    eventType: undefined as EventType | undefined,
     gender: undefined as 'male' | 'female' | 'mixed' | undefined,
     organizationId: undefined as string | null | undefined,
     sortBy: undefined as

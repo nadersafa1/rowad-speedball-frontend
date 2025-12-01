@@ -19,6 +19,7 @@ import {
   checkEventUpdateAuthorization,
   checkEventReadAuthorization,
 } from '@/lib/event-authorization-helpers'
+import { enrichRegistrationWithPlayers } from '@/lib/registration-helpers'
 
 export async function GET(
   request: NextRequest,
@@ -79,71 +80,26 @@ export async function GET(
       group = groupResult[0] || null
     }
 
-    // Fetch registration1 with player data
+    // Fetch registrations with player data from junction table
     const registration1 = await db
       .select()
       .from(schema.registrations)
       .where(eq(schema.registrations.id, match[0].registration1Id))
       .limit(1)
 
-    let registration1WithPlayers = null
-    if (registration1.length > 0) {
-      const reg1 = registration1[0]
-      const player1 = await db
-        .select()
-        .from(schema.players)
-        .where(eq(schema.players.id, reg1.player1Id))
-        .limit(1)
-
-      let player2 = null
-      if (reg1.player2Id) {
-        const player2Result = await db
-          .select()
-          .from(schema.players)
-          .where(eq(schema.players.id, reg1.player2Id))
-          .limit(1)
-        player2 = player2Result[0] || null
-      }
-
-      registration1WithPlayers = {
-        ...reg1,
-        player1: player1[0] || null,
-        player2: player2,
-      }
-    }
-
-    // Fetch registration2 with player data
     const registration2 = await db
       .select()
       .from(schema.registrations)
       .where(eq(schema.registrations.id, match[0].registration2Id))
       .limit(1)
 
-    let registration2WithPlayers = null
-    if (registration2.length > 0) {
-      const reg2 = registration2[0]
-      const player1 = await db
-        .select()
-        .from(schema.players)
-        .where(eq(schema.players.id, reg2.player1Id))
-        .limit(1)
+    const registration1WithPlayers = registration1[0]
+      ? await enrichRegistrationWithPlayers(registration1[0])
+      : null
 
-      let player2 = null
-      if (reg2.player2Id) {
-        const player2Result = await db
-          .select()
-          .from(schema.players)
-          .where(eq(schema.players.id, reg2.player2Id))
-          .limit(1)
-        player2 = player2Result[0] || null
-      }
-
-      registration2WithPlayers = {
-        ...reg2,
-        player1: player1[0] || null,
-        player2: player2,
-      }
-    }
+    const registration2WithPlayers = registration2[0]
+      ? await enrichRegistrationWithPlayers(registration2[0])
+      : null
 
     return Response.json({
       ...match[0],

@@ -372,8 +372,9 @@ const EventDetailPage = () => {
         {registrationFormOpen && selectedEvent && (
           <RegistrationForm
             eventId={eventId}
-            eventType={selectedEvent.eventType}
             eventGender={selectedEvent.gender}
+            minPlayers={selectedEvent.minPlayers}
+            maxPlayers={selectedEvent.maxPlayers}
             onSuccess={() => {
               setRegistrationFormOpen(false)
               handleRefresh()

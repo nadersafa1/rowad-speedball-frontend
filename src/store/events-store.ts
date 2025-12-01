@@ -4,6 +4,7 @@ import { apiClient } from '@/lib/api-client'
 import type { Event, PaginatedResponse } from '@/types'
 import type { EventsStats } from '@/types/api/pagination'
 import { isEventsStats } from '@/lib/utils/stats-type-guards'
+import type { EventType } from '@/types/event-types'
 
 interface EventsState {
   events: Event[]
@@ -21,7 +22,7 @@ interface EventsState {
   // Actions
   fetchEvents: (filters?: {
     q?: string
-    eventType?: 'singles' | 'doubles'
+    eventType?: EventType
     gender?: 'male' | 'female' | 'mixed'
     visibility?: 'public' | 'private'
     organizationId?: string | null
