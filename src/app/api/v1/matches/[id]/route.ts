@@ -8,7 +8,10 @@ import {
   matchesUpdateSchema,
 } from '@/types/api/matches.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { validateMatchCompletion } from '@/lib/validations/match-validation'
+import {
+  validateMatchCompletion,
+  advanceWinnerToNextMatch,
+} from '@/lib/validations/match-validation'
 import {
   calculateMatchPoints,
   calculateSetPoints,
@@ -81,25 +84,37 @@ export async function GET(
     }
 
     // Fetch registrations with player data from junction table
-    const registration1 = await db
-      .select()
-      .from(schema.registrations)
-      .where(eq(schema.registrations.id, match[0].registration1Id))
-      .limit(1)
+    // Handle nullable registration IDs for BYE matches in SE
+    let registration1WithPlayers = null
+    let registration2WithPlayers = null
 
-    const registration2 = await db
-      .select()
-      .from(schema.registrations)
-      .where(eq(schema.registrations.id, match[0].registration2Id))
-      .limit(1)
+    if (match[0].registration1Id) {
+      const registration1 = await db
+        .select()
+        .from(schema.registrations)
+        .where(eq(schema.registrations.id, match[0].registration1Id))
+        .limit(1)
 
-    const registration1WithPlayers = registration1[0]
-      ? await enrichRegistrationWithPlayers(registration1[0])
-      : null
+      registration1WithPlayers = registration1[0]
+        ? await enrichRegistrationWithPlayers(registration1[0])
+        : null
+    }
 
-    const registration2WithPlayers = registration2[0]
-      ? await enrichRegistrationWithPlayers(registration2[0])
-      : null
+    if (match[0].registration2Id) {
+      const registration2 = await db
+        .select()
+        .from(schema.registrations)
+        .where(eq(schema.registrations.id, match[0].registration2Id))
+        .limit(1)
+
+      registration2WithPlayers = registration2[0]
+        ? await enrichRegistrationWithPlayers(registration2[0])
+        : null
+    }
+
+    // Determine if this is a BYE match
+    const isByeMatch =
+      match[0].registration1Id === null || match[0].registration2Id === null
 
     return Response.json({
       ...match[0],
@@ -109,6 +124,7 @@ export async function GET(
       registration2: registration2WithPlayers,
       event: event[0] || null,
       group: group,
+      isByeMatch,
     })
   } catch (error) {
     console.error('Error fetching match:', error)
@@ -187,8 +203,20 @@ export async function PATCH(
       }
     }
 
+    // Check if this is a BYE match (one registration is null)
+    const isByeMatch =
+      match.registration1Id === null || match.registration2Id === null
+
     // If setting played = true, validate match completion
     if (updateData.played === true && !match.played) {
+      // BYE matches should already be marked as played during bracket generation
+      if (isByeMatch) {
+        return Response.json(
+          { message: 'BYE matches are auto-completed during bracket generation' },
+          { status: 400 }
+        )
+      }
+
       // Get all sets for the match
       const allSets = await db
         .select()
@@ -209,29 +237,39 @@ export async function PATCH(
         return Response.json({ message: validation.error }, { status: 400 })
       }
 
-      // Determine winner ID
+      // Determine winner ID (registration IDs are guaranteed non-null for non-BYE matches)
       const finalWinnerId =
         validation.winnerId === '1'
-          ? match.registration1Id
-          : match.registration2Id
+          ? match.registration1Id!
+          : match.registration2Id!
 
-      // Calculate points and update standings
-      const matchPoints = calculateMatchPoints(
-        finalWinnerId,
-        match.registration1Id,
-        match.registration2Id,
-        eventData.pointsPerWin,
-        eventData.pointsPerLoss
-      )
+      // Calculate points and update standings (only for groups format)
+      if (eventData.format === 'groups' && match.registration1Id && match.registration2Id) {
+        const matchPoints = calculateMatchPoints(
+          finalWinnerId,
+          match.registration1Id,
+          match.registration2Id,
+          eventData.pointsPerWin,
+          eventData.pointsPerLoss
+        )
 
-      const setResults = calculateSetPoints(
-        allSets.map((s) => ({
-          registration1Score: s.registration1Score,
-          registration2Score: s.registration2Score,
-        })),
-        match.registration1Id,
-        match.registration2Id
-      )
+        const setResults = calculateSetPoints(
+          allSets.map((s) => ({
+            registration1Score: s.registration1Score,
+            registration2Score: s.registration2Score,
+          })),
+          match.registration1Id,
+          match.registration2Id
+        )
+
+        // Update standings
+        await updateRegistrationStandings(
+          match.registration1Id,
+          match.registration2Id,
+          matchPoints,
+          setResults
+        )
+      }
 
       // Update match
       const updateFields: any = {
@@ -249,13 +287,19 @@ export async function PATCH(
         .where(eq(schema.matches.id, id))
         .returning()
 
-      // Update standings
-      await updateRegistrationStandings(
-        match.registration1Id,
-        match.registration2Id,
-        matchPoints,
-        setResults
-      )
+      // Handle SE bracket advancement
+      if (
+        eventData.format === 'single-elimination' &&
+        match.winnerTo &&
+        match.winnerToSlot &&
+        finalWinnerId
+      ) {
+        await advanceWinnerToNextMatch(
+          match.winnerTo,
+          match.winnerToSlot,
+          finalWinnerId
+        )
+      }
 
       // Update group completed status if match belongs to a group
       if (match.groupId) {

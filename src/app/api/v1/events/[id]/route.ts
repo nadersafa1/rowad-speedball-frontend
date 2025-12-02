@@ -194,12 +194,17 @@ export async function PATCH(
       finalUpdateData = updateData
     }
 
-    // Check if registrations exist and if any sets are played (optimized with single queries)
-    const [registrations, playedSets] = await Promise.all([
+    // Check if registrations exist, matches exist, and if any sets are played
+    const [registrations, existingMatches, playedSets] = await Promise.all([
       db
         .select()
         .from(schema.registrations)
         .where(eq(schema.registrations.eventId, id))
+        .limit(1),
+      db
+        .select({ id: schema.matches.id })
+        .from(schema.matches)
+        .where(eq(schema.matches.eventId, id))
         .limit(1),
       db
         .select({ id: schema.sets.id })
@@ -212,6 +217,7 @@ export async function PATCH(
     ])
 
     const hasRegistrations = registrations.length > 0
+    const hasMatches = existingMatches.length > 0
     const hasPlayedSets = playedSets.length > 0
 
     // Validate: Cannot change eventType or gender if registrations exist
@@ -231,6 +237,32 @@ export async function PATCH(
       ) {
         return Response.json(
           { message: 'Cannot change gender once registrations exist' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate: Cannot change format once matches are generated
+    if (hasMatches) {
+      if (
+        updateData.format !== undefined &&
+        updateData.format !== eventData.format
+      ) {
+        return Response.json(
+          { message: 'Cannot change format once matches are generated' },
+          { status: 400 }
+        )
+      }
+      // Cannot change hasThirdPlaceMatch once matches are generated
+      if (
+        updateData.hasThirdPlaceMatch !== undefined &&
+        updateData.hasThirdPlaceMatch !== eventData.hasThirdPlaceMatch
+      ) {
+        return Response.json(
+          {
+            message:
+              'Cannot change third place match setting once matches are generated',
+          },
           { status: 400 }
         )
       }
@@ -265,7 +297,7 @@ export async function PATCH(
           { status: 400 }
         )
       }
-      // Cannot change registration dates or group mode once sets are played
+      // Cannot change registration dates once sets are played
       if (
         updateData.registrationStartDate !== undefined &&
         updateData.registrationStartDate !== eventData.registrationStartDate
@@ -286,15 +318,6 @@ export async function PATCH(
           {
             message: 'Cannot change registration end date once sets are played',
           },
-          { status: 400 }
-        )
-      }
-      if (
-        updateData.groupMode !== undefined &&
-        updateData.groupMode !== eventData.groupMode
-      ) {
-        return Response.json(
-          { message: 'Cannot change group mode once sets are played' },
           { status: 400 }
         )
       }

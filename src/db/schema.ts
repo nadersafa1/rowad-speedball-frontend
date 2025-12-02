@@ -227,7 +227,12 @@ export const events = pgTable('events', {
     ],
   }).notNull(),
   gender: text('gender', { enum: ['male', 'female', 'mixed'] }).notNull(),
-  groupMode: text('group_mode', { enum: ['single', 'multiple'] }).notNull(),
+  format: text('format', {
+    enum: ['groups', 'single-elimination', 'groups-knockout'],
+  })
+    .notNull()
+    .default('groups'),
+  hasThirdPlaceMatch: boolean('has_third_place_match').default(false),
   visibility: text('visibility', { enum: ['public', 'private'] })
     .notNull()
     .default('public'),
@@ -271,6 +276,7 @@ export const registrations = pgTable('registrations', {
   groupId: uuid('group_id').references(() => groups.id, {
     onDelete: 'set null',
   }),
+  seed: integer('seed'), // Seeding rank for SE events (1 = top seed)
   matchesWon: integer('matches_won').notNull().default(0),
   matchesLost: integer('matches_lost').notNull().default(0),
   setsWon: integer('sets_won').notNull().default(0),
@@ -311,17 +317,22 @@ export const matches = pgTable('matches', {
   }),
   round: integer('round').notNull(),
   matchNumber: integer('match_number').notNull(),
-  registration1Id: uuid('registration1_id')
-    .notNull()
-    .references(() => registrations.id, { onDelete: 'cascade' }),
-  registration2Id: uuid('registration2_id')
-    .notNull()
-    .references(() => registrations.id, { onDelete: 'cascade' }),
+  // Nullable for BYE matches in single elimination
+  registration1Id: uuid('registration1_id').references(() => registrations.id, {
+    onDelete: 'cascade',
+  }),
+  registration2Id: uuid('registration2_id').references(() => registrations.id, {
+    onDelete: 'cascade',
+  }),
   matchDate: date('match_date'),
   played: boolean('played').notNull().default(false),
   winnerId: uuid('winner_id').references(() => registrations.id, {
     onDelete: 'set null',
   }),
+  // Single elimination specific columns
+  bracketPosition: integer('bracket_position'), // Unique position in bracket for rendering
+  winnerTo: uuid('winner_to'), // Self-reference to next match (winner advances here)
+  winnerToSlot: integer('winner_to_slot'), // Which slot (1 or 2) winner occupies in next match
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

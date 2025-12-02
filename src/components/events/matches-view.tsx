@@ -20,7 +20,6 @@ import { useSocket } from '@/hooks/use-socket'
 interface MatchesViewProps {
   matches: Match[]
   groups?: Group[]
-  groupMode?: 'single' | 'multiple'
   canUpdate?: boolean
   onMatchUpdate?: () => void
 }
@@ -28,7 +27,6 @@ interface MatchesViewProps {
 const MatchesView = ({
   matches,
   groups = [],
-  groupMode = 'single',
   canUpdate = false,
   onMatchUpdate,
 }: MatchesViewProps) => {
@@ -274,7 +272,7 @@ const MatchesView = ({
 
   // Helper function to get group name by ID
   const getGroupName = (groupId: string | null | undefined): string | null => {
-    if (!groupId || groupMode === 'single') return null
+    if (!groupId) return null
     const group = groups.find((g) => g.id === groupId)
     return group?.name || null
   }
@@ -330,11 +328,7 @@ const MatchesView = ({
                 <EventMatchItem
                   key={match.id}
                   match={match}
-                  groupName={
-                    groupMode === 'multiple' && match.groupId
-                      ? getGroupName(match.groupId)
-                      : null
-                  }
+                  groupName={getGroupName(match.groupId)}
                   showEditButton={canUpdate}
                   onEditClick={() => setSelectedMatch(match)}
                   isLive={liveMatchIds.has(match.id)}

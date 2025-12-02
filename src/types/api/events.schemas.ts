@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { EVENT_TYPES } from '../event-types'
 
+// Event format types
+export const EVENT_FORMATS = ['groups', 'single-elimination', 'groups-knockout'] as const
+export type EventFormat = (typeof EVENT_FORMATS)[number]
+
 // Query parameters for GET /events
 export const eventsQuerySchema = z
   .object({
@@ -11,6 +15,7 @@ export const eventsQuerySchema = z
       .optional(),
     eventType: z.enum(EVENT_TYPES).optional(),
     gender: z.enum(['male', 'female', 'mixed']).optional(),
+    format: z.enum(EVENT_FORMATS).optional(),
     visibility: z.enum(['public', 'private']).optional(),
     organizationId: z
       .string()
@@ -70,9 +75,13 @@ export const eventsCreateSchema = z
     gender: z.enum(['male', 'female', 'mixed'], {
       message: 'Gender must be male, female, or mixed',
     }),
-    groupMode: z.enum(['single', 'multiple'], {
-      message: 'Group mode must be single or multiple',
-    }),
+    format: z
+      .enum(EVENT_FORMATS, {
+        message: 'Format must be groups, single-elimination, or groups-knockout',
+      })
+      .optional()
+      .default('groups'),
+    hasThirdPlaceMatch: z.boolean().optional().default(false),
     visibility: z.enum(['public', 'private']).optional().default('public'),
     minPlayers: z
       .number()
@@ -135,11 +144,12 @@ export const eventsUpdateSchema = z
         message: 'Gender must be male, female, or mixed',
       })
       .optional(),
-    groupMode: z
-      .enum(['single', 'multiple'], {
-        message: 'Group mode must be single or multiple',
+    format: z
+      .enum(EVENT_FORMATS, {
+        message: 'Format must be groups, single-elimination, or groups-knockout',
       })
       .optional(),
+    hasThirdPlaceMatch: z.boolean().optional(),
     visibility: z.enum(['public', 'private']).optional(),
     minPlayers: z
       .number()

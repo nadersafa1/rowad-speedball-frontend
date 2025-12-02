@@ -166,30 +166,37 @@ export async function PATCH(
       if (updatedMatch.length > 0) {
         const matchData = updatedMatch[0]
 
-        // Calculate points and update standings
-        const matchPoints = calculateMatchPoints(
-          completionResult.winnerId,
-          matchData.registration1Id,
-          matchData.registration2Id,
-          event[0].pointsPerWin,
-          event[0].pointsPerLoss
-        )
-
-        const setResults = calculateSetPoints(
-          updatedSets.map((s) => ({
-            registration1Score: s.registration1Score,
-            registration2Score: s.registration2Score,
-          })),
-          matchData.registration1Id,
+        // Calculate points and update standings (only for groups format)
+        // Single-elimination matches don't use points/standings
+        if (
+          event[0].format === 'groups' &&
+          matchData.registration1Id &&
           matchData.registration2Id
-        )
+        ) {
+          const matchPoints = calculateMatchPoints(
+            completionResult.winnerId,
+            matchData.registration1Id,
+            matchData.registration2Id,
+            event[0].pointsPerWin,
+            event[0].pointsPerLoss
+          )
 
-        await updateRegistrationStandings(
-          matchData.registration1Id,
-          matchData.registration2Id,
-          matchPoints,
-          setResults
-        )
+          const setResults = calculateSetPoints(
+            updatedSets.map((s) => ({
+              registration1Score: s.registration1Score,
+              registration2Score: s.registration2Score,
+            })),
+            matchData.registration1Id,
+            matchData.registration2Id
+          )
+
+          await updateRegistrationStandings(
+            matchData.registration1Id,
+            matchData.registration2Id,
+            matchPoints,
+            setResults
+          )
+        }
       }
     }
 

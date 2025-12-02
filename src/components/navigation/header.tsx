@@ -270,7 +270,10 @@ const Header = () => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                  <AlertDialog
+                    open={logoutDialogOpen}
+                    onOpenChange={setLogoutDialogOpen}
+                  >
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem
                         onSelect={(e) => {
@@ -287,8 +290,8 @@ const Header = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to logout? You will need to login
-                          again to access your account.
+                          Are you sure you want to logout? You will need to
+                          login again to access your account.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -391,7 +394,9 @@ const Header = () => {
             </div>
             <div className='mt-4 pt-4 border-t border-border space-y-2'>
               <div className='flex items-center justify-between px-3 py-2'>
-                <span className='text-sm font-medium text-foreground'>Theme</span>
+                <span className='text-sm font-medium text-foreground'>
+                  Theme
+                </span>
                 <ThemeToggle />
               </div>
               {isAuthenticated && session?.user ? (
@@ -423,7 +428,10 @@ const Header = () => {
                     <User className='h-5 w-5' />
                     <span>Profile</span>
                   </Link>
-                  <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                  <AlertDialog
+                    open={logoutDialogOpen}
+                    onOpenChange={setLogoutDialogOpen}
+                  >
                     <AlertDialogTrigger asChild>
                       <Button
                         variant='outline'
@@ -439,8 +447,8 @@ const Header = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to logout? You will need to login
-                          again to access your account.
+                          Are you sure you want to logout? You will need to
+                          login again to access your account.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
