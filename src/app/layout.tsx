@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   description:
     'A comprehensive web application for managing speedball sport data for Rowad club',
   keywords: 'speedball, rowad, sport, analytics, performance',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 }
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
