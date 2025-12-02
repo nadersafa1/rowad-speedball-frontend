@@ -23,7 +23,7 @@ const eventTemplates: Array<{
   name: string
   eventType: EventType
   gender: 'male' | 'female' | 'mixed'
-  groupMode: 'single' | 'multiple'
+  format: 'groups' | 'single-elimination' | 'groups-knockout'
   bestOf: number
   minPlayers: number
   maxPlayers: number
@@ -32,7 +32,7 @@ const eventTemplates: Array<{
     name: 'Men Singles Championship',
     eventType: 'singles',
     gender: 'male',
-    groupMode: 'multiple',
+    format: 'groups',
     bestOf: 3,
     minPlayers: 1,
     maxPlayers: 1,
@@ -41,7 +41,7 @@ const eventTemplates: Array<{
     name: 'Women Singles Championship',
     eventType: 'singles',
     gender: 'female',
-    groupMode: 'single',
+    format: 'groups',
     bestOf: 3,
     minPlayers: 1,
     maxPlayers: 1,
@@ -50,7 +50,7 @@ const eventTemplates: Array<{
     name: 'Men Doubles Tournament',
     eventType: 'doubles',
     gender: 'male',
-    groupMode: 'multiple',
+    format: 'groups',
     bestOf: 3,
     minPlayers: 2,
     maxPlayers: 2,
@@ -59,7 +59,7 @@ const eventTemplates: Array<{
     name: 'Women Doubles Tournament',
     eventType: 'doubles',
     gender: 'female',
-    groupMode: 'single',
+    format: 'groups',
     bestOf: 3,
     minPlayers: 2,
     maxPlayers: 2,
@@ -68,7 +68,7 @@ const eventTemplates: Array<{
     name: 'Mixed Doubles Tournament',
     eventType: 'doubles',
     gender: 'mixed',
-    groupMode: 'multiple',
+    format: 'groups',
     bestOf: 5,
     minPlayers: 2,
     maxPlayers: 2,
@@ -77,7 +77,7 @@ const eventTemplates: Array<{
     name: 'Men Singles Teams Championship',
     eventType: 'singles-teams',
     gender: 'male',
-    groupMode: 'multiple',
+    format: 'groups',
     bestOf: 3,
     minPlayers: 2,
     maxPlayers: 4,
@@ -173,7 +173,7 @@ export const seedEvents = async (
           name: `${org.name} - ${template.name}`,
           eventType: template.eventType,
           gender: template.gender,
-          groupMode: template.groupMode,
+          format: template.format,
           visibility: 'public',
           registrationStartDate: regDates.start,
           registrationEndDate: regDates.end,

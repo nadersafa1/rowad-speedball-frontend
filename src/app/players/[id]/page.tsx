@@ -11,6 +11,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  BadgeCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BackButton } from '@/components/ui'
@@ -189,8 +190,11 @@ const PlayerDetailPage = () => {
               </div>
               <div className='flex-1 w-full min-w-0'>
                 <div className='mb-2'>
-                  <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 break-words'>
+                  <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 break-words flex items-center gap-2'>
                     {selectedPlayer.name}
+                    {selectedPlayer.userId && (
+                      <BadgeCheck className='h-6 w-6 text-blue-500' />
+                    )}
                   </h1>
                 </div>
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600'>

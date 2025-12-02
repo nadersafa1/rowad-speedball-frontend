@@ -84,6 +84,17 @@ export async function POST(request: NextRequest) {
       return Response.json({ message: 'Event not found' }, { status: 404 })
     }
 
+    // Validate event format is groups (not single-elimination)
+    if (event[0].format !== 'groups') {
+      return Response.json(
+        {
+          message:
+            'Groups can only be created for events with groups format. Use generate-bracket endpoint for single-elimination events.',
+        },
+        { status: 400 }
+      )
+    }
+
     // Check authorization based on parent event
     const authError = checkEventCreateAuthorization(context)
     if (authError) {

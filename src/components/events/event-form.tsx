@@ -35,6 +35,11 @@ import ClubCombobox from '@/components/organizations/club-combobox'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { UI_EVENT_TYPES, EVENT_TYPE_LABELS } from '@/types/event-types'
 
+// Event format options - currently only groups is supported
+const EVENT_FORMAT_OPTIONS = [
+  { value: 'groups', label: 'Groups (Round Robin)' },
+] as const
+
 // Validation schema - matches backend schema exactly
 const eventSchema = z
   .object({
@@ -45,8 +50,8 @@ const eventSchema = z
     gender: z.enum(['male', 'female', 'mixed'], {
       message: 'Gender is required',
     }),
-    groupMode: z.enum(['single', 'multiple'], {
-      message: 'Group mode is required',
+    format: z.enum(['groups', 'single-elimination', 'groups-knockout'], {
+      message: 'Format is required',
     }),
     visibility: z.enum(['public', 'private']),
     minPlayers: z.number().int().min(1, 'Must be at least 1'),
@@ -75,13 +80,10 @@ const eventSchema = z
       path: ['registrationEndDate'],
     }
   )
-  .refine(
-    (data) => data.minPlayers <= data.maxPlayers,
-    {
-      message: 'Min players must be less than or equal to max players',
-      path: ['minPlayers'],
-    }
-  )
+  .refine((data) => data.minPlayers <= data.maxPlayers, {
+    message: 'Min players must be less than or equal to max players',
+    path: ['minPlayers'],
+  })
 
 type EventFormData = z.infer<typeof eventSchema>
 
@@ -111,7 +113,7 @@ const EventForm = ({
       name: event?.name || '',
       eventType: event?.eventType || 'singles',
       gender: event?.gender || 'male',
-      groupMode: event?.groupMode || 'single',
+      format: event?.format || 'groups',
       visibility: event?.visibility || 'public',
       minPlayers: event?.minPlayers || 1,
       maxPlayers: event?.maxPlayers || 2,
@@ -314,58 +316,31 @@ const EventForm = ({
 
           <FormField
             control={form.control}
-            name='groupMode'
+            name='format'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Group Mode</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className='flex flex-col sm:flex-row gap-4 sm:gap-6'
-                    disabled={isEditing && hasPlayedSets}
-                  >
-                    <div className='flex items-center space-x-2'>
-                      <RadioGroupItem
-                        value='single'
-                        id='single'
-                        disabled={isEditing && hasPlayedSets}
-                      />
-                      <label
-                        htmlFor='single'
-                        className={
-                          isEditing && hasPlayedSets
-                            ? 'text-muted-foreground cursor-not-allowed'
-                            : ''
-                        }
-                      >
-                        Single Group
-                      </label>
-                    </div>
-                    <div className='flex items-center space-x-2'>
-                      <RadioGroupItem
-                        value='multiple'
-                        id='multiple'
-                        disabled={isEditing && hasPlayedSets}
-                      />
-                      <label
-                        htmlFor='multiple'
-                        className={
-                          isEditing && hasPlayedSets
-                            ? 'text-muted-foreground cursor-not-allowed'
-                            : ''
-                        }
-                      >
-                        Multiple Groups
-                      </label>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                {isEditing && hasPlayedSets && (
-                  <p className='text-xs text-muted-foreground'>
-                    Cannot change group mode once sets are played
-                  </p>
-                )}
+                <FormLabel>Format</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={true}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder='Select format' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {EVENT_FORMAT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className='text-xs text-muted-foreground'>
+                  Only groups format is currently supported
+                </p>
                 <FormMessage />
               </FormItem>
             )}

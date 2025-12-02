@@ -12,7 +12,7 @@ export const getRegistrations = (
     ) {
       return match.playerRegistration
     }
-    return match.registration1
+    return match.registration1 ?? undefined
   }
 
   const getRegistration2 = (): Registration | undefined => {
@@ -23,7 +23,7 @@ export const getRegistrations = (
     ) {
       return match.opponentRegistration
     }
-    return match.registration2
+    return match.registration2 ?? undefined
   }
 
   return { getRegistration1, getRegistration2 }

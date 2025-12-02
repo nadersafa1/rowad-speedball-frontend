@@ -26,6 +26,7 @@ export type Player = {
   preferredHand: 'left' | 'right'
   age: number
   ageGroup: string
+  userId?: string | null
   createdAt: string
   updatedAt: string
   organizationName?: string | null
@@ -103,12 +104,14 @@ export type AuthResponse = {
 // Events types
 import type { EventType } from './event-types'
 
+export type EventFormat = 'groups' | 'single-elimination' | 'groups-knockout'
+
 export type Event = {
   id: string
   name: string
   eventType: EventType
   gender: 'male' | 'female' | 'mixed'
-  groupMode: 'single' | 'multiple'
+  format: EventFormat
   visibility: 'public' | 'private'
   minPlayers: number
   maxPlayers: number
@@ -119,6 +122,7 @@ export type Event = {
   pointsPerWin: number
   pointsPerLoss: number
   completed: boolean
+  hasThirdPlaceMatch?: boolean
   organizationId?: string | null
   registrationsCount?: number
   lastMatchPlayedDate?: string | null
@@ -160,8 +164,8 @@ export type Match = {
   groupId?: string | null
   round: number
   matchNumber: number
-  registration1Id: string
-  registration2Id: string
+  registration1Id: string | null
+  registration2Id: string | null
   matchDate?: string | null
   played: boolean
   winnerId?: string | null
@@ -169,10 +173,16 @@ export type Match = {
   updatedAt: string
   sets?: Set[]
   bestOf?: number
-  registration1?: Registration
-  registration2?: Registration
+  registration1?: Registration | null
+  registration2?: Registration | null
   event?: Event | null
   group?: Group | null
+  // Single elimination specific fields
+  bracketPosition?: number | null
+  winnerTo?: string | null
+  winnerToSlot?: 1 | 2 | null
+  isByeMatch?: boolean
+  isThirdPlace?: boolean
 }
 
 export type Set = {

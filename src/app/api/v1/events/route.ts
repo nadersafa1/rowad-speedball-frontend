@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       q,
       eventType,
       gender,
+      format,
       visibility,
       organizationId,
       sortBy,
@@ -62,6 +63,11 @@ export async function GET(request: NextRequest) {
     // Gender filter
     if (gender) {
       conditions.push(eq(schema.events.gender, gender))
+    }
+
+    // Format filter
+    if (format) {
+      conditions.push(eq(schema.events.format, format))
     }
 
     // Organization filter (only for system admins)
@@ -370,7 +376,8 @@ export async function POST(request: NextRequest) {
       name,
       eventType,
       gender,
-      groupMode,
+      format,
+      hasThirdPlaceMatch,
       visibility,
       registrationStartDate,
       registrationEndDate,
@@ -408,7 +415,8 @@ export async function POST(request: NextRequest) {
         name,
         eventType,
         gender,
-        groupMode,
+        format: format || 'groups',
+        hasThirdPlaceMatch: hasThirdPlaceMatch || false,
         visibility: visibility || 'public',
         registrationStartDate: registrationStartDate || null,
         registrationEndDate: registrationEndDate || null,

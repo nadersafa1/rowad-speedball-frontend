@@ -25,6 +25,7 @@ interface GroupManagementProps {
   groups: Group[]
   registrations: Registration[]
   onGroupCreated?: () => void
+  canManage?: boolean
 }
 
 const GroupManagement = ({
@@ -32,6 +33,7 @@ const GroupManagement = ({
   groups,
   registrations,
   onGroupCreated,
+  canManage = true,
 }: GroupManagementProps) => {
   const { createGroup, deleteGroup, isLoading } = useGroupsStore()
   const { fetchRegistrations } = useRegistrationsStore()
@@ -118,21 +120,23 @@ const GroupManagement = ({
                         {groupRegistrations.length !== 1 ? 's' : ''}
                       </p>
                     </div>
-                    <Button
-                      variant='destructive'
-                      size='sm'
-                      onClick={() => setDeleteGroupId(group.id)}
-                      className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
-                    >
-                      <Trash2 className='h-4 w-4' />
-                    </Button>
+                    {canManage && (
+                      <Button
+                        variant='destructive'
+                        size='sm'
+                        onClick={() => setDeleteGroupId(group.id)}
+                        className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
+                      >
+                        <Trash2 className='h-4 w-4' />
+                      </Button>
+                    )}
                   </div>
                 )
               })}
             </div>
           )}
 
-          {unassignedRegistrations.length > 0 && (
+          {canManage && unassignedRegistrations.length > 0 && (
             <div className='space-y-2'>
               <h4 className='font-medium'>Unassigned Registrations</h4>
               <div className='space-y-2 max-h-60 overflow-y-auto'>

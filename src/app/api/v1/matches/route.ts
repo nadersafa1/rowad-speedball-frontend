@@ -91,17 +91,22 @@ export async function GET(request: NextRequest) {
           .where(eq(schema.sets.matchId, match.id))
 
         // Fetch registrations with players from junction table
-        const registration1 = await db
-          .select()
-          .from(schema.registrations)
-          .where(eq(schema.registrations.id, match.registration1Id))
-          .limit(1)
+        // Handle nullable registration IDs for BYE matches in single elimination
+        const registration1 = match.registration1Id
+          ? await db
+              .select()
+              .from(schema.registrations)
+              .where(eq(schema.registrations.id, match.registration1Id))
+              .limit(1)
+          : []
 
-        const registration2 = await db
-          .select()
-          .from(schema.registrations)
-          .where(eq(schema.registrations.id, match.registration2Id))
-          .limit(1)
+        const registration2 = match.registration2Id
+          ? await db
+              .select()
+              .from(schema.registrations)
+              .where(eq(schema.registrations.id, match.registration2Id))
+              .limit(1)
+          : []
 
         const registration1WithPlayers = registration1[0]
           ? await enrichRegistrationWithPlayers(registration1[0])

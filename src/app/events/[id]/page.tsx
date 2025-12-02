@@ -166,7 +166,6 @@ const EventDetailPage = () => {
         <div className='flex flex-wrap gap-2 mt-2'>
           <Badge variant='outline'>{selectedEvent.eventType}</Badge>
           <Badge variant='outline'>{selectedEvent.gender}</Badge>
-          <Badge variant='outline'>{selectedEvent.groupMode}</Badge>
           {selectedEvent.visibility === 'private' && (
             <Badge variant='secondary'>Private</Badge>
           )}
@@ -282,7 +281,8 @@ const EventDetailPage = () => {
                     >
                       <div>
                         <p className='font-medium'>
-                          {reg.players?.map((p) => p.name).join(' & ') || 'Unknown'}
+                          {reg.players?.map((p) => p.name).join(' & ') ||
+                            'Unknown'}
                         </p>
                         {reg.groupId && (
                           <p className='text-sm text-muted-foreground'>
@@ -317,30 +317,19 @@ const EventDetailPage = () => {
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          {canCreate && (
-            <GroupManagement
-              eventId={eventId}
-              groups={groups}
-              registrations={registrations}
-              onGroupCreated={handleRefresh}
-            />
-          )}
-          {!canCreate && groups.length === 0 && (
-            <Card>
-              <CardContent>
-                <p className='text-sm text-muted-foreground'>
-                  No groups created yet
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <GroupManagement
+            eventId={eventId}
+            groups={groups}
+            registrations={registrations}
+            onGroupCreated={handleRefresh}
+            canManage={canCreate}
+          />
         </TabsContent>
 
         <TabsContent value='matches' className='space-y-4'>
           <MatchesView
             matches={matches}
             groups={groups}
-            groupMode={selectedEvent.groupMode}
             canUpdate={canUpdate}
             onMatchUpdate={handleRefresh}
           />

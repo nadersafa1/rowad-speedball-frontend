@@ -123,6 +123,7 @@ export const validateSetPlayed = (
 /**
  * Checks if a player has reached majority and auto-completes the match
  * Returns the winner ID if majority reached, null otherwise
+ * For SE matches, also advances winner to the next match
  */
 export const checkMajorityAndCompleteMatch = async (
   matchId: string,
@@ -188,10 +189,34 @@ export const checkMajorityAndCompleteMatch = async (
       }
     }
 
+    // Handle SE bracket advancement
+    if (match.winnerTo && match.winnerToSlot && winnerId) {
+      await advanceWinnerToNextMatch(match.winnerTo, match.winnerToSlot, winnerId)
+    }
+
     return { winnerId, completed: true }
   }
 
   return { winnerId: null, completed: false }
+}
+
+/**
+ * Advances winner to the next match in SE bracket
+ */
+export const advanceWinnerToNextMatch = async (
+  nextMatchId: string,
+  slot: number,
+  winnerId: string
+): Promise<void> => {
+  const updateField = slot === 1 ? 'registration1Id' : 'registration2Id'
+
+  await db
+    .update(matches)
+    .set({
+      [updateField]: winnerId,
+      updatedAt: new Date(),
+    })
+    .where(eq(matches.id, nextMatchId))
 }
 
 /**

@@ -386,9 +386,6 @@ const MatchDetailPage = () => {
                 <div className='flex items-center gap-3 flex-wrap'>
                   <Badge variant='outline'>{match.event.eventType}</Badge>
                   <Badge variant='outline'>{match.event.gender}</Badge>
-                  {match.event.groupMode === 'multiple' && (
-                    <Badge variant='outline'>Multiple Groups</Badge>
-                  )}
                   {match.event.completed && (
                     <Badge variant='default'>Completed</Badge>
                   )}

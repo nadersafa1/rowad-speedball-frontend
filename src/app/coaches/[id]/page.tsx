@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { User, Edit, Trash2 } from 'lucide-react'
+import { User, Edit, Trash2, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BackButton } from '@/components/ui'
 import {
@@ -137,7 +137,12 @@ const CoachDetailPage = () => {
       {/* Coach Header */}
       <div className='mb-8'>
         <div>
-          <h1 className='text-3xl font-bold'>{selectedCoach.name}</h1>
+          <h1 className='text-3xl font-bold flex items-center gap-2'>
+            {selectedCoach.name}
+            {selectedCoach.userId && (
+              <BadgeCheck className='h-6 w-6 text-blue-500' />
+            )}
+          </h1>
           <p className='text-muted-foreground mt-1'>Coach Details</p>
         </div>
       </div>
