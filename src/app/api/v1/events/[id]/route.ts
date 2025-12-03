@@ -220,7 +220,7 @@ export async function PATCH(
     const hasMatches = existingMatches.length > 0
     const hasPlayedSets = playedSets.length > 0
 
-    // Validate: Cannot change eventType or gender if registrations exist
+    // Validate: Cannot change eventType, gender, minPlayers, or maxPlayers if registrations exist
     if (hasRegistrations) {
       if (
         updateData.eventType !== undefined &&
@@ -237,6 +237,24 @@ export async function PATCH(
       ) {
         return Response.json(
           { message: 'Cannot change gender once registrations exist' },
+          { status: 400 }
+        )
+      }
+      if (
+        updateData.minPlayers !== undefined &&
+        updateData.minPlayers !== eventData.minPlayers
+      ) {
+        return Response.json(
+          { message: 'Cannot change min players once registrations exist' },
+          { status: 400 }
+        )
+      }
+      if (
+        updateData.maxPlayers !== undefined &&
+        updateData.maxPlayers !== eventData.maxPlayers
+      ) {
+        return Response.json(
+          { message: 'Cannot change max players once registrations exist' },
           { status: 400 }
         )
       }
