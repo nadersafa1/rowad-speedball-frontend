@@ -86,11 +86,9 @@ export async function POST(
     let body = {}
     try {
       const text = await request.text()
-      if (text.trim()) {
-        body = JSON.parse(text)
-      }
-    } catch (error) {
-      // If body is empty or invalid, use empty object (seeds is optional)
+      body = text.trim() ? JSON.parse(text) : {}
+    } catch {
+      // If parsing fails, treat as empty body (seeds is optional)
       body = {}
     }
 
@@ -217,20 +215,20 @@ export async function POST(
       }
     }
 
-    // Create sets for each non-BYE match
-    for (const match of createdMatches) {
-      if (!match.bracketMatch.isBye) {
-        for (let setNum = 1; setNum <= event.bestOf; setNum++) {
-          await db.insert(schema.sets).values({
-            matchId: match.id,
-            setNumber: setNum,
-            registration1Score: 0,
-            registration2Score: 0,
-            played: false,
-          })
-        }
-      }
-    }
+    // // Create sets for each non-BYE match
+    // for (const match of createdMatches) {
+    //   if (!match.bracketMatch.isBye) {
+    //     for (let setNum = 1; setNum <= event.bestOf; setNum++) {
+    //       await db.insert(schema.sets).values({
+    //         matchId: match.id,
+    //         setNumber: setNum,
+    //         registration1Score: 0,
+    //         registration2Score: 0,
+    //         played: false,
+    //       })
+    //     }
+    //   }
+    // }
 
     // Fetch created matches with proper structure
     const finalMatches = await db

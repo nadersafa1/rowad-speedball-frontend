@@ -1,7 +1,7 @@
 // Events Store - Single responsibility: Events state management
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
-import type { Event, PaginatedResponse } from '@/types'
+import type { Event, PaginatedResponse, EventFormat } from '@/types'
 import type { EventsStats } from '@/types/api/pagination'
 import { isEventsStats } from '@/lib/utils/stats-type-guards'
 import type { EventType } from '@/types/event-types'
@@ -24,6 +24,7 @@ interface EventsState {
     q?: string
     eventType?: EventType
     gender?: 'male' | 'female' | 'mixed'
+    format?: EventFormat
     visibility?: 'public' | 'private'
     organizationId?: string | null
     sortBy?:
@@ -68,6 +69,7 @@ export const useEventsStore = create<EventsState>((set) => ({
         q: filters.q || undefined,
         eventType: filters.eventType || undefined,
         gender: filters.gender || undefined,
+        format: filters.format || undefined,
         visibility: filters.visibility || undefined,
         organizationId:
           filters.organizationId !== undefined

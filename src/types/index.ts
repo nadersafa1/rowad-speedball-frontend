@@ -16,6 +16,10 @@ export {
 } from './team-level'
 export type { TeamLevel, TeamLevelFilter } from './team-level'
 
+// Re-export event format types from centralized location
+export { EVENT_FORMATS, EVENT_FORMAT_LABELS } from './event-format'
+export type { EventFormat } from './event-format'
+
 // Re-export types from the backend API contract
 export type Player = {
   id: string
@@ -103,8 +107,7 @@ export type AuthResponse = {
 
 // Events types
 import type { EventType } from './event-types'
-
-export type EventFormat = 'groups' | 'single-elimination' | 'groups-knockout'
+import type { EventFormat } from './event-format'
 
 export type Event = {
   id: string

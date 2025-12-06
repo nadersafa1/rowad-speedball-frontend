@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react'
 import EventsTable from './components/events-table'
 import EventsStats from './components/events-stats'
 import type { EventType } from '@/types/event-types'
+import type { EventFormat } from '@/types/event-format'
 
 const EventsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
@@ -25,6 +26,7 @@ const EventsPage = () => {
     q: '',
     eventType: undefined as EventType | undefined,
     gender: undefined as 'male' | 'female' | 'mixed' | undefined,
+    format: undefined as EventFormat | undefined,
     organizationId: undefined as string | null | undefined,
     sortBy: undefined as
       | 'name'
@@ -162,11 +164,15 @@ const EventsPage = () => {
             searchValue={filters.q}
             eventType={filters.eventType}
             gender={filters.gender}
+            format={filters.format}
             onEventTypeChange={(value) =>
               handleFilterChange('eventType', value || 'all')
             }
             onGenderChange={(value) =>
               handleFilterChange('gender', value || 'all')
+            }
+            onFormatChange={(value) =>
+              handleFilterChange('format', value || 'all')
             }
             organizationId={filters.organizationId}
             onOrganizationChange={handleOrganizationChange}
