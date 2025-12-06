@@ -6,7 +6,7 @@ import * as schema from '@/db/schema'
 import { matchesQuerySchema } from '@/types/api/matches.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventReadAuthorization } from '@/lib/event-authorization-helpers'
-import { enrichRegistrationWithPlayers } from '@/lib/registration-helpers'
+import { enrichMatch } from '@/lib/services/match-enrichment.service'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -21,6 +21,9 @@ export async function GET(request: NextRequest) {
   try {
     const { eventId, groupId, round } = parseResult.data
 
+    // Track event data for bestOf (used in response)
+    let eventData: typeof schema.events.$inferSelect | null = null
+
     // Authorization checks
     if (eventId) {
       const event = await db
@@ -33,6 +36,7 @@ export async function GET(request: NextRequest) {
         return Response.json({ message: 'Event not found' }, { status: 404 })
       }
 
+      eventData = event[0]
       const authError = checkEventReadAuthorization(context, event[0])
       if (authError) return authError
     }
@@ -58,6 +62,7 @@ export async function GET(request: NextRequest) {
         return Response.json({ message: 'Event not found' }, { status: 404 })
       }
 
+      eventData = event[0]
       const authError = checkEventReadAuthorization(context, event[0])
       if (authError) return authError
     }
@@ -82,46 +87,33 @@ export async function GET(request: NextRequest) {
 
     const matches = await query
 
-    // Enrich matches with sets and registration data
+    // Enrich matches with sets, registration data, and bestOf using shared service
     const matchesWithData = await Promise.all(
       matches.map(async (match) => {
-        const matchSets = await db
-          .select()
-          .from(schema.sets)
-          .where(eq(schema.sets.matchId, match.id))
-
-        // Fetch registrations with players from junction table
-        // Handle nullable registration IDs for BYE matches in single elimination
-        const registration1 = match.registration1Id
-          ? await db
-              .select()
-              .from(schema.registrations)
-              .where(eq(schema.registrations.id, match.registration1Id))
-              .limit(1)
-          : []
-
-        const registration2 = match.registration2Id
-          ? await db
-              .select()
-              .from(schema.registrations)
-              .where(eq(schema.registrations.id, match.registration2Id))
-              .limit(1)
-          : []
-
-        const registration1WithPlayers = registration1[0]
-          ? await enrichRegistrationWithPlayers(registration1[0])
-          : null
-
-        const registration2WithPlayers = registration2[0]
-          ? await enrichRegistrationWithPlayers(registration2[0])
-          : null
-
-        return {
-          ...match,
-          sets: matchSets,
-          registration1: registration1WithPlayers,
-          registration2: registration2WithPlayers,
+        // Get event for this match (use cached if available, otherwise fetch)
+        let event = eventData
+        if (!event || event.id !== match.eventId) {
+          const eventResult = await db
+            .select()
+            .from(schema.events)
+            .where(eq(schema.events.id, match.eventId))
+            .limit(1)
+          event = eventResult[0]
         }
+
+        if (!event) {
+          // Fallback if event not found (shouldn't happen)
+          return {
+            ...match,
+            sets: [],
+            bestOf: 3,
+            registration1: null,
+            registration2: null,
+          }
+        }
+
+        // Use shared enrichment service
+        return await enrichMatch(match, event)
       })
     )
 

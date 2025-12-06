@@ -53,6 +53,15 @@ const MatchCardHeader = ({
             </div>
           )}
 
+          {/* BYE badge for single-elimination matches */}
+          {(match.isByeMatch ||
+            !match.registration1Id ||
+            !match.registration2Id) && (
+            <Badge variant='secondary' className='text-xs'>
+              BYE
+            </Badge>
+          )}
+
           {isLive && !match.played && (
             <Badge
               variant='default'

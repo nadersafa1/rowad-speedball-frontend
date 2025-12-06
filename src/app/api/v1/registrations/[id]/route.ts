@@ -12,6 +12,15 @@ import {
   checkEventUpdateAuthorization,
   checkEventDeleteAuthorization,
 } from '@/lib/event-authorization-helpers'
+import {
+  addPlayersToRegistration,
+  checkPlayersAlreadyRegistered,
+  enrichRegistrationWithPlayers,
+} from '@/lib/registration-helpers'
+import {
+  validateRegistrationPlayerCount,
+  validateGenderRulesForPlayers,
+} from '@/lib/validations/registration-validation'
 
 export async function PATCH(
   request: NextRequest,
@@ -67,16 +76,140 @@ export async function PATCH(
       return authError
     }
 
+    const eventData = event[0]
+    const { playerIds, ...otherUpdateData } = updateData
+
+    // Handle player updates if provided
+    if (playerIds) {
+      // Validate player count based on min/max configuration
+      const countValidation = validateRegistrationPlayerCount(
+        eventData.eventType as
+          | 'solo'
+          | 'singles'
+          | 'doubles'
+          | 'singles-teams'
+          | 'solo-teams'
+          | 'relay',
+        playerIds.length,
+        eventData.minPlayers,
+        eventData.maxPlayers
+      )
+      if (!countValidation.valid) {
+        return Response.json(
+          { message: countValidation.error },
+          { status: 400 }
+        )
+      }
+
+      // Check for duplicate player IDs
+      const uniquePlayerIds = new Set(playerIds)
+      if (uniquePlayerIds.size !== playerIds.length) {
+        return Response.json(
+          { message: 'Duplicate player IDs are not allowed' },
+          { status: 400 }
+        )
+      }
+
+      // Fetch all players
+      const playersData = await Promise.all(
+        playerIds.map(async (playerId) => {
+          const player = await db
+            .select()
+            .from(schema.players)
+            .where(eq(schema.players.id, playerId))
+            .limit(1)
+          return player[0] || null
+        })
+      )
+
+      // Check all players exist
+      const missingIndex = playersData.findIndex((p) => !p)
+      if (missingIndex !== -1) {
+        return Response.json(
+          { message: `Player ${missingIndex + 1} not found` },
+          { status: 404 }
+        )
+      }
+
+      // Validate gender rules
+      const genders = playersData.map((p) => p!.gender as 'male' | 'female')
+      const genderValidation = validateGenderRulesForPlayers(
+        eventData.gender as 'male' | 'female' | 'mixed',
+        genders,
+        eventData.eventType as
+          | 'solo'
+          | 'singles'
+          | 'doubles'
+          | 'singles-teams'
+          | 'solo-teams'
+          | 'relay'
+      )
+      if (!genderValidation.valid) {
+        return Response.json(
+          { message: genderValidation.error },
+          { status: 400 }
+        )
+      }
+
+      // Check for duplicate registrations (excluding current registration)
+      const duplicateCheck = await checkPlayersAlreadyRegistered(
+        eventData.id,
+        playerIds
+      )
+      if (duplicateCheck.registered) {
+        // Check if the duplicate is from the same registration (allowed)
+        const currentRegistrationPlayers = await db
+          .select({ playerId: schema.registrationPlayers.playerId })
+          .from(schema.registrationPlayers)
+          .where(eq(schema.registrationPlayers.registrationId, id))
+
+        const currentPlayerIds = new Set(
+          currentRegistrationPlayers.map((rp) => rp.playerId)
+        )
+
+        // If duplicate player is not in current registration, it's an error
+        if (
+          duplicateCheck.playerId &&
+          !currentPlayerIds.has(duplicateCheck.playerId)
+        ) {
+          return Response.json(
+            { message: 'Player(s) already registered for this event' },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Update players in transaction
+      await db.transaction(async (tx) => {
+        // Delete existing players
+        await tx
+          .delete(schema.registrationPlayers)
+          .where(eq(schema.registrationPlayers.registrationId, id))
+
+        // Add new players
+        const values = playerIds.map((playerId, index) => ({
+          registrationId: id,
+          playerId,
+          position: index + 1,
+        }))
+        await tx.insert(schema.registrationPlayers).values(values)
+      })
+    }
+
+    // Update other registration fields if provided
     const result = await db
       .update(schema.registrations)
       .set({
-        ...updateData,
+        ...otherUpdateData,
         updatedAt: new Date(),
       })
       .where(eq(schema.registrations.id, id))
       .returning()
 
-    return Response.json(result[0])
+    // Return enriched registration with players
+    const enrichedRegistration = await enrichRegistrationWithPlayers(result[0])
+
+    return Response.json(enrichedRegistration)
   } catch (error) {
     console.error('Error updating registration:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

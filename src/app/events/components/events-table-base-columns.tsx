@@ -1,130 +1,130 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { Event } from "@/types";
-import { SortableHeader } from "./events-table-sortable-header";
+import { ColumnDef } from '@tanstack/react-table'
+import { Event } from '@/types'
+import { SortableHeader } from './events-table-sortable-header'
 import {
   NameCell,
   EventTypeCell,
   GenderCell,
+  FormatCell,
   CompletedCell,
   RegistrationsCountCell,
   LastMatchPlayedDateCell,
-} from "./events-table-cell-renderers";
+} from './events-table-cell-renderers'
 
 export const createBaseColumns = (
   sortBy?: string,
-  sortOrder?: "asc" | "desc",
+  sortOrder?: 'asc' | 'desc',
   onSort?: (columnId: string) => void
 ): ColumnDef<Event>[] => [
   {
-    accessorKey: "name",
-    id: "name",
+    accessorKey: 'name',
+    id: 'name',
     enableHiding: false,
     header: () => (
       <SortableHeader
-        label="Name"
+        label='Name'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="name"
+        field='name'
         onSort={onSort}
       />
     ),
     cell: ({ row }) => <NameCell event={row.original} />,
   },
   {
-    accessorKey: "eventType",
-    id: "eventType",
+    accessorKey: 'eventType',
+    id: 'eventType',
     header: () => (
       <SortableHeader
-        label="Type"
+        label='Type'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="eventType"
+        field='eventType'
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => (
-      <EventTypeCell eventType={row.getValue("eventType")} />
-    ),
+    cell: ({ row }) => <EventTypeCell eventType={row.getValue('eventType')} />,
   },
   {
-    accessorKey: "gender",
-    id: "gender",
+    accessorKey: 'gender',
+    id: 'gender',
     header: () => (
       <SortableHeader
-        label="Gender"
+        label='Gender'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="gender"
+        field='gender'
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => <GenderCell gender={row.getValue("gender")} />,
+    cell: ({ row }) => <GenderCell gender={row.getValue('gender')} />,
   },
   {
-    accessorKey: "completed",
-    id: "completed",
+    accessorKey: 'format',
+    id: 'format',
+    header: () => <div>Format</div>,
+    cell: ({ row }) => <FormatCell eventFormat={row.getValue('format')} />,
+  },
+  {
+    accessorKey: 'completed',
+    id: 'completed',
     header: () => (
       <SortableHeader
-        label="Completed"
+        label='Completed'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="completed"
+        field='completed'
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => (
-      <CompletedCell completed={row.getValue("completed")} />
-    ),
+    cell: ({ row }) => <CompletedCell completed={row.getValue('completed')} />,
   },
   {
-    accessorKey: "organizationName",
-    id: "organizationName",
+    accessorKey: 'organizationName',
+    id: 'organizationName',
     header: () => <div>Club</div>,
     cell: ({ row }) => (
-      <span className="text-sm">
-        {row.getValue("organizationName") || "—"}
-      </span>
+      <span className='text-sm'>{row.getValue('organizationName') || '—'}</span>
     ),
   },
   {
-    accessorKey: "bestOf",
-    id: "bestOf",
+    accessorKey: 'bestOf',
+    id: 'bestOf',
     header: () => <div>Best Of</div>,
     cell: ({ row }) => (
-      <span className="text-sm">{row.getValue("bestOf")}</span>
+      <span className='text-sm'>{row.getValue('bestOf')}</span>
     ),
   },
   {
-    accessorKey: "registrationsCount",
-    id: "registrationsCount",
+    accessorKey: 'registrationsCount',
+    id: 'registrationsCount',
     header: () => (
       <SortableHeader
-        label="Registrations"
+        label='Registrations'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="registrationsCount"
+        field='registrationsCount'
         onSort={onSort}
       />
     ),
     cell: ({ row }) => (
-      <RegistrationsCountCell count={row.getValue("registrationsCount")} />
+      <RegistrationsCountCell count={row.getValue('registrationsCount')} />
     ),
   },
   {
-    accessorKey: "lastMatchPlayedDate",
-    id: "lastMatchPlayedDate",
+    accessorKey: 'lastMatchPlayedDate',
+    id: 'lastMatchPlayedDate',
     header: () => (
       <SortableHeader
-        label="Last Match"
+        label='Last Match'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field="lastMatchPlayedDate"
+        field='lastMatchPlayedDate'
         onSort={onSort}
       />
     ),
     cell: ({ row }) => (
-      <LastMatchPlayedDateCell date={row.getValue("lastMatchPlayedDate")} />
+      <LastMatchPlayedDateCell date={row.getValue('lastMatchPlayedDate')} />
     ),
   },
-];
-
+]

@@ -6,10 +6,11 @@ import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventUpdateAuthorization } from '@/lib/event-authorization-helpers'
 import {
-  generateSingleEliminationBracket,
-  processByeAdvancements,
-  SeedMapping,
-} from '@/lib/utils/single-elimination'
+  generateBracket,
+  validateEventForBracketGeneration,
+  checkBracketExists,
+  validateSeeds,
+} from '@/lib/services/bracket-service'
 
 // Request body schema
 const generateBracketSchema = z.object({
@@ -60,22 +61,15 @@ export async function POST(
       return authError
     }
 
-    // Validate event format is single-elimination
-    if (event.format !== 'single-elimination') {
-      return Response.json(
-        { message: 'Bracket generation is only available for SE events' },
-        { status: 400 }
-      )
+    // Validate event format supports bracket generation
+    const formatValidation = validateEventForBracketGeneration(event.format)
+    if (!formatValidation.valid) {
+      return Response.json({ message: formatValidation.error }, { status: 400 })
     }
 
-    // Check if matches already exist (prevent regeneration)
-    const existingMatches = await db
-      .select({ id: schema.matches.id })
-      .from(schema.matches)
-      .where(eq(schema.matches.eventId, eventId))
-      .limit(1)
-
-    if (existingMatches.length > 0) {
+    // Check if bracket already exists
+    const bracketExists = await checkBracketExists(eventId)
+    if (bracketExists) {
       return Response.json(
         { message: 'Bracket already generated. Delete matches to regenerate.' },
         { status: 400 }
@@ -86,11 +80,9 @@ export async function POST(
     let body = {}
     try {
       const text = await request.text()
-      if (text.trim()) {
-        body = JSON.parse(text)
-      }
-    } catch (error) {
-      // If body is empty or invalid, use empty object (seeds is optional)
+      body = text.trim() ? JSON.parse(text) : {}
+    } catch {
+      // If parsing fails, treat as empty body (seeds is optional)
       body = {}
     }
 
@@ -116,135 +108,36 @@ export async function POST(
     }
 
     // Validate seeds if provided
-    if (seeds && seeds.length > 0) {
-      const registrationIds = new Set(registrations.map((r) => r.id))
-      for (const seed of seeds) {
-        if (!registrationIds.has(seed.registrationId)) {
-          return Response.json(
-            {
-              message: `Invalid registration ID in seeds: ${seed.registrationId}`,
-            },
-            { status: 400 }
-          )
-        }
-      }
-    }
-
-    // Generate bracket
     const registrationIds = registrations.map((r) => r.id)
-    const seedMappings: SeedMapping[] | undefined = seeds
-
-    const {
-      matches: bracketMatches,
-      totalRounds,
-      bracketSize,
-    } = generateSingleEliminationBracket(
-      registrationIds,
-      seedMappings,
-      event.hasThirdPlaceMatch ?? false
-    )
-
-    // Create matches in database
-    const createdMatches = []
-    const positionToIdMap = new Map<number, string>()
-
-    // First pass: create all matches without winnerTo (to get IDs)
-    for (const bracketMatch of bracketMatches) {
-      const [insertedMatch] = await db
-        .insert(schema.matches)
-        .values({
-          eventId,
-          groupId: null,
-          round: bracketMatch.round,
-          matchNumber: bracketMatch.matchNumber,
-          registration1Id: bracketMatch.registration1Id,
-          registration2Id: bracketMatch.registration2Id,
-          bracketPosition: bracketMatch.bracketPosition,
-          winnerTo: null, // Will update in second pass
-          winnerToSlot: bracketMatch.winnerToSlot,
-          played: bracketMatch.isBye, // BYE matches are auto-played
-          winnerId: bracketMatch.isBye
-            ? bracketMatch.registration1Id ?? bracketMatch.registration2Id
-            : null,
-        })
-        .returning()
-
-      positionToIdMap.set(bracketMatch.bracketPosition, insertedMatch.id)
-      createdMatches.push({
-        ...insertedMatch,
-        bracketMatch,
-      })
-    }
-
-    // Second pass: update winnerTo references
-    for (const bracketMatch of bracketMatches) {
-      if (bracketMatch.winnerTo) {
-        const matchId = positionToIdMap.get(bracketMatch.bracketPosition)
-        const winnerToId = positionToIdMap.get(bracketMatch.winnerTo)
-
-        if (matchId && winnerToId) {
-          await db
-            .update(schema.matches)
-            .set({ winnerTo: winnerToId })
-            .where(eq(schema.matches.id, matchId))
-        }
-      }
-    }
-
-    // Process BYE advancements
-    const byeAdvancements = processByeAdvancements(bracketMatches)
-    for (const [toPosition, advancement] of Array.from(
-      byeAdvancements.entries()
-    )) {
-      const toMatchId = positionToIdMap.get(toPosition)
-      if (toMatchId) {
-        const updateField =
-          advancement.slot === 1 ? 'registration1Id' : 'registration2Id'
-        await db
-          .update(schema.matches)
-          .set({ [updateField]: advancement.registrationId })
-          .where(eq(schema.matches.id, toMatchId))
-      }
-    }
-
-    // Update registrations with seeds if provided
     if (seeds && seeds.length > 0) {
-      for (const seed of seeds) {
-        await db
-          .update(schema.registrations)
-          .set({ seed: seed.seed, updatedAt: new Date() })
-          .where(eq(schema.registrations.id, seed.registrationId))
+      const seedValidation = validateSeeds(seeds, registrationIds)
+      if (!seedValidation.valid) {
+        return Response.json(
+          {
+            message: `Invalid registration ID in seeds: ${seedValidation.invalidId}`,
+          },
+          { status: 400 }
+        )
       }
     }
 
-    // Create sets for each non-BYE match
-    for (const match of createdMatches) {
-      if (!match.bracketMatch.isBye) {
-        for (let setNum = 1; setNum <= event.bestOf; setNum++) {
-          await db.insert(schema.sets).values({
-            matchId: match.id,
-            setNumber: setNum,
-            registration1Score: 0,
-            registration2Score: 0,
-            played: false,
-          })
-        }
-      }
-    }
-
-    // Fetch created matches with proper structure
-    const finalMatches = await db
-      .select()
-      .from(schema.matches)
-      .where(eq(schema.matches.eventId, eventId))
+    // Generate and persist bracket using service
+    const result = await generateBracket(
+      {
+        eventId,
+        seeds,
+        hasThirdPlaceMatch: event.hasThirdPlaceMatch ?? false,
+      },
+      registrationIds
+    )
 
     return Response.json(
       {
         message: 'Bracket generated successfully',
-        totalRounds,
-        bracketSize,
-        matchCount: finalMatches.length,
-        matches: finalMatches,
+        totalRounds: result.totalRounds,
+        bracketSize: result.bracketSize,
+        matchCount: result.matchCount,
+        matches: result.matches,
       },
       { status: 201 }
     )

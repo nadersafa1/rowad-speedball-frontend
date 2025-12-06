@@ -411,13 +411,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const finalFormat = format || 'groups'
+    const isGroupsFormat =
+      finalFormat === 'groups' || finalFormat === 'groups-knockout'
+
     const result = await db
       .insert(schema.events)
       .values({
         name,
         eventType,
         gender,
-        format: format || 'groups',
+        format: finalFormat,
         hasThirdPlaceMatch: hasThirdPlaceMatch || false,
         visibility: visibility || 'public',
         minPlayers: minPlayers || 1,
@@ -426,8 +430,10 @@ export async function POST(request: NextRequest) {
         registrationEndDate: registrationEndDate || null,
         eventDates: eventDates || [],
         bestOf,
-        pointsPerWin: pointsPerWin || 3,
-        pointsPerLoss: pointsPerLoss || 0,
+        // Points are only meaningful for groups format
+        // For single-elimination, set to 0 since they're not used
+        pointsPerWin: isGroupsFormat ? pointsPerWin || 3 : 0,
+        pointsPerLoss: isGroupsFormat ? pointsPerLoss || 0 : 0,
         organizationId: finalOrganizationId,
       })
       .returning()

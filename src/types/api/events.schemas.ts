@@ -2,7 +2,11 @@ import { z } from 'zod'
 import { EVENT_TYPES } from '../event-types'
 
 // Event format types
-export const EVENT_FORMATS = ['groups', 'single-elimination', 'groups-knockout'] as const
+export const EVENT_FORMATS = [
+  'groups',
+  'single-elimination',
+  'groups-knockout',
+] as const
 export type EventFormat = (typeof EVENT_FORMATS)[number]
 
 // Query parameters for GET /events
@@ -77,7 +81,8 @@ export const eventsCreateSchema = z
     }),
     format: z
       .enum(EVENT_FORMATS, {
-        message: 'Format must be groups, single-elimination, or groups-knockout',
+        message:
+          'Format must be groups, single-elimination, or groups-knockout',
       })
       .optional()
       .default('groups'),
@@ -112,8 +117,8 @@ export const eventsCreateSchema = z
         (val) => val % 2 === 1,
         'bestOf must be an odd number (1, 3, 5, 7, etc.)'
       ),
-    pointsPerWin: z.number().int().min(0).optional().default(3),
-    pointsPerLoss: z.number().int().min(0).optional().default(0),
+    pointsPerWin: z.number().int().min(0).optional(),
+    pointsPerLoss: z.number().int().min(0).optional(),
     organizationId: z
       .uuid('Invalid organization ID format')
       .nullable()
@@ -124,6 +129,21 @@ export const eventsCreateSchema = z
     message: 'minPlayers must be less than or equal to maxPlayers',
     path: ['minPlayers'],
   })
+  .refine(
+    (data) => {
+      // Points per win/loss are required only for groups format
+      if (data.format === 'groups' || data.format === 'groups-knockout') {
+        return (
+          data.pointsPerWin !== undefined && data.pointsPerLoss !== undefined
+        )
+      }
+      return true
+    },
+    {
+      message: 'Points per win and loss are required for groups format',
+      path: ['pointsPerWin'],
+    }
+  )
 
 // Update event schema for PATCH /events/:id
 export const eventsUpdateSchema = z
@@ -146,7 +166,8 @@ export const eventsUpdateSchema = z
       .optional(),
     format: z
       .enum(EVENT_FORMATS, {
-        message: 'Format must be groups, single-elimination, or groups-knockout',
+        message:
+          'Format must be groups, single-elimination, or groups-knockout',
       })
       .optional(),
     hasThirdPlaceMatch: z.boolean().optional(),

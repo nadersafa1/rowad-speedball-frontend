@@ -16,10 +16,14 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Table } from '@tanstack/react-table'
-import { Event } from '@/types'
+import { Event, EventFormat, EVENT_FORMATS, EVENT_FORMAT_LABELS } from '@/types'
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
-import { UI_EVENT_TYPES, EVENT_TYPE_LABELS, type EventType } from '@/types/event-types'
+import {
+  UI_EVENT_TYPES,
+  EVENT_TYPE_LABELS,
+  type EventType,
+} from '@/types/event-types'
 
 interface EventsTableControlsProps {
   table: Table<Event>
@@ -27,10 +31,12 @@ interface EventsTableControlsProps {
   onSearchChange?: (value: string) => void
   eventType?: EventType
   gender?: 'male' | 'female' | 'mixed'
+  format?: EventFormat
   organizationId?: string | null
   isSystemAdmin?: boolean
   onEventTypeChange?: (eventType?: EventType) => void
   onGenderChange?: (gender?: 'male' | 'female' | 'mixed') => void
+  onFormatChange?: (format?: EventFormat) => void
   onOrganizationChange?: (organizationId?: string | null) => void
 }
 
@@ -40,10 +46,12 @@ export const EventsTableControls = ({
   onSearchChange,
   eventType,
   gender,
+  format,
   organizationId,
   isSystemAdmin = false,
   onEventTypeChange,
   onGenderChange,
+  onFormatChange,
   onOrganizationChange,
 }: EventsTableControlsProps) => {
   const [organizations, setOrganizations] = useState<
@@ -72,6 +80,7 @@ export const EventsTableControls = ({
     const labels: Record<string, string> = {
       eventType: 'Type',
       gender: 'Gender',
+      format: 'Format',
       completed: 'Completed',
       organizationName: 'Club',
       bestOf: 'Best Of',
@@ -180,6 +189,34 @@ export const EventsTableControls = ({
               <SelectItem value='male'>Male</SelectItem>
               <SelectItem value='female'>Female</SelectItem>
               <SelectItem value='mixed'>Mixed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Format Filter */}
+        <div className='flex-1 w-full md:w-auto'>
+          <Label htmlFor='format' className='block mb-2'>
+            Format
+          </Label>
+          <Select
+            name='format'
+            value={format || 'all'}
+            onValueChange={(value) =>
+              onFormatChange?.(
+                value === 'all' ? undefined : (value as EventFormat)
+              )
+            }
+          >
+            <SelectTrigger className='w-full'>
+              <SelectValue placeholder='Select Format' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>All Formats</SelectItem>
+              {EVENT_FORMATS.map((fmt) => (
+                <SelectItem key={fmt} value={fmt}>
+                  {EVENT_FORMAT_LABELS[fmt]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

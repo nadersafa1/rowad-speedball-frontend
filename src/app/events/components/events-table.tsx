@@ -23,9 +23,11 @@ const EventsTable = ({
   searchValue = '',
   eventType,
   gender,
+  format,
   organizationId,
   onEventTypeChange,
   onGenderChange,
+  onFormatChange,
   onOrganizationChange,
   sortBy,
   sortOrder,
@@ -69,7 +71,15 @@ const EventsTable = ({
         sortOrder,
         handleSort
       ),
-    [canEdit, canDelete, handleEdit, handleDelete, sortBy, sortOrder, handleSort]
+    [
+      canEdit,
+      canDelete,
+      handleEdit,
+      handleDelete,
+      sortBy,
+      sortOrder,
+      handleSort,
+    ]
   )
 
   const { table } = useEventsTable({
@@ -91,10 +101,12 @@ const EventsTable = ({
         onSearchChange={onSearchChange}
         eventType={eventType}
         gender={gender}
+        format={format}
         organizationId={organizationId}
         isSystemAdmin={isSystemAdmin}
         onEventTypeChange={onEventTypeChange}
         onGenderChange={onGenderChange}
+        onFormatChange={onFormatChange}
         onOrganizationChange={onOrganizationChange}
       />
       <div className='rounded-md border overflow-x-auto'>

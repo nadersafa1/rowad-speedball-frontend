@@ -8,21 +8,18 @@ import {
   matchesUpdateSchema,
 } from '@/types/api/matches.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import {
-  validateMatchCompletion,
-  advanceWinnerToNextMatch,
-} from '@/lib/validations/match-validation'
-import {
-  calculateMatchPoints,
-  calculateSetPoints,
-  updateRegistrationStandings,
-} from '@/lib/utils/points-calculation'
-import { updateEventCompletedStatus } from '@/lib/event-helpers'
+import { validateMatchCompletion } from '@/lib/validations/match-validation'
 import {
   checkEventUpdateAuthorization,
   checkEventReadAuthorization,
 } from '@/lib/event-authorization-helpers'
-import { enrichRegistrationWithPlayers } from '@/lib/registration-helpers'
+import {
+  handleMatchCompletion,
+  handleMatchReset,
+  updateGroupCompletionStatus,
+} from '@/lib/services/match-service'
+import { enrichMatch } from '@/lib/services/match-enrichment.service'
+import { updateEventCompletedStatus } from '@/lib/event-helpers'
 
 export async function GET(
   request: NextRequest,
@@ -66,66 +63,8 @@ export async function GET(
       return authError
     }
 
-    // Get sets for the match
-    const matchSets = await db
-      .select()
-      .from(schema.sets)
-      .where(eq(schema.sets.matchId, id))
-
-    // Get group data if match has a groupId
-    let group = null
-    if (match[0].groupId) {
-      const groupResult = await db
-        .select()
-        .from(schema.groups)
-        .where(eq(schema.groups.id, match[0].groupId))
-        .limit(1)
-      group = groupResult[0] || null
-    }
-
-    // Fetch registrations with player data from junction table
-    // Handle nullable registration IDs for BYE matches in SE
-    let registration1WithPlayers = null
-    let registration2WithPlayers = null
-
-    if (match[0].registration1Id) {
-      const registration1 = await db
-        .select()
-        .from(schema.registrations)
-        .where(eq(schema.registrations.id, match[0].registration1Id))
-        .limit(1)
-
-      registration1WithPlayers = registration1[0]
-        ? await enrichRegistrationWithPlayers(registration1[0])
-        : null
-    }
-
-    if (match[0].registration2Id) {
-      const registration2 = await db
-        .select()
-        .from(schema.registrations)
-        .where(eq(schema.registrations.id, match[0].registration2Id))
-        .limit(1)
-
-      registration2WithPlayers = registration2[0]
-        ? await enrichRegistrationWithPlayers(registration2[0])
-        : null
-    }
-
-    // Determine if this is a BYE match
-    const isByeMatch =
-      match[0].registration1Id === null || match[0].registration2Id === null
-
-    return Response.json({
-      ...match[0],
-      sets: matchSets,
-      bestOf: event[0]?.bestOf || 3,
-      registration1: registration1WithPlayers,
-      registration2: registration2WithPlayers,
-      event: event[0] || null,
-      group: group,
-      isByeMatch,
-    })
+    // Return enriched match data using shared service
+    return Response.json(await enrichMatch(match[0], event[0]))
   } catch (error) {
     console.error('Error fetching match:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })
@@ -212,7 +151,9 @@ export async function PATCH(
       // BYE matches should already be marked as played during bracket generation
       if (isByeMatch) {
         return Response.json(
-          { message: 'BYE matches are auto-completed during bracket generation' },
+          {
+            message: 'BYE matches are auto-completed during bracket generation',
+          },
           { status: 400 }
         )
       }
@@ -243,35 +184,7 @@ export async function PATCH(
           ? match.registration1Id!
           : match.registration2Id!
 
-      // Calculate points and update standings (only for groups format)
-      if (eventData.format === 'groups' && match.registration1Id && match.registration2Id) {
-        const matchPoints = calculateMatchPoints(
-          finalWinnerId,
-          match.registration1Id,
-          match.registration2Id,
-          eventData.pointsPerWin,
-          eventData.pointsPerLoss
-        )
-
-        const setResults = calculateSetPoints(
-          allSets.map((s) => ({
-            registration1Score: s.registration1Score,
-            registration2Score: s.registration2Score,
-          })),
-          match.registration1Id,
-          match.registration2Id
-        )
-
-        // Update standings
-        await updateRegistrationStandings(
-          match.registration1Id,
-          match.registration2Id,
-          matchPoints,
-          setResults
-        )
-      }
-
-      // Update match
+      // Update match first
       const updateFields: any = {
         played: true,
         winnerId: finalWinnerId,
@@ -287,41 +200,23 @@ export async function PATCH(
         .where(eq(schema.matches.id, id))
         .returning()
 
-      // Handle SE bracket advancement
-      if (
-        eventData.format === 'single-elimination' &&
-        match.winnerTo &&
-        match.winnerToSlot &&
-        finalWinnerId
-      ) {
-        await advanceWinnerToNextMatch(
-          match.winnerTo,
-          match.winnerToSlot,
-          finalWinnerId
-        )
-      }
+      // Handle format-specific logic via match service
+      await handleMatchCompletion({
+        match: updatedMatch[0],
+        event: eventData,
+        winnerId: finalWinnerId,
+        sets: allSets.map((s) => ({
+          registration1Score: s.registration1Score,
+          registration2Score: s.registration2Score,
+        })),
+      })
 
-      // Update group completed status if match belongs to a group
-      if (match.groupId) {
-        const groupMatches = await db
-          .select()
-          .from(schema.matches)
-          .where(eq(schema.matches.groupId, match.groupId))
-
-        const allMatchesPlayed = groupMatches.every((m) => m.played)
-
-        // Update group completed flag
-        await db
-          .update(schema.groups)
-          .set({ completed: allMatchesPlayed, updatedAt: new Date() })
-          .where(eq(schema.groups.id, match.groupId))
-      }
-
-      // Always recalculate event completion status based on all matches
-      await updateEventCompletedStatus(match.eventId)
-
-      return Response.json(updatedMatch[0])
+      // Return enriched match data (consistent with GET)
+      return Response.json(await enrichMatch(updatedMatch[0], eventData))
     } else if (updateData.played === false) {
+      // Handle format-specific reset logic via match service
+      await handleMatchReset(match, eventData)
+
       // Allow unmarking as played (admin only)
       const updatedMatch = await db
         .update(schema.matches)
@@ -333,29 +228,8 @@ export async function PATCH(
         .where(eq(schema.matches.id, id))
         .returning()
 
-      // Update group completed status if match belongs to a group
-      if (match.groupId) {
-        const groupMatches = await db
-          .select()
-          .from(schema.matches)
-          .where(eq(schema.matches.groupId, match.groupId))
-
-        const allMatchesPlayed = groupMatches.every((m) => m.played)
-
-        // Update group completed flag
-        await db
-          .update(schema.groups)
-          .set({
-            completed: allMatchesPlayed,
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.groups.id, match.groupId))
-      }
-
-      // Always recalculate event completion status based on all matches
-      await updateEventCompletedStatus(match.eventId)
-
-      return Response.json(updatedMatch[0])
+      // Return enriched match data (consistent with GET)
+      return Response.json(await enrichMatch(updatedMatch[0], eventData))
     } else {
       // Update other fields (matchDate, winnerId, etc.)
       const updateFields: any = {
@@ -374,10 +248,11 @@ export async function PATCH(
         .where(eq(schema.matches.id, id))
         .returning()
 
-      return Response.json(updatedMatch[0])
+      // Return enriched match data (consistent with GET)
+      return Response.json(await enrichMatch(updatedMatch[0], eventData))
     }
 
-    return Response.json(match)
+    return Response.json(await enrichMatch(match, eventData))
   } catch (error) {
     console.error('Error updating match:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

@@ -1,80 +1,92 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { io, Socket } from 'socket.io-client'
+import { useEffect, useCallback } from 'react'
+import { io } from 'socket.io-client'
 import { authClient } from '@/lib/auth-client'
+import { useSocketStore } from '@/store/socket-store'
+import { SOCKET_EVENTS, getSocketServerUrl } from '@/lib/socket'
+import type {
+  JoinMatchPayload,
+  LeaveMatchPayload,
+  GetMatchPayload,
+  CreateSetPayload,
+  UpdateSetScorePayload,
+  MarkSetPlayedPayload,
+  UpdateMatchPayload,
+} from '@/lib/socket'
 
-const SOCKET_SERVER_URL =
-  process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || 'http://localhost:3001'
+/**
+ * Global socket hook for WebSocket connection management.
+ *
+ * Provides:
+ * - Automatic connection with auth token
+ * - Reconnection handling
+ * - Match-related actions (join, leave, getMatch, etc.)
+ * - Event listener factories
+ *
+ * @example
+ * ```tsx
+ * const { socket, connected, joinMatch, getMatch } = useSocket()
+ *
+ * useEffect(() => {
+ *   if (connected) {
+ *     getMatch(matchId)
+ *     socket.on('match-data', handleMatchData)
+ *   }
+ * }, [connected])
+ * ```
+ */
+export const useSocket = () => {
+  const {
+    socket,
+    connected,
+    error,
+    isConnecting,
+    setSocket,
+    setConnected,
+    setError,
+    setIsConnecting,
+    reset,
+  } = useSocketStore()
 
-// Socket event names (matching backend)
-const SOCKET_EVENTS = {
-  JOIN_MATCH: 'join-match',
-  LEAVE_MATCH: 'leave-match',
-  UPDATE_SET_SCORE: 'update-set-score',
-  UPDATE_MATCH: 'update-match',
-  CREATE_SET: 'create-set',
-  MATCH_SCORE_UPDATED: 'match-score-updated',
-  MATCH_UPDATED: 'match-updated',
-  SET_COMPLETED: 'set-completed',
-  MATCH_COMPLETED: 'match-completed',
-  SET_CREATED: 'set-created',
-  ERROR: 'err',
-  CONNECT_SUCCESS: 'connect-success',
-} as const
-
-interface UseSocketReturn {
-  socket: Socket | null
-  connected: boolean
-  error: string | null
-  joinMatch: (matchId: string) => void
-  leaveMatch: (matchId: string) => void
-  createSet: (matchId: string, setNumber?: number) => Promise<void>
-  updateSetScore: (
-    setId: string,
-    registration1Score: number,
-    registration2Score: number,
-    played?: boolean
-  ) => Promise<void>
-  updateMatch: (
-    matchId: string,
-    data: { played?: boolean; matchDate?: string }
-  ) => Promise<void>
-  onSetCreated: (callback: (data: any) => void) => (() => void) | undefined
-  onScoreUpdated: (callback: (data: any) => void) => (() => void) | undefined
-  onSetCompleted: (callback: (data: any) => void) => (() => void) | undefined
-  onMatchCompleted: (callback: (data: any) => void) => (() => void) | undefined
-  onMatchUpdated: (callback: (data: any) => void) => (() => void) | undefined
-  onError: (callback: (error: string) => void) => (() => void) | undefined
-}
-
-export const useSocket = (): UseSocketReturn => {
-  const [socket, setSocket] = useState<Socket | null>(null)
-  const [connected, setConnected] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const socketRef = useRef<Socket | null>(null)
-
+  // Initialize socket connection
   useEffect(() => {
+    // If socket exists and is connected, nothing to do
+    if (socket?.connected) {
+      if (!connected) {
+        setConnected(true)
+      }
+      return
+    }
+
+    // If socket exists but disconnected, try to reconnect
+    if (socket && !socket.connected) {
+      socket.connect()
+      return
+    }
+
+    // If already connecting, wait
+    if (isConnecting) return
+
     const initSocket = async () => {
+      setIsConnecting(true)
+      setError(null)
+
       try {
-        // Get session from better-auth
         const session = await authClient.getSession()
+
         if (!session?.data?.session?.token) {
           setError('No session token available')
+          setIsConnecting(false)
           return
         }
 
         const token = session.data.session.token
+        const serverUrl = getSocketServerUrl()
 
-        // Create socket connection with auth token
-        const newSocket = io(SOCKET_SERVER_URL, {
-          auth: {
-            authorization: token,
-            token: token,
-          },
-          extraHeaders: {
-            Authorization: token,
-          },
+        const newSocket = io(serverUrl, {
+          auth: { authorization: token, token },
+          extraHeaders: { Authorization: token },
           transports: ['websocket', 'polling'],
           reconnection: true,
           reconnectionDelay: 1000,
@@ -82,71 +94,100 @@ export const useSocket = (): UseSocketReturn => {
           withCredentials: true,
         })
 
+        // Connection events
         newSocket.on('connect', () => {
-          console.log('Socket connected')
-          setConnected(true)
           setError(null)
         })
 
+        newSocket.on('connect_error', (err) => {
+          setError(`Connection error: ${err.message}`)
+          setIsConnecting(false)
+        })
+
         newSocket.on('disconnect', () => {
-          console.log('Socket disconnected')
           setConnected(false)
         })
 
-        newSocket.on(SOCKET_EVENTS.CONNECT_SUCCESS, (data) => {
-          console.log('Socket connection success:', data)
+        newSocket.on('reconnect_failed', () => {
+          setError('Failed to reconnect to server')
+        })
+
+        newSocket.on(SOCKET_EVENTS.CONNECT_SUCCESS, () => {
           setConnected(true)
+          setError(null)
+          setIsConnecting(false)
         })
 
         newSocket.on(SOCKET_EVENTS.ERROR, (data) => {
-          console.error('Socket error:', data)
           setError(data.message || 'Socket error occurred')
         })
 
-        socketRef.current = newSocket
         setSocket(newSocket)
-
-        return () => {
-          newSocket.close()
-          socketRef.current = null
-        }
       } catch (err) {
-        console.error('Failed to initialize socket:', err)
         setError(err instanceof Error ? err.message : 'Failed to connect')
+        setIsConnecting(false)
       }
     }
 
     initSocket()
-  }, [])
+  }, [
+    socket,
+    connected,
+    isConnecting,
+    setSocket,
+    setConnected,
+    setError,
+    setIsConnecting,
+  ])
 
-  const joinMatch = useCallback(
-    (matchId: string) => {
-      if (socket && connected) {
-        socket.emit(SOCKET_EVENTS.JOIN_MATCH, { matchId })
+  // Note: We intentionally do NOT close the socket on component unmount
+  // The socket connection should persist across page navigations in the SPA
+  // Socket will be closed when the browser tab is closed or on logout
+
+  // Emit helpers
+  const emit = useCallback(
+    (event: string, data: unknown) => {
+      if (!socket || !connected) {
+        console.warn(`[Socket] Cannot emit ${event} - not connected`)
+        return false
       }
+      socket.emit(event, data)
+      return true
     },
     [socket, connected]
   )
 
+  // Actions
+  const joinMatch = useCallback(
+    (matchId: string) =>
+      emit(SOCKET_EVENTS.JOIN_MATCH, { matchId } as JoinMatchPayload),
+    [emit]
+  )
+
   const leaveMatch = useCallback(
-    (matchId: string) => {
-      if (socket && connected) {
-        socket.emit(SOCKET_EVENTS.LEAVE_MATCH, { matchId })
-      }
-    },
-    [socket, connected]
+    (matchId: string) =>
+      emit(SOCKET_EVENTS.LEAVE_MATCH, { matchId } as LeaveMatchPayload),
+    [emit]
+  )
+
+  const getMatch = useCallback(
+    (matchId: string) =>
+      emit(SOCKET_EVENTS.GET_MATCH, { matchId } as GetMatchPayload),
+    [emit]
   )
 
   const createSet = useCallback(
     async (matchId: string, setNumber?: number) => {
-      if (!socket || !connected) {
+      if (
+        !emit(SOCKET_EVENTS.CREATE_SET, {
+          matchId,
+          setNumber,
+        } as CreateSetPayload)
+      ) {
         throw new Error('Socket not connected')
       }
-
-      socket.emit(SOCKET_EVENTS.CREATE_SET, { matchId, setNumber })
-      console.log('createSet', matchId, setNumber)
     },
-    [socket, connected]
+    [emit]
   )
 
   const updateSetScore = useCallback(
@@ -156,98 +197,47 @@ export const useSocket = (): UseSocketReturn => {
       registration2Score: number,
       played?: boolean
     ) => {
-      if (!socket || !connected) {
-        throw new Error('Socket not connected')
-      }
-
-      socket.emit(SOCKET_EVENTS.UPDATE_SET_SCORE, {
+      const payload: UpdateSetScorePayload = {
         setId,
         registration1Score,
         registration2Score,
         played,
-      })
+      }
+      if (!emit(SOCKET_EVENTS.UPDATE_SET_SCORE, payload)) {
+        throw new Error('Socket not connected')
+      }
     },
-    [socket, connected]
+    [emit]
+  )
+
+  const markSetPlayed = useCallback(
+    async (setId: string) => {
+      if (
+        !emit(SOCKET_EVENTS.MARK_SET_PLAYED, { setId } as MarkSetPlayedPayload)
+      ) {
+        throw new Error('Socket not connected')
+      }
+    },
+    [emit]
   )
 
   const updateMatch = useCallback(
     async (matchId: string, data: { played?: boolean; matchDate?: string }) => {
-      if (!socket || !connected) {
+      const payload: UpdateMatchPayload = { matchId, ...data }
+      if (!emit(SOCKET_EVENTS.UPDATE_MATCH, payload)) {
         throw new Error('Socket not connected')
       }
-
-      socket.emit(SOCKET_EVENTS.UPDATE_MATCH, {
-        matchId,
-        ...data,
-      })
     },
-    [socket, connected]
+    [emit]
   )
 
-  const onSetCreated = useCallback(
-    (callback: (data: any) => void) => {
+  // Event listeners
+  const createListener = useCallback(
+    (event: string) => (callback: (data: any) => void) => {
       if (!socket) return
-      socket.on(SOCKET_EVENTS.SET_CREATED, callback)
+      socket.on(event, callback)
       return () => {
-        socket.off(SOCKET_EVENTS.SET_CREATED, callback)
-      }
-    },
-    [socket]
-  )
-
-  const onScoreUpdated = useCallback(
-    (callback: (data: any) => void) => {
-      if (!socket) return
-      socket.on(SOCKET_EVENTS.MATCH_SCORE_UPDATED, callback)
-      return () => {
-        socket.off(SOCKET_EVENTS.MATCH_SCORE_UPDATED, callback)
-      }
-    },
-    [socket]
-  )
-
-  const onSetCompleted = useCallback(
-    (callback: (data: any) => void) => {
-      if (!socket) return
-      socket.on(SOCKET_EVENTS.SET_COMPLETED, callback)
-      return () => {
-        socket.off(SOCKET_EVENTS.SET_COMPLETED, callback)
-      }
-    },
-    [socket]
-  )
-
-  const onMatchCompleted = useCallback(
-    (callback: (data: any) => void) => {
-      if (!socket) return
-      socket.on(SOCKET_EVENTS.MATCH_COMPLETED, callback)
-      return () => {
-        socket.off(SOCKET_EVENTS.MATCH_COMPLETED, callback)
-      }
-    },
-    [socket]
-  )
-
-  const onMatchUpdated = useCallback(
-    (callback: (data: any) => void) => {
-      if (!socket) return
-      socket.on(SOCKET_EVENTS.MATCH_UPDATED, callback)
-      return () => {
-        socket.off(SOCKET_EVENTS.MATCH_UPDATED, callback)
-      }
-    },
-    [socket]
-  )
-
-  const onError = useCallback(
-    (callback: (error: string) => void) => {
-      if (!socket) return
-      const errorHandler = (data: any) => {
-        callback(data.message || 'Socket error')
-      }
-      socket.on(SOCKET_EVENTS.ERROR, errorHandler)
-      return () => {
-        socket.off(SOCKET_EVENTS.ERROR, errorHandler)
+        socket.off(event, callback)
       }
     },
     [socket]
@@ -257,16 +247,22 @@ export const useSocket = (): UseSocketReturn => {
     socket,
     connected,
     error,
+    isConnecting,
+    // Actions
     joinMatch,
     leaveMatch,
+    getMatch,
     createSet,
     updateSetScore,
+    markSetPlayed,
     updateMatch,
-    onSetCreated,
-    onScoreUpdated,
-    onSetCompleted,
-    onMatchCompleted,
-    onMatchUpdated,
-    onError,
+    // Listeners
+    onMatchData: createListener(SOCKET_EVENTS.MATCH_DATA),
+    onSetCreated: createListener(SOCKET_EVENTS.SET_CREATED),
+    onScoreUpdated: createListener(SOCKET_EVENTS.MATCH_SCORE_UPDATED),
+    onSetPlayed: createListener(SOCKET_EVENTS.SET_PLAYED),
+    onMatchCompleted: createListener(SOCKET_EVENTS.MATCH_COMPLETED),
+    onMatchUpdated: createListener(SOCKET_EVENTS.MATCH_UPDATED),
+    onError: createListener(SOCKET_EVENTS.ERROR),
   }
 }

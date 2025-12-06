@@ -74,6 +74,7 @@ export const calculateSetPoints = (
 
 /**
  * Updates registration standings after a match
+ * Uses a transaction to ensure both updates succeed or fail together
  */
 export const updateRegistrationStandings = async (
   registration1Id: string,
@@ -91,8 +92,9 @@ export const updateRegistrationStandings = async (
     registration2SetsLost: number
   }
 ): Promise<void> => {
+  await db.transaction(async (tx) => {
   // Update registration 1
-  const reg1Result = await db
+    const reg1Result = await tx
     .select()
     .from(registrations)
     .where(eq(registrations.id, registration1Id))
@@ -100,7 +102,7 @@ export const updateRegistrationStandings = async (
 
   if (reg1Result.length > 0) {
     const reg1 = reg1Result[0]
-    await db
+      await tx
       .update(registrations)
       .set({
         matchesWon: reg1.matchesWon + (matchResult.registration1Won ? 1 : 0),
@@ -114,7 +116,7 @@ export const updateRegistrationStandings = async (
   }
 
   // Update registration 2
-  const reg2Result = await db
+    const reg2Result = await tx
     .select()
     .from(registrations)
     .where(eq(registrations.id, registration2Id))
@@ -122,7 +124,7 @@ export const updateRegistrationStandings = async (
 
   if (reg2Result.length > 0) {
     const reg2 = reg2Result[0]
-    await db
+      await tx
       .update(registrations)
       .set({
         matchesWon: reg2.matchesWon + (matchResult.registration2Won ? 1 : 0),
@@ -134,4 +136,5 @@ export const updateRegistrationStandings = async (
       })
       .where(eq(registrations.id, registration2Id))
   }
+  })
 }

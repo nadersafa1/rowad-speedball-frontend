@@ -2,6 +2,7 @@
 import type { PaginatedResponse } from '@/types/api/pagination'
 import type { OrganizationContext } from '@/lib/organization-helpers'
 import type { EventType } from '@/types/event-types'
+import type { EventFormat } from '@/types/event-format'
 import type { TeamLevel } from '@/types/team-level'
 
 export class ApiClient {
@@ -276,6 +277,7 @@ export class ApiClient {
     q?: string
     eventType?: EventType
     gender?: 'male' | 'female' | 'mixed'
+    format?: EventFormat
     visibility?: 'public' | 'private'
     organizationId?: string | null
     sortBy?:
@@ -296,6 +298,7 @@ export class ApiClient {
     if (params?.q) searchParams.set('q', params.q)
     if (params?.eventType) searchParams.set('eventType', params.eventType)
     if (params?.gender) searchParams.set('gender', params.gender)
+    if (params?.format) searchParams.set('format', params.format)
     if (params?.visibility) searchParams.set('visibility', params.visibility)
     if (params?.organizationId !== undefined) {
       if (params.organizationId === null) {
@@ -334,6 +337,22 @@ export class ApiClient {
   async deleteEvent(id: string) {
     return this.request(`/events/${id}`, {
       method: 'DELETE',
+    })
+  }
+
+  async generateBracket(
+    eventId: string,
+    seeds?: Array<{ registrationId: string; seed: number }>
+  ) {
+    return this.request(`/events/${eventId}/generate-bracket`, {
+      method: 'POST',
+      body: seeds ? JSON.stringify({ seeds }) : undefined,
+    })
+  }
+
+  async resetBracket(eventId: string) {
+    return this.request(`/events/${eventId}/reset-bracket`, {
+      method: 'POST',
     })
   }
 

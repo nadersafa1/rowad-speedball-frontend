@@ -9,12 +9,8 @@ import {
   validateSetPlayed,
   checkMajorityAndCompleteMatch,
 } from '@/lib/validations/match-validation'
-import {
-  calculateMatchPoints,
-  calculateSetPoints,
-  updateRegistrationStandings,
-} from '@/lib/utils/points-calculation'
 import { checkEventUpdateAuthorization } from '@/lib/event-authorization-helpers'
+import { handleMatchCompletion } from '@/lib/services/match-service'
 
 export async function PATCH(
   request: NextRequest,
@@ -155,7 +151,7 @@ export async function PATCH(
       playedSetsData
     )
 
-    // If match was auto-completed, update standings
+    // If match was auto-completed, handle format-specific logic via match service
     if (completionResult.completed && completionResult.winnerId) {
       const updatedMatch = await db
         .select()
@@ -164,39 +160,15 @@ export async function PATCH(
         .limit(1)
 
       if (updatedMatch.length > 0) {
-        const matchData = updatedMatch[0]
-
-        // Calculate points and update standings (only for groups format)
-        // Single-elimination matches don't use points/standings
-        if (
-          event[0].format === 'groups' &&
-          matchData.registration1Id &&
-          matchData.registration2Id
-        ) {
-          const matchPoints = calculateMatchPoints(
-            completionResult.winnerId,
-            matchData.registration1Id,
-            matchData.registration2Id,
-            event[0].pointsPerWin,
-            event[0].pointsPerLoss
-          )
-
-          const setResults = calculateSetPoints(
-            updatedSets.map((s) => ({
+        await handleMatchCompletion({
+          match: updatedMatch[0],
+          event: event[0],
+          winnerId: completionResult.winnerId,
+          sets: updatedSets.map((s) => ({
               registration1Score: s.registration1Score,
               registration2Score: s.registration2Score,
             })),
-            matchData.registration1Id,
-            matchData.registration2Id
-          )
-
-          await updateRegistrationStandings(
-            matchData.registration1Id,
-            matchData.registration2Id,
-            matchPoints,
-            setResults
-          )
-        }
+        })
       }
     }
 
