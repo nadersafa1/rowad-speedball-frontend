@@ -26,6 +26,10 @@ export const registrationsUpdateSchema = z
   .object({
     groupId: z.uuid('Invalid group ID format').nullable().optional(),
     qualified: z.boolean().optional(),
+    playerIds: z
+      .array(z.uuid('Invalid player ID format'))
+      .min(1, 'At least one player is required')
+      .optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,

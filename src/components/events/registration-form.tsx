@@ -16,6 +16,7 @@ import {
 import { useRegistrationsStore } from '@/store/registrations-store'
 import { useEffect, useMemo } from 'react'
 import PlayerCombobox from '@/components/players/player-combobox'
+import type { Registration } from '@/types'
 import {
   DialogContent,
   DialogDescription,
@@ -45,6 +46,7 @@ interface RegistrationFormProps {
   eventGender: 'male' | 'female' | 'mixed'
   minPlayers: number
   maxPlayers: number
+  registration?: Registration | null
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -54,11 +56,13 @@ const RegistrationForm = ({
   eventGender,
   minPlayers,
   maxPlayers,
+  registration,
   onSuccess,
   onCancel,
 }: RegistrationFormProps) => {
   const {
     createRegistration,
+    updateRegistration,
     isLoading,
     error,
     clearError,
@@ -66,6 +70,7 @@ const RegistrationForm = ({
     fetchRegistrations,
   } = useRegistrationsStore()
 
+  const isEditing = !!registration
 
   const schema = useMemo(
     () => createRegistrationSchema(minPlayers, maxPlayers),
@@ -75,9 +80,11 @@ const RegistrationForm = ({
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      players: Array(minPlayers)
-        .fill(null)
-        .map(() => ({ playerId: '' })),
+      players: registration?.players
+        ? registration.players.map((p) => ({ playerId: p.id }))
+        : Array(minPlayers)
+            .fill(null)
+            .map(() => ({ playerId: '' })),
     },
   })
 
@@ -97,15 +104,15 @@ const RegistrationForm = ({
   const excludedPlayerIds = useMemo(() => {
     const excluded: string[] = []
 
-    // Exclude players from existing registrations
+    // Exclude players from existing registrations (excluding current registration if editing)
     registrations.forEach((reg) => {
-      if (reg.players && reg.players.length > 0) {
+      if (reg.id !== registration?.id && reg.players && reg.players.length > 0) {
         reg.players.forEach((p) => excluded.push(p.id))
       }
     })
 
     return excluded
-  }, [registrations])
+  }, [registrations, registration])
 
   // Get excluded IDs for each player slot (excluding currently selected in other slots)
   const getExcludedIdsForSlot = (slotIndex: number) => {
@@ -121,7 +128,11 @@ const RegistrationForm = ({
     try {
       clearError()
       const playerIds = data.players.map((p) => p.playerId)
-      await createRegistration({ eventId, playerIds })
+      if (isEditing && registration) {
+        await updateRegistration(registration.id, { playerIds })
+      } else {
+        await createRegistration({ eventId, playerIds })
+      }
       onSuccess?.()
     } catch (err) {
       console.error('Error submitting registration form:', err)
@@ -139,9 +150,13 @@ const RegistrationForm = ({
   return (
     <DialogContent className='max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
       <DialogHeader>
-        <DialogTitle>Register for Event</DialogTitle>
+        <DialogTitle>
+          {isEditing ? 'Edit Registration' : 'Register for Event'}
+        </DialogTitle>
         <DialogDescription>
-          Select {maxPlayers === 1 ? 'a player' : 'players'} to register
+          {isEditing
+            ? `Update ${maxPlayers === 1 ? 'the player' : 'players'} for this registration`
+            : `Select ${maxPlayers === 1 ? 'a player' : 'players'} to register`}
           {minPlayers !== maxPlayers && ` (${minPlayers}-${maxPlayers} players)`}
           .
         </DialogDescription>
@@ -216,7 +231,13 @@ const RegistrationForm = ({
               className='w-full sm:w-auto'
             >
               <UserPlus className='mr-2 h-4 w-4' />
-              {isLoading ? 'Registering...' : 'Register'}
+              {isLoading
+                ? isEditing
+                  ? 'Updating...'
+                  : 'Registering...'
+                : isEditing
+                  ? 'Update Registration'
+                  : 'Register'}
             </Button>
           </DialogFooter>
         </form>
