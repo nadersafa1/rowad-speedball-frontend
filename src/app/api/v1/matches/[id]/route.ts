@@ -13,71 +13,13 @@ import {
   checkEventUpdateAuthorization,
   checkEventReadAuthorization,
 } from '@/lib/event-authorization-helpers'
-import { enrichRegistrationWithPlayers } from '@/lib/registration-helpers'
 import {
   handleMatchCompletion,
   handleMatchReset,
   updateGroupCompletionStatus,
 } from '@/lib/services/match-service'
+import { enrichMatch } from '@/lib/services/match-enrichment.service'
 import { updateEventCompletedStatus } from '@/lib/event-helpers'
-
-/** Enrich match with full data (sets, registrations with players, bestOf) */
-async function enrichMatchResponse(
-  match: typeof schema.matches.$inferSelect,
-  event: typeof schema.events.$inferSelect
-) {
-  const matchSets = await db
-    .select()
-    .from(schema.sets)
-    .where(eq(schema.sets.matchId, match.id))
-
-  let group = null
-  if (match.groupId) {
-    const groupResult = await db
-      .select()
-      .from(schema.groups)
-      .where(eq(schema.groups.id, match.groupId))
-      .limit(1)
-    group = groupResult[0] || null
-  }
-
-  let registration1WithPlayers = null
-  let registration2WithPlayers = null
-
-  if (match.registration1Id) {
-    const reg1 = await db
-      .select()
-      .from(schema.registrations)
-      .where(eq(schema.registrations.id, match.registration1Id))
-      .limit(1)
-    registration1WithPlayers = reg1[0]
-      ? await enrichRegistrationWithPlayers(reg1[0])
-      : null
-  }
-
-  if (match.registration2Id) {
-    const reg2 = await db
-      .select()
-      .from(schema.registrations)
-      .where(eq(schema.registrations.id, match.registration2Id))
-      .limit(1)
-    registration2WithPlayers = reg2[0]
-      ? await enrichRegistrationWithPlayers(reg2[0])
-      : null
-  }
-
-  return {
-    ...match,
-    sets: matchSets,
-    bestOf: event.bestOf,
-    registration1: registration1WithPlayers,
-    registration2: registration2WithPlayers,
-    event,
-    group,
-    isByeMatch:
-      match.registration1Id === null || match.registration2Id === null,
-  }
-}
 
 export async function GET(
   request: NextRequest,
@@ -121,8 +63,8 @@ export async function GET(
       return authError
     }
 
-    // Return enriched match data using shared helper
-    return Response.json(await enrichMatchResponse(match[0], event[0]))
+    // Return enriched match data using shared service
+    return Response.json(await enrichMatch(match[0], event[0]))
   } catch (error) {
     console.error('Error fetching match:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })
@@ -270,9 +212,7 @@ export async function PATCH(
       })
 
       // Return enriched match data (consistent with GET)
-      return Response.json(
-        await enrichMatchResponse(updatedMatch[0], eventData)
-      )
+      return Response.json(await enrichMatch(updatedMatch[0], eventData))
     } else if (updateData.played === false) {
       // Handle format-specific reset logic via match service
       await handleMatchReset(match, eventData)
@@ -289,9 +229,7 @@ export async function PATCH(
         .returning()
 
       // Return enriched match data (consistent with GET)
-      return Response.json(
-        await enrichMatchResponse(updatedMatch[0], eventData)
-      )
+      return Response.json(await enrichMatch(updatedMatch[0], eventData))
     } else {
       // Update other fields (matchDate, winnerId, etc.)
       const updateFields: any = {
@@ -311,12 +249,10 @@ export async function PATCH(
         .returning()
 
       // Return enriched match data (consistent with GET)
-      return Response.json(
-        await enrichMatchResponse(updatedMatch[0], eventData)
-      )
+      return Response.json(await enrichMatch(updatedMatch[0], eventData))
     }
 
-    return Response.json(await enrichMatchResponse(match, eventData))
+    return Response.json(await enrichMatch(match, eventData))
   } catch (error) {
     console.error('Error updating match:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

@@ -27,6 +27,21 @@ page.tsx                    # Main page component
 3. **Real-time Updates**: Socket events update local state immediately
 4. **Actions**: Score changes emit events that broadcast to all connected clients
 
+## Backend Data Enrichment
+
+Match data is enriched using a shared service (`@/lib/services/match-enrichment.service.ts`) that:
+- Fetches sets (ordered by setNumber)
+- Enriches registrations with player data
+- Includes `bestOf` from event
+- Includes group and event data
+- Sets `isByeMatch` flag
+
+This service is used by both:
+- **REST API** (`/api/v1/matches/[id]`) - For dialog-based edits
+- **Socket Backend** (`getMatch` handler) - For real-time updates
+
+This ensures consistent data structure across all endpoints.
+
 ## Socket Events
 
 ### Client → Server
@@ -53,11 +68,29 @@ page.tsx                    # Main page component
 | Feature    | Socket Page     | REST Dialog        |
 | ---------- | --------------- | ------------------ |
 | Use Case   | Live scoring    | Quick admin edits  |
-| Updates    | Real-time       | Manual refresh     |
+| Updates    | Real-time       | Optimistic (store) |
 | Resilience | Requires socket | Works offline      |
 | Location   | /matches/[id]   | Events page dialog |
+| State      | Local (socket)  | Zustand store      |
 
-## Shared Utilities
+## Shared Utilities & Services
 
-Match helper functions are in `/lib/utils/match.ts` and can be used by both
-the socket page and REST dialog components.
+### Utilities (`/lib/utils/match.ts`)
+Match helper functions used by both socket page and REST dialog:
+- `formatRegistrationName` - Format player names for display
+- `hasMajorityFromSets` - Check if majority reached
+- `areAllSetsPlayed` - Check if all sets completed
+- `calculateSetWins` - Calculate wins per registration
+
+### Services (`/lib/services/match-enrichment.service.ts`)
+Shared match enrichment service ensures consistent data structure:
+- Used by REST API endpoints
+- Used by Socket backend
+- Single source of truth for match data enrichment
+
+### State Management
+- **Socket Page**: Uses local state managed by `useMatchData` hook
+- **REST Dialog**: Uses Zustand store (`useMatchesStore`) as single source of truth
+  - No local state duplication
+  - Optimistic updates
+  - Automatic sync after actions

@@ -8,7 +8,7 @@ import {
   playerMatchesQuerySchema,
 } from '@/types/api/players.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
-import { enrichRegistrationWithPlayers } from '@/lib/registration-helpers'
+import { enrichMatch } from '@/lib/services/match-enrichment.service'
 
 export async function GET(
   request: NextRequest,
@@ -85,22 +85,33 @@ export async function GET(
 
     const totalItems = countResult[0].count
 
-    // Enrich matches with sets, event, and registration data
+    // Enrich matches with sets, event, and registration data using shared service
     const matchesWithData = await Promise.all(
       matches.map(async (match) => {
-        // Get sets
-        const matchSets = await db
-          .select()
-          .from(schema.sets)
-          .where(eq(schema.sets.matchId, match.id))
-          .orderBy(schema.sets.setNumber)
-
-        // Get event
+        // Get event for enrichment
         const event = await db
           .select()
           .from(schema.events)
           .where(eq(schema.events.id, match.eventId))
           .limit(1)
+
+        if (!event[0]) {
+          // Fallback if event not found
+          return {
+            ...match,
+            sets: [],
+            bestOf: 3,
+            registration1: null,
+            registration2: null,
+            event: null,
+            playerRegistration: null,
+            opponentRegistration: null,
+            playerWon: false,
+          }
+        }
+
+        // Use shared enrichment service
+        const enrichedMatch = await enrichMatch(match, event[0])
 
         // Determine which registration is the player's
         const playerRegistrationId = registrationIds.find(
@@ -111,48 +122,19 @@ export async function GET(
         const isPlayerRegistration1 =
           match.registration1Id === playerRegistrationId
 
-        // Get registration1 with players from junction table
-        // Handle nullable registration IDs for BYE matches in single elimination
-        const registration1 = match.registration1Id
-          ? await db
-              .select()
-              .from(schema.registrations)
-              .where(eq(schema.registrations.id, match.registration1Id))
-              .limit(1)
-          : []
-
-        const registration1WithPlayers = registration1[0]
-          ? await enrichRegistrationWithPlayers(registration1[0])
-          : null
-
-        // Get registration2 with players from junction table
-        const registration2 = match.registration2Id
-          ? await db
-              .select()
-              .from(schema.registrations)
-              .where(eq(schema.registrations.id, match.registration2Id))
-              .limit(1)
-          : []
-
-        const registration2WithPlayers = registration2[0]
-          ? await enrichRegistrationWithPlayers(registration2[0])
-          : null
-
         // Determine opponent registration
         const playerRegistration = isPlayerRegistration1
-          ? registration1WithPlayers
-          : registration2WithPlayers
+          ? enrichedMatch.registration1
+          : enrichedMatch.registration2
         const opponentRegistration = isPlayerRegistration1
-          ? registration2WithPlayers
-          : registration1WithPlayers
+          ? enrichedMatch.registration2
+          : enrichedMatch.registration1
 
         // Determine if player won
         const playerWon = match.winnerId === playerRegistrationId
 
         return {
-          ...match,
-          sets: matchSets,
-          event: event[0] || null,
+          ...enrichedMatch,
           playerRegistration,
           opponentRegistration,
           playerWon,
