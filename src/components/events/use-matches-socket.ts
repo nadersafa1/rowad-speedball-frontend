@@ -7,6 +7,7 @@ import type {
   SetCompletedData,
   MatchCompletedData,
   MatchUpdatedData,
+  SetPlayedData,
 } from '@/types'
 
 export const useMatchesSocket = (matches: Match[]) => {
@@ -23,6 +24,7 @@ export const useMatchesSocket = (matches: Match[]) => {
     onScoreUpdated,
     onSetCreated,
     onSetCompleted,
+    onSetPlayed,
     onMatchCompleted,
     onMatchUpdated,
   } = useSocket()
@@ -131,6 +133,46 @@ export const useMatchesSocket = (matches: Match[]) => {
       )
     })
   }, [socket, onSetCompleted])
+
+  // Handle SET_PLAYED event (from markSetPlayed)
+  useEffect(() => {
+    if (!socket) return
+    return onSetPlayed((data: SetPlayedData) => {
+      markMatchAsLive(data.matchId)
+      setLocalMatches((prev) =>
+        prev.map((match) =>
+          match.id === data.matchId
+            ? {
+                ...match,
+                sets: (match.sets || []).map((set) =>
+                  set.id === data.set.id
+                    ? {
+                        ...set,
+                        registration1Score: data.set.registration1Score,
+                        registration2Score: data.set.registration2Score,
+                        played: true,
+                      }
+                    : set
+                ),
+                played: data.matchCompleted ? true : match.played,
+                winnerId: data.winnerId ?? match.winnerId,
+              }
+            : match
+        )
+      )
+
+      // If match completed, leave room
+      if (data.matchCompleted) {
+        leaveMatch(data.matchId)
+        joinedRoomsRef.current.delete(data.matchId)
+        setLiveMatchIds((prev) => {
+          const next = new Set(prev)
+          next.delete(data.matchId)
+          return next
+        })
+      }
+    })
+  }, [socket, onSetPlayed, markMatchAsLive, leaveMatch])
 
   useEffect(() => {
     if (!socket) return

@@ -3,14 +3,18 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSocket } from '@/hooks/use-socket'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
+import { SOCKET_EVENTS } from '@/lib/socket'
 import type {
-  Match,
-  SetCreatedData,
-  MatchScoreUpdatedData,
-  SetCompletedData,
-  MatchCompletedData,
-  SetPlayedData,
-} from '@/types'
+  SocketMatchData,
+  SetCreatedResponse,
+  ScoreUpdatedResponse,
+  SetCompletedResponse,
+  MatchCompletedResponse,
+  SetPlayedResponse,
+  SocketErrorResponse,
+} from '@/lib/socket'
+import type { Match } from '@/types'
 
 export type MatchSocketStatus = 'connecting' | 'loading' | 'ready' | 'error'
 
@@ -88,42 +92,33 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
     }
 
     // Event handlers
-    const handleMatchData = (data: Match) => {
+    const handleMatchData = (data: SocketMatchData | Match) => {
       console.log('[useMatchSocket] Received match-data:', data)
-      // Clear timeout since we received data
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
         timeoutRef.current = null
       }
 
-      setMatch(data)
-      setMatchDate(data.matchDate || new Date().toISOString().split('T')[0])
+      setMatch(data as Match)
+      setMatchDate(data.matchDate || format(new Date(), 'yyyy-MM-dd'))
       setStatus('ready')
       setError(null)
-
-      // Join match room after receiving data
       joinMatch(matchId)
     }
 
-    const handleSetCreated = (data: SetCreatedData) => {
+    const handleSetCreated = (data: SetCreatedResponse) => {
       setMatch((prev) => {
         if (!prev) return prev
         const newSet = {
           ...data.set,
-          createdAt:
-            typeof data.set.createdAt === 'string'
-              ? data.set.createdAt
-              : data.set.createdAt.toISOString(),
-          updatedAt:
-            typeof data.set.updatedAt === 'string'
-              ? data.set.updatedAt
-              : data.set.updatedAt.toISOString(),
+          createdAt: String(data.set.createdAt),
+          updatedAt: String(data.set.updatedAt),
         }
         return { ...prev, sets: [...(prev.sets || []), newSet] }
       })
     }
 
-    const handleScoreUpdated = (data: MatchScoreUpdatedData) => {
+    const handleScoreUpdated = (data: ScoreUpdatedResponse) => {
       setMatch((prev) => {
         if (!prev) return prev
         return {
@@ -142,7 +137,7 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
       })
     }
 
-    const handleSetCompleted = (data: SetCompletedData) => {
+    const handleSetCompleted = (data: SetCompletedResponse) => {
       toast.success(`Set ${data.setNumber} completed`)
       setMatch((prev) => {
         if (!prev) return prev
@@ -155,7 +150,7 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
       })
     }
 
-    const handleSetPlayed = (data: SetPlayedData) => {
+    const handleSetPlayed = (data: SetPlayedResponse) => {
       toast.success(`Set ${data.set.setNumber} completed`)
       setMatch((prev) => {
         if (!prev) return prev
@@ -182,7 +177,7 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
       })
     }
 
-    const handleMatchCompleted = (data: MatchCompletedData) => {
+    const handleMatchCompleted = (data: MatchCompletedResponse) => {
       toast.success('Match completed!')
       setMatch((prev) => {
         if (!prev) return prev
@@ -190,7 +185,11 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
       })
     }
 
-    const handleMatchUpdated = (data: any) => {
+    const handleMatchUpdated = (data: {
+      played?: boolean
+      matchDate?: string
+      winnerId?: string | null
+    }) => {
       setMatch((prev) => {
         if (!prev) return prev
         return {
@@ -205,7 +204,7 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
       }
     }
 
-    const handleError = (err: any) => {
+    const handleError = (err: SocketErrorResponse | string) => {
       console.error('[useMatchSocket] Socket error:', err)
       const errMsg =
         typeof err === 'string' ? err : err?.message || 'Unknown error'
@@ -221,15 +220,14 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
     }
 
     // Register all listeners
-    console.log('[useMatchSocket] Registering event listeners...')
-    socket.on('match-data', handleMatchData)
-    socket.on('set-created', handleSetCreated)
-    socket.on('match-score-updated', handleScoreUpdated)
-    socket.on('set-completed', handleSetCompleted)
-    socket.on('set-played', handleSetPlayed)
-    socket.on('match-completed', handleMatchCompleted)
-    socket.on('match-updated', handleMatchUpdated)
-    socket.on('err', handleError)
+    socket.on(SOCKET_EVENTS.MATCH_DATA, handleMatchData)
+    socket.on(SOCKET_EVENTS.SET_CREATED, handleSetCreated)
+    socket.on(SOCKET_EVENTS.MATCH_SCORE_UPDATED, handleScoreUpdated)
+    socket.on(SOCKET_EVENTS.SET_COMPLETED, handleSetCompleted)
+    socket.on(SOCKET_EVENTS.SET_PLAYED, handleSetPlayed)
+    socket.on(SOCKET_EVENTS.MATCH_COMPLETED, handleMatchCompleted)
+    socket.on(SOCKET_EVENTS.MATCH_UPDATED, handleMatchUpdated)
+    socket.on(SOCKET_EVENTS.ERROR, handleError)
 
     // Request match data (only once)
     if (!hasRequestedMatch.current) {
@@ -251,14 +249,14 @@ export const useMatchSocket = (matchId: string): UseMatchSocketReturn => {
 
     // Cleanup
     return () => {
-      socket.off('match-data', handleMatchData)
-      socket.off('set-created', handleSetCreated)
-      socket.off('match-score-updated', handleScoreUpdated)
-      socket.off('set-completed', handleSetCompleted)
-      socket.off('set-played', handleSetPlayed)
-      socket.off('match-completed', handleMatchCompleted)
-      socket.off('match-updated', handleMatchUpdated)
-      socket.off('err', handleError)
+      socket.off(SOCKET_EVENTS.MATCH_DATA, handleMatchData)
+      socket.off(SOCKET_EVENTS.SET_CREATED, handleSetCreated)
+      socket.off(SOCKET_EVENTS.MATCH_SCORE_UPDATED, handleScoreUpdated)
+      socket.off(SOCKET_EVENTS.SET_COMPLETED, handleSetCompleted)
+      socket.off(SOCKET_EVENTS.SET_PLAYED, handleSetPlayed)
+      socket.off(SOCKET_EVENTS.MATCH_COMPLETED, handleMatchCompleted)
+      socket.off(SOCKET_EVENTS.MATCH_UPDATED, handleMatchUpdated)
+      socket.off(SOCKET_EVENTS.ERROR, handleError)
     }
   }, [
     socket,

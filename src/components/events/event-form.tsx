@@ -25,6 +25,7 @@ import { Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useEffect } from 'react'
 import { z } from 'zod'
+import { format } from 'date-fns'
 import {
   DialogContent,
   DialogDescription,
@@ -184,12 +185,8 @@ const EventForm = ({
 
       const formattedData = {
         ...data,
-        registrationStartDate: data.registrationStartDate
-          .toISOString()
-          .split('T')[0],
-        registrationEndDate: data.registrationEndDate
-          .toISOString()
-          .split('T')[0],
+        registrationStartDate: format(data.registrationStartDate, 'yyyy-MM-dd'),
+        registrationEndDate: format(data.registrationEndDate, 'yyyy-MM-dd'),
         // Points are only meaningful for groups format
         // For single-elimination, set to 0 since they're not used
         pointsPerWin: isGroupsFormat ? data.pointsPerWin ?? 3 : 0,

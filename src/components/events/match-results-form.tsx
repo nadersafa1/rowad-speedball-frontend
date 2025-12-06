@@ -13,9 +13,10 @@ import {
 } from '@/components/ui'
 import { DatePicker } from '@/components/ui/date-picker'
 import { useMatchesStore } from '@/store/matches-store'
-import { CheckCircle2, Plus, X, Trophy, AlertCircle } from 'lucide-react'
+import { CheckCircle2, Plus, X, Trophy } from 'lucide-react'
 import type { Match, Set } from '@/types'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 
 interface MatchResultsFormProps {
   match: Match
@@ -24,18 +25,10 @@ interface MatchResultsFormProps {
 }
 
 const MatchResultsForm = ({
-  match,
+  match: initialMatch,
   onSuccess,
   onCancel,
 }: MatchResultsFormProps) => {
-  // Helper function to format player names from a registration
-  const formatRegistrationName = (registration: Match['registration1']) => {
-    if (!registration) return 'Unknown'
-    if (registration.players && registration.players.length > 0) {
-      return registration.players.map((p) => p.name || 'Unknown').join(' & ')
-    }
-    return 'Unknown'
-  }
   const {
     createSet,
     updateSet,
@@ -44,7 +37,34 @@ const MatchResultsForm = ({
     fetchMatch,
     updateMatch,
     isLoading,
+    selectedMatch,
   } = useMatchesStore()
+
+  // Merge selectedMatch with initialMatch to ensure we always have player data
+  // selectedMatch from store may lose player info when updateMatch API returns partial data
+  const match: Match =
+    selectedMatch?.id === initialMatch.id
+      ? {
+          ...selectedMatch,
+          // Preserve registration data with players from initialMatch if selectedMatch doesn't have it
+          registration1: selectedMatch.registration1?.players?.length
+            ? selectedMatch.registration1
+            : initialMatch.registration1,
+          registration2: selectedMatch.registration2?.players?.length
+            ? selectedMatch.registration2
+            : initialMatch.registration2,
+        }
+      : initialMatch
+
+  // Helper function to format player names from a registration
+  const formatRegistrationName = (registration: Match['registration1']) => {
+    if (!registration) return 'Unknown'
+    if (registration.players && registration.players.length > 0) {
+      return registration.players.map((p) => p.name || 'Unknown').join(' & ')
+    }
+    return 'Unknown'
+  }
+
   const [sets, setSets] = useState<Set[]>(match.sets || [])
   const [editingSet, setEditingSet] = useState<string | null>(null)
   const [newSetScores, setNewSetScores] = useState({
@@ -60,20 +80,28 @@ const MatchResultsForm = ({
   useEffect(() => {
     setSets(match.sets || [])
     setMatchDate(match.matchDate ? new Date(match.matchDate) : new Date())
-  }, [match])
+  }, [match.id, match.sets, match.matchDate])
 
   // Auto-save today's date if match doesn't have one and no sets exist
   useEffect(() => {
-    const shouldAutoSetDate = !match.matchDate && !hasAutoSetDate && !match.played && sets.length === 0
+    const shouldAutoSetDate =
+      !match.matchDate && !hasAutoSetDate && !match.played && sets.length === 0
     if (shouldAutoSetDate) {
       setHasAutoSetDate(true)
       const today = new Date()
-      const dateString = today.toISOString().split('T')[0]
+      const dateString = format(today, 'yyyy-MM-dd')
       updateMatch(match.id, { matchDate: dateString }).catch(() => {
         // Silently fail - user can still set date manually
       })
     }
-  }, [match.matchDate, match.id, match.played, sets.length, hasAutoSetDate, updateMatch])
+  }, [
+    match.matchDate,
+    match.id,
+    match.played,
+    sets.length,
+    hasAutoSetDate,
+    updateMatch,
+  ])
 
   const hasSets = sets.length > 0
   const hasMatchDate = !!matchDate
@@ -105,7 +133,7 @@ const MatchResultsForm = ({
     if (!date) return
 
     try {
-      const dateString = date.toISOString().split('T')[0]
+      const dateString = format(date, 'yyyy-MM-dd')
       await updateMatch(match.id, { matchDate: dateString })
       setMatchDate(date)
       toast.success('Match date updated successfully')
@@ -239,7 +267,7 @@ const MatchResultsForm = ({
           {!match.matchDate && matchDate && !hasSets && (
             <p className='text-xs text-muted-foreground'>
               Match date defaulted to today. Change it above if needed.
-              </p>
+            </p>
           )}
         </div>
 
@@ -260,55 +288,55 @@ const MatchResultsForm = ({
 
               {editingSet === set.id && !set.played ? (
                 <div className='space-y-4'>
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                  <div>
-                    <label className='text-sm font-medium text-muted-foreground mb-1 block break-words'>
-                      {formatRegistrationName(match.registration1)}
-                    </label>
-                    <Input
-                      type='text'
-                      inputMode='numeric'
-                      value={set.registration1Score}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        // Allow empty string or numeric values only
-                        if (value === '' || /^\d+$/.test(value)) {
-                          handleUpdateSet(set.id, {
-                            registration1Score:
-                              value === '' ? 0 : parseInt(value, 10) || 0,
-                            registration2Score: set.registration2Score,
-                          })
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      onClick={(e) => e.currentTarget.select()}
-                      className='text-center'
-                    />
-                  </div>
-                  <div>
-                    <label className='text-sm font-medium text-muted-foreground mb-1 block break-words'>
-                      {formatRegistrationName(match.registration2)}
-                    </label>
-                    <Input
-                      type='text'
-                      inputMode='numeric'
-                      value={set.registration2Score}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        // Allow empty string or numeric values only
-                        if (value === '' || /^\d+$/.test(value)) {
-                          handleUpdateSet(set.id, {
-                            registration1Score: set.registration1Score,
-                            registration2Score:
-                              value === '' ? 0 : parseInt(value, 10) || 0,
-                          })
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      onClick={(e) => e.currentTarget.select()}
-                      className='text-center'
-                    />
-                  </div>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                    <div>
+                      <label className='text-sm font-medium text-muted-foreground mb-1 block break-words'>
+                        {formatRegistrationName(match.registration1)}
+                      </label>
+                      <Input
+                        type='text'
+                        inputMode='numeric'
+                        value={set.registration1Score}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          // Allow empty string or numeric values only
+                          if (value === '' || /^\d+$/.test(value)) {
+                            handleUpdateSet(set.id, {
+                              registration1Score:
+                                value === '' ? 0 : parseInt(value, 10) || 0,
+                              registration2Score: set.registration2Score,
+                            })
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onClick={(e) => e.currentTarget.select()}
+                        className='text-center'
+                      />
+                    </div>
+                    <div>
+                      <label className='text-sm font-medium text-muted-foreground mb-1 block break-words'>
+                        {formatRegistrationName(match.registration2)}
+                      </label>
+                      <Input
+                        type='text'
+                        inputMode='numeric'
+                        value={set.registration2Score}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          // Allow empty string or numeric values only
+                          if (value === '' || /^\d+$/.test(value)) {
+                            handleUpdateSet(set.id, {
+                              registration1Score: set.registration1Score,
+                              registration2Score:
+                                value === '' ? 0 : parseInt(value, 10) || 0,
+                            })
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onClick={(e) => e.currentTarget.select()}
+                        className='text-center'
+                      />
+                    </div>
                   </div>
                   <Button
                     variant='outline'
