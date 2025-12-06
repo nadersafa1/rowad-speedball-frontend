@@ -350,6 +350,12 @@ export class ApiClient {
     })
   }
 
+  async resetBracket(eventId: string) {
+    return this.request(`/events/${eventId}/reset-bracket`, {
+      method: 'POST',
+    })
+  }
+
   // Groups methods
   async getGroups(eventId?: string) {
     const params = eventId ? `?eventId=${eventId}` : ''

@@ -51,14 +51,29 @@ const MatchResultsForm = ({
     registration1Score: 0,
     registration2Score: 0,
   })
+  // Default to today's date if no date is set
   const [matchDate, setMatchDate] = useState<Date | undefined>(
-    match.matchDate ? new Date(match.matchDate) : undefined
+    match.matchDate ? new Date(match.matchDate) : new Date()
   )
+  const [hasAutoSetDate, setHasAutoSetDate] = useState(false)
 
   useEffect(() => {
     setSets(match.sets || [])
-    setMatchDate(match.matchDate ? new Date(match.matchDate) : undefined)
+    setMatchDate(match.matchDate ? new Date(match.matchDate) : new Date())
   }, [match])
+
+  // Auto-save today's date if match doesn't have one and no sets exist
+  useEffect(() => {
+    const shouldAutoSetDate = !match.matchDate && !hasAutoSetDate && !match.played && sets.length === 0
+    if (shouldAutoSetDate) {
+      setHasAutoSetDate(true)
+      const today = new Date()
+      const dateString = today.toISOString().split('T')[0]
+      updateMatch(match.id, { matchDate: dateString }).catch(() => {
+        // Silently fail - user can still set date manually
+      })
+    }
+  }, [match.matchDate, match.id, match.played, sets.length, hasAutoSetDate, updateMatch])
 
   const hasSets = sets.length > 0
   const hasMatchDate = !!matchDate
@@ -137,8 +152,7 @@ const MatchResultsForm = ({
       if (updatedMatch && updatedMatch.sets) {
         setSets(updatedMatch.sets)
       }
-      setEditingSet(null)
-      toast.success('Set updated successfully')
+      // Don't clear editingSet - let user click "Done Editing" to exit
     } catch (error: any) {
       toast.error(error.message || 'Failed to update set')
     }
@@ -222,13 +236,10 @@ const MatchResultsForm = ({
               Match date cannot be changed once sets are entered
             </p>
           )}
-          {!hasMatchDate && !hasSets && (
-            <div className='flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg'>
-              <AlertCircle className='h-4 w-4 text-yellow-600' />
-              <p className='text-xs text-yellow-800 dark:text-yellow-200'>
-                Match date must be set before entering set results
+          {!match.matchDate && matchDate && !hasSets && (
+            <p className='text-xs text-muted-foreground'>
+              Match date defaulted to today. Change it above if needed.
               </p>
-            </div>
           )}
         </div>
 
@@ -248,6 +259,7 @@ const MatchResultsForm = ({
               </div>
 
               {editingSet === set.id && !set.played ? (
+                <div className='space-y-4'>
                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                   <div>
                     <label className='text-sm font-medium text-muted-foreground mb-1 block break-words'>
@@ -297,6 +309,15 @@ const MatchResultsForm = ({
                       className='text-center'
                     />
                   </div>
+                  </div>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setEditingSet(null)}
+                    className='w-full'
+                  >
+                    Done Editing
+                  </Button>
                 </div>
               ) : (
                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>

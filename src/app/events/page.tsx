@@ -141,7 +141,7 @@ const EventsPage = () => {
       <PageHeader
         icon={Trophy}
         title='Events'
-        description='Manage round robin tournaments'
+        description='Manage tournaments and competitions'
         actionButton={
           isSystemAdmin || isCoach || isAdmin || isOwner
             ? {

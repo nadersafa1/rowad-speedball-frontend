@@ -6,7 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { useEventPermissions } from '@/hooks/use-event-permissions'
-import { Plus, Users, Trophy, Edit, Trash2, CheckCircle2, Pencil } from 'lucide-react'
+import {
+  Plus,
+  Users,
+  Trophy,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  Pencil,
+} from 'lucide-react'
 import { useEventsStore } from '@/store/events-store'
 import { toast } from 'sonner'
 import { useGroupsStore } from '@/store/groups-store'
@@ -46,9 +54,9 @@ const EventDetailPage = () => {
 
   const [eventFormOpen, setEventFormOpen] = useState(false)
   const [registrationFormOpen, setRegistrationFormOpen] = useState(false)
-  const [editingRegistration, setEditingRegistration] = useState<
-    string | null
-  >(null)
+  const [editingRegistration, setEditingRegistration] = useState<string | null>(
+    null
+  )
   const [deleteRegistrationId, setDeleteRegistrationId] = useState<
     string | null
   >(null)
@@ -61,29 +69,6 @@ const EventDetailPage = () => {
     isLoading: eventLoading,
   } = useEventsStore()
 
-  // Update active tab when URL changes
-  useEffect(() => {
-    const tab = searchParams.get('tab') || 'overview'
-    setActiveTab(tab)
-  }, [searchParams])
-
-  // Redirect away from standings tab if event is single-elimination
-  useEffect(() => {
-    if (
-      selectedEvent &&
-      selectedEvent.format === 'single-elimination' &&
-      activeTab === 'standings'
-    ) {
-      router.push(`/events/${eventId}?tab=overview`, { scroll: false })
-      setActiveTab('overview')
-    }
-  }, [selectedEvent, activeTab, eventId, router])
-
-  // Handle tab change - update URL
-  const handleTabChange = (value: string) => {
-    setActiveTab(value)
-    router.push(`/events/${eventId}?tab=${value}`, { scroll: false })
-  }
   const { groups, fetchGroups, isLoading: groupsLoading } = useGroupsStore()
   const {
     registrations,
@@ -93,6 +78,36 @@ const EventDetailPage = () => {
   } = useRegistrationsStore()
   const { matches, fetchMatches, isLoading: matchesLoading } = useMatchesStore()
   const { canUpdate, canDelete, canCreate } = useEventPermissions(selectedEvent)
+
+  // Update active tab when URL changes
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'overview'
+    setActiveTab(tab)
+  }, [searchParams])
+
+  // Redirect away from standings tab if event is single-elimination
+  // or from matches tab if no matches exist
+  useEffect(() => {
+    if (
+      selectedEvent &&
+      selectedEvent.format === 'single-elimination' &&
+      activeTab === 'standings'
+    ) {
+      router.push(`/events/${eventId}?tab=overview`, { scroll: false })
+      setActiveTab('overview')
+    }
+    // Redirect away from matches tab if no matches exist
+    if (activeTab === 'matches' && matches.length === 0) {
+      router.push(`/events/${eventId}?tab=overview`, { scroll: false })
+      setActiveTab('overview')
+    }
+  }, [selectedEvent, activeTab, eventId, router, matches.length])
+
+  // Handle tab change - update URL
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    router.push(`/events/${eventId}?tab=${value}`, { scroll: false })
+  }
 
   useEffect(() => {
     if (eventId) {
@@ -211,11 +226,15 @@ const EventDetailPage = () => {
             Registrations
           </TabsTrigger>
           <TabsTrigger value='groups' className='whitespace-nowrap'>
-            {selectedEvent.format === 'single-elimination' ? 'Bracket' : 'Groups'}
+            {selectedEvent.format === 'single-elimination'
+              ? 'Bracket'
+              : 'Groups'}
           </TabsTrigger>
-          <TabsTrigger value='matches' className='whitespace-nowrap'>
-            Matches
-          </TabsTrigger>
+          {matches.length > 0 && (
+            <TabsTrigger value='matches' className='whitespace-nowrap'>
+              Matches
+            </TabsTrigger>
+          )}
           {selectedEvent.format !== 'single-elimination' && (
             <TabsTrigger value='standings' className='whitespace-nowrap'>
               Standings
@@ -240,13 +259,15 @@ const EventDetailPage = () => {
                   <p className='text-sm text-muted-foreground'>Best Of</p>
                   <p className='font-medium'>{selectedEvent.bestOf} sets</p>
                 </div>
-                <div>
-                  <p className='text-sm text-muted-foreground'>Points</p>
-                  <p className='font-medium'>
-                    Win: {selectedEvent.pointsPerWin} | Loss:{' '}
-                    {selectedEvent.pointsPerLoss}
-                  </p>
-                </div>
+                {selectedEvent.format !== 'single-elimination' && (
+                  <div>
+                    <p className='text-sm text-muted-foreground'>Points</p>
+                    <p className='font-medium'>
+                      Win: {selectedEvent.pointsPerWin} | Loss:{' '}
+                      {selectedEvent.pointsPerLoss}
+                    </p>
+                  </div>
+                )}
                 {selectedEvent.registrationStartDate && (
                   <div>
                     <p className='text-sm text-muted-foreground'>
@@ -284,7 +305,8 @@ const EventDetailPage = () => {
                 {canCreate &&
                   matches.length === 0 &&
                   (!selectedEvent?.registrationEndDate ||
-                    new Date(selectedEvent.registrationEndDate) >= new Date()) && (
+                    new Date(selectedEvent.registrationEndDate) >=
+                      new Date()) && (
                     <Button
                       onClick={() => {
                         setEditingRegistration(null)
@@ -323,12 +345,24 @@ const EventDetailPage = () => {
                         )}
                       </div>
                       <div className='flex items-center gap-2'>
-                        <div className='text-right'>
-                          <p className='text-sm'>
-                            {reg.matchesWon}W - {reg.matchesLost}L
-                          </p>
-                          <p className='text-sm font-bold'>{reg.points} pts</p>
-                        </div>
+                        {selectedEvent.format === 'single-elimination' ? (
+                          <div className='text-right'>
+                            {reg.seed && (
+                              <p className='text-sm font-medium'>
+                                Seed #{reg.seed}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className='text-right'>
+                            <p className='text-sm'>
+                              {reg.matchesWon}W - {reg.matchesLost}L
+                            </p>
+                            <p className='text-sm font-bold'>
+                              {reg.points} pts
+                            </p>
+                          </div>
+                        )}
                         {canUpdate && (
                           <Button
                             variant='outline'
@@ -379,15 +413,17 @@ const EventDetailPage = () => {
           )}
         </TabsContent>
 
-        <TabsContent value='matches' className='space-y-4'>
-          <MatchesView
-            matches={matches}
-            groups={groups}
-            canUpdate={canUpdate}
-            onMatchUpdate={handleRefresh}
-            eventFormat={selectedEvent.format}
-          />
-        </TabsContent>
+        {matches.length > 0 && (
+          <TabsContent value='matches' className='space-y-4'>
+            <MatchesView
+              matches={matches}
+              groups={groups}
+              canUpdate={canUpdate}
+              onMatchUpdate={handleRefresh}
+              eventFormat={selectedEvent.format}
+            />
+          </TabsContent>
+        )}
 
         {selectedEvent.format !== 'single-elimination' && (
           <TabsContent value='standings' className='space-y-4'>
@@ -426,7 +462,8 @@ const EventDetailPage = () => {
             maxPlayers={selectedEvent.maxPlayers}
             registration={
               editingRegistration
-                ? registrations.find((r) => r.id === editingRegistration) || null
+                ? registrations.find((r) => r.id === editingRegistration) ||
+                  null
                 : null
             }
             onSuccess={() => {

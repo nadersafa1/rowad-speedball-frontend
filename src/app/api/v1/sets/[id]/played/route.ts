@@ -165,9 +165,9 @@ export async function PATCH(
           event: event[0],
           winnerId: completionResult.winnerId,
           sets: updatedSets.map((s) => ({
-            registration1Score: s.registration1Score,
-            registration2Score: s.registration2Score,
-          })),
+              registration1Score: s.registration1Score,
+              registration2Score: s.registration2Score,
+            })),
         })
       }
     }

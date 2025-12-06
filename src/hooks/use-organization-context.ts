@@ -15,5 +15,8 @@ export const useOrganizationContext = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return { context, isLoading, error }
+  // isLoading should be true if we haven't fetched yet OR if we're currently loading
+  const isContextLoading = !hasFetched || isLoading
+
+  return { context, isLoading: isContextLoading, error }
 }

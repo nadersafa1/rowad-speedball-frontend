@@ -242,6 +242,22 @@ export interface MatchCompletedData {
   winnerId: string
 }
 
+export interface SetPlayedData {
+  matchId: string
+  set: {
+    id: string
+    matchId: string
+    setNumber: number
+    registration1Score: number
+    registration2Score: number
+    played: boolean
+    createdAt: string
+    updatedAt: string
+  }
+  matchCompleted: boolean
+  winnerId?: string | null
+}
+
 export interface MatchUpdatedData {
   matchId: string
   played?: boolean

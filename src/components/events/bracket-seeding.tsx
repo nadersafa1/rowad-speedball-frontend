@@ -18,7 +18,17 @@ import {
 } from '@dnd-kit/sortable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trophy, Loader2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Trophy, Loader2, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiClient } from '@/lib/api-client'
 import type { Registration } from '@/types'
@@ -42,6 +52,8 @@ const BracketSeeding = ({
   const [orderedRegistrations, setOrderedRegistrations] =
     useState<Registration[]>(registrations)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -96,6 +108,22 @@ const BracketSeeding = ({
     }
   }
 
+  const handleResetBracket = async () => {
+    setIsResetting(true)
+    try {
+      await apiClient.resetBracket(eventId)
+      toast.success('Bracket reset successfully!')
+      setResetDialogOpen(false)
+      onBracketGenerated?.()
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to reset bracket'
+      )
+    } finally {
+      setIsResetting(false)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -109,24 +137,41 @@ const BracketSeeding = ({
               Drag registrations to set their seed order for the bracket.
             </p>
           </div>
-          {canManage &&
-            !hasExistingMatches &&
-            orderedRegistrations.length >= 2 && (
-              <Button
-                onClick={handleGenerateBracket}
-                disabled={isGenerating}
-                className='w-full sm:w-auto'
-              >
-                {isGenerating && (
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                )}
-                Generate Bracket
-              </Button>
-            )}
+          {canManage && orderedRegistrations.length >= 2 && (
+            <div className='flex gap-2 w-full sm:w-auto'>
+              {hasExistingMatches ? (
+                <Button
+                  variant='outline'
+                  onClick={() => setResetDialogOpen(true)}
+                  disabled={isResetting}
+                  className='w-full sm:w-auto'
+                >
+                  {isResetting ? (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  ) : (
+                    <RotateCcw className='mr-2 h-4 w-4' />
+                  )}
+                  Reset Bracket
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleGenerateBracket}
+                  disabled={isGenerating}
+                  className='w-full sm:w-auto'
+                >
+                  {isGenerating && (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  )}
+                  Generate Bracket
+                </Button>
+              )}
+            </div>
+          )}
         </div>
         {hasExistingMatches && (
-          <p className='text-sm text-amber-600 mt-2'>
-            Bracket already generated. Delete matches to regenerate.
+          <p className='text-sm text-muted-foreground mt-2'>
+            Bracket already generated. Use &quot;Reset Bracket&quot; to start
+            over.
           </p>
         )}
       </CardHeader>
@@ -158,6 +203,34 @@ const BracketSeeding = ({
           </DndContext>
         )}
       </CardContent>
+
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Bracket</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reset the bracket? This will:
+              <ul className='list-disc list-inside mt-2 space-y-1'>
+                <li>Delete all matches and their results</li>
+                <li>Clear all registration seeds</li>
+                <li>Allow you to regenerate the bracket with new seeding</li>
+              </ul>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isResetting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetBracket}
+              disabled={isResetting}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              {isResetting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+              Reset Bracket
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }
