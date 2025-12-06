@@ -340,6 +340,16 @@ export class ApiClient {
     })
   }
 
+  async generateBracket(
+    eventId: string,
+    seeds?: Array<{ registrationId: string; seed: number }>
+  ) {
+    return this.request(`/events/${eventId}/generate-bracket`, {
+      method: 'POST',
+      body: seeds ? JSON.stringify({ seeds }) : undefined,
+    })
+  }
+
   // Groups methods
   async getGroups(eventId?: string) {
     const params = eventId ? `?eventId=${eventId}` : ''

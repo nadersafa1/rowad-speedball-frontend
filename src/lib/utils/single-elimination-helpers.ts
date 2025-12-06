@@ -12,29 +12,38 @@ export const nextPowerOf2 = (n: number): number => {
 
 /**
  * Generate standard SE bracket seeding positions
- * For a bracket of size N, returns array of seed positions for round 1
- * e.g., for 8: [1,8,5,4,3,6,7,2] which creates matches 1v8, 5v4, 3v6, 7v2
+ * For a bracket of size N, returns array where seedPositions[i] = slot position for seed (i+1)
+ * This ensures proper bracket structure: 1v8, 4v5, 3v6, 2v7 for 8-bracket
+ * With byes, higher seeds (1,2,3) get byes when there are fewer participants
  */
 export const generateSeedPositions = (bracketSize: number): number[] => {
   if (bracketSize === 1) return [1]
   if (bracketSize === 2) return [1, 2]
 
-  const positions: number[] = [1, 2]
+  // First generate bracket slots (which seed goes in each slot)
+  const bracketSlots: number[] = [1, 2]
 
-  while (positions.length < bracketSize) {
-    const newPositions: number[] = []
-    const sum = positions.length * 2 + 1
+  while (bracketSlots.length < bracketSize) {
+    const newSlots: number[] = []
+    const sum = bracketSlots.length * 2 + 1
 
-    for (const pos of positions) {
-      newPositions.push(pos)
-      newPositions.push(sum - pos)
+    for (const seed of bracketSlots) {
+      newSlots.push(seed)
+      newSlots.push(sum - seed)
     }
 
-    positions.length = 0
-    positions.push(...newPositions)
+    bracketSlots.length = 0
+    bracketSlots.push(...newSlots)
   }
 
-  return positions
+  // Invert: convert from "slot→seed" to "seed→slot" (1-indexed)
+  const seedPositions = new Array(bracketSize)
+  for (let slotIndex = 0; slotIndex < bracketSlots.length; slotIndex++) {
+    const seed = bracketSlots[slotIndex]
+    seedPositions[seed - 1] = slotIndex + 1
+  }
+
+  return seedPositions
 }
 
 /**

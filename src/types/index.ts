@@ -150,6 +150,7 @@ export type Registration = {
   id: string
   eventId: string
   groupId?: string | null
+  seed?: number | null
   matchesWon: number
   matchesLost: number
   setsWon: number

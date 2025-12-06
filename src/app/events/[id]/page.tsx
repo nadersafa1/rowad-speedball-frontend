@@ -15,6 +15,7 @@ import { useMatchesStore } from '@/store/matches-store'
 import EventForm from '@/components/events/event-form'
 import RegistrationForm from '@/components/events/registration-form'
 import GroupManagement from '@/components/events/group-management'
+import BracketSeeding from '@/components/events/bracket-seeding'
 import StandingsTable from '@/components/events/standings-table'
 import MatchesView from '@/components/events/matches-view'
 import { Badge } from '@/components/ui/badge'
@@ -191,7 +192,7 @@ const EventDetailPage = () => {
             Registrations
           </TabsTrigger>
           <TabsTrigger value='groups' className='whitespace-nowrap'>
-            Groups
+            {selectedEvent.format === 'single-elimination' ? 'Bracket' : 'Groups'}
           </TabsTrigger>
           <TabsTrigger value='matches' className='whitespace-nowrap'>
             Matches
@@ -317,13 +318,23 @@ const EventDetailPage = () => {
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          <GroupManagement
-            eventId={eventId}
-            groups={groups}
-            registrations={registrations}
-            onGroupCreated={handleRefresh}
-            canManage={canCreate}
-          />
+          {selectedEvent.format === 'single-elimination' ? (
+            <BracketSeeding
+              eventId={eventId}
+              registrations={registrations}
+              hasExistingMatches={matches.length > 0}
+              canManage={canCreate}
+              onBracketGenerated={handleRefresh}
+            />
+          ) : (
+            <GroupManagement
+              eventId={eventId}
+              groups={groups}
+              registrations={registrations}
+              onGroupCreated={handleRefresh}
+              canManage={canCreate}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value='matches' className='space-y-4'>
