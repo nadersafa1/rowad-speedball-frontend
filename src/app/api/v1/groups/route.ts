@@ -8,11 +8,15 @@ import {
   groupsQuerySchema,
 } from '@/types/api/groups.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { roundRobin } from '@/lib/utils/round-robin'
 import {
   checkEventCreateAuthorization,
   checkEventReadAuthorization,
 } from '@/lib/event-authorization-helpers'
+import {
+  createGroup,
+  validateRegistrations,
+  validateEventForGroupCreation,
+} from '@/lib/services/groups-service'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -84,15 +88,10 @@ export async function POST(request: NextRequest) {
       return Response.json({ message: 'Event not found' }, { status: 404 })
     }
 
-    // Validate event format is groups (not single-elimination)
-    if (event[0].format !== 'groups') {
-      return Response.json(
-        {
-          message:
-            'Groups can only be created for events with groups format. Use generate-bracket endpoint for single-elimination events.',
-        },
-        { status: 400 }
-      )
+    // Validate event format supports groups
+    const formatValidation = validateEventForGroupCreation(event[0].format)
+    if (!formatValidation.valid) {
+      return Response.json({ message: formatValidation.error }, { status: 400 })
     }
 
     // Check authorization based on parent event
@@ -101,104 +100,30 @@ export async function POST(request: NextRequest) {
       return authError
     }
 
-    // Verify all registrations exist and belong to the event
-    const registrations = await db
-      .select()
-      .from(schema.registrations)
-      .where(eq(schema.registrations.eventId, eventId))
-
-    const registrationIdsSet = new Set(registrations.map((r) => r.id))
-    const invalidIds = registrationIds.filter(
-      (id) => !registrationIdsSet.has(id)
+    // Validate registrations belong to the event
+    const registrationValidation = await validateRegistrations(
+      eventId,
+      registrationIds
     )
-
-    if (invalidIds.length > 0) {
+    if (!registrationValidation.valid) {
       return Response.json(
-        { message: `Invalid registration IDs: ${invalidIds.join(', ')}` },
+        {
+          message: `Invalid registration IDs: ${registrationValidation.invalidIds?.join(
+            ', '
+          )}`,
+        },
         { status: 400 }
       )
     }
 
-    // Count existing groups to generate name (A, B, C...)
-    const existingGroups = await db
-      .select()
-      .from(schema.groups)
-      .where(eq(schema.groups.eventId, eventId))
-
-    const groupName = String.fromCharCode(65 + existingGroups.length) // A=65, B=66, etc.
-
-    // Create group
-    const [newGroup] = await db
-      .insert(schema.groups)
-      .values({
-        eventId,
-        name: groupName,
-      })
-      .returning()
-
-    // Update registrations to assign them to the group
-    await db
-      .update(schema.registrations)
-      .set({
-        groupId: newGroup.id,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.registrations.id, registrationIds[0])) // This will be done in a loop
-
-    // Update all registrations in the group
-    for (const registrationId of registrationIds) {
-      await db
-        .update(schema.registrations)
-        .set({
-          groupId: newGroup.id,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.registrations.id, registrationId))
-    }
-
-    // Generate matches using round robin algorithm
-    const rounds = roundRobin(registrationIds.length, registrationIds)
-
-    // Create matches for each round
-    for (let roundIndex = 0; roundIndex < rounds.length; roundIndex++) {
-      const round = rounds[roundIndex]
-      for (let matchIndex = 0; matchIndex < round.length; matchIndex++) {
-        const [registration1Id, registration2Id] = round[matchIndex] as [
-          string,
-          string
-        ]
-
-        await db.insert(schema.matches).values({
-          eventId,
-          groupId: newGroup.id,
-          round: roundIndex + 1,
-          matchNumber: matchIndex + 1,
-          registration1Id,
-          registration2Id,
-        })
-      }
-    }
-
-    // Recalculate event completion
-    const eventGroups = await db
-      .select()
-      .from(schema.groups)
-      .where(eq(schema.groups.eventId, eventId))
-
-    const allGroupsCompleted = eventGroups.every((g) => g.completed)
-
-    await db
-      .update(schema.events)
-      .set({
-        completed: allGroupsCompleted && eventGroups.length > 0,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.events.id, eventId))
+    // Create group with matches using the service
+    const result = await createGroup({ eventId, registrationIds })
 
     return Response.json(
       {
         message: 'Group created and matches generated successfully',
-        group: newGroup,
+        group: result.group,
+        matchCount: result.matchCount,
       },
       { status: 201 }
     )

@@ -74,6 +74,7 @@ export const calculateSetPoints = (
 
 /**
  * Updates registration standings after a match
+ * Uses a transaction to ensure both updates succeed or fail together
  */
 export const updateRegistrationStandings = async (
   registration1Id: string,
@@ -91,47 +92,49 @@ export const updateRegistrationStandings = async (
     registration2SetsLost: number
   }
 ): Promise<void> => {
-  // Update registration 1
-  const reg1Result = await db
-    .select()
-    .from(registrations)
-    .where(eq(registrations.id, registration1Id))
-    .limit(1)
-
-  if (reg1Result.length > 0) {
-    const reg1 = reg1Result[0]
-    await db
-      .update(registrations)
-      .set({
-        matchesWon: reg1.matchesWon + (matchResult.registration1Won ? 1 : 0),
-        matchesLost: reg1.matchesLost + (matchResult.registration1Won ? 0 : 1),
-        setsWon: reg1.setsWon + setResults.registration1SetsWon,
-        setsLost: reg1.setsLost + setResults.registration1SetsLost,
-        points: reg1.points + matchResult.registration1Points,
-        updatedAt: new Date(),
-      })
+  await db.transaction(async (tx) => {
+    // Update registration 1
+    const reg1Result = await tx
+      .select()
+      .from(registrations)
       .where(eq(registrations.id, registration1Id))
-  }
+      .limit(1)
 
-  // Update registration 2
-  const reg2Result = await db
-    .select()
-    .from(registrations)
-    .where(eq(registrations.id, registration2Id))
-    .limit(1)
+    if (reg1Result.length > 0) {
+      const reg1 = reg1Result[0]
+      await tx
+        .update(registrations)
+        .set({
+          matchesWon: reg1.matchesWon + (matchResult.registration1Won ? 1 : 0),
+          matchesLost: reg1.matchesLost + (matchResult.registration1Won ? 0 : 1),
+          setsWon: reg1.setsWon + setResults.registration1SetsWon,
+          setsLost: reg1.setsLost + setResults.registration1SetsLost,
+          points: reg1.points + matchResult.registration1Points,
+          updatedAt: new Date(),
+        })
+        .where(eq(registrations.id, registration1Id))
+    }
 
-  if (reg2Result.length > 0) {
-    const reg2 = reg2Result[0]
-    await db
-      .update(registrations)
-      .set({
-        matchesWon: reg2.matchesWon + (matchResult.registration2Won ? 1 : 0),
-        matchesLost: reg2.matchesLost + (matchResult.registration2Won ? 0 : 1),
-        setsWon: reg2.setsWon + setResults.registration2SetsWon,
-        setsLost: reg2.setsLost + setResults.registration2SetsLost,
-        points: reg2.points + matchResult.registration2Points,
-        updatedAt: new Date(),
-      })
+    // Update registration 2
+    const reg2Result = await tx
+      .select()
+      .from(registrations)
       .where(eq(registrations.id, registration2Id))
-  }
+      .limit(1)
+
+    if (reg2Result.length > 0) {
+      const reg2 = reg2Result[0]
+      await tx
+        .update(registrations)
+        .set({
+          matchesWon: reg2.matchesWon + (matchResult.registration2Won ? 1 : 0),
+          matchesLost: reg2.matchesLost + (matchResult.registration2Won ? 0 : 1),
+          setsWon: reg2.setsWon + setResults.registration2SetsWon,
+          setsLost: reg2.setsLost + setResults.registration2SetsLost,
+          points: reg2.points + matchResult.registration2Points,
+          updatedAt: new Date(),
+        })
+        .where(eq(registrations.id, registration2Id))
+    }
+  })
 }
