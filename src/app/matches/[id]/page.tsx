@@ -4,8 +4,8 @@ import { useParams } from 'next/navigation'
 import { useMatchSocket } from './_hooks/use-match-socket'
 import {
   MatchHeader,
-  MatchDateCard,
-  MatchDetailsCard,
+  MatchDateSection,
+  MatchDetailsSection,
   WinnerCelebration,
   CurrentSetEditor,
   AddSetCard,
@@ -28,15 +28,7 @@ const MatchDetailPage = () => {
   const params = useParams()
   const matchId = params.id as string
 
-  const {
-    match,
-    matchDate,
-    status,
-    error,
-    accessDenied,
-    isDateSaving,
-    actions,
-  } = useMatchSocket(matchId)
+  const { match, matchDate, status, error, accessDenied, isDateSaving, actions } = useMatchSocket(matchId)
 
   // Loading and error states
   if (status === 'connecting' || status === 'loading' || !match) {
@@ -58,26 +50,16 @@ const MatchDetailPage = () => {
   const player2Name = getPlayerName(match.registration2)
   const currentSet = getCurrentSet(match.sets)
   const allSetsPlayed = areAllSetsPlayed(match.sets)
-  const majorityReached = hasMajorityReached(
-    setWins.player1,
-    setWins.player2,
-    bestOf
-  )
+  const majorityReached = hasMajorityReached(setWins.player1, setWins.player2, bestOf)
   const winnerName = getWinnerName(match, player1Name, player2Name)
-  const majorityWinnerName = getMajorityWinnerName(
-    setWins.player1,
-    setWins.player2,
-    bestOf,
-    player1Name,
-    player2Name
-  )
+  const majorityWinnerName = getMajorityWinnerName(setWins.player1, setWins.player2, bestOf, player1Name, player2Name)
   const isDateSet = !!match.matchDate
 
   return (
     <div className='container mx-auto p-4 space-y-6'>
       <MatchHeader />
 
-      <MatchDateCard
+      <MatchDateSection
         matchDate={matchDate}
         isDateSet={isDateSet}
         isDateSaving={isDateSaving}
@@ -85,7 +67,7 @@ const MatchDetailPage = () => {
         onDateChange={actions.updateDate}
       />
 
-      <MatchDetailsCard match={match} />
+      <MatchDetailsSection match={match} />
 
       <MatchCard match={match} />
 

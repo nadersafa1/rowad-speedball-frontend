@@ -4,7 +4,6 @@ import type {
   Match,
   SetCreatedData,
   MatchScoreUpdatedData,
-  SetCompletedData,
   MatchCompletedData,
   MatchUpdatedData,
   SetPlayedData,
@@ -23,7 +22,6 @@ export const useMatchesSocket = (matches: Match[]) => {
     leaveMatch,
     onScoreUpdated,
     onSetCreated,
-    onSetCompleted,
     onSetPlayed,
     onMatchCompleted,
     onMatchUpdated,
@@ -87,7 +85,12 @@ export const useMatchesSocket = (matches: Match[]) => {
                 ...match,
                 sets: (match.sets || []).map((set) =>
                   set.id === data.setId
-                    ? { ...set, registration1Score: data.registration1Score, registration2Score: data.registration2Score, played: data.played }
+                    ? {
+                        ...set,
+                        registration1Score: data.registration1Score,
+                        registration2Score: data.registration2Score,
+                        played: data.played,
+                      }
                     : set
                 ),
               }
@@ -110,8 +113,14 @@ export const useMatchesSocket = (matches: Match[]) => {
                   ...(match.sets || []),
                   {
                     ...data.set,
-                    createdAt: typeof data.set.createdAt === 'string' ? data.set.createdAt : data.set.createdAt.toISOString(),
-                    updatedAt: typeof data.set.updatedAt === 'string' ? data.set.updatedAt : data.set.updatedAt.toISOString(),
+                    createdAt:
+                      typeof data.set.createdAt === 'string'
+                        ? data.set.createdAt
+                        : data.set.createdAt.toISOString(),
+                    updatedAt:
+                      typeof data.set.updatedAt === 'string'
+                        ? data.set.updatedAt
+                        : data.set.updatedAt.toISOString(),
                   },
                 ],
               }
@@ -121,20 +130,8 @@ export const useMatchesSocket = (matches: Match[]) => {
     })
   }, [socket, onSetCreated, markMatchAsLive])
 
-  useEffect(() => {
-    if (!socket) return
-    return onSetCompleted((data: SetCompletedData) => {
-      setLocalMatches((prev) =>
-        prev.map((match) =>
-          match.id === data.matchId
-            ? { ...match, sets: (match.sets || []).map((set) => (set.id === data.setId ? { ...set, played: true } : set)) }
-            : match
-        )
-      )
-    })
-  }, [socket, onSetCompleted])
-
   // Handle SET_PLAYED event (from markSetPlayed)
+  // Note: SET_COMPLETED event was deprecated - MATCH_SCORE_UPDATED includes played flag
   useEffect(() => {
     if (!socket) return
     return onSetPlayed((data: SetPlayedData) => {
@@ -177,7 +174,13 @@ export const useMatchesSocket = (matches: Match[]) => {
   useEffect(() => {
     if (!socket) return
     return onMatchCompleted((data: MatchCompletedData) => {
-      setLocalMatches((prev) => prev.map((match) => (match.id === data.matchId ? { ...match, played: true, winnerId: data.winnerId } : match)))
+      setLocalMatches((prev) =>
+        prev.map((match) =>
+          match.id === data.matchId
+            ? { ...match, played: true, winnerId: data.winnerId }
+            : match
+        )
+      )
       leaveMatch(data.matchId)
       joinedRoomsRef.current.delete(data.matchId)
       setLiveMatchIds((prev) => {
@@ -194,7 +197,12 @@ export const useMatchesSocket = (matches: Match[]) => {
       setLocalMatches((prev) =>
         prev.map((match) =>
           match.id === data.matchId
-            ? { ...match, played: data.played ?? match.played, matchDate: data.matchDate ?? match.matchDate, winnerId: data.winnerId ?? match.winnerId }
+            ? {
+                ...match,
+                played: data.played ?? match.played,
+                matchDate: data.matchDate ?? match.matchDate,
+                winnerId: data.winnerId ?? match.winnerId,
+              }
             : match
         )
       )
@@ -223,4 +231,3 @@ export const useMatchesSocket = (matches: Match[]) => {
 
   return { localMatches, liveMatchIds }
 }
-

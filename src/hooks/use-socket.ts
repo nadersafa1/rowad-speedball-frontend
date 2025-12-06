@@ -15,6 +15,27 @@ import type {
   UpdateMatchPayload,
 } from '@/lib/socket'
 
+/**
+ * Global socket hook for WebSocket connection management.
+ *
+ * Provides:
+ * - Automatic connection with auth token
+ * - Reconnection handling
+ * - Match-related actions (join, leave, getMatch, etc.)
+ * - Event listener factories
+ *
+ * @example
+ * ```tsx
+ * const { socket, connected, joinMatch, getMatch } = useSocket()
+ *
+ * useEffect(() => {
+ *   if (connected) {
+ *     getMatch(matchId)
+ *     socket.on('match-data', handleMatchData)
+ *   }
+ * }, [connected])
+ * ```
+ */
 export const useSocket = () => {
   const {
     socket,
@@ -239,7 +260,6 @@ export const useSocket = () => {
     onMatchData: createListener(SOCKET_EVENTS.MATCH_DATA),
     onSetCreated: createListener(SOCKET_EVENTS.SET_CREATED),
     onScoreUpdated: createListener(SOCKET_EVENTS.MATCH_SCORE_UPDATED),
-    onSetCompleted: createListener(SOCKET_EVENTS.SET_COMPLETED),
     onSetPlayed: createListener(SOCKET_EVENTS.SET_PLAYED),
     onMatchCompleted: createListener(SOCKET_EVENTS.MATCH_COMPLETED),
     onMatchUpdated: createListener(SOCKET_EVENTS.MATCH_UPDATED),

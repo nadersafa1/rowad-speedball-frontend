@@ -133,11 +133,7 @@ export interface ScoreUpdatedResponse {
   played: boolean
 }
 
-export interface SetCompletedResponse {
-  matchId: string
-  setId: string
-  setNumber: number
-}
+// SetCompletedResponse is deprecated - use ScoreUpdatedResponse with played flag
 
 export interface SetPlayedResponse {
   matchId: string

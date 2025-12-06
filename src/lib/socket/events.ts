@@ -13,7 +13,6 @@ export const SOCKET_EVENTS = {
   MATCH_DATA: 'match-data',
   MATCH_SCORE_UPDATED: 'match-score-updated',
   MATCH_UPDATED: 'match-updated',
-  SET_COMPLETED: 'set-completed',
   MATCH_COMPLETED: 'match-completed',
   SET_CREATED: 'set-created',
   SET_PLAYED: 'set-played',

@@ -2,7 +2,37 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar } from 'lucide-react'
+import LiveScoreEditor from '@/components/matches/live-score-editor'
 import AddSetButton from '@/components/matches/add-set-button'
+import type { Match, Set } from '@/types'
+
+interface CurrentSetEditorProps {
+  currentSet: Set
+  match: Match
+  onScoreUpdate: (setId: string, reg1Score: number, reg2Score: number) => Promise<void>
+  onMarkAsPlayed: (setId: string) => Promise<void>
+}
+
+/**
+ * Editor for the current active set.
+ */
+const CurrentSetEditor = ({ currentSet, match, onScoreUpdate, onMarkAsPlayed }: CurrentSetEditorProps) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Current Set - Set {currentSet.setNumber}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <LiveScoreEditor
+          set={currentSet}
+          match={match}
+          onScoreUpdate={onScoreUpdate}
+          onMarkAsPlayed={onMarkAsPlayed}
+        />
+      </CardContent>
+    </Card>
+  )
+}
 
 interface AddSetCardProps {
   matchId: string
@@ -14,6 +44,9 @@ interface AddSetCardProps {
   onCreateSet: (matchId: string, setNumber?: number) => Promise<void>
 }
 
+/**
+ * Card for adding a new set to the match.
+ */
 const AddSetCard = ({
   matchId,
   currentSetCount,
@@ -37,8 +70,7 @@ const AddSetCard = ({
       <CardContent>
         {hasMajorityReached && majorityWinnerName ? (
           <p className='text-center text-muted-foreground mb-4'>
-            {majorityWinnerName} has won the majority of sets. The match will be
-            marked as complete.
+            {majorityWinnerName} has won the majority of sets. The match will be marked as complete.
           </p>
         ) : allSetsPlayed && currentSetCount > 0 ? (
           <p className='text-center text-muted-foreground mb-4'>
@@ -57,9 +89,10 @@ const AddSetCard = ({
   )
 }
 
-interface DateNotSetCardProps {}
-
-export const DateNotSetCard = ({}: DateNotSetCardProps) => {
+/**
+ * Card shown when match date is not set.
+ */
+const DateNotSetCard = () => {
   return (
     <Card className='border-yellow-400'>
       <CardContent className='pt-6'>
@@ -72,5 +105,5 @@ export const DateNotSetCard = ({}: DateNotSetCardProps) => {
   )
 }
 
-export default AddSetCard
+export { CurrentSetEditor, AddSetCard, DateNotSetCard }
 

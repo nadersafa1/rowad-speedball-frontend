@@ -1,16 +1,70 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, Users } from 'lucide-react'
+import { Calendar, Loader2, Trophy, Users } from 'lucide-react'
+import { format } from 'date-fns'
 import Link from 'next/link'
 import type { Match } from '@/types'
 
-interface MatchDetailsCardProps {
+interface MatchDateSectionProps {
+  matchDate: string
+  isDateSet: boolean
+  isDateSaving: boolean
+  isMatchPlayed: boolean
+  onDateChange: (date: string) => void
+}
+
+/**
+ * Date picker section for match date.
+ */
+const MatchDateSection = ({
+  matchDate,
+  isDateSet,
+  isDateSaving,
+  isMatchPlayed,
+  onDateChange,
+}: MatchDateSectionProps) => {
+  const dateValue = matchDate ? new Date(matchDate + 'T12:00:00') : undefined
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) onDateChange(format(date, 'yyyy-MM-dd'))
+  }
+
+  return (
+    <Card>
+      <CardHeader className='pb-3'>
+        <CardTitle className='flex items-center gap-2 text-lg'>
+          <Calendar className='h-5 w-5' />
+          Match Date
+          {isDateSaving && <Loader2 className='h-4 w-4 animate-spin' />}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className='flex items-center gap-4'>
+          <DatePicker
+            date={dateValue}
+            onDateChange={handleDateChange}
+            placeholder='Select match date'
+            disabled={isDateSaving || isMatchPlayed}
+            className='max-w-[200px]'
+          />
+          {!isDateSet && <p className='text-sm text-yellow-600'>Set a date to enable scoring</p>}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+interface MatchDetailsSectionProps {
   match: Match
 }
 
-const MatchDetailsCard = ({ match }: MatchDetailsCardProps) => {
+/**
+ * Event and group details section.
+ */
+const MatchDetailsSection = ({ match }: MatchDetailsSectionProps) => {
   if (!match.event && !match.group) return null
 
   return (
@@ -36,9 +90,7 @@ const MatchDetailsCard = ({ match }: MatchDetailsCardProps) => {
             <div className='flex items-center gap-3 flex-wrap'>
               <Badge variant='outline'>{match.event.eventType}</Badge>
               <Badge variant='outline'>{match.event.gender}</Badge>
-              {match.event.completed && (
-                <Badge variant='default'>Completed</Badge>
-              )}
+              {match.event.completed && <Badge variant='default'>Completed</Badge>}
             </div>
           </div>
         )}
@@ -49,11 +101,7 @@ const MatchDetailsCard = ({ match }: MatchDetailsCardProps) => {
               <Users className='h-4 w-4 text-gray-500' />
               <span className='text-sm font-medium text-gray-500'>Group:</span>
               <span className='text-sm font-semibold'>{match.group.name}</span>
-              {match.group.completed && (
-                <Badge variant='default' className='ml-2'>
-                  Completed
-                </Badge>
-              )}
+              {match.group.completed && <Badge variant='default' className='ml-2'>Completed</Badge>}
             </div>
           </div>
         )}
@@ -72,5 +120,5 @@ const MatchDetailsCard = ({ match }: MatchDetailsCardProps) => {
   )
 }
 
-export default MatchDetailsCard
+export { MatchDateSection, MatchDetailsSection }
 

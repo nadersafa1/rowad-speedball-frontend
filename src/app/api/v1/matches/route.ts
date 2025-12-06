@@ -21,6 +21,9 @@ export async function GET(request: NextRequest) {
   try {
     const { eventId, groupId, round } = parseResult.data
 
+    // Track event data for bestOf (used in response)
+    let eventData: typeof schema.events.$inferSelect | null = null
+
     // Authorization checks
     if (eventId) {
       const event = await db
@@ -33,6 +36,7 @@ export async function GET(request: NextRequest) {
         return Response.json({ message: 'Event not found' }, { status: 404 })
       }
 
+      eventData = event[0]
       const authError = checkEventReadAuthorization(context, event[0])
       if (authError) return authError
     }
@@ -58,6 +62,7 @@ export async function GET(request: NextRequest) {
         return Response.json({ message: 'Event not found' }, { status: 404 })
       }
 
+      eventData = event[0]
       const authError = checkEventReadAuthorization(context, event[0])
       if (authError) return authError
     }
@@ -82,13 +87,24 @@ export async function GET(request: NextRequest) {
 
     const matches = await query
 
-    // Enrich matches with sets and registration data
+    // Enrich matches with sets, registration data, and bestOf
     const matchesWithData = await Promise.all(
       matches.map(async (match) => {
         const matchSets = await db
           .select()
           .from(schema.sets)
           .where(eq(schema.sets.matchId, match.id))
+
+        // Get bestOf from cached event or fetch if needed
+        let bestOf = eventData?.bestOf || 3
+        if (!eventData && match.eventId) {
+          const event = await db
+            .select()
+            .from(schema.events)
+            .where(eq(schema.events.id, match.eventId))
+            .limit(1)
+          bestOf = event[0]?.bestOf || 3
+        }
 
         // Fetch registrations with players from junction table
         // Handle nullable registration IDs for BYE matches in single elimination
@@ -119,6 +135,7 @@ export async function GET(request: NextRequest) {
         return {
           ...match,
           sets: matchSets,
+          bestOf,
           registration1: registration1WithPlayers,
           registration2: registration2WithPlayers,
         }
