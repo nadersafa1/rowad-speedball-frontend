@@ -134,6 +134,13 @@
       "when": 1765119706852,
       "tag": "0018_organization_federation_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1765200000000,
+      "tag": "0019_federation_players_user_federation",
+      "breakpoints": true
     }
   ]
 }
