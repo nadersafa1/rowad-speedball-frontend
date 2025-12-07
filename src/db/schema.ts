@@ -18,10 +18,13 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
-  role: text('role'),
+  role: text('role'), // Supports: user, admin, federation-admin, federation-editor
   banned: boolean('banned'),
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
+  federationId: uuid('federation_id').references(() => federations.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -467,6 +470,29 @@ export const championships = pgTable('championships', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+// Federation Players Junction Table (player registration in federation)
+export const federationPlayers = pgTable(
+  'federation_players',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    federationId: uuid('federation_id')
+      .notNull()
+      .references(() => federations.id, { onDelete: 'cascade' }),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id, { onDelete: 'cascade' }),
+    federationRegistrationNumber: varchar('federation_registration_number', {
+      length: 50,
+    }).notNull(),
+    registrationYear: integer('registration_year').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueFederationPlayer: unique().on(table.federationId, table.playerId),
+  })
+)
+
 // Helper function to format date as "Nov 22, 2025"
 export const formatDateForSessionName = (date: Date): string => {
   return date.toLocaleDateString('en-US', {
@@ -494,6 +520,7 @@ export type TrainingSessionAttendance =
 export type Federation = typeof federations.$inferSelect
 export type Championship = typeof championships.$inferSelect
 export type FederationClub = typeof federationClubs.$inferSelect
+export type FederationPlayer = typeof federationPlayers.$inferSelect
 export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect
 export type Invitation = typeof invitation.$inferSelect
