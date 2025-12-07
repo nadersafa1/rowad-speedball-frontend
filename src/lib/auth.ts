@@ -133,6 +133,17 @@ export const auth = betterAuth({
     nextCookies(),
     admin({ defaultRole: 'user' }),
     organization({
+      schema: {
+        organization: {
+          additionalFields: {
+            federationId: {
+              type: 'string',
+              required: false,
+              input: true,
+            },
+          },
+        },
+      },
       ac,
       roles: {
         owner,
