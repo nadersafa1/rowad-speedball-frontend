@@ -303,7 +303,6 @@ const EventDetailPage = () => {
               <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
                 <CardTitle>Registrations ({registrations.length})</CardTitle>
                 {canCreate &&
-                  matches.length === 0 &&
                   (!selectedEvent?.registrationEndDate ||
                     new Date(selectedEvent.registrationEndDate) >=
                       new Date()) && (

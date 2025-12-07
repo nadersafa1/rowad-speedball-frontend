@@ -137,29 +137,6 @@ export async function POST(request: NextRequest) {
     const authError = checkEventCreateAuthorization(context)
     if (authError) return authError
 
-    // Check if any sets are played
-    const matches = await db
-      .select()
-      .from(schema.matches)
-      .where(eq(schema.matches.eventId, eventId))
-
-    for (const match of matches) {
-      const playedSets = await db
-        .select()
-        .from(schema.sets)
-        .where(
-          and(eq(schema.sets.matchId, match.id), eq(schema.sets.played, true))
-        )
-        .limit(1)
-
-      if (playedSets.length > 0) {
-        return Response.json(
-          { message: 'Cannot add registrations once sets are played' },
-          { status: 400 }
-        )
-      }
-    }
-
     // Validate player count based on min/max configuration
     const countValidation = validateRegistrationPlayerCount(
       eventData.eventType as
