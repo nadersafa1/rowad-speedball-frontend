@@ -1,4 +1,4 @@
-import { Building2, Users, ArrowRight } from 'lucide-react'
+import { Building2, Users, ArrowRight, Globe } from 'lucide-react'
 import Link from 'next/link'
 import {
   Card,
@@ -18,7 +18,7 @@ const AdminPage = () => {
         </p>
       </div>
 
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-2 items-stretch'>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch'>
         <Link href='/admin/clubs' className='group h-full block'>
           <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
             <CardHeader className='p-4 flex-1 flex items-center'>
@@ -52,6 +52,27 @@ const AdminPage = () => {
                     <CardTitle>Users</CardTitle>
                     <CardDescription>
                       Manage user accounts, roles, and permissions
+                    </CardDescription>
+                  </div>
+                </div>
+                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
+
+        <Link href='/admin/federations' className='group h-full block'>
+          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
+            <CardHeader className='p-4 flex-1 flex items-center'>
+              <div className='flex items-center justify-between w-full'>
+                <div className='flex items-center gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
+                    <Globe className='h-6 w-6 text-primary' />
+                  </div>
+                  <div>
+                    <CardTitle>Federations</CardTitle>
+                    <CardDescription>
+                      Manage federations and their settings
                     </CardDescription>
                   </div>
                 </div>
