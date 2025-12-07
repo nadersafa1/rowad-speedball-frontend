@@ -155,6 +155,49 @@ export class ApiClient {
     })
   }
 
+  // Federation methods
+  async getFederations(params?: {
+    q?: string
+    sortBy?: 'name' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request(`/federations${query ? `?${query}` : ''}`)
+  }
+
+  async getFederation(id: string) {
+    return this.request(`/federations/${id}`)
+  }
+
+  async createFederation(data: any) {
+    return this.request('/federations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateFederation(id: string, data: any) {
+    return this.request(`/federations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteFederation(id: string) {
+    return this.request(`/federations/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
   // Test methods
   async getTests(params?: {
     q?: string
