@@ -34,6 +34,9 @@ export const organization = pgTable('organization', {
   logo: text('logo'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   metadata: text('metadata'),
+  federationId: uuid('federation_id').references(() => federations.id, {
+    onDelete: 'set null',
+  }),
 })
 
 export const member = pgTable('member', {
