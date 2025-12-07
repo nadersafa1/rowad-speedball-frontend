@@ -10,6 +10,7 @@ import {
   pgEnum,
   unique,
 } from 'drizzle-orm/pg-core'
+import { parse, getYear, getMonth } from 'date-fns'
 
 // Auth Tables
 export const user = pgTable('user', {
@@ -140,18 +141,18 @@ export const players = pgTable('players', {
 
 export const calculateAge = (dateOfBirth: string): number => {
   const today = new Date()
-  const birthDate = new Date(dateOfBirth)
-  let age = today.getFullYear() - birthDate.getFullYear()
-  const monthDiff = today.getMonth() - birthDate.getMonth()
+  const currentYear = getYear(today)
+  const currentMonth = getMonth(today) + 1 // getMonth is 0-indexed
 
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    age--
-  }
+  // Parse date safely as local (avoids UTC timezone issues)
+  const birthDate = parse(dateOfBirth, 'yyyy-MM-dd', new Date())
+  const birthYear = getYear(birthDate)
 
-  return age
+  // Season-based calculation:
+  // Jul-Dec: currentYear - birthYear (new season)
+  // Jan-Jun: currentYear - birthYear - 1 (still in previous season)
+  const isFirstHalf = currentMonth <= 6
+  return isFirstHalf ? currentYear - birthYear - 1 : currentYear - birthYear
 }
 
 export const getAgeGroup = (dateOfBirth: string): string => {
