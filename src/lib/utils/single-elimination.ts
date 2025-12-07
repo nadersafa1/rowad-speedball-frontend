@@ -80,12 +80,13 @@ export const generateSingleEliminationBracket = (
 /**
  * Auto-advances BYE match winners
  * Returns the updates needed for the next round matches
+ * Uses composite key to handle multiple bye matches advancing to same position
  */
 export const processByeAdvancements = (
   matches: SEBracketMatch[]
-): Map<number, { slot: 1 | 2; registrationId: string }> => {
+): Map<string, { slot: 1 | 2; registrationId: string }> => {
   const advancements = new Map<
-    number,
+    string,
     { slot: 1 | 2; registrationId: string }
   >()
 
@@ -93,7 +94,9 @@ export const processByeAdvancements = (
     if (match.isBye && match.winnerTo && match.winnerToSlot) {
       const winnerId = match.registration1Id ?? match.registration2Id
       if (winnerId) {
-        advancements.set(match.winnerTo, {
+        // Use composite key: position-slot to handle multiple byes to same match
+        const key = `${match.winnerTo}-${match.winnerToSlot}`
+        advancements.set(key, {
           slot: match.winnerToSlot,
           registrationId: winnerId,
         })
