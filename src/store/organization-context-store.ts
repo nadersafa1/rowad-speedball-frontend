@@ -24,6 +24,10 @@ const defaultContext: OrganizationContext = {
   isPlayer: false,
   isMember: false,
   isAuthenticated: false,
+  // Federation role flags
+  isFederationAdmin: false,
+  isFederationEditor: false,
+  federationId: null,
 }
 
 export const useOrganizationContextStore = create<OrganizationContextState>(

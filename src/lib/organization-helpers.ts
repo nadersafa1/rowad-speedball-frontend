@@ -24,6 +24,20 @@ const getRoleFlags = (
   }
 }
 
+const getFederationRoleFlags = (
+  userRole: string | null | undefined,
+  federationId: string | null | undefined
+): Pick<
+  OrganizationContext,
+  'isFederationAdmin' | 'isFederationEditor' | 'federationId'
+> => {
+  return {
+    isFederationAdmin: userRole === 'federation-admin',
+    isFederationEditor: userRole === 'federation-editor',
+    federationId: federationId ?? null,
+  }
+}
+
 export async function getOrganizationContext(): Promise<OrganizationContext> {
   const session = await auth.api.getSession({ headers: await headers() })
 
@@ -38,8 +52,20 @@ export async function getOrganizationContext(): Promise<OrganizationContext> {
       activeOrgId: null,
       isSystemAdmin: false,
       ...getRoleFlags(null),
+      ...getFederationRoleFlags(null, null),
     }
   }
+
+  // Get user's federation role and federationId from database
+  const userData = await db.query.user.findFirst({
+    where: eq(schema.user.id, session.user.id),
+    columns: {
+      role: true,
+      federationId: true,
+    },
+  })
+  const userRole = userData?.role ?? null
+  const userFederationId = userData?.federationId ?? null
 
   // Check permission
   const hasAdminPermission = await auth.api.userHasPermission({
@@ -56,6 +82,7 @@ export async function getOrganizationContext(): Promise<OrganizationContext> {
       isAuthenticated: true,
       userId: session.user.id,
       ...getRoleFlags(null),
+      ...getFederationRoleFlags(userRole, userFederationId),
     }
   }
 
@@ -79,6 +106,7 @@ export async function getOrganizationContext(): Promise<OrganizationContext> {
         role: null,
         activeOrgId: null,
         ...getRoleFlags(null),
+        ...getFederationRoleFlags(userRole, userFederationId),
       }
     }
 
@@ -90,6 +118,7 @@ export async function getOrganizationContext(): Promise<OrganizationContext> {
       isAuthenticated: true,
       userId: session.user.id,
       ...getRoleFlags(membership.role as OrganizationRole),
+      ...getFederationRoleFlags(userRole, userFederationId),
     }
   }
 
@@ -111,6 +140,7 @@ export async function getOrganizationContext(): Promise<OrganizationContext> {
         role: null,
         activeOrgId: null,
         ...getRoleFlags(null),
+        ...getFederationRoleFlags(userRole, userFederationId),
       }
     }
 
@@ -122,6 +152,7 @@ export async function getOrganizationContext(): Promise<OrganizationContext> {
       isAuthenticated: true,
       userId: session.user.id,
       ...getRoleFlags(membership.role as OrganizationRole),
+      ...getFederationRoleFlags(userRole, userFederationId),
     }
   }
 
@@ -133,6 +164,7 @@ export async function getOrganizationContext(): Promise<OrganizationContext> {
     role: null,
     activeOrgId: null,
     ...getRoleFlags(null),
+    ...getFederationRoleFlags(userRole, userFederationId),
   }
 }
 
