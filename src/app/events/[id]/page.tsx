@@ -427,7 +427,7 @@ const EventDetailPage = () => {
 
         {selectedEvent.format !== 'single-elimination' && (
           <TabsContent value='standings' className='space-y-4'>
-            <StandingsTable registrations={registrations} />
+            <StandingsTable registrations={registrations} groups={groups} />
           </TabsContent>
         )}
       </Tabs>
