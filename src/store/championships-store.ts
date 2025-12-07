@@ -92,8 +92,9 @@ export const useChampionshipsStore = create<ChampionshipsState>((set, get) => ({
   fetchChampionship: async (id: string) => {
     set({ isLoading: true, error: null })
     try {
-      const championship =
-        (await apiClient.getChampionship(id)) as ChampionshipWithFederation
+      const championship = (await apiClient.getChampionship(
+        id
+      )) as ChampionshipWithFederation
       set({ selectedChampionship: championship, isLoading: false })
     } catch (error) {
       set({
@@ -184,4 +185,3 @@ export const useChampionshipsStore = create<ChampionshipsState>((set, get) => ({
   clearError: () => set({ error: null }),
   clearSelectedChampionship: () => set({ selectedChampionship: null }),
 }))
-
