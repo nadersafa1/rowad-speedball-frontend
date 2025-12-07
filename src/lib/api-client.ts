@@ -198,6 +198,52 @@ export class ApiClient {
     })
   }
 
+  // Championship methods
+  async getChampionships(params?: {
+    q?: string
+    federationId?: string
+    sortBy?: 'name' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }) {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.federationId)
+      searchParams.set('federationId', params.federationId)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request(`/championships${query ? `?${query}` : ''}`)
+  }
+
+  async getChampionship(id: string) {
+    return this.request(`/championships/${id}`)
+  }
+
+  async createChampionship(data: any) {
+    return this.request('/championships', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateChampionship(id: string, data: any) {
+    return this.request(`/championships/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteChampionship(id: string) {
+    return this.request(`/championships/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
   // Test methods
   async getTests(params?: {
     q?: string

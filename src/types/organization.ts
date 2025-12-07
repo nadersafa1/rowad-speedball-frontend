@@ -26,5 +26,8 @@ export interface OrganizationContext {
   isPlayer: boolean
   isMember: boolean
   isAuthenticated: boolean
+  // Federation role flags
+  isFederationAdmin: boolean
+  isFederationEditor: boolean
+  federationId: string | null
 }
-
