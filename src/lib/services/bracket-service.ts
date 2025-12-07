@@ -146,9 +146,11 @@ const processAndApplyByeAdvancements = async (
 ): Promise<void> => {
   const byeAdvancements = processByeAdvancements(bracketMatches)
 
-  for (const [toPosition, advancement] of Array.from(
+  for (const [compositeKey, advancement] of Array.from(
     byeAdvancements.entries()
   )) {
+    // Extract position from composite key (format: "position-slot")
+    const toPosition = parseInt(compositeKey.split('-')[0], 10)
     const toMatchId = positionToIdMap.get(toPosition)
     if (toMatchId) {
       const updateField =
