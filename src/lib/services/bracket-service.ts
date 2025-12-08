@@ -8,7 +8,10 @@ import {
   processByeAdvancements,
   SeedMapping,
 } from '@/lib/utils/single-elimination'
-import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
+import {
+  nextPowerOf2,
+  sortRegistrationsBySeeds,
+} from '@/lib/utils/single-elimination-helpers'
 import { generateModifiedDoubleEliminationBracket } from '@/lib/utils/modified-double-elimination'
 import {
   isSingleEliminationFormat,
@@ -274,8 +277,12 @@ export const generateBracket = async (
   const isDoubleElim = isDoubleEliminationFormat(format)
 
   if (isDoubleElim) {
+    const seededRegistrationIds = sortRegistrationsBySeeds(
+      registrationIds,
+      seeds
+    )
     const { matches: bracketMatches, totalRounds } =
-      generateModifiedDoubleEliminationBracket(registrationIds)
+      generateModifiedDoubleEliminationBracket(seededRegistrationIds)
     const paddedBracketSize = nextPowerOf2(registrationIds.length)
 
     const idMap = await createDoubleElimMatches(eventId, bracketMatches)
