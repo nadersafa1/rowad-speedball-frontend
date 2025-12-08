@@ -8,11 +8,9 @@ import {
   processByeAdvancements,
   SeedMapping,
 } from '@/lib/utils/single-elimination'
-import {
-  nextPowerOf2,
-  sortRegistrationsBySeeds,
-} from '@/lib/utils/single-elimination-helpers'
-import { generateModifiedDoubleEliminationBracket } from '@/lib/utils/modified-double-elimination'
+import { sortRegistrationsBySeeds } from '@/lib/utils/single-elimination-helpers'
+import { generateDoubleEliminationBracket } from '@/lib/utils/double-elimination'
+import type { ParticipantSeed } from '@/lib/utils/double-elimination-types'
 import {
   isSingleEliminationFormat,
   isDoubleEliminationFormat,
@@ -120,53 +118,6 @@ const createBracketMatches = async (
 }
 
 /**
- * Creates modified double elimination matches in database
- * Uses match.id as key for lookup instead of bracketPosition
- */
-const createDoubleElimMatches = async (
-  eventId: string,
-  bracketMatches: ReturnType<
-    typeof generateModifiedDoubleEliminationBracket
-  >['matches']
-): Promise<Map<string, string>> => {
-  const idMap = new Map<string, string>()
-  let bracketPosition = 1
-
-  for (const match of bracketMatches) {
-    const matchNumber =
-      Number(match.id.split('-')[2] ?? match.id.split('-')[1]) ||
-      bracketPosition
-    const hasBye = Boolean(
-      (match.player1 && !match.player2) || (match.player2 && !match.player1)
-    )
-    const winnerId = hasBye ? match.player1 ?? match.player2 : null
-
-    const [insertedMatch] = await db
-      .insert(schema.matches)
-      .values({
-        eventId,
-        groupId: null,
-        round: match.round,
-        matchNumber,
-        registration1Id: match.player1,
-        registration2Id: match.player2,
-        bracketPosition,
-        bracketType: match.bracketType,
-        winnerToSlot: match.winnerToSlot ?? null,
-        loserToSlot: match.loserToSlot ?? null,
-        played: hasBye,
-        winnerId,
-      })
-      .returning()
-
-    idMap.set(match.id, insertedMatch.id)
-    bracketPosition++
-  }
-
-  return idMap
-}
-
-/**
  * Links matches via winnerTo references (second pass)
  */
 const linkBracketMatches = async (
@@ -187,40 +138,6 @@ const linkBracketMatches = async (
           .where(eq(schema.matches.id, matchId))
       }
     }
-  }
-}
-
-/**
- * Links double elimination matches via winnerTo/loserTo using DB IDs
- */
-const linkDoubleElimMatches = async (
-  bracketMatches: ReturnType<
-    typeof generateModifiedDoubleEliminationBracket
-  >['matches'],
-  idMap: Map<string, string>
-): Promise<void> => {
-  for (const bracketMatch of bracketMatches) {
-    const matchId = idMap.get(bracketMatch.id)
-    if (!matchId) continue
-
-    const winnerToId =
-      typeof bracketMatch.winnerTo === 'string' &&
-      idMap.has(bracketMatch.winnerTo)
-        ? idMap.get(bracketMatch.winnerTo)!
-        : null
-    const loserToId =
-      typeof bracketMatch.loserTo === 'string' &&
-      idMap.has(bracketMatch.loserTo)
-        ? idMap.get(bracketMatch.loserTo)!
-        : null
-
-    await db
-      .update(schema.matches)
-      .set({
-        winnerTo: winnerToId ?? null,
-        loserTo: loserToId ?? null,
-      })
-      .where(eq(schema.matches.id, matchId))
   }
 }
 
@@ -267,6 +184,52 @@ export const updateRegistrationSeeds = async (
 }
 
 /**
+ * Advance winner/loser into their routed matches for a completed match
+ */
+export const advanceMatchResult = async (params: {
+  matchId: string
+  winnerId: string
+  loserId?: string | null
+}): Promise<void> => {
+  const { matchId, winnerId, loserId } = params
+  const [match] = await db
+    .select()
+    .from(schema.matches)
+    .where(eq(schema.matches.id, matchId))
+    .limit(1)
+
+  if (!match) {
+    throw new Error('Match not found')
+  }
+
+  if (match.winnerTo && match.winnerToSlot) {
+    const field =
+      match.winnerToSlot === 1 ? 'registration1Id' : 'registration2Id'
+    const payload =
+      field === 'registration1Id'
+        ? { registration1Id: winnerId }
+        : { registration2Id: winnerId }
+    await db
+      .update(schema.matches)
+      .set(payload)
+      .where(eq(schema.matches.id, match.winnerTo))
+  }
+
+  if (match.loserTo && match.loserToSlot && loserId) {
+    const field =
+      match.loserToSlot === 1 ? 'registration1Id' : 'registration2Id'
+    const payload =
+      field === 'registration1Id'
+        ? { registration1Id: loserId }
+        : { registration2Id: loserId }
+    await db
+      .update(schema.matches)
+      .set(payload)
+      .where(eq(schema.matches.id, match.loserTo))
+  }
+}
+
+/**
  * Main function to generate and persist a single elimination bracket
  */
 export const generateBracket = async (
@@ -281,39 +244,55 @@ export const generateBracket = async (
       registrationIds,
       seeds
     )
-    const { matches: bracketMatches, totalRounds } =
-      generateModifiedDoubleEliminationBracket(seededRegistrationIds)
-    const paddedBracketSize = nextPowerOf2(registrationIds.length)
+    const seedMap = new Map(
+      seeds?.map((seed) => [seed.registrationId, seed.seed]) ?? []
+    )
+    const participants: ParticipantSeed[] = seededRegistrationIds.map(
+      (registrationId, idx) => ({
+        registrationId,
+        seed: seedMap.get(registrationId) ?? idx + 1,
+      })
+    )
+    const { matches: bracketMatches, totals } =
+      generateDoubleEliminationBracket(participants)
 
-    const idMap = await createDoubleElimMatches(eventId, bracketMatches)
-    await linkDoubleElimMatches(bracketMatches, idMap)
-
-    // Auto-advance BYE winners
+    const idMap = new Map<string, string>()
     for (const match of bracketMatches) {
-      if (!match.winnerTo || typeof match.winnerTo !== 'string') continue
-      const fromId = idMap.get(match.id)
-      const toId = idMap.get(match.winnerTo)
-      if (!fromId || !toId) continue
+      const [insertedMatch] = await db
+        .insert(schema.matches)
+        .values({
+          eventId,
+          groupId: null,
+          round: match.round,
+          matchNumber: match.matchNumber,
+          registration1Id: match.registration1Id,
+          registration2Id: match.registration2Id,
+          bracketPosition: match.bracketPosition,
+          bracketType: match.bracketType,
+          winnerToSlot: match.winnerTo?.slot ?? null,
+          loserToSlot: match.loserTo?.slot ?? null,
+          played: match.played,
+          winnerId: match.played ? match.winnerId : null,
+        })
+        .returning()
 
-      const fromDb = await db
-        .select()
-        .from(schema.matches)
-        .where(eq(schema.matches.id, fromId))
-        .limit(1)
+      idMap.set(match.id, insertedMatch.id)
+    }
 
-      if (
-        fromDb[0] &&
-        fromDb[0].played &&
-        fromDb[0].winnerId &&
-        match.winnerToSlot
-      ) {
-        const updateField =
-          match.winnerToSlot === 1 ? 'registration1Id' : 'registration2Id'
-        await db
-          .update(schema.matches)
-          .set({ [updateField]: fromDb[0].winnerId })
-          .where(eq(schema.matches.id, toId))
-      }
+    for (const match of bracketMatches) {
+      const matchId = idMap.get(match.id)
+      if (!matchId) continue
+
+      const winnerToId = match.winnerTo ? idMap.get(match.winnerTo.id) : null
+      const loserToId = match.loserTo ? idMap.get(match.loserTo.id) : null
+
+      await db
+        .update(schema.matches)
+        .set({
+          winnerTo: winnerToId ?? null,
+          loserTo: loserToId ?? null,
+        })
+        .where(eq(schema.matches.id, matchId))
     }
 
     if (seeds && seeds.length > 0) {
@@ -327,8 +306,8 @@ export const generateBracket = async (
 
     return {
       matches: finalMatches,
-      totalRounds: totalRounds.winners + totalRounds.losers,
-      bracketSize: paddedBracketSize,
+      totalRounds: totals.winners + totals.losers,
+      bracketSize: totals.bracketSize,
       matchCount: finalMatches.length,
     }
   }
