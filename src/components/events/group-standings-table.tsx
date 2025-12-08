@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   Table,
@@ -7,16 +7,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy } from "lucide-react";
-import type { Registration } from "@/types";
-import { StandingsTableHeader } from "./standings-table-header";
-import { StandingsTableRow } from "./standings-table-row";
+} from '@/components/ui/table'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Trophy } from 'lucide-react'
+import type { Registration } from '@/types'
+import { StandingsTableHeader } from './standings-table-header'
+import { StandingsTableRow } from './standings-table-row'
 
 interface GroupStandingsTableProps {
-  groupName: string;
-  registrations: Registration[];
+  groupName: string
+  registrations: Registration[]
 }
 
 const GroupStandingsTable = ({
@@ -25,23 +25,23 @@ const GroupStandingsTable = ({
 }: GroupStandingsTableProps) => {
   // Sort by points (desc), then sets difference, then matches won
   const sortedRegistrations = [...registrations].sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    const aSetsDiff = a.setsWon - a.setsLost;
-    const bSetsDiff = b.setsWon - b.setsLost;
-    if (bSetsDiff !== aSetsDiff) return bSetsDiff - aSetsDiff;
-    return b.matchesWon - a.matchesWon;
-  });
+    if (b.points !== a.points) return b.points - a.points
+    const aSetsDiff = a.setsWon - a.setsLost
+    const bSetsDiff = b.setsWon - b.setsLost
+    if (bSetsDiff !== aSetsDiff) return bSetsDiff - aSetsDiff
+    return b.matchesWon - a.matchesWon
+  })
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5" />
+        <CardTitle className='flex items-center gap-2'>
+          <Trophy className='h-5 w-5' />
           Group {groupName} Standings
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className='overflow-x-auto'>
           <Table>
             <StandingsTableHeader />
             <TableBody>
@@ -49,7 +49,7 @@ const GroupStandingsTable = ({
                 <TableRow>
                   <TableCell
                     colSpan={9}
-                    className="text-center text-muted-foreground px-2 sm:px-4"
+                    className='text-center text-muted-foreground px-2 sm:px-4'
                   >
                     No registrations in this group
                   </TableCell>
@@ -68,8 +68,7 @@ const GroupStandingsTable = ({
         </div>
       </CardContent>
     </Card>
-  );
-};
+  )
+}
 
-export default GroupStandingsTable;
-
+export default GroupStandingsTable
