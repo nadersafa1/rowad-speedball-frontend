@@ -6,6 +6,7 @@ export const EVENT_FORMATS = [
   'groups',
   'single-elimination',
   'groups-knockout',
+  'double-elimination',
 ] as const
 export type EventFormat = (typeof EVENT_FORMATS)[number]
 
@@ -82,7 +83,7 @@ export const eventsCreateSchema = z
     format: z
       .enum(EVENT_FORMATS, {
         message:
-          'Format must be groups, single-elimination, or groups-knockout',
+          'Format must be groups, single-elimination, groups-knockout, or double-elimination',
       })
       .optional()
       .default('groups'),
@@ -167,7 +168,7 @@ export const eventsUpdateSchema = z
     format: z
       .enum(EVENT_FORMATS, {
         message:
-          'Format must be groups, single-elimination, or groups-knockout',
+          'Format must be groups, single-elimination, groups-knockout, or double-elimination',
       })
       .optional(),
     hasThirdPlaceMatch: z.boolean().optional(),

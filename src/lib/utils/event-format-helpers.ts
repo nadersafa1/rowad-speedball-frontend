@@ -17,10 +17,21 @@ export const isSingleEliminationFormat = (format: string): boolean => {
 }
 
 /**
+ * Check if the event format is double elimination
+ */
+export const isDoubleEliminationFormat = (format: string): boolean => {
+  return format === 'double-elimination'
+}
+
+/**
  * Check if the format supports bracket generation
  */
 export const supportsBracketGeneration = (format: string): boolean => {
-  return format === 'single-elimination' || format === 'groups-knockout'
+  return (
+    format === 'single-elimination' ||
+    format === 'groups-knockout' ||
+    format === 'double-elimination'
+  )
 }
 
 /**
@@ -34,7 +45,11 @@ export const usesPointsStandings = (format: string): boolean => {
  * Check if the format supports BYE matches
  */
 export const supportsByeMatches = (format: string): boolean => {
-  return isSingleEliminationFormat(format) || format === 'groups-knockout'
+  return (
+    isSingleEliminationFormat(format) ||
+    isDoubleEliminationFormat(format) ||
+    format === 'groups-knockout'
+  )
 }
 
 /**
@@ -43,4 +58,3 @@ export const supportsByeMatches = (format: string): boolean => {
 export const isValidEventFormat = (format: string): format is EventFormat => {
   return EVENT_FORMATS.includes(format as EventFormat)
 }
-

@@ -181,10 +181,24 @@ export type Match = {
   registration2?: Registration | null
   event?: Event | null
   group?: Group | null
-  // Single elimination specific fields
+  // Elimination fields
   bracketPosition?: number | null
+  bracketType?: 'winners' | 'losers' | null
   winnerTo?: string | null
   winnerToSlot?: 1 | 2 | null
+  loserTo?: string | null
+  loserToSlot?: 1 | 2 | null
+  winnerToPlacement?:
+    | 'first-place'
+    | 'second-place'
+    | 'third-place'
+    | 'fourth-place'
+  loserToPlacement?:
+    | 'first-place'
+    | 'second-place'
+    | 'third-place'
+    | 'fourth-place'
+    | 'eliminated'
   isByeMatch?: boolean
   isThirdPlace?: boolean
 }

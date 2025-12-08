@@ -393,7 +393,8 @@ const EventDetailPage = () => {
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          {selectedEvent.format === 'single-elimination' ? (
+          {selectedEvent.format === 'single-elimination' ||
+          selectedEvent.format === 'double-elimination' ? (
             <BracketSeeding
               eventId={eventId}
               registrations={registrations}

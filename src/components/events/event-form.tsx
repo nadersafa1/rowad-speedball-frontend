@@ -38,12 +38,16 @@ import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { UI_EVENT_TYPES, EVENT_TYPE_LABELS } from '@/types/event-types'
 import { EVENT_FORMATS, EVENT_FORMAT_LABELS } from '@/types/event-format'
 
-// Event format options - groups and single-elimination are supported
+// Event format options
 const EVENT_FORMAT_OPTIONS = [
   { value: 'groups', label: EVENT_FORMAT_LABELS.groups },
   {
     value: 'single-elimination',
     label: EVENT_FORMAT_LABELS['single-elimination'],
+  },
+  {
+    value: 'double-elimination',
+    label: EVENT_FORMAT_LABELS['double-elimination'],
   },
 ] as const
 
@@ -57,9 +61,12 @@ const eventSchema = z
     gender: z.enum(['male', 'female', 'mixed'], {
       message: 'Gender is required',
     }),
-    format: z.enum(['groups', 'single-elimination', 'groups-knockout'], {
-      message: 'Format is required',
-    }),
+    format: z.enum(
+      ['groups', 'single-elimination', 'groups-knockout', 'double-elimination'],
+      {
+        message: 'Format is required',
+      }
+    ),
     visibility: z.enum(['public', 'private']),
     minPlayers: z.number().int().min(1, 'Must be at least 1'),
     maxPlayers: z.number().int().min(1, 'Must be at least 1'),

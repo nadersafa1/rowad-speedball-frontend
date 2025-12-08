@@ -9,6 +9,8 @@ import MatchResultsForm from './match-results-form'
 import MatchesListView from './matches-list-view'
 import BracketStats from './bracket-stats'
 import BracketVisualization from '@/components/tournaments/bracket-visualization'
+import DoubleElimList from './double-elim-list'
+import DoubleElimBracket from '@/components/tournaments/double-elim-bracket'
 import { useMatchesSocket } from './use-matches-socket'
 import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
 import MatchesFilters, { type MatchStatus } from './matches-filters'
@@ -31,6 +33,7 @@ const MatchesView = ({
   eventFormat,
 }: MatchesViewProps) => {
   const isSingleElimination = eventFormat === 'single-elimination'
+  const isDoubleElimination = eventFormat === 'double-elimination'
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
   const [groupFilter, setGroupFilter] = useState<string>('all')
@@ -85,17 +88,25 @@ const MatchesView = ({
               statusFilter={statusFilter}
               onGroupChange={setGroupFilter}
               onStatusChange={setStatusFilter}
-              showGroupFilter={!isSingleElimination}
+              showGroupFilter={!isSingleElimination && !isDoubleElimination}
             />
-            {isSingleElimination && (
+            {(isSingleElimination || isDoubleElimination) && (
               <div className='flex items-center gap-2'>
                 <span className='text-sm text-muted-foreground'>View:</span>
                 <div className='flex items-center gap-1 p-1 bg-muted rounded-lg'>
                   <Button
-                    variant={viewMode === 'bracket' ? 'default' : 'ghost'}
+                    variant={
+                      viewMode === 'bracket' && isSingleElimination
+                        ? 'default'
+                        : 'ghost'
+                    }
                     size='sm'
-                    onClick={() => setViewMode('bracket')}
+                    onClick={() =>
+                      (isSingleElimination || isDoubleElimination) &&
+                      setViewMode('bracket')
+                    }
                     className='gap-1.5 h-8 px-3'
+                    disabled={!isSingleElimination && !isDoubleElimination}
                   >
                     <LayoutGrid className='h-4 w-4' />
                     <span className='hidden sm:inline'>Bracket</span>
@@ -129,6 +140,15 @@ const MatchesView = ({
             totalRounds={totalRounds}
           />
         </>
+      ) : isDoubleElimination && viewMode === 'bracket' ? (
+        <DoubleElimBracket matches={filteredMatches} />
+      ) : isDoubleElimination ? (
+        <DoubleElimList
+          matches={filteredMatches}
+          canUpdate={canUpdate}
+          liveMatchIds={liveMatchIds}
+          onEditMatch={handleEditMatch}
+        />
       ) : (
         <MatchesListView
           matches={filteredMatches}
