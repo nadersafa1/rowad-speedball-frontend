@@ -41,9 +41,36 @@ const MatchesView = ({
 
   const { localMatches, liveMatchIds } = useMatchesSocket(matches)
 
-  // Filter matches based on group and status
+  // Helper to check if a match is a BYE (one registration is null)
+  const isByeMatch = (match: Match): boolean => {
+    const has1 = match.registration1Id !== null
+    const has2 = match.registration2Id !== null
+    return (has1 && !has2) || (!has1 && has2)
+  }
+
+  // Helper to check if a match has no participants (both null)
+  const isEmptyMatch = (match: Match): boolean => {
+    return match.registration1Id === null && match.registration2Id === null
+  }
+
+  // Filter matches based on group, status, and hide played BYE matches for elimination formats
   const filteredMatches = useMemo(() => {
     return localMatches.filter((match) => {
+      // Hide matches with no participants (both sides null)
+      if ((isSingleElimination || isDoubleElimination) && isEmptyMatch(match)) {
+        return false
+      }
+
+      // Hide played BYE matches in single/double elimination list view
+      // Unplayed BYE matches are shown so users can see pending auto-advances
+      if (
+        (isSingleElimination || isDoubleElimination) &&
+        isByeMatch(match) &&
+        match.played
+      ) {
+        return false
+      }
+
       // Group filter
       if (groupFilter !== 'all' && match.groupId !== groupFilter) {
         return false
@@ -62,7 +89,14 @@ const MatchesView = ({
 
       return true
     })
-  }, [localMatches, groupFilter, statusFilter, liveMatchIds])
+  }, [
+    localMatches,
+    groupFilter,
+    statusFilter,
+    liveMatchIds,
+    isSingleElimination,
+    isDoubleElimination,
+  ])
 
   // Calculate bracket stats
   const totalRounds =
@@ -95,18 +129,10 @@ const MatchesView = ({
                 <span className='text-sm text-muted-foreground'>View:</span>
                 <div className='flex items-center gap-1 p-1 bg-muted rounded-lg'>
                   <Button
-                    variant={
-                      viewMode === 'bracket' && isSingleElimination
-                        ? 'default'
-                        : 'ghost'
-                    }
+                    variant={viewMode === 'bracket' ? 'default' : 'ghost'}
                     size='sm'
-                    onClick={() =>
-                      (isSingleElimination || isDoubleElimination) &&
-                      setViewMode('bracket')
-                    }
+                    onClick={() => setViewMode('bracket')}
                     className='gap-1.5 h-8 px-3'
-                    disabled={!isSingleElimination && !isDoubleElimination}
                   >
                     <LayoutGrid className='h-4 w-4' />
                     <span className='hidden sm:inline'>Bracket</span>
@@ -141,7 +167,7 @@ const MatchesView = ({
           />
         </>
       ) : isDoubleElimination && viewMode === 'bracket' ? (
-        <DoubleElimBracket matches={filteredMatches} />
+        <DoubleElimBracket matches={localMatches} />
       ) : isDoubleElimination ? (
         <DoubleElimList
           matches={filteredMatches}

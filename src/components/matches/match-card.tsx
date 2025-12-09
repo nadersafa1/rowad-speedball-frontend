@@ -59,7 +59,7 @@ const MatchCard = ({
   )
 
   return (
-    <div className='border rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-white'>
+    <div className='border rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-card'>
       <MatchCardHeader
         match={match}
         isPlayerMatch={isPlayerMatch}

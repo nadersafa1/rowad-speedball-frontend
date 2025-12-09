@@ -21,12 +21,12 @@ const MatchCardPlayers = ({ players, align }: MatchCardPlayersProps) => {
             <Link
               key={idx}
               href={`/players/${player.id}`}
-              className='text-sm font-medium text-gray-900 hover:text-rowad-600 transition-colors'
+              className='text-sm font-medium text-foreground hover:text-rowad-600 transition-colors'
             >
               {player.name}
             </Link>
           ) : (
-            <div key={idx} className='text-sm font-medium text-gray-900'>
+            <div key={idx} className='text-sm font-medium text-foreground'>
               {player.name}
             </div>
           )

@@ -129,6 +129,64 @@ export const singleEliminationMatchHandler: MatchHandler = {
 }
 
 /**
+ * Checks if a match is effectively a BYE (one player, no pending feeders)
+ * and auto-advances the player, cascading through subsequent BYE matches
+ */
+const checkAndAutoAdvanceBye = async (
+  matchId: string,
+  eventId: string
+): Promise<void> => {
+  // Fetch the match
+  const [match] = await db
+    .select()
+    .from(schema.matches)
+    .where(eq(schema.matches.id, matchId))
+    .limit(1)
+
+  if (!match || match.played) return
+
+  // Check if exactly one registration exists
+  const hasReg1 = match.registration1Id !== null
+  const hasReg2 = match.registration2Id !== null
+  if (hasReg1 === hasReg2) return // Either both or neither - not a BYE
+
+  const soloRegistrationId = match.registration1Id || match.registration2Id
+
+  // Check if any unplayed match can feed into this match
+  const eventMatches = await db
+    .select()
+    .from(schema.matches)
+    .where(eq(schema.matches.eventId, eventId))
+
+  const hasPendingFeeder = eventMatches.some(
+    (m) => !m.played && (m.winnerTo === matchId || m.loserTo === matchId)
+  )
+
+  if (hasPendingFeeder) return // Someone else might arrive
+
+  // This is a BYE - auto-complete the match
+  await db
+    .update(schema.matches)
+    .set({
+      winnerId: soloRegistrationId,
+      played: true,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.matches.id, matchId))
+
+  // Advance winner to next match
+  if (match.winnerTo && match.winnerToSlot && soloRegistrationId) {
+    await advanceWinnerToNextMatch(
+      match.winnerTo,
+      match.winnerToSlot,
+      soloRegistrationId
+    )
+    // Recursively check the next match
+    await checkAndAutoAdvanceBye(match.winnerTo, eventId)
+  }
+}
+
+/**
  * Double elimination format match handler
  * Advances winners and routes losers to losers bracket when applicable
  */
@@ -157,6 +215,14 @@ export const doubleEliminationMatchHandler: MatchHandler = {
         .update(schema.matches)
         .set({ [updateField]: loserId, updatedAt: new Date() })
         .where(eq(schema.matches.id, match.loserTo))
+
+      // Check if loser's destination is now a BYE (no opponent, no pending feeders)
+      await checkAndAutoAdvanceBye(match.loserTo, match.eventId)
+    }
+
+    // Check if winner's destination is now a BYE
+    if (match.winnerTo) {
+      await checkAndAutoAdvanceBye(match.winnerTo, match.eventId)
     }
   },
 
