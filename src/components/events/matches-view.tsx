@@ -114,18 +114,10 @@ const MatchesView = ({
                 <span className='text-sm text-muted-foreground'>View:</span>
                 <div className='flex items-center gap-1 p-1 bg-muted rounded-lg'>
                   <Button
-                    variant={
-                      viewMode === 'bracket' && isSingleElimination
-                        ? 'default'
-                        : 'ghost'
-                    }
+                    variant={viewMode === 'bracket' ? 'default' : 'ghost'}
                     size='sm'
-                    onClick={() =>
-                      (isSingleElimination || isDoubleElimination) &&
-                      setViewMode('bracket')
-                    }
+                    onClick={() => setViewMode('bracket')}
                     className='gap-1.5 h-8 px-3'
-                    disabled={!isSingleElimination && !isDoubleElimination}
                   >
                     <LayoutGrid className='h-4 w-4' />
                     <span className='hidden sm:inline'>Bracket</span>
