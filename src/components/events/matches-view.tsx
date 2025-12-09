@@ -160,7 +160,7 @@ const MatchesView = ({
           />
         </>
       ) : isDoubleElimination && viewMode === 'bracket' ? (
-        <DoubleElimBracket matches={filteredMatches} />
+        <DoubleElimBracket matches={localMatches} />
       ) : isDoubleElimination ? (
         <DoubleElimList
           matches={filteredMatches}
