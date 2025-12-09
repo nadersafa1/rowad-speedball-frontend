@@ -54,7 +54,6 @@ const EVENT_FORMAT_OPTIONS = [
 // Losers bracket start options for double elimination
 const LOSERS_BRACKET_START_OPTIONS = [
   { value: 'full', label: 'Full Double Elimination' },
-  { value: '1', label: 'SF' },
   { value: '2', label: 'QF' },
   { value: '3', label: 'R16' },
   { value: '4', label: 'R32' },

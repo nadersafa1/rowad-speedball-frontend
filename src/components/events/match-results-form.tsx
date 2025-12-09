@@ -146,6 +146,7 @@ const MatchResultsForm = ({ match: initialMatch, onSuccess, onCancel }: MatchRes
           player2Name={player2Name}
           isMatchPlayed={match.played}
           hasMatchDate={hasMatchDate}
+          isLoading={isLoading}
           onUpdateSet={handleUpdateSet}
           onMarkSetPlayed={handleMarkSetPlayed}
           onDeleteSet={handleDeleteSet}
