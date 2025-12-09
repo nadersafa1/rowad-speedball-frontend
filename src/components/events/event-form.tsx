@@ -54,9 +54,11 @@ const EVENT_FORMAT_OPTIONS = [
 // Losers bracket start options for double elimination
 const LOSERS_BRACKET_START_OPTIONS = [
   { value: 'full', label: 'Full Double Elimination' },
-  { value: '3', label: '3 rounds before finals (QF for 32+ players)' },
-  { value: '2', label: '2 rounds before finals (QF for 16 players)' },
-  { value: '1', label: '1 round before finals (SF only)' },
+  { value: '1', label: 'SF' },
+  { value: '2', label: 'QF' },
+  { value: '3', label: 'R16' },
+  { value: '4', label: 'R32' },
+  { value: '5', label: 'R64' },
 ] as const
 
 // Validation schema - matches backend schema exactly
@@ -91,7 +93,12 @@ const eventSchema = z
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
     // For double-elimination: how many rounds before finals the losers bracket starts
-    losersStartRoundsBeforeFinal: z.number().int().positive().nullable().optional(),
+    losersStartRoundsBeforeFinal: z
+      .number()
+      .int()
+      .positive()
+      .nullable()
+      .optional(),
     organizationId: z.string().uuid().nullable().optional(),
   })
   .refine(
@@ -155,7 +162,7 @@ const EventForm = ({
       format: event?.format || 'groups',
       visibility: event?.visibility || 'public',
       minPlayers: event?.minPlayers || 1,
-      maxPlayers: event?.maxPlayers || 2,
+      maxPlayers: event?.maxPlayers || 1,
       registrationStartDate: event?.registrationStartDate
         ? new Date(event.registrationStartDate)
         : undefined,
@@ -181,6 +188,7 @@ const EventForm = ({
 
   const { isSubmitting } = form.formState
   const selectedFormat = form.watch('format')
+  const selectedEventType = form.watch('eventType')
 
   // Handle format changes - clear or set default points values
   useEffect(() => {
@@ -188,7 +196,9 @@ const EventForm = ({
       // Clear points fields for single-elimination
       form.setValue('pointsPerWin', undefined, { shouldValidate: false })
       form.setValue('pointsPerLoss', undefined, { shouldValidate: false })
-      form.setValue('losersStartRoundsBeforeFinal', null, { shouldValidate: false })
+      form.setValue('losersStartRoundsBeforeFinal', null, {
+        shouldValidate: false,
+      })
     } else if (selectedFormat === 'double-elimination') {
       // Clear points fields for double-elimination
       form.setValue('pointsPerWin', undefined, { shouldValidate: false })
@@ -200,7 +210,9 @@ const EventForm = ({
       // Set default values for groups format if not already set
       form.setValue('pointsPerWin', 3, { shouldValidate: false })
       form.setValue('pointsPerLoss', 0, { shouldValidate: false })
-      form.setValue('losersStartRoundsBeforeFinal', null, { shouldValidate: false })
+      form.setValue('losersStartRoundsBeforeFinal', null, {
+        shouldValidate: false,
+      })
     }
   }, [selectedFormat, form])
 
@@ -334,142 +346,149 @@ const EventForm = ({
             />
           </div>
 
+          {!['solo', 'singles'].includes(selectedEventType) && (
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+              <FormField
+                control={form.control}
+                name='minPlayers'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min Players per Team</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        placeholder='1'
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value) || 1)
+                        }
+                        onFocus={(e) => e.target.select()}
+                        min={1}
+                        disabled={isEditing && hasRegistrations}
+                      />
+                    </FormControl>
+                    {isEditing && hasRegistrations && (
+                      <p className='text-xs text-muted-foreground'>
+                        Cannot change once registrations exist
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='maxPlayers'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Players per Team</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        placeholder='2'
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value) || 2)
+                        }
+                        onFocus={(e) => e.target.select()}
+                        min={1}
+                        disabled={isEditing && hasRegistrations}
+                      />
+                    </FormControl>
+                    {isEditing && hasRegistrations && (
+                      <p className='text-xs text-muted-foreground'>
+                        Cannot change once registrations exist
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
             <FormField
               control={form.control}
-              name='minPlayers'
+              name='format'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Min Players per Team</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      placeholder='1'
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseInt(e.target.value) || 1)
-                      }
-                      onFocus={(e) => e.target.select()}
-                      min={1}
-                      disabled={isEditing && hasRegistrations}
-                    />
-                  </FormControl>
-                  {isEditing && hasRegistrations && (
-                    <p className='text-xs text-muted-foreground'>
-                      Cannot change once registrations exist
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='maxPlayers'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max Players per Team</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      placeholder='2'
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseInt(e.target.value) || 2)
-                      }
-                      onFocus={(e) => e.target.select()}
-                      min={1}
-                      disabled={isEditing && hasRegistrations}
-                    />
-                  </FormControl>
-                  {isEditing && hasRegistrations && (
-                    <p className='text-xs text-muted-foreground'>
-                      Cannot change once registrations exist
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name='format'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Event Format</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  disabled={isEditing && hasRegistrations}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder='Select format' />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {EVENT_FORMAT_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isEditing && hasRegistrations && (
-                  <p className='text-xs text-muted-foreground'>
-                    Cannot change format once registrations exist
-                  </p>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {selectedFormat === 'double-elimination' && (
-            <FormField
-              control={form.control}
-              name='losersStartRoundsBeforeFinal'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Losers Bracket Start</FormLabel>
+                  <FormLabel>Event Format</FormLabel>
                   <Select
-                    onValueChange={(value) =>
-                      field.onChange(value === 'full' ? null : parseInt(value))
-                    }
-                    value={field.value === null ? 'full' : String(field.value)}
+                    onValueChange={field.onChange}
+                    value={field.value}
                     disabled={isEditing && hasRegistrations}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder='Select when losers bracket starts' />
+                        <SelectValue placeholder='Select format' />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {LOSERS_BRACKET_START_OPTIONS.map((option) => (
+                      {EVENT_FORMAT_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className='text-xs text-muted-foreground'>
-                    Players who lose before this round are eliminated. Full double
-                    elimination gives everyone a second chance.
-                  </p>
                   {isEditing && hasRegistrations && (
                     <p className='text-xs text-muted-foreground'>
-                      Cannot change once registrations exist
+                      Cannot change format once registrations exist
                     </p>
                   )}
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
 
+            {selectedFormat === 'double-elimination' && (
+              <FormField
+                control={form.control}
+                name='losersStartRoundsBeforeFinal'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Losers Bracket Start</FormLabel>
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(
+                          value === 'full' ? null : parseInt(value)
+                        )
+                      }
+                      value={
+                        field.value === null ? 'full' : String(field.value)
+                      }
+                      disabled={isEditing && hasRegistrations}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='Select when losers bracket starts' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {LOSERS_BRACKET_START_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className='text-xs text-muted-foreground'>
+                      Players who lose before this round are eliminated. Full
+                      double elimination gives everyone a second chance.
+                    </p>
+                    {isEditing && hasRegistrations && (
+                      <p className='text-xs text-muted-foreground'>
+                        Cannot change once registrations exist
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
           <FormField
             control={form.control}
             name='visibility'
