@@ -48,11 +48,16 @@ const MatchesView = ({
     return (has1 && !has2) || (!has1 && has2)
   }
 
-  // Filter matches based on group, status, and hide BYE matches for elimination formats
+  // Filter matches based on group, status, and hide played BYE matches for elimination formats
   const filteredMatches = useMemo(() => {
     return localMatches.filter((match) => {
-      // Hide BYE matches in single/double elimination list view
-      if ((isSingleElimination || isDoubleElimination) && isByeMatch(match)) {
+      // Hide played BYE matches in single/double elimination list view
+      // Unplayed BYE matches are shown so users can see pending auto-advances
+      if (
+        (isSingleElimination || isDoubleElimination) &&
+        isByeMatch(match) &&
+        match.played
+      ) {
         return false
       }
 

@@ -27,9 +27,9 @@ const groupByBracketAndRound = (
 ): Map<BracketGroup, Map<number, Match[]>> => {
   const map = new Map<BracketGroup, Map<number, Match[]>>()
 
-  // Filter out BYE matches and ensure bracketType
+  // Filter out played BYE matches (show unplayed BYEs so users can see pending auto-advances)
   const filteredMatches = matches
-    .filter((m) => !isByeMatch(m))
+    .filter((m) => !(isByeMatch(m) && m.played))
     .map((m) => ({
       ...m,
       bracketType: (m.bracketType as BracketGroup) ?? 'winners',
@@ -123,10 +123,10 @@ const DoubleElimList = ({
   const grouped = groupByBracketAndRound(matches)
   const brackets: BracketGroup[] = ['winners', 'losers']
 
-  // Count non-BYE matches
-  const nonByeCount = matches.filter((m) => !isByeMatch(m)).length
+  // Count visible matches (exclude played BYE matches)
+  const visibleMatchCount = matches.filter((m) => !(isByeMatch(m) && m.played)).length
 
-  if (nonByeCount === 0) {
+  if (visibleMatchCount === 0) {
     return (
       <div className='rounded-lg border p-6 text-center text-sm text-muted-foreground'>
         No matches yet. Generate the bracket to begin.
