@@ -128,6 +128,7 @@ export async function POST(
         format: event.format,
         seeds,
         hasThirdPlaceMatch: event.hasThirdPlaceMatch ?? false,
+        losersStartRoundsBeforeFinal: event.losersStartRoundsBeforeFinal,
       },
       registrationIds
     )

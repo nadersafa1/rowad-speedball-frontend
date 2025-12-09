@@ -148,6 +148,13 @@
       "when": 1765151220124,
       "tag": "0020_uneven_gressill",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1765273707935,
+      "tag": "0021_gray_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }

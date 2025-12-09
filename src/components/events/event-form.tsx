@@ -51,6 +51,14 @@ const EVENT_FORMAT_OPTIONS = [
   },
 ] as const
 
+// Losers bracket start options for double elimination
+const LOSERS_BRACKET_START_OPTIONS = [
+  { value: 'full', label: 'Full Double Elimination' },
+  { value: '3', label: '3 rounds before finals (QF for 32+ players)' },
+  { value: '2', label: '2 rounds before finals (QF for 16 players)' },
+  { value: '1', label: '1 round before finals (SF only)' },
+] as const
+
 // Validation schema - matches backend schema exactly
 const eventSchema = z
   .object({
@@ -82,6 +90,8 @@ const eventSchema = z
       ),
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
+    // For double-elimination: how many rounds before finals the losers bracket starts
+    losersStartRoundsBeforeFinal: z.number().int().positive().nullable().optional(),
     organizationId: z.string().uuid().nullable().optional(),
   })
   .refine(
@@ -161,6 +171,10 @@ const EventForm = ({
         event?.format === 'groups' || event?.format === 'groups-knockout'
           ? event?.pointsPerLoss ?? 0
           : undefined,
+      losersStartRoundsBeforeFinal:
+        event?.format === 'double-elimination'
+          ? event?.losersStartRoundsBeforeFinal ?? null
+          : null,
       organizationId: event?.organizationId || null,
     },
   })
@@ -174,6 +188,11 @@ const EventForm = ({
       // Clear points fields for single-elimination
       form.setValue('pointsPerWin', undefined, { shouldValidate: false })
       form.setValue('pointsPerLoss', undefined, { shouldValidate: false })
+      form.setValue('losersStartRoundsBeforeFinal', null, { shouldValidate: false })
+    } else if (selectedFormat === 'double-elimination') {
+      // Clear points fields for double-elimination
+      form.setValue('pointsPerWin', undefined, { shouldValidate: false })
+      form.setValue('pointsPerLoss', undefined, { shouldValidate: false })
     } else if (
       (selectedFormat === 'groups' || selectedFormat === 'groups-knockout') &&
       !form.getValues('pointsPerWin')
@@ -181,6 +200,7 @@ const EventForm = ({
       // Set default values for groups format if not already set
       form.setValue('pointsPerWin', 3, { shouldValidate: false })
       form.setValue('pointsPerLoss', 0, { shouldValidate: false })
+      form.setValue('losersStartRoundsBeforeFinal', null, { shouldValidate: false })
     }
   }, [selectedFormat, form])
 
@@ -189,6 +209,7 @@ const EventForm = ({
     try {
       const isGroupsFormat =
         data.format === 'groups' || data.format === 'groups-knockout'
+      const isDoubleElimination = data.format === 'double-elimination'
 
       const formattedData = {
         ...data,
@@ -198,6 +219,10 @@ const EventForm = ({
         // For single-elimination, set to 0 since they're not used
         pointsPerWin: isGroupsFormat ? data.pointsPerWin ?? 3 : 0,
         pointsPerLoss: isGroupsFormat ? data.pointsPerLoss ?? 0 : 0,
+        // losersStartRoundsBeforeFinal is only for double-elimination
+        losersStartRoundsBeforeFinal: isDoubleElimination
+          ? data.losersStartRoundsBeforeFinal ?? null
+          : null,
       }
 
       if (isEditing) {
@@ -402,6 +427,48 @@ const EventForm = ({
               </FormItem>
             )}
           />
+
+          {selectedFormat === 'double-elimination' && (
+            <FormField
+              control={form.control}
+              name='losersStartRoundsBeforeFinal'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Losers Bracket Start</FormLabel>
+                  <Select
+                    onValueChange={(value) =>
+                      field.onChange(value === 'full' ? null : parseInt(value))
+                    }
+                    value={field.value === null ? 'full' : String(field.value)}
+                    disabled={isEditing && hasRegistrations}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select when losers bracket starts' />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {LOSERS_BRACKET_START_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className='text-xs text-muted-foreground'>
+                    Players who lose before this round are eliminated. Full double
+                    elimination gives everyone a second chance.
+                  </p>
+                  {isEditing && hasRegistrations && (
+                    <p className='text-xs text-muted-foreground'>
+                      Cannot change once registrations exist
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}

@@ -13,12 +13,24 @@ const isByeMatch = (
   return (has1 && !has2) || (!has1 && has2)
 }
 
-export const generateDoubleEliminationBracket = (
+export interface DoubleEliminationOptions {
   participants: ParticipantSeed[]
+  losersStartRoundsBeforeFinal?: number | null
+}
+
+export const generateDoubleEliminationBracket = (
+  participantsOrOptions: ParticipantSeed[] | DoubleEliminationOptions
 ): {
   matches: GeneratedMatch[]
   totals: { winners: number; losers: number; bracketSize: number }
 } => {
+  // Support both old (array) and new (options object) signatures
+  const options: DoubleEliminationOptions = Array.isArray(participantsOrOptions)
+    ? { participants: participantsOrOptions }
+    : participantsOrOptions
+
+  const { participants, losersStartRoundsBeforeFinal } = options
+
   if (participants.length < 2) {
     throw new Error('At least 2 participants are required')
   }
@@ -30,6 +42,7 @@ export const generateDoubleEliminationBracket = (
       seed: p.seed,
     })),
     idFactory: () => crypto.randomUUID(),
+    losersStartRoundsBeforeFinal: losersStartRoundsBeforeFinal ?? undefined,
   })
 
   const matches: GeneratedMatch[] = bracketMatches.map((m) => {

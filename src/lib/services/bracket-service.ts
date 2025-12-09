@@ -21,6 +21,7 @@ export interface GenerateBracketParams {
   format: string
   seeds?: SeedMapping[]
   hasThirdPlaceMatch: boolean
+  losersStartRoundsBeforeFinal?: number | null
 }
 
 export interface GenerateBracketResult {
@@ -236,7 +237,7 @@ export const generateBracket = async (
   params: GenerateBracketParams,
   registrationIds: string[]
 ): Promise<GenerateBracketResult> => {
-  const { eventId, seeds, hasThirdPlaceMatch, format } = params
+  const { eventId, seeds, hasThirdPlaceMatch, format, losersStartRoundsBeforeFinal } = params
   const isDoubleElim = isDoubleEliminationFormat(format)
 
   if (isDoubleElim) {
@@ -254,7 +255,10 @@ export const generateBracket = async (
       })
     )
     const { matches: bracketMatches, totals } =
-      generateDoubleEliminationBracket(participants)
+      generateDoubleEliminationBracket({
+        participants,
+        losersStartRoundsBeforeFinal,
+      })
 
     const idMap = new Map<string, string>()
     for (const match of bracketMatches) {

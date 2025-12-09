@@ -284,6 +284,20 @@ export async function PATCH(
           { status: 400 }
         )
       }
+      // Cannot change losersStartRoundsBeforeFinal once matches are generated
+      if (
+        updateData.losersStartRoundsBeforeFinal !== undefined &&
+        updateData.losersStartRoundsBeforeFinal !==
+          eventData.losersStartRoundsBeforeFinal
+      ) {
+        return Response.json(
+          {
+            message:
+              'Cannot change losers bracket start round once matches are generated',
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate: Cannot change bestOf, pointsPerWin, pointsPerLoss if sets are played

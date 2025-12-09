@@ -257,6 +257,9 @@ export const events = pgTable('events', {
   pointsPerWin: integer('points_per_win').notNull().default(3),
   pointsPerLoss: integer('points_per_loss').notNull().default(0),
   completed: boolean('completed').notNull().default(false),
+  // For double-elimination: how many rounds before finals the losers bracket starts
+  // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
+  losersStartRoundsBeforeFinal: integer('losers_start_rounds_before_final'),
   championshipId: uuid('championship_id').references(() => championships.id, {
     onDelete: 'cascade',
   }),

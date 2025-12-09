@@ -120,6 +120,14 @@ export const eventsCreateSchema = z
       ),
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
+    // For double-elimination: how many rounds before finals the losers bracket starts
+    // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
+    losersStartRoundsBeforeFinal: z
+      .number()
+      .int('losersStartRoundsBeforeFinal must be an integer')
+      .positive('losersStartRoundsBeforeFinal must be positive')
+      .nullable()
+      .optional(),
     organizationId: z
       .uuid('Invalid organization ID format')
       .nullable()
@@ -143,6 +151,24 @@ export const eventsCreateSchema = z
     {
       message: 'Points per win and loss are required for groups format',
       path: ['pointsPerWin'],
+    }
+  )
+  .refine(
+    (data) => {
+      // losersStartRoundsBeforeFinal is only valid for double-elimination format
+      if (
+        data.losersStartRoundsBeforeFinal !== undefined &&
+        data.losersStartRoundsBeforeFinal !== null &&
+        data.format !== 'double-elimination'
+      ) {
+        return false
+      }
+      return true
+    },
+    {
+      message:
+        'losersStartRoundsBeforeFinal is only valid for double-elimination format',
+      path: ['losersStartRoundsBeforeFinal'],
     }
   )
 
@@ -203,6 +229,12 @@ export const eventsUpdateSchema = z
       .optional(),
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
+    losersStartRoundsBeforeFinal: z
+      .number()
+      .int('losersStartRoundsBeforeFinal must be an integer')
+      .positive('losersStartRoundsBeforeFinal must be positive')
+      .nullable()
+      .optional(),
     organizationId: z
       .uuid('Invalid organization ID format')
       .nullable()
