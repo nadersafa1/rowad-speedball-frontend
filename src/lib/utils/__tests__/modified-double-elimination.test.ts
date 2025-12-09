@@ -1,5 +1,6 @@
 import { generateDoubleEliminationBracket } from '../double-elimination'
 import type { ParticipantSeed } from '../double-elimination-types'
+import type { GeneratedMatch } from '../double-elimination-types'
 
 const assert = (condition: boolean, message: string) => {
   if (!condition) throw new Error(message)
@@ -11,12 +12,24 @@ const makeParticipants = (count: number): ParticipantSeed[] =>
     seed: idx + 1,
   }))
 
+const findMatch = (
+  matches: GeneratedMatch[],
+  bracketType: 'winners' | 'losers',
+  round: number,
+  matchNumber: number
+): GeneratedMatch | undefined =>
+  matches.find(
+    (m) =>
+      m.bracketType === bracketType &&
+      m.round === round &&
+      m.matchNumber === matchNumber
+  )
+
 const run = () => {
   const { matches } = generateDoubleEliminationBracket(makeParticipants(8))
-  const byId = new Map(matches.map((match) => [match.id, match]))
 
-  const lb11 = byId.get('LB-1-1')
-  const lb12 = byId.get('LB-1-2')
+  const lb11 = findMatch(matches, 'losers', 1, 1)
+  const lb12 = findMatch(matches, 'losers', 1, 2)
   const next1 = lb11?.winnerTo
   const next2 = lb12?.winnerTo
 
@@ -26,18 +39,21 @@ const run = () => {
     'LB round 1 winners should face different opponents in LB round 2'
   )
 
-  const lb21 = next1 ? byId.get(next1.id) : null
-  const lb22 = next2 ? byId.get(next2.id) : null
-  const wb21 = byId.get('WB-2-1')
-  const wb22 = byId.get('WB-2-2')
+  const lb21 = next1 ? matches.find((m) => m.id === next1.id) : null
+  const lb22 = next2 ? matches.find((m) => m.id === next2.id) : null
+  const wb21 = findMatch(matches, 'winners', 2, 1)
+  const wb22 = findMatch(matches, 'winners', 2, 2)
 
   assert(
     lb21?.bracketType === 'losers' && lb22?.bracketType === 'losers',
     'LB round 2 matches must be in losers bracket'
   )
 
-  assert(wb21?.loserTo?.id === 'LB-2-1', 'WB-2-1 loser drops to LB-2-1')
-  assert(wb22?.loserTo?.id === 'LB-2-2', 'WB-2-2 loser drops to LB-2-2')
+  const lb2m1 = findMatch(matches, 'losers', 2, 1)
+  const lb2m2 = findMatch(matches, 'losers', 2, 2)
+
+  assert(wb21?.loserTo?.id === lb2m1?.id, 'WB-2-1 loser drops to LB-2-1')
+  assert(wb22?.loserTo?.id === lb2m2?.id, 'WB-2-2 loser drops to LB-2-2')
 
   console.log('double elimination losers routing check passed')
 }
