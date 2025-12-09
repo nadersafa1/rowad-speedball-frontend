@@ -10,7 +10,11 @@ import {
 } from '@/lib/utils/points-calculation'
 import { advanceWinnerToNextMatch } from '@/lib/validations/match-validation'
 import { updateEventCompletedStatus } from '@/lib/event-helpers'
-import { isGroupsFormat, isSingleEliminationFormat } from '@/lib/utils/event-format-helpers'
+import {
+  isGroupsFormat,
+  isSingleEliminationFormat,
+  isDoubleEliminationFormat,
+} from '@/lib/utils/event-format-helpers'
 
 export interface MatchCompletionContext {
   match: typeof schema.matches.$inferSelect
@@ -91,7 +95,9 @@ export const singleEliminationMatchHandler: MatchHandler = {
     }
   },
 
-  async handleMatchReset(match: typeof schema.matches.$inferSelect): Promise<void> {
+  async handleMatchReset(
+    match: typeof schema.matches.$inferSelect
+  ): Promise<void> {
     // SE format: need to clear winner from next match
     if (match.winnerTo && match.winnerId) {
       // Find the next match and clear the appropriate slot
@@ -104,7 +110,7 @@ export const singleEliminationMatchHandler: MatchHandler = {
       if (nextMatch.length > 0) {
         const updateField =
           match.winnerToSlot === 1 ? 'registration1Id' : 'registration2Id'
-        
+
         // Only clear if it matches the current winner
         const currentSlotValue =
           match.winnerToSlot === 1
@@ -123,6 +129,75 @@ export const singleEliminationMatchHandler: MatchHandler = {
 }
 
 /**
+ * Double elimination format match handler
+ * Advances winners and routes losers to losers bracket when applicable
+ */
+export const doubleEliminationMatchHandler: MatchHandler = {
+  async handleMatchCompletion(context: MatchCompletionContext): Promise<void> {
+    const { match, winnerId } = context
+
+    // Advance winner
+    if (match.winnerTo && match.winnerToSlot && winnerId) {
+      await advanceWinnerToNextMatch(
+        match.winnerTo,
+        match.winnerToSlot,
+        winnerId
+      )
+    }
+
+    // Route loser to losers bracket
+    const loserId =
+      winnerId === match.registration1Id
+        ? match.registration2Id
+        : match.registration1Id
+    if (loserId && match.loserTo && match.loserToSlot) {
+      const updateField =
+        match.loserToSlot === 1 ? 'registration1Id' : 'registration2Id'
+      await db
+        .update(schema.matches)
+        .set({ [updateField]: loserId, updatedAt: new Date() })
+        .where(eq(schema.matches.id, match.loserTo))
+    }
+  },
+
+  async handleMatchReset(
+    match: typeof schema.matches.$inferSelect
+  ): Promise<void> {
+    // Clear winner advancement
+    if (match.winnerTo && match.winnerToSlot && match.winnerId) {
+      const updateField =
+        match.winnerToSlot === 1 ? 'registration1Id' : 'registration2Id'
+      const nextMatch = await db
+        .select()
+        .from(schema.matches)
+        .where(eq(schema.matches.id, match.winnerTo))
+        .limit(1)
+
+      if (
+        nextMatch.length > 0 &&
+        nextMatch[0][updateField as 'registration1Id' | 'registration2Id'] ===
+          match.winnerId
+      ) {
+        await db
+          .update(schema.matches)
+          .set({ [updateField]: null, updatedAt: new Date() })
+          .where(eq(schema.matches.id, match.winnerTo))
+      }
+    }
+
+    // Clear loser advancement
+    if (match.loserTo && match.loserToSlot) {
+      const updateField =
+        match.loserToSlot === 1 ? 'registration1Id' : 'registration2Id'
+      await db
+        .update(schema.matches)
+        .set({ [updateField]: null, updatedAt: new Date() })
+        .where(eq(schema.matches.id, match.loserTo))
+    }
+  },
+}
+
+/**
  * Get the appropriate handler for an event format
  */
 export const getMatchHandler = (format: string): MatchHandler | null => {
@@ -131,6 +206,9 @@ export const getMatchHandler = (format: string): MatchHandler | null => {
   }
   if (isSingleEliminationFormat(format)) {
     return singleEliminationMatchHandler
+  }
+  if (isDoubleEliminationFormat(format)) {
+    return doubleEliminationMatchHandler
   }
   return null
 }
@@ -142,7 +220,7 @@ export const handleMatchCompletion = async (
   context: MatchCompletionContext
 ): Promise<void> => {
   const handler = getMatchHandler(context.event.format)
-  
+
   if (handler) {
     await handler.handleMatchCompletion(context)
   }
@@ -164,7 +242,7 @@ export const handleMatchReset = async (
   event: typeof schema.events.$inferSelect
 ): Promise<void> => {
   const handler = getMatchHandler(event.format)
-  
+
   if (handler) {
     await handler.handleMatchReset(match)
   }
@@ -196,4 +274,3 @@ export const updateGroupCompletionStatus = async (
     .set({ completed: allMatchesPlayed, updatedAt: new Date() })
     .where(eq(schema.groups.id, groupId))
 }
-

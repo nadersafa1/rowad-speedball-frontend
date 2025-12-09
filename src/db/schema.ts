@@ -235,7 +235,12 @@ export const events = pgTable('events', {
   }).notNull(),
   gender: text('gender', { enum: ['male', 'female', 'mixed'] }).notNull(),
   format: text('format', {
-    enum: ['groups', 'single-elimination', 'groups-knockout'],
+    enum: [
+      'groups',
+      'single-elimination',
+      'groups-knockout',
+      'double-elimination',
+    ],
   })
     .notNull()
     .default('groups'),
@@ -252,6 +257,9 @@ export const events = pgTable('events', {
   pointsPerWin: integer('points_per_win').notNull().default(3),
   pointsPerLoss: integer('points_per_loss').notNull().default(0),
   completed: boolean('completed').notNull().default(false),
+  // For double-elimination: how many rounds before finals the losers bracket starts
+  // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
+  losersStartRoundsBeforeFinal: integer('losers_start_rounds_before_final'),
   championshipId: uuid('championship_id').references(() => championships.id, {
     onDelete: 'cascade',
   }),
@@ -336,10 +344,13 @@ export const matches = pgTable('matches', {
   winnerId: uuid('winner_id').references(() => registrations.id, {
     onDelete: 'set null',
   }),
-  // Single elimination specific columns
+  // Bracket columns
   bracketPosition: integer('bracket_position'), // Unique position in bracket for rendering
   winnerTo: uuid('winner_to'), // Self-reference to next match (winner advances here)
   winnerToSlot: integer('winner_to_slot'), // Which slot (1 or 2) winner occupies in next match
+  loserTo: uuid('loser_to'), // Self-reference for loser routing (double elimination)
+  loserToSlot: integer('loser_to_slot'),
+  bracketType: text('bracket_type', { enum: ['winners', 'losers'] }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

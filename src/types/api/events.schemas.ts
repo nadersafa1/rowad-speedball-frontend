@@ -6,6 +6,7 @@ export const EVENT_FORMATS = [
   'groups',
   'single-elimination',
   'groups-knockout',
+  'double-elimination',
 ] as const
 export type EventFormat = (typeof EVENT_FORMATS)[number]
 
@@ -82,7 +83,7 @@ export const eventsCreateSchema = z
     format: z
       .enum(EVENT_FORMATS, {
         message:
-          'Format must be groups, single-elimination, or groups-knockout',
+          'Format must be groups, single-elimination, groups-knockout, or double-elimination',
       })
       .optional()
       .default('groups'),
@@ -119,6 +120,14 @@ export const eventsCreateSchema = z
       ),
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
+    // For double-elimination: how many rounds before finals the losers bracket starts
+    // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
+    losersStartRoundsBeforeFinal: z
+      .number()
+      .int('losersStartRoundsBeforeFinal must be an integer')
+      .positive('losersStartRoundsBeforeFinal must be positive')
+      .nullable()
+      .optional(),
     organizationId: z
       .uuid('Invalid organization ID format')
       .nullable()
@@ -144,6 +153,24 @@ export const eventsCreateSchema = z
       path: ['pointsPerWin'],
     }
   )
+  .refine(
+    (data) => {
+      // losersStartRoundsBeforeFinal is only valid for double-elimination format
+      if (
+        data.losersStartRoundsBeforeFinal !== undefined &&
+        data.losersStartRoundsBeforeFinal !== null &&
+        data.format !== 'double-elimination'
+      ) {
+        return false
+      }
+      return true
+    },
+    {
+      message:
+        'losersStartRoundsBeforeFinal is only valid for double-elimination format',
+      path: ['losersStartRoundsBeforeFinal'],
+    }
+  )
 
 // Update event schema for PATCH /events/:id
 export const eventsUpdateSchema = z
@@ -167,7 +194,7 @@ export const eventsUpdateSchema = z
     format: z
       .enum(EVENT_FORMATS, {
         message:
-          'Format must be groups, single-elimination, or groups-knockout',
+          'Format must be groups, single-elimination, groups-knockout, or double-elimination',
       })
       .optional(),
     hasThirdPlaceMatch: z.boolean().optional(),
@@ -202,6 +229,12 @@ export const eventsUpdateSchema = z
       .optional(),
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
+    losersStartRoundsBeforeFinal: z
+      .number()
+      .int('losersStartRoundsBeforeFinal must be an integer')
+      .positive('losersStartRoundsBeforeFinal must be positive')
+      .nullable()
+      .optional(),
     organizationId: z
       .uuid('Invalid organization ID format')
       .nullable()

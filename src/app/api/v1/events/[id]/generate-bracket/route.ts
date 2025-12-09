@@ -125,8 +125,10 @@ export async function POST(
     const result = await generateBracket(
       {
         eventId,
+        format: event.format,
         seeds,
         hasThirdPlaceMatch: event.hasThirdPlaceMatch ?? false,
+        losersStartRoundsBeforeFinal: event.losersStartRoundsBeforeFinal,
       },
       registrationIds
     )

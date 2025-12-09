@@ -387,6 +387,7 @@ export async function POST(request: NextRequest) {
       bestOf,
       pointsPerWin,
       pointsPerLoss,
+      losersStartRoundsBeforeFinal,
       organizationId: providedOrgId,
     } = parseResult.data
 
@@ -434,6 +435,11 @@ export async function POST(request: NextRequest) {
         // For single-elimination, set to 0 since they're not used
         pointsPerWin: isGroupsFormat ? pointsPerWin || 3 : 0,
         pointsPerLoss: isGroupsFormat ? pointsPerLoss || 0 : 0,
+        // losersStartRoundsBeforeFinal is only for double-elimination
+        losersStartRoundsBeforeFinal:
+          finalFormat === 'double-elimination'
+            ? losersStartRoundsBeforeFinal ?? null
+            : null,
         organizationId: finalOrganizationId,
       })
       .returning()

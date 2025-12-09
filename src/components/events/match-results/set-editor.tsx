@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { Set } from '@/types'
@@ -8,29 +9,51 @@ interface SetEditorProps {
   set: Set
   player1Name: string
   player2Name: string
-  onScoreChange: (scores: { registration1Score: number; registration2Score: number }) => void
-  onDoneEditing: () => void
+  onSaveScores: (scores: {
+    registration1Score: number
+    registration2Score: number
+  }) => Promise<void>
+  onCancel: () => void
+  isLoading?: boolean
 }
 
 /**
  * Inline editor for editing set scores.
+ * Uses local state and only submits to API on "Save" click.
  */
 const SetEditor = ({
   set,
   player1Name,
   player2Name,
-  onScoreChange,
-  onDoneEditing,
+  onSaveScores,
+  onCancel,
+  isLoading = false,
 }: SetEditorProps) => {
-  const handleScoreInput = (field: 'registration1Score' | 'registration2Score', value: string) => {
+  const [localScores, setLocalScores] = useState({
+    registration1Score: set.registration1Score,
+    registration2Score: set.registration2Score,
+  })
+
+  const handleScoreInput = (
+    field: 'registration1Score' | 'registration2Score',
+    value: string
+  ) => {
     if (value === '' || /^\d+$/.test(value)) {
       const numValue = value === '' ? 0 : parseInt(value, 10) || 0
-      onScoreChange({
-        registration1Score: field === 'registration1Score' ? numValue : set.registration1Score,
-        registration2Score: field === 'registration2Score' ? numValue : set.registration2Score,
-      })
+      setLocalScores((prev) => ({
+        ...prev,
+        [field]: numValue,
+      }))
     }
   }
+
+  const handleSave = async () => {
+    await onSaveScores(localScores)
+    onCancel()
+  }
+
+  const isTied =
+    localScores.registration1Score === localScores.registration2Score
 
   return (
     <div className='space-y-4'>
@@ -42,11 +65,14 @@ const SetEditor = ({
           <Input
             type='text'
             inputMode='numeric'
-            value={set.registration1Score}
-            onChange={(e) => handleScoreInput('registration1Score', e.target.value)}
+            value={localScores.registration1Score}
+            onChange={(e) =>
+              handleScoreInput('registration1Score', e.target.value)
+            }
             onFocus={(e) => e.target.select()}
             onClick={(e) => e.currentTarget.select()}
             className='text-center'
+            disabled={isLoading}
           />
         </div>
         <div>
@@ -56,20 +82,42 @@ const SetEditor = ({
           <Input
             type='text'
             inputMode='numeric'
-            value={set.registration2Score}
-            onChange={(e) => handleScoreInput('registration2Score', e.target.value)}
+            value={localScores.registration2Score}
+            onChange={(e) =>
+              handleScoreInput('registration2Score', e.target.value)
+            }
             onFocus={(e) => e.target.select()}
             onClick={(e) => e.currentTarget.select()}
             className='text-center'
+            disabled={isLoading}
           />
         </div>
       </div>
-      <Button variant='outline' size='sm' onClick={onDoneEditing} className='w-full'>
-        Done Editing
-      </Button>
+      {isTied && (
+        <p className='text-xs text-destructive'>Scores cannot be tied</p>
+      )}
+      <div className='flex gap-2'>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={onCancel}
+          className='flex-1'
+          disabled={isLoading}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant='default'
+          size='sm'
+          onClick={handleSave}
+          className='flex-1'
+          disabled={isLoading || isTied}
+        >
+          {isLoading ? 'Saving...' : 'Save'}
+        </Button>
+      </div>
     </div>
   )
 }
 
 export default SetEditor
-

@@ -25,10 +25,16 @@ export async function POST(
     const authError = checkEventUpdateAuthorization(context, event[0])
     if (authError) return authError
 
-    // Only allow reset for single-elimination events
-    if (event[0].format !== 'single-elimination') {
+    // Only allow reset for elimination events
+    if (
+      event[0].format !== 'single-elimination' &&
+      event[0].format !== 'double-elimination'
+    ) {
       return Response.json(
-        { message: 'Reset bracket is only available for single-elimination events' },
+        {
+          message:
+            'Reset bracket is only available for elimination events (single or double).',
+        },
         { status: 400 }
       )
     }
@@ -40,10 +46,7 @@ export async function POST(
       .where(eq(schema.matches.eventId, eventId))
 
     if (matches.length === 0) {
-      return Response.json(
-        { message: 'No bracket to reset' },
-        { status: 400 }
-      )
+      return Response.json({ message: 'No bracket to reset' }, { status: 400 })
     }
 
     // Delete all sets for these matches
@@ -73,5 +76,3 @@ export async function POST(
     return Response.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
-
-

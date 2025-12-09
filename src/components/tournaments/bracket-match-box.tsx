@@ -53,6 +53,13 @@ const BracketMatchBox = ({
   const reg2IsWinner = isWinner(match, 2)
   const isBye =
     match.isByeMatch || !match.registration1Id || !match.registration2Id
+  const placement =
+    match.winnerTo === 'first-place' ||
+    match.winnerTo === 'third-place' ||
+    match.loserTo === 'second-place' ||
+    match.loserTo === 'fourth-place'
+      ? match.winnerTo || match.loserTo
+      : match.winnerToPlacement || match.loserToPlacement
 
   return (
     <div className='w-52 bg-card border rounded-lg shadow-sm overflow-hidden'>
@@ -65,11 +72,16 @@ const BracketMatchBox = ({
         </div>
       )}
 
-      {/* Match number */}
+      {/* Match number / placement */}
       <div className='px-2 py-1 bg-muted/30 border-b flex items-center justify-between'>
         <span className='text-[10px] text-muted-foreground font-medium'>
           Match {match.matchNumber}
         </span>
+        {placement && (
+          <Badge variant='secondary' className='text-[10px]'>
+            {placement.replace('-place', ' place')}
+          </Badge>
+        )}
         {match.played && (
           <Badge variant='default' className='text-[10px] bg-green-600'>
             Played

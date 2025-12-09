@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 
 interface AddSetFormProps {
   player1Name: string
@@ -40,6 +40,9 @@ const AddSetForm = ({
     setScores({ registration1Score: 0, registration2Score: 0 })
   }
 
+  const isTied = scores.registration1Score === scores.registration2Score
+  const canSubmit = hasMatchDate && !isLoading && !isTied
+
   return (
     <Card>
       <CardHeader>
@@ -60,6 +63,7 @@ const AddSetForm = ({
               onFocus={(e) => e.target.select()}
               onClick={(e) => e.currentTarget.select()}
               className='text-center'
+              disabled={isLoading}
             />
           </div>
           <div>
@@ -75,12 +79,25 @@ const AddSetForm = ({
               onFocus={(e) => e.target.select()}
               onClick={(e) => e.currentTarget.select()}
               className='text-center'
+              disabled={isLoading}
             />
           </div>
         </div>
-        <Button onClick={handleSubmit} disabled={isLoading || !hasMatchDate} className='w-full'>
-          <Plus className='mr-2 h-4 w-4' />
-          Add Set
+        {isTied && (
+          <p className='text-xs text-destructive'>Scores cannot be tied - one player must win the set</p>
+        )}
+        <Button onClick={handleSubmit} disabled={!canSubmit} className='w-full'>
+          {isLoading ? (
+            <>
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              Adding...
+            </>
+          ) : (
+            <>
+              <Plus className='mr-2 h-4 w-4' />
+              Add Set
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>

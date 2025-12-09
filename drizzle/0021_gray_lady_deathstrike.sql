@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "losers_start_rounds_before_final" integer;

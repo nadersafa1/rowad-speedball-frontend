@@ -85,12 +85,12 @@ const EventDetailPage = () => {
     setActiveTab(tab)
   }, [searchParams])
 
-  // Redirect away from standings tab if event is single-elimination
+  // Redirect away from standings tab if event is not groups
   // or from matches tab if no matches exist
   useEffect(() => {
     if (
       selectedEvent &&
-      selectedEvent.format === 'single-elimination' &&
+      selectedEvent.format !== 'groups' &&
       activeTab === 'standings'
     ) {
       router.push(`/events/${eventId}?tab=overview`, { scroll: false })
@@ -226,16 +226,14 @@ const EventDetailPage = () => {
             Registrations
           </TabsTrigger>
           <TabsTrigger value='groups' className='whitespace-nowrap'>
-            {selectedEvent.format === 'single-elimination'
-              ? 'Bracket'
-              : 'Groups'}
+            {selectedEvent.format === 'groups' ? 'Groups' : 'Bracket'}
           </TabsTrigger>
           {matches.length > 0 && (
             <TabsTrigger value='matches' className='whitespace-nowrap'>
               Matches
             </TabsTrigger>
           )}
-          {selectedEvent.format !== 'single-elimination' && (
+          {selectedEvent.format === 'groups' && (
             <TabsTrigger value='standings' className='whitespace-nowrap'>
               Standings
             </TabsTrigger>
@@ -259,7 +257,7 @@ const EventDetailPage = () => {
                   <p className='text-sm text-muted-foreground'>Best Of</p>
                   <p className='font-medium'>{selectedEvent.bestOf} sets</p>
                 </div>
-                {selectedEvent.format !== 'single-elimination' && (
+                {selectedEvent.format === 'groups' && (
                   <div>
                     <p className='text-sm text-muted-foreground'>Points</p>
                     <p className='font-medium'>
@@ -344,7 +342,7 @@ const EventDetailPage = () => {
                         )}
                       </div>
                       <div className='flex items-center gap-2'>
-                        {selectedEvent.format === 'single-elimination' ? (
+                        {selectedEvent.format !== 'groups' ? (
                           <div className='text-right'>
                             {reg.seed && (
                               <p className='text-sm font-medium'>
@@ -393,7 +391,7 @@ const EventDetailPage = () => {
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          {selectedEvent.format === 'single-elimination' ? (
+          {selectedEvent.format !== 'groups' ? (
             <BracketSeeding
               eventId={eventId}
               registrations={registrations}
@@ -424,7 +422,7 @@ const EventDetailPage = () => {
           </TabsContent>
         )}
 
-        {selectedEvent.format !== 'single-elimination' && (
+        {selectedEvent.format === 'groups' && (
           <TabsContent value='standings' className='space-y-4'>
             <StandingsTable registrations={registrations} groups={groups} />
           </TabsContent>
