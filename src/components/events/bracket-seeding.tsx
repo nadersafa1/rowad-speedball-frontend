@@ -208,14 +208,16 @@ const BracketSeeding = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Bracket</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to reset the bracket? This will:
-              <ul className='list-disc list-inside mt-2 space-y-1'>
-                <li>Delete all matches and their results</li>
-                <li>Clear all registration seeds</li>
-                <li>Allow you to regenerate the bracket with new seeding</li>
-              </ul>
-              This action cannot be undone.
+            <AlertDialogDescription asChild>
+              <div className='text-sm text-muted-foreground'>
+                Are you sure you want to reset the bracket? This will:
+                <ul className='list-disc list-inside mt-2 space-y-1'>
+                  <li>Delete all matches and their results</li>
+                  <li>Clear all registration seeds</li>
+                  <li>Allow you to regenerate the bracket with new seeding</li>
+                </ul>
+                <p className='mt-2'>This action cannot be undone.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
