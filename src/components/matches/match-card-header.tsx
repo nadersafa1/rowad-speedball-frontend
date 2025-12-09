@@ -22,7 +22,7 @@ const MatchCardHeader = ({
   isLive = false,
 }: MatchCardHeaderProps) => {
   return (
-    <div className='bg-gray-50 px-4 py-2 border-b'>
+    <div className='bg-muted px-4 py-2 border-b'>
       <div className='flex items-center justify-between flex-wrap gap-2'>
         <div className='flex items-center gap-2 flex-wrap'>
           {isPlayerMatch && 'event' in match && match.event && (
@@ -35,7 +35,7 @@ const MatchCardHeader = ({
           )}
 
           {!isPlayerMatch && (
-            <span className='text-sm font-medium text-gray-900'>
+            <span className='text-sm font-medium text-foreground'>
               Match {match.matchNumber}
             </span>
           )}
@@ -47,7 +47,7 @@ const MatchCardHeader = ({
           )}
 
           {match.matchDate && (
-            <div className='flex items-center gap-1 text-xs text-gray-500'>
+            <div className='flex items-center gap-1 text-xs text-muted-foreground'>
               <Calendar className='h-3 w-3' />
               <span>{new Date(match.matchDate).toLocaleDateString()}</span>
             </div>

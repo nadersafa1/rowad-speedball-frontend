@@ -14,7 +14,7 @@ const MatchCardSets = ({ sets }: MatchCardSetsProps) => {
 
   return (
     <div className='mt-4 pt-4 border-t'>
-      <div className='text-xs text-gray-500 mb-2 text-center'>Set Scores</div>
+      <div className='text-xs text-muted-foreground mb-2 text-center'>Set Scores</div>
       <div className='flex justify-center gap-3'>
         {sets.map((set, idx) => {
           const isIncomplete = set.played === false
@@ -23,36 +23,36 @@ const MatchCardSets = ({ sets }: MatchCardSetsProps) => {
               key={idx}
               className={`flex flex-col items-center rounded px-3 py-1.5 min-w-[3rem] ${
                 isIncomplete
-                  ? 'bg-blue-50 border border-blue-200'
-                  : 'bg-gray-50'
+                  ? 'bg-blue-500/10 border border-blue-500/30 dark:bg-blue-500/20'
+                  : 'bg-muted'
               }`}
             >
-              <div className='text-xs text-gray-500 mb-1'>
+              <div className='text-xs text-muted-foreground mb-1'>
                 Set {set.setNumber}
                 {isIncomplete && (
-                  <span className='ml-1 text-blue-600 font-medium'>Live</span>
+                  <span className='ml-1 text-blue-600 dark:text-blue-400 font-medium'>Live</span>
                 )}
               </div>
               <div className='text-sm font-semibold'>
                 <span
                   className={
                     set.reg1Score > set.reg2Score
-                      ? 'text-green-600'
+                      ? 'text-green-600 dark:text-green-400'
                       : set.reg1Score < set.reg2Score
-                      ? 'text-red-600'
-                      : 'text-gray-600'
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-muted-foreground'
                   }
                 >
                   {set.reg1Score}
                 </span>
-                <span className='text-gray-400 mx-1'>-</span>
+                <span className='text-muted-foreground mx-1'>-</span>
                 <span
                   className={
                     set.reg2Score > set.reg1Score
-                      ? 'text-green-600'
+                      ? 'text-green-600 dark:text-green-400'
                       : set.reg2Score < set.reg1Score
-                      ? 'text-red-600'
-                      : 'text-gray-600'
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-muted-foreground'
                   }
                 >
                   {set.reg2Score}

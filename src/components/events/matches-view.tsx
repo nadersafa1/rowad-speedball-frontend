@@ -41,9 +41,21 @@ const MatchesView = ({
 
   const { localMatches, liveMatchIds } = useMatchesSocket(matches)
 
-  // Filter matches based on group and status
+  // Helper to check if a match is a BYE (one registration is null)
+  const isByeMatch = (match: Match): boolean => {
+    const has1 = match.registration1Id !== null
+    const has2 = match.registration2Id !== null
+    return (has1 && !has2) || (!has1 && has2)
+  }
+
+  // Filter matches based on group, status, and hide BYE matches for elimination formats
   const filteredMatches = useMemo(() => {
     return localMatches.filter((match) => {
+      // Hide BYE matches in single/double elimination list view
+      if ((isSingleElimination || isDoubleElimination) && isByeMatch(match)) {
+        return false
+      }
+
       // Group filter
       if (groupFilter !== 'all' && match.groupId !== groupFilter) {
         return false
@@ -62,7 +74,14 @@ const MatchesView = ({
 
       return true
     })
-  }, [localMatches, groupFilter, statusFilter, liveMatchIds])
+  }, [
+    localMatches,
+    groupFilter,
+    statusFilter,
+    liveMatchIds,
+    isSingleElimination,
+    isDoubleElimination,
+  ])
 
   // Calculate bracket stats
   const totalRounds =
