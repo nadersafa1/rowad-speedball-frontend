@@ -22,14 +22,19 @@ const isByeMatch = (match: Match): boolean => {
   return (has1 && !has2) || (!has1 && has2)
 }
 
+// Helper to check if a match has no participants
+const isEmptyMatch = (match: Match): boolean => {
+  return match.registration1Id === null && match.registration2Id === null
+}
+
 const groupByBracketAndRound = (
   matches: Match[]
 ): Map<BracketGroup, Map<number, Match[]>> => {
   const map = new Map<BracketGroup, Map<number, Match[]>>()
 
-  // Filter out played BYE matches (show unplayed BYEs so users can see pending auto-advances)
+  // Filter out empty matches and played BYE matches
   const filteredMatches = matches
-    .filter((m) => !(isByeMatch(m) && m.played))
+    .filter((m) => !isEmptyMatch(m) && !(isByeMatch(m) && m.played))
     .map((m) => ({
       ...m,
       bracketType: (m.bracketType as BracketGroup) ?? 'winners',

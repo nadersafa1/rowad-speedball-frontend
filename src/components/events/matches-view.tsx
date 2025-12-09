@@ -48,9 +48,19 @@ const MatchesView = ({
     return (has1 && !has2) || (!has1 && has2)
   }
 
+  // Helper to check if a match has no participants (both null)
+  const isEmptyMatch = (match: Match): boolean => {
+    return match.registration1Id === null && match.registration2Id === null
+  }
+
   // Filter matches based on group, status, and hide played BYE matches for elimination formats
   const filteredMatches = useMemo(() => {
     return localMatches.filter((match) => {
+      // Hide matches with no participants (both sides null)
+      if ((isSingleElimination || isDoubleElimination) && isEmptyMatch(match)) {
+        return false
+      }
+
       // Hide played BYE matches in single/double elimination list view
       // Unplayed BYE matches are shown so users can see pending auto-advances
       if (
