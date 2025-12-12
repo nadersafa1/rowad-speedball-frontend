@@ -369,6 +369,7 @@ export class ApiClient {
     format?: EventFormat
     visibility?: 'public' | 'private'
     organizationId?: string | null
+    trainingSessionId?: string
     sortBy?:
       | 'name'
       | 'eventType'
@@ -389,6 +390,9 @@ export class ApiClient {
     if (params?.gender) searchParams.set('gender', params.gender)
     if (params?.format) searchParams.set('format', params.format)
     if (params?.visibility) searchParams.set('visibility', params.visibility)
+    if (params?.trainingSessionId) {
+      searchParams.set('trainingSessionId', params.trainingSessionId)
+    }
     if (params?.organizationId !== undefined) {
       if (params.organizationId === null) {
         searchParams.set('organizationId', 'null')

@@ -34,6 +34,13 @@ export const eventsQuerySchema = z
           val === undefined || val === null || z.uuid().safeParse(val).success,
         'Invalid organization ID format'
       ),
+    trainingSessionId: z
+      .string()
+      .optional()
+      .refine(
+        (val) => val === undefined || z.uuid().safeParse(val).success,
+        'Invalid training session ID format'
+      ),
     sortBy: z
       .enum([
         'name',
@@ -132,6 +139,7 @@ export const eventsCreateSchema = z
       .uuid('Invalid organization ID format')
       .nullable()
       .optional(),
+    trainingSessionId: z.uuid('Invalid training session ID format').optional(),
   })
   .strict()
   .refine((data) => data.minPlayers <= data.maxPlayers, {

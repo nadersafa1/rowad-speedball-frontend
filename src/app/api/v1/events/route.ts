@@ -20,6 +20,8 @@ import {
 } from '@/types/api/events.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { validateAttendanceAccess } from '@/lib/training-session-attendance-helpers'
+import { registerSessionAttendeesToEvent } from '@/lib/training-session-event-helpers'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -38,6 +40,7 @@ export async function GET(request: NextRequest) {
       format,
       visibility,
       organizationId,
+      trainingSessionId,
       sortBy,
       sortOrder,
       page,
@@ -68,6 +71,11 @@ export async function GET(request: NextRequest) {
     // Format filter
     if (format) {
       conditions.push(eq(schema.events.format, format))
+    }
+
+    // Training session filter
+    if (trainingSessionId) {
+      conditions.push(eq(schema.events.trainingSessionId, trainingSessionId))
     }
 
     // Organization filter (only for system admins)
@@ -389,7 +397,23 @@ export async function POST(request: NextRequest) {
       pointsPerLoss,
       losersStartRoundsBeforeFinal,
       organizationId: providedOrgId,
+      trainingSessionId,
     } = parseResult.data
+
+    // Validate training session access if trainingSessionId is provided
+    if (trainingSessionId) {
+      const context = await getOrganizationContext()
+      const accessCheck = await validateAttendanceAccess(
+        trainingSessionId,
+        context
+      )
+      if (!accessCheck.hasAccess) {
+        return Response.json(
+          { message: accessCheck.error?.message || 'Forbidden' },
+          { status: accessCheck.error?.status || 403 }
+        )
+      }
+    }
 
     // Determine final organizationId:
     // - System admins can specify any organizationId or leave it null (for global events)
@@ -416,6 +440,11 @@ export async function POST(request: NextRequest) {
     const isGroupsFormat =
       finalFormat === 'groups' || finalFormat === 'groups-knockout'
 
+    // Training session events are always private
+    const finalVisibility = trainingSessionId
+      ? 'private'
+      : visibility || 'public'
+
     const result = await db
       .insert(schema.events)
       .values({
@@ -424,7 +453,7 @@ export async function POST(request: NextRequest) {
         gender,
         format: finalFormat,
         hasThirdPlaceMatch: hasThirdPlaceMatch || false,
-        visibility: visibility || 'public',
+        visibility: finalVisibility,
         minPlayers: minPlayers || 1,
         maxPlayers: maxPlayers || 2,
         registrationStartDate: registrationStartDate || null,
@@ -441,10 +470,32 @@ export async function POST(request: NextRequest) {
             ? losersStartRoundsBeforeFinal ?? null
             : null,
         organizationId: finalOrganizationId,
+        trainingSessionId: trainingSessionId || null,
       })
       .returning()
 
-    return Response.json(result[0], { status: 201 })
+    const createdEvent = result[0]
+
+    // Auto-register attendees for solo/singles events only
+    if (
+      trainingSessionId &&
+      (eventType === 'solo' || eventType === 'singles')
+    ) {
+      try {
+        await registerSessionAttendeesToEvent(
+          createdEvent.id,
+          trainingSessionId,
+          eventType,
+          gender as 'male' | 'female' | 'mixed'
+        )
+      } catch (error) {
+        // Log error but don't fail event creation
+        console.error('Error auto-registering attendees:', error)
+        // Continue - event is created, registrations can be done manually
+      }
+    }
+
+    return Response.json(createdEvent, { status: 201 })
   } catch (error) {
     console.error('Error creating event:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })

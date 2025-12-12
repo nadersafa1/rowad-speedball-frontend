@@ -3,7 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Calendar, Edit, Trash2, Users, ClipboardList } from 'lucide-react'
+import {
+  Calendar,
+  Edit,
+  Trash2,
+  Users,
+  ClipboardList,
+  Plus,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageBreadcrumb } from '@/components/ui'
 import { Badge } from '@/components/ui/badge'
@@ -32,6 +39,8 @@ import { useTrainingSessionsStore } from '@/store/training-sessions-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { toast } from 'sonner'
 import TrainingSessionForm from '@/components/training-sessions/training-session-form'
+import EventForm from '@/components/events/event-form'
+import SessionEventsList from './_components/session-events-list'
 import { formatDate } from '@/lib/utils'
 
 const TrainingSessionDetailPage = () => {
@@ -51,6 +60,7 @@ const TrainingSessionDetailPage = () => {
   } = useTrainingSessionsStore()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false)
 
   useEffect(() => {
     if (
@@ -125,6 +135,16 @@ const TrainingSessionDetailPage = () => {
         <PageBreadcrumb currentPageLabel={selectedTrainingSession?.name} />
         {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
           <div className='flex gap-2'>
+            {/* Create Event: system admin, org admin, org owner, or org coach */}
+            <Button
+              variant='default'
+              size='sm'
+              className='gap-2'
+              onClick={() => setCreateEventDialogOpen(true)}
+            >
+              <Plus className='h-4 w-4' />
+              <span className='hidden sm:inline'>Create Event</span>
+            </Button>
             {/* Manage Attendance: system admin, org admin, org owner, or org coach */}
             <Button
               variant='default'
@@ -316,6 +336,8 @@ const TrainingSessionDetailPage = () => {
               </CardContent>
             </Card>
           )}
+
+        <SessionEventsList trainingSessionId={sessionId} />
       </div>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -329,6 +351,20 @@ const TrainingSessionDetailPage = () => {
             fetchTrainingSession(sessionId)
           }}
           onCancel={() => setEditDialogOpen(false)}
+        />
+      </Dialog>
+
+      <Dialog
+        open={createEventDialogOpen}
+        onOpenChange={setCreateEventDialogOpen}
+      >
+        <EventForm
+          trainingSessionId={sessionId}
+          onSuccess={() => {
+            setCreateEventDialogOpen(false)
+            toast.success('Event created successfully')
+          }}
+          onCancel={() => setCreateEventDialogOpen(false)}
         />
       </Dialog>
     </div>

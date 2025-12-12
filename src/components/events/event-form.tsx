@@ -23,9 +23,10 @@ import { useEventsStore } from '@/store/events-store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
+import { apiClient } from '@/lib/api-client'
 import {
   DialogContent,
   DialogDescription,
@@ -138,6 +139,7 @@ interface EventFormProps {
   onCancel?: () => void
   hasRegistrations?: boolean
   hasPlayedSets?: boolean
+  trainingSessionId?: string
 }
 
 const EventForm = ({
@@ -146,11 +148,53 @@ const EventForm = ({
   onCancel,
   hasRegistrations = false,
   hasPlayedSets = false,
+  trainingSessionId,
 }: EventFormProps) => {
   const { createEvent, updateEvent, error, clearError } = useEventsStore()
   const { context } = useOrganizationContext()
   const { isSystemAdmin } = context
   const isEditing = !!event
+  const [trainingSession, setTrainingSession] = useState<any>(null)
+  const [isLoadingSession, setIsLoadingSession] = useState(false)
+
+  // Fetch training session data if trainingSessionId is provided
+  useEffect(() => {
+    if (trainingSessionId && !isEditing) {
+      setIsLoadingSession(true)
+      apiClient
+        .getTrainingSession(trainingSessionId)
+        .then((session) => {
+          setTrainingSession(session)
+        })
+        .catch((error) => {
+          console.error('Error fetching training session:', error)
+        })
+        .finally(() => {
+          setIsLoadingSession(false)
+        })
+    }
+  }, [trainingSessionId, isEditing])
+
+  // Calculate default dates from training session
+  const getDefaultDates = () => {
+    if (trainingSession?.date) {
+      const sessionDate = new Date(trainingSession.date)
+      return {
+        startDate: sessionDate,
+        endDate: addDays(sessionDate, 7), // 7 days after session date
+      }
+    }
+    return {
+      startDate: event?.registrationStartDate
+        ? new Date(event.registrationStartDate)
+        : undefined,
+      endDate: event?.registrationEndDate
+        ? new Date(event.registrationEndDate)
+        : undefined,
+    }
+  }
+
+  const defaultDates = getDefaultDates()
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
@@ -159,15 +203,12 @@ const EventForm = ({
       eventType: event?.eventType || 'singles',
       gender: event?.gender || 'male',
       format: event?.format || 'groups',
-      visibility: event?.visibility || 'public',
+      visibility:
+        event?.visibility || (trainingSessionId ? 'private' : 'public'),
       minPlayers: event?.minPlayers || 1,
       maxPlayers: event?.maxPlayers || 1,
-      registrationStartDate: event?.registrationStartDate
-        ? new Date(event.registrationStartDate)
-        : undefined,
-      registrationEndDate: event?.registrationEndDate
-        ? new Date(event.registrationEndDate)
-        : undefined,
+      registrationStartDate: defaultDates.startDate,
+      registrationEndDate: defaultDates.endDate,
       bestOf: event?.bestOf || 3,
       pointsPerWin:
         event?.format === 'groups' || event?.format === 'groups-knockout'
@@ -181,9 +222,38 @@ const EventForm = ({
         event?.format === 'double-elimination'
           ? event?.losersStartRoundsBeforeFinal ?? null
           : null,
-      organizationId: event?.organizationId || null,
+      organizationId:
+        event?.organizationId || trainingSession?.organizationId || null,
     },
   })
+
+  // Update form when training session is loaded
+  useEffect(() => {
+    if (trainingSession && !isEditing) {
+      if (trainingSession.organizationId) {
+        form.setValue('organizationId', trainingSession.organizationId, {
+          shouldDirty: false,
+        })
+      }
+      if (trainingSession.date) {
+        const sessionDate = new Date(trainingSession.date)
+        form.setValue('registrationStartDate', sessionDate, {
+          shouldDirty: false,
+        })
+        form.setValue('registrationEndDate', addDays(sessionDate, 7), {
+          shouldDirty: false,
+        })
+      }
+      // Force visibility to private for training session events
+      form.setValue('visibility', 'private', { shouldDirty: false })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    trainingSession?.id,
+    trainingSession?.organizationId,
+    trainingSession?.date,
+    isEditing,
+  ])
 
   const { isSubmitting } = form.formState
   const selectedFormat = form.watch('format')
@@ -234,6 +304,10 @@ const EventForm = ({
         losersStartRoundsBeforeFinal: isDoubleElimination
           ? data.losersStartRoundsBeforeFinal ?? null
           : null,
+        // Training session events are always private
+        visibility: trainingSessionId ? 'private' : data.visibility,
+        // Include trainingSessionId if provided
+        ...(trainingSessionId && { trainingSessionId }),
       }
 
       if (isEditing) {
@@ -498,18 +572,32 @@ const EventForm = ({
                   <RadioGroup
                     onValueChange={field.onChange}
                     value={field.value}
+                    disabled={!!trainingSessionId}
                     className='flex flex-col sm:flex-row gap-4 sm:gap-6'
                   >
                     <div className='flex items-center space-x-2'>
-                      <RadioGroupItem value='public' id='public' />
+                      <RadioGroupItem
+                        value='public'
+                        id='public'
+                        disabled={!!trainingSessionId}
+                      />
                       <label htmlFor='public'>Public</label>
                     </div>
                     <div className='flex items-center space-x-2'>
-                      <RadioGroupItem value='private' id='private' />
+                      <RadioGroupItem
+                        value='private'
+                        id='private'
+                        disabled={!!trainingSessionId}
+                      />
                       <label htmlFor='private'>Private</label>
                     </div>
                   </RadioGroup>
                 </FormControl>
+                {trainingSessionId && (
+                  <p className='text-xs text-muted-foreground'>
+                    Events created from training sessions are always private
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -665,8 +753,8 @@ const EventForm = ({
             )}
           </div>
 
-          {/* Club Field - Only for System Admins */}
-          {isSystemAdmin && (
+          {/* Club Field - Only for System Admins, and only if not creating from training session */}
+          {isSystemAdmin && !trainingSessionId && (
             <FormField
               control={form.control}
               name='organizationId'
