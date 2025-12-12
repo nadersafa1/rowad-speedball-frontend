@@ -20,8 +20,15 @@ export const calculateSetWins = (sets: Set[] | undefined) => {
     )
 }
 
-/** Get player name from registration */
-export const getPlayerName = (registration: Match['registration1'] | Match['registration2']): string => {
+/**
+ * Get player name from registration.
+ * Returns formatted name with "/" separator for multiple players.
+ * @param registration - The registration object (registration1 or registration2)
+ * @returns Formatted player name(s) or 'TBD' if no registration
+ */
+export const getPlayerName = (
+  registration: Match['registration1'] | Match['registration2']
+): string => {
   if (!registration) return 'TBD'
   const players = registration.players
   if (players && players.length > 0) {
@@ -34,8 +41,20 @@ export const getPlayerName = (registration: Match['registration1'] | Match['regi
   return 'TBD'
 }
 
-/** Format registration name (for display in UI) */
-export const formatRegistrationName = (registration: Match['registration1']): string => {
+/**
+ * Format registration name for display in UI.
+ * Returns formatted name with "&" separator for multiple players.
+ * This is the preferred method for displaying player names in match cards and lists.
+ * @param registration - The registration object (typically registration1)
+ * @returns Formatted player name(s) or 'Unknown' if no registration
+ */
+export const formatRegistrationName = (
+  registration:
+    | Match['registration1']
+    | Match['registration2']
+    | null
+    | undefined
+): string => {
   if (!registration) return 'Unknown'
   if (registration.players?.length) {
     return registration.players.map((p) => p.name || 'Unknown').join(' & ')
@@ -46,7 +65,9 @@ export const formatRegistrationName = (registration: Match['registration1']): st
 /** Get the current active set (first unplayed set) */
 export const getCurrentSet = (sets: Set[] | undefined): Set | undefined => {
   if (!sets) return undefined
-  return sets.filter((s) => !s.played).sort((a, b) => a.setNumber - b.setNumber)[0]
+  return sets
+    .filter((s) => !s.played)
+    .sort((a, b) => a.setNumber - b.setNumber)[0]
 }
 
 /** Check if all sets are played */
@@ -55,7 +76,11 @@ export const areAllSetsPlayed = (sets: Set[] | undefined): boolean => {
 }
 
 /** Check if majority has been reached */
-export const hasMajorityReached = (player1Wins: number, player2Wins: number, bestOf: number): boolean => {
+export const hasMajorityReached = (
+  player1Wins: number,
+  player2Wins: number,
+  bestOf: number
+): boolean => {
   const majority = Math.ceil(bestOf / 2)
   return player1Wins >= majority || player2Wins >= majority
 }
@@ -67,7 +92,11 @@ export const hasMajorityFromSets = (sets: Set[], bestOf: number): boolean => {
 }
 
 /** Get winner name based on winnerId */
-export const getWinnerName = (match: Match, player1Name: string, player2Name: string): string | null => {
+export const getWinnerName = (
+  match: Match,
+  player1Name: string,
+  player2Name: string
+): string | null => {
   if (!match.winnerId) return null
   return match.winnerId === match.registration1Id ? player1Name : player2Name
 }
@@ -85,4 +114,3 @@ export const getMajorityWinnerName = (
   if (player2Wins >= majority) return player2Name
   return undefined
 }
-

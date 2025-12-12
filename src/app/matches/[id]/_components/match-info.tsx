@@ -9,6 +9,10 @@ import { Calendar, CalendarCheck, Loader2, Trophy, Users } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import type { Match } from '@/types'
+import {
+  useKeyboardShortcuts,
+  COMMON_SHORTCUTS,
+} from '@/hooks/use-keyboard-shortcuts'
 
 interface MatchDateSectionProps {
   matchDate: string
@@ -82,6 +86,19 @@ const MatchDateSection = ({
 
   const isButtonDisabled =
     hasSets || isDateSaving || isMatchPlayed || !isDateChanged()
+
+  // Keyboard shortcut: Enter to submit date
+  useKeyboardShortcuts(
+    [
+      {
+        ...COMMON_SHORTCUTS.submit(handleSubmit),
+        handler: () => {
+          if (!isButtonDisabled) handleSubmit()
+        },
+      },
+    ],
+    !isButtonDisabled
+  )
 
   return (
     <Card>

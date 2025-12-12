@@ -12,6 +12,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { CheckCircle2 } from 'lucide-react'
 import type { Set, Match } from '@/types'
+import { formatRegistrationName } from '@/lib/utils/match'
+import {
+  useKeyboardShortcuts,
+  COMMON_SHORTCUTS,
+} from '@/hooks/use-keyboard-shortcuts'
 
 interface SetPlayedConfirmationDialogProps {
   open: boolean
@@ -30,14 +35,6 @@ const SetPlayedConfirmationDialog = ({
 }: SetPlayedConfirmationDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const formatRegistrationName = (registration: Match['registration1']) => {
-    if (!registration) return 'Unknown'
-    if (registration.players && registration.players.length > 0) {
-      return registration.players.map((p) => p.name || 'Unknown').join(' & ')
-    }
-    return 'Unknown'
-  }
-
   const player1Name = formatRegistrationName(match.registration1)
   const player2Name = formatRegistrationName(match.registration2)
 
@@ -52,6 +49,17 @@ const SetPlayedConfirmationDialog = ({
       setIsSubmitting(false)
     }
   }
+
+  // Keyboard shortcuts: Enter to confirm, Esc to cancel
+  useKeyboardShortcuts([
+    {
+      ...COMMON_SHORTCUTS.submit(handleConfirm),
+      handler: () => {
+        if (!isSubmitting) handleConfirm()
+      },
+    },
+    COMMON_SHORTCUTS.cancel(() => onOpenChange(false)),
+  ])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -3,6 +3,7 @@ import { Calendar } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import type { Match, PlayerMatch } from '@/types'
 import MatchEditDropdown from './match-edit-dropdown'
+import MatchStatusBadge from '@/components/shared/match-status-badge'
 
 interface MatchCardHeaderProps {
   match: Match | PlayerMatch
@@ -63,17 +64,10 @@ const MatchCardHeader = ({
           )}
 
           {isLive && !match.played && (
-            <Badge
-              variant='default'
-              className='text-xs bg-red-600 hover:bg-red-700'
-            >
-              Live
-            </Badge>
+            <MatchStatusBadge status='live' size='sm' className='text-xs' />
           )}
           {match.played && (
-            <Badge variant='default' className='text-xs'>
-              Completed
-            </Badge>
+            <MatchStatusBadge status='played' size='sm' className='text-xs' />
           )}
         </div>
 

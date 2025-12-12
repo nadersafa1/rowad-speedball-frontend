@@ -6,6 +6,7 @@ import { ButtonGroup } from '@/components/ui/button-group'
 import { Minus, Plus, CheckCircle2 } from 'lucide-react'
 import type { Set, Match } from '@/types'
 import { toast } from 'sonner'
+import { formatRegistrationName } from '@/lib/utils/match'
 import SetPlayedConfirmationDialog from './set-played-confirmation-dialog'
 
 interface LiveScoreEditorProps {
@@ -39,14 +40,6 @@ const LiveScoreEditor = ({
       reg2: set.registration2Score,
     })
   }, [set.registration1Score, set.registration2Score])
-
-  const formatRegistrationName = (registration: Match['registration1']) => {
-    if (!registration) return 'Unknown'
-    if (registration.players && registration.players.length > 0) {
-      return registration.players.map((p) => p.name || 'Unknown').join(' & ')
-    }
-    return 'Unknown'
-  }
 
   const updateScore = async (registration: 'reg1' | 'reg2', delta: number) => {
     if (set.played || isUpdating) return

@@ -87,7 +87,7 @@ const MatchesColumnView = ({
                   No matches in this round
                 </div>
               ) : (
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4'>
                   {groupIds.map((groupId) => {
                     const groupMatches = roundMap.get(groupId) || []
                     const groupName = getGroupName(groups, groupId)
@@ -206,59 +206,63 @@ const MatchesColumnView = ({
               <h3 className='text-lg font-semibold capitalize'>
                 {bracketType} Bracket
               </h3>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-                {rounds.map((round) => {
-                  const roundMatches = bracketMap.get(round) || []
-                  const roundsFromFinal = totalRounds - round
-                  let roundName = `Round ${round}`
+              <div className='overflow-x-auto pb-4 -mx-4 px-4'>
+                <div className='flex gap-4 min-w-max'>
+                  {rounds.map((round) => {
+                    const roundMatches = bracketMap.get(round) || []
+                    const roundsFromFinal = totalRounds - round
+                    let roundName = `Round ${round}`
 
-                  // Add descriptive names for finals
-                  if (bracketType === 'winners') {
-                    if (roundsFromFinal === 0) {
-                      roundName = 'Winners Final'
-                    } else if (roundsFromFinal === 1) {
-                      roundName = 'Winners Semifinals'
-                    } else if (roundsFromFinal === 2) {
-                      roundName = 'Winners Quarterfinals'
+                    // Add descriptive names for finals
+                    if (bracketType === 'winners') {
+                      if (roundsFromFinal === 0) {
+                        roundName = 'Winners Final'
+                      } else if (roundsFromFinal === 1) {
+                        roundName = 'Winners Semifinals'
+                      } else if (roundsFromFinal === 2) {
+                        roundName = 'Winners Quarterfinals'
+                      } else {
+                        const label = getRoundLabel(bracketSize, round)
+                        roundName = `Round ${round} (${label})`
+                      }
                     } else {
-                      const label = getRoundLabel(bracketSize, round)
-                      roundName = `Round ${round} (${label})`
+                      if (roundsFromFinal === 0) {
+                        roundName = 'Losers Final'
+                      } else if (roundsFromFinal === 1) {
+                        roundName = 'Losers Semifinals'
+                      } else {
+                        roundName = `Losers Round ${round}`
+                      }
                     }
-                  } else {
-                    if (roundsFromFinal === 0) {
-                      roundName = 'Losers Final'
-                    } else if (roundsFromFinal === 1) {
-                      roundName = 'Losers Semifinals'
-                    } else {
-                      roundName = `Losers Round ${round}`
-                    }
-                  }
 
-                  return (
-                    <Card key={round} className='h-fit'>
-                      <CardHeader className='pb-3'>
-                        <CardTitle className='text-base'>{roundName}</CardTitle>
-                      </CardHeader>
-                      <CardContent className='space-y-2'>
-                        {roundMatches.length === 0 ? (
-                          <div className='text-center text-sm text-muted-foreground py-4'>
-                            No matches ready to play yet
-                          </div>
-                        ) : (
-                          roundMatches.map((match: Match) => (
-                            <CompactMatchItem
-                              key={match.id}
-                              match={match}
-                              showEditButton={canUpdate}
-                              onEditClick={() => onEditMatch(match)}
-                              isLive={liveMatchIds.has(match.id)}
-                            />
-                          ))
-                        )}
-                      </CardContent>
-                    </Card>
-                  )
-                })}
+                    return (
+                      <Card key={round} className='h-fit w-64 flex-shrink-0'>
+                        <CardHeader>
+                          <CardTitle className='text-base'>
+                            {roundName}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-2'>
+                          {roundMatches.length === 0 ? (
+                            <div className='text-center text-sm text-muted-foreground py-4'>
+                              No matches ready to play yet
+                            </div>
+                          ) : (
+                            roundMatches.map((match: Match) => (
+                              <CompactMatchItem
+                                key={match.id}
+                                match={match}
+                                showEditButton={canUpdate}
+                                onEditClick={() => onEditMatch(match)}
+                                isLive={liveMatchIds.has(match.id)}
+                              />
+                            ))
+                          )}
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )

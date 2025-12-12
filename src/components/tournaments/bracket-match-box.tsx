@@ -2,6 +2,8 @@ import type { Match } from '@/types'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Trophy, User } from 'lucide-react'
+import { getPlayerName as getPlayerNameUtil } from '@/lib/utils/match'
+import MatchStatusBadge from '@/components/shared/match-status-badge'
 
 interface BracketMatchBoxProps {
   match: Match
@@ -9,12 +11,10 @@ interface BracketMatchBoxProps {
   showRoundBadge?: boolean
 }
 
-// Get player name from registration
+// Get player name from registration using shared utility
 const getPlayerName = (match: Match, slot: 1 | 2): string => {
   const registration = slot === 1 ? match.registration1 : match.registration2
-  if (!registration) return 'TBD'
-  if (!registration.players || registration.players.length === 0) return 'TBD'
-  return registration.players.map((p) => p.name).join(' / ')
+  return getPlayerNameUtil(registration)
 }
 
 // Check if this slot is the winner
@@ -83,9 +83,7 @@ const BracketMatchBox = ({
           </Badge>
         )}
         {match.played && (
-          <Badge variant='default' className='text-[10px] bg-green-600'>
-            Played
-          </Badge>
+          <MatchStatusBadge status='played' size='sm' className='text-[10px]' />
         )}
         {!match.played && !isBye && (
           <Badge variant='outline' className='text-[10px]'>

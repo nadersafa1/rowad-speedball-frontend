@@ -14,8 +14,10 @@ import DoubleElimList from './double-elim-list'
 import DoubleElimBracket from '@/components/tournaments/double-elim-bracket'
 import { useMatchesSocket } from './use-matches-socket'
 import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
-import MatchesFilters, { type MatchStatus } from './matches-filters'
+import MatchesFilters from './matches-filters'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useMatchFilters, type MatchStatus } from '@/hooks/use-match-filters'
+import { formatRegistrationName } from '@/lib/utils/match'
 
 type ViewMode = 'bracket' | 'list' | 'column'
 
@@ -59,10 +61,11 @@ const MatchesView = ({
 
   const [viewMode, setViewMode] = useState<ViewMode>(getDefaultViewMode)
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
-  const [groupFilter, setGroupFilter] = useState<string>('all')
-  const [statusFilter, setStatusFilter] = useState<MatchStatus>('all')
 
   const { localMatches, liveMatchIds } = useMatchesSocket(matches)
+
+  const { filters, updateFilter, resetFilters, availableRounds } =
+    useMatchFilters(localMatches, groups, eventFormat, liveMatchIds)
 
   // Helper to check if a match is a BYE (one registration is null)
   const isByeMatch = (match: Match): boolean => {
@@ -76,7 +79,7 @@ const MatchesView = ({
     return match.registration1Id === null && match.registration2Id === null
   }
 
-  // Filter matches based on group, status, and hide played BYE matches for elimination formats
+  // Filter matches based on all criteria
   const filteredMatches = useMemo(() => {
     return localMatches.filter((match) => {
       // Hide matches with no participants (both sides null)
@@ -85,7 +88,6 @@ const MatchesView = ({
       }
 
       // Hide played BYE matches in single/double elimination list view
-      // Unplayed BYE matches are shown so users can see pending auto-advances
       if (
         (isSingleElimination || isDoubleElimination) &&
         isByeMatch(match) &&
@@ -95,27 +97,70 @@ const MatchesView = ({
       }
 
       // Group filter
-      if (groupFilter !== 'all' && match.groupId !== groupFilter) {
+      if (
+        filters.groupFilter !== 'all' &&
+        match.groupId !== filters.groupFilter
+      ) {
+        return false
+      }
+
+      // Round filter
+      if (
+        filters.roundFilter !== 'all' &&
+        match.round !== filters.roundFilter
+      ) {
         return false
       }
 
       // Status filter
-      if (statusFilter !== 'all') {
+      if (filters.statusFilter !== 'all') {
         const isPlayed = match.played
         const isLive = !match.played && liveMatchIds.has(match.id)
         const isUpcoming = !match.played && !liveMatchIds.has(match.id)
 
-        if (statusFilter === 'played' && !isPlayed) return false
-        if (statusFilter === 'live' && !isLive) return false
-        if (statusFilter === 'upcoming' && !isUpcoming) return false
+        if (filters.statusFilter === 'played' && !isPlayed) return false
+        if (filters.statusFilter === 'live' && !isLive) return false
+        if (filters.statusFilter === 'upcoming' && !isUpcoming) return false
+      }
+
+      // Player search filter
+      if (filters.playerSearch) {
+        const searchLower = filters.playerSearch.toLowerCase()
+        const player1Name = formatRegistrationName(
+          match.registration1
+        ).toLowerCase()
+        const player2Name = formatRegistrationName(
+          match.registration2
+        ).toLowerCase()
+        if (
+          !player1Name.includes(searchLower) &&
+          !player2Name.includes(searchLower)
+        ) {
+          return false
+        }
+      }
+
+      // Date range filter
+      if (filters.dateFrom || filters.dateTo) {
+        if (!match.matchDate) return false
+        const matchDate = new Date(match.matchDate)
+        if (filters.dateFrom && matchDate < new Date(filters.dateFrom)) {
+          return false
+        }
+        if (filters.dateTo) {
+          const toDate = new Date(filters.dateTo)
+          toDate.setHours(23, 59, 59, 999) // Include entire end date
+          if (matchDate > toDate) {
+            return false
+          }
+        }
       }
 
       return true
     })
   }, [
     localMatches,
-    groupFilter,
-    statusFilter,
+    filters,
     liveMatchIds,
     isSingleElimination,
     isDoubleElimination,
@@ -134,8 +179,10 @@ const MatchesView = ({
   const handleEditMatch = (match: Match) => setSelectedMatch(match)
 
   useEffect(() => {
-    setStatusFilter(viewMode === 'list' ? 'upcoming' : 'all')
-  }, [viewMode])
+    if (viewMode === 'list') {
+      updateFilter('statusFilter', 'upcoming')
+    }
+  }, [viewMode, updateFilter])
 
   return (
     <div className='space-y-4'>
@@ -145,11 +192,20 @@ const MatchesView = ({
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
             <MatchesFilters
               groups={groups}
-              groupFilter={groupFilter}
-              statusFilter={statusFilter}
-              onGroupChange={setGroupFilter}
-              onStatusChange={setStatusFilter}
+              groupFilter={filters.groupFilter}
+              statusFilter={filters.statusFilter}
+              roundFilter={filters.roundFilter}
+              playerSearch={filters.playerSearch}
+              availableRounds={availableRounds}
               showGroupFilter={!isSingleElimination && !isDoubleElimination}
+              showRoundFilter={isSingleElimination || isDoubleElimination}
+              onGroupChange={(value) => updateFilter('groupFilter', value)}
+              onStatusChange={(value) => updateFilter('statusFilter', value)}
+              onRoundChange={(value) => updateFilter('roundFilter', value)}
+              onPlayerSearchChange={(value) =>
+                updateFilter('playerSearch', value)
+              }
+              onReset={resetFilters}
             />
             <div className='flex items-center gap-2'>
               <div className='flex items-center gap-1 p-1 bg-muted rounded-lg'>

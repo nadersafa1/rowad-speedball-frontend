@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import type { Match } from '@/types'
-import { formatRegistrationName, calculateSetWins } from '@/lib/utils/match'
-import { Badge } from '@/components/ui/badge'
+import { useMatchDisplay } from '@/hooks/use-match-display'
+import MatchStatusBadge from '@/components/shared/match-status-badge'
+import ScoreBadge from '@/components/shared/score-badge'
 import { Button } from '@/components/ui/button'
 import { Archive, MoreVertical, Play } from 'lucide-react'
 import {
@@ -28,10 +29,8 @@ const CompactMatchItem = ({
   isLive = false,
 }: CompactMatchItemProps) => {
   const router = useRouter()
-  const player1Name = formatRegistrationName(match.registration1)
-  const player2Name = formatRegistrationName(match.registration2)
-  const setWins = calculateSetWins(match.sets)
-  const hasScore = match.sets && match.sets.length > 0
+  const { player1Name, player2Name, setWins, hasScore, status } =
+    useMatchDisplay(match, isLive)
 
   const handleLiveMode = () => {
     router.push(`/matches/${match.id}`)
@@ -44,47 +43,30 @@ const CompactMatchItem = ({
           <span className='text-xs font-medium text-muted-foreground'>
             M{match.matchNumber}
           </span>
-          {match.played && (
-            <Badge variant='default' className='text-xs px-1.5 py-0'>
-              Done
-            </Badge>
-          )}
-          {isLive && !match.played && (
-            <Badge
-              variant='default'
-              className='text-xs px-1.5 py-0 bg-red-600 hover:bg-red-700'
-            >
-              Live
-            </Badge>
+          {status !== 'upcoming' && (
+            <MatchStatusBadge status={status} size='sm' />
           )}
         </div>
 
         <div className='flex items-center justify-between'>
           <p className='text-sm font-medium truncate'>{player1Name}</p>
           {hasScore && (
-            <Badge
-              variant='default'
-              className={`text-xs px-1.5 py-0 w-6 bg-${
-                setWins.player1 > setWins.player2 ? 'green-600' : 'red-600'
-              }`}
-            >
-              {setWins.player1}
-            </Badge>
+            <ScoreBadge
+              score={setWins.player1}
+              isWinner={setWins.player1 > setWins.player2}
+              size='sm'
+            />
           )}
         </div>
         <Separator />
-        {/* <p className='text-xs text-muted-foreground'>vs</p> */}
         <div className='flex items-center justify-between'>
           <p className='text-sm font-medium truncate'>{player2Name}</p>
           {hasScore && (
-            <Badge
-              variant='default'
-              className={`text-xs px-1.5 py-0 w-6 bg-${
-                setWins.player2 > setWins.player1 ? 'green-600' : 'red-600'
-              }`}
-            >
-              {setWins.player2}
-            </Badge>
+            <ScoreBadge
+              score={setWins.player2}
+              isWinner={setWins.player2 > setWins.player1}
+              size='sm'
+            />
           )}
         </div>
       </div>
@@ -95,9 +77,9 @@ const CompactMatchItem = ({
               <Button
                 variant='ghost'
                 size='sm'
-                className='h-6 w-6 p-0 flex-shrink-0'
+                className='h-8 w-8 sm:h-6 sm:w-6 p-0 flex-shrink-0 min-h-[48px] min-w-[48px] sm:min-h-0 sm:min-w-0'
               >
-                <MoreVertical className='h-3 w-3' />
+                <MoreVertical className='h-4 w-4 sm:h-3 sm:w-3' />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
