@@ -9,7 +9,10 @@ import {
   validateSetPlayed,
   checkMajorityAndCompleteMatch,
 } from '@/lib/validations/match-validation'
-import { checkEventUpdateAuthorization } from '@/lib/event-authorization-helpers'
+import {
+  checkEventUpdateAuthorization,
+  canPlayerUpdateMatch,
+} from '@/lib/event-authorization-helpers'
 import { handleMatchCompletion } from '@/lib/services/match-service'
 
 export async function PATCH(
@@ -86,10 +89,21 @@ export async function PATCH(
       return Response.json({ message: 'Event not found' }, { status: 404 })
     }
 
-    // Check authorization based on parent event (same as edit event)
+    // Check authorization: coaches/admins/owners can always mark sets as played
     const authError = checkEventUpdateAuthorization(context, event[0])
+
+    // If standard authorization fails, check if player can update their own match
     if (authError) {
-      return authError
+      const playerCanUpdate = await canPlayerUpdateMatch(
+        context,
+        match[0],
+        event[0]
+      )
+
+      if (!playerCanUpdate) {
+        return authError
+      }
+      // Player can update - continue with marking set as played
     }
 
     // Get all sets for validation
@@ -165,9 +179,9 @@ export async function PATCH(
           event: event[0],
           winnerId: completionResult.winnerId,
           sets: updatedSets.map((s) => ({
-              registration1Score: s.registration1Score,
-              registration2Score: s.registration2Score,
-            })),
+            registration1Score: s.registration1Score,
+            registration2Score: s.registration2Score,
+          })),
         })
       }
     }

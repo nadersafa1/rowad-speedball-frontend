@@ -8,6 +8,7 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
   checkEventUpdateAuthorization,
   checkEventDeleteAuthorization,
+  canPlayerUpdateMatch,
 } from '@/lib/event-authorization-helpers'
 
 export async function PATCH(
@@ -81,10 +82,21 @@ export async function PATCH(
       return Response.json({ message: 'Event not found' }, { status: 404 })
     }
 
-    // Check authorization based on parent event
+    // Check authorization: coaches/admins/owners can always update sets
     const authError = checkEventUpdateAuthorization(context, event[0])
+
+    // If standard authorization fails, check if player can update their own match
     if (authError) {
-      return authError
+      const playerCanUpdate = await canPlayerUpdateMatch(
+        context,
+        match[0],
+        event[0]
+      )
+
+      if (!playerCanUpdate) {
+        return authError
+      }
+      // Player can update - continue with set update
     }
 
     // Update set
@@ -168,10 +180,21 @@ export async function DELETE(
       return Response.json({ message: 'Event not found' }, { status: 404 })
     }
 
-    // Check authorization based on parent event
+    // Check authorization: coaches/admins/owners can always delete sets
     const authError = checkEventDeleteAuthorization(context, event[0])
+
+    // If standard authorization fails, check if player can update their own match
     if (authError) {
-      return authError
+      const playerCanUpdate = await canPlayerUpdateMatch(
+        context,
+        match[0],
+        event[0]
+      )
+
+      if (!playerCanUpdate) {
+        return authError
+      }
+      // Player can update - continue with set deletion
     }
 
     // Delete set
