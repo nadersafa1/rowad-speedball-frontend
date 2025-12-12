@@ -179,10 +179,11 @@ const MatchesView = ({
   const handleEditMatch = (match: Match) => setSelectedMatch(match)
 
   useEffect(() => {
-    if (viewMode === 'list') {
+    if (viewMode === 'list' && filters.statusFilter !== 'upcoming') {
       updateFilter('statusFilter', 'upcoming')
     }
-  }, [viewMode, updateFilter])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode])
 
   return (
     <div className='space-y-4'>

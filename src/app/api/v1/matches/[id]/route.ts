@@ -12,6 +12,7 @@ import { validateMatchCompletion } from '@/lib/validations/match-validation'
 import {
   checkEventUpdateAuthorization,
   checkEventReadAuthorization,
+  canPlayerUpdateMatch,
 } from '@/lib/event-authorization-helpers'
 import {
   handleMatchCompletion,
@@ -120,10 +121,21 @@ export async function PATCH(
 
     const eventData = event[0]
 
-    // Check authorization based on parent event
+    // Check authorization: coaches/admins/owners can always update
     const authError = checkEventUpdateAuthorization(context, eventData)
+
+    // If standard authorization fails, check if player can update their own match
     if (authError) {
-      return authError
+      const playerCanUpdate = await canPlayerUpdateMatch(
+        context,
+        match,
+        eventData
+      )
+
+      if (!playerCanUpdate) {
+        return authError
+      }
+      // Player can update - continue with update
     }
 
     // Check if trying to update matchDate when sets exist

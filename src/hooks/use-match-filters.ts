@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import type { Match, Group, EventFormat } from '@/types'
 
@@ -14,6 +14,27 @@ export interface MatchFilters {
   dateFrom: string | null
   dateTo: string | null
 }
+
+// Helper to parse filters from URL
+const parseFiltersFromUrl = (searchParams: URLSearchParams): MatchFilters => ({
+  groupFilter: searchParams.get('group') || 'all',
+  statusFilter: (searchParams.get('status') as MatchStatus) || 'all',
+  roundFilter: searchParams.get('round')
+    ? Number(searchParams.get('round'))
+    : 'all',
+  playerSearch: searchParams.get('search') || '',
+  dateFrom: searchParams.get('dateFrom') || null,
+  dateTo: searchParams.get('dateTo') || null,
+})
+
+// Helper to check if filters have changed
+const filtersEqual = (a: MatchFilters, b: MatchFilters): boolean =>
+  a.groupFilter === b.groupFilter &&
+  a.statusFilter === b.statusFilter &&
+  a.roundFilter === b.roundFilter &&
+  a.playerSearch === b.playerSearch &&
+  a.dateFrom === b.dateFrom &&
+  a.dateTo === b.dateTo
 
 /**
  * Hook for managing match filters with URL state persistence.
@@ -29,19 +50,9 @@ export const useMatchFilters = (
   const searchParams = useSearchParams()
   const isUpdatingRef = useRef(false)
 
-  // Get initial values from URL or defaults
-  const getInitialFilters = (): MatchFilters => ({
-    groupFilter: searchParams.get('group') || 'all',
-    statusFilter: (searchParams.get('status') as MatchStatus) || 'all',
-    roundFilter: searchParams.get('round')
-      ? Number(searchParams.get('round'))
-      : 'all',
-    playerSearch: searchParams.get('search') || '',
-    dateFrom: searchParams.get('dateFrom') || null,
-    dateTo: searchParams.get('dateTo') || null,
-  })
-
-  const [filters, setFilters] = useState<MatchFilters>(getInitialFilters)
+  const [filters, setFilters] = useState<MatchFilters>(() =>
+    parseFiltersFromUrl(searchParams)
+  )
 
   // Sync filters from URL when URL changes externally (not from our updates)
   useEffect(() => {
@@ -50,88 +61,55 @@ export const useMatchFilters = (
       return
     }
 
-    const urlFilters: MatchFilters = {
-      groupFilter: searchParams.get('group') || 'all',
-      statusFilter: (searchParams.get('status') as MatchStatus) || 'all',
-      roundFilter: searchParams.get('round')
-        ? Number(searchParams.get('round'))
-        : 'all',
-      playerSearch: searchParams.get('search') || '',
-      dateFrom: searchParams.get('dateFrom') || null,
-      dateTo: searchParams.get('dateTo') || null,
-    }
+    const urlFilters = parseFiltersFromUrl(searchParams)
 
-    setFilters((currentFilters) => {
-      // Check if URL filters differ from current filters
-      const hasChanged =
-        urlFilters.groupFilter !== currentFilters.groupFilter ||
-        urlFilters.statusFilter !== currentFilters.statusFilter ||
-        urlFilters.roundFilter !== currentFilters.roundFilter ||
-        urlFilters.playerSearch !== currentFilters.playerSearch ||
-        urlFilters.dateFrom !== currentFilters.dateFrom ||
-        urlFilters.dateTo !== currentFilters.dateTo
-
-      return hasChanged ? urlFilters : currentFilters
-    })
+    setFilters((currentFilters) =>
+      filtersEqual(urlFilters, currentFilters) ? currentFilters : urlFilters
+    )
   }, [searchParams])
 
   // Update URL when filters change
   useEffect(() => {
     isUpdatingRef.current = true
 
-    // Create new params object preserving all existing params
     const params = new URLSearchParams(searchParams.toString())
 
-    // Update or remove filter params based on filter values
-    if (filters.groupFilter !== 'all') {
-      params.set('group', filters.groupFilter)
-    } else {
-      params.delete('group')
-    }
+    // Map filter keys to URL param names and default values
+    const filterMap: Array<{
+      key: keyof MatchFilters
+      param: string
+      defaultValue: string | 'all' | null
+    }> = [
+      { key: 'groupFilter', param: 'group', defaultValue: 'all' },
+      { key: 'statusFilter', param: 'status', defaultValue: 'all' },
+      { key: 'roundFilter', param: 'round', defaultValue: 'all' },
+      { key: 'playerSearch', param: 'search', defaultValue: '' },
+      { key: 'dateFrom', param: 'dateFrom', defaultValue: null },
+      { key: 'dateTo', param: 'dateTo', defaultValue: null },
+    ]
 
-    if (filters.statusFilter !== 'all') {
-      params.set('status', filters.statusFilter)
-    } else {
-      params.delete('status')
-    }
+    // Update or remove filter params
+    filterMap.forEach(({ key, param, defaultValue }) => {
+      const value = filters[key]
+      if (value !== defaultValue && value !== null && value !== '') {
+        params.set(param, String(value))
+      } else {
+        params.delete(param)
+      }
+    })
 
-    if (filters.roundFilter !== 'all') {
-      params.set('round', String(filters.roundFilter))
-    } else {
-      params.delete('round')
-    }
-
-    if (filters.playerSearch) {
-      params.set('search', filters.playerSearch)
-    } else {
-      params.delete('search')
-    }
-
-    if (filters.dateFrom) {
-      params.set('dateFrom', filters.dateFrom)
-    } else {
-      params.delete('dateFrom')
-    }
-
-    if (filters.dateTo) {
-      params.set('dateTo', filters.dateTo)
-    } else {
-      params.delete('dateTo')
-    }
-
-    // Build new URL preserving all params (including non-filter params like 'tab')
     const newUrl = params.toString()
       ? `${pathname}?${params.toString()}`
       : pathname
 
-    // Only update if URL actually changed to avoid infinite loops
     const currentUrl = `${pathname}${
       searchParams.toString() ? `?${searchParams.toString()}` : ''
     }`
+
     if (newUrl !== currentUrl) {
       router.replace(newUrl, { scroll: false })
     }
-  }, [filters, router, pathname])
+  }, [filters, router, pathname, searchParams])
 
   // Get available rounds from matches
   const availableRounds = useMemo(() => {
@@ -140,14 +118,14 @@ export const useMatchFilters = (
     return Array.from(rounds).sort((a, b) => a - b)
   }, [matches])
 
-  const updateFilter = <K extends keyof MatchFilters>(
-    key: K,
-    value: MatchFilters[K]
-  ) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
-  }
+  const updateFilter = useCallback(
+    <K extends keyof MatchFilters>(key: K, value: MatchFilters[K]) => {
+      setFilters((prev) => ({ ...prev, [key]: value }))
+    },
+    []
+  )
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilters({
       groupFilter: 'all',
       statusFilter: 'all',
@@ -156,7 +134,7 @@ export const useMatchFilters = (
       dateFrom: null,
       dateTo: null,
     })
-  }
+  }, [])
 
   return {
     filters,

@@ -127,6 +127,7 @@ export type Event = {
   completed: boolean
   hasThirdPlaceMatch?: boolean
   organizationId?: string | null
+  trainingSessionId?: string | null
   registrationsCount?: number
   lastMatchPlayedDate?: string | null
   organizationName?: string | null

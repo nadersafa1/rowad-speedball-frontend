@@ -1,6 +1,9 @@
 'use client'
 
+import Link from 'next/link'
+import { Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { EVENT_FORMAT_LABELS } from '@/types'
 import { formatDisplayDate } from '@/lib/utils/date-formatting'
 import type { Event } from '@/types'
@@ -49,6 +52,20 @@ const EventOverviewTab = ({ event }: EventOverviewTabProps) => {
               <p className='font-medium'>
                 {formatDisplayDate(event.registrationEndDate)}
               </p>
+            </div>
+          )}
+          {event.trainingSessionId && (
+            <div>
+              <p className='text-sm text-muted-foreground'>Training Session</p>
+              <Button variant='link' className='h-auto p-0 font-medium' asChild>
+                <Link
+                  href={`/sessions/${event.trainingSessionId}`}
+                  className='flex items-center gap-2'
+                >
+                  <Calendar className='h-4 w-4' />
+                  View Training Session
+                </Link>
+              </Button>
             </div>
           )}
         </div>

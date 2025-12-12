@@ -266,6 +266,9 @@ export const events = pgTable('events', {
   organizationId: uuid('organization_id').references(() => organization.id, {
     onDelete: 'cascade',
   }),
+  trainingSessionId: uuid('training_session_id').references(() => trainingSessions.id, {
+    onDelete: 'cascade',
+  }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
