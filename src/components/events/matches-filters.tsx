@@ -80,6 +80,19 @@ const MatchesFilters = ({
         </div>
       )}
 
+      <div className='flex items-center gap-2 flex-1 min-w-[200px]'>
+        <div className='relative flex-1 max-w-[300px]'>
+          <Search className='absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+          <Input
+            type='text'
+            placeholder='Search players...'
+            value={playerSearch}
+            onChange={(e) => onPlayerSearchChange(e.target.value)}
+            className='pl-8 h-8'
+          />
+        </div>
+      </div>
+
       <div className='flex items-center gap-2'>
         <Select value={statusFilter} onValueChange={onStatusChange}>
           <SelectTrigger className='w-[130px] h-8'>
@@ -117,19 +130,6 @@ const MatchesFilters = ({
           </Select>
         </div>
       )}
-
-      <div className='flex items-center gap-2 flex-1 min-w-[200px]'>
-        <div className='relative flex-1 max-w-[300px]'>
-          <Search className='absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-          <Input
-            type='text'
-            placeholder='Search players...'
-            value={playerSearch}
-            onChange={(e) => onPlayerSearchChange(e.target.value)}
-            className='pl-8 h-8'
-          />
-        </div>
-      </div>
 
       {hasActiveFilters && onReset && (
         <Button
