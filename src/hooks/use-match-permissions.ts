@@ -24,7 +24,7 @@ export const useMatchPermissions = (match: Match | null | undefined) => {
     const event = match.event
 
     // Check if player can update this match
-    const canPlayerUpdate =
+    const canPlayerUpdate = !!(
       isPlayer &&
       userId &&
       organization?.id &&
@@ -32,6 +32,7 @@ export const useMatchPermissions = (match: Match | null | undefined) => {
       event.organizationId === organization.id &&
       (match.registration1?.players?.some((p) => p.userId === userId) ||
         match.registration2?.players?.some((p) => p.userId === userId))
+    )
 
     return {
       canUpdate: canPlayerUpdate,
@@ -60,7 +61,7 @@ export const canPlayerUpdateMatch = (
     !!organizationId &&
     !!event.trainingSessionId &&
     event.organizationId === organizationId &&
-    (match.registration1?.players?.some((p) => p.userId === userId) ||
-      match.registration2?.players?.some((p) => p.userId === userId))
+    (!!match.registration1?.players?.some((p) => p.userId === userId) ||
+      !!match.registration2?.players?.some((p) => p.userId === userId))
   )
 }
