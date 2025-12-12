@@ -795,6 +795,10 @@ export class ApiClient {
     )
   }
 
+  async getUser(id: string): Promise<any> {
+    return this.request(`/users/${id}`)
+  }
+
   async getMyMemberships(): Promise<
     Array<{
       id: string
