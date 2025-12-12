@@ -72,6 +72,7 @@ const MatchDetailPage = () => {
     player2Name
   )
   const isDateSet = !!match.matchDate
+  const hasSets = (match.sets?.length || 0) > 0
 
   // Generate match label for breadcrumb
   const matchLabel = match.event
@@ -79,52 +80,62 @@ const MatchDetailPage = () => {
     : `${player1Name} vs ${player2Name}`
 
   return (
-    <div className='container mx-auto p-4 space-y-6'>
+    <div className='container mx-auto p-4 space-y-4 lg:space-y-6'>
       <PageBreadcrumb currentPageLabel={matchLabel || 'Match'} />
 
-      <MatchDateSection
-        matchDate={matchDate}
-        isDateSet={isDateSet}
-        isDateSaving={isDateSaving}
-        isMatchPlayed={match.played}
-        onDateChange={actions.updateDate}
-      />
+      {/* Responsive 2-column layout: Main (scoring) + Sidebar (details) */}
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6'>
+        {/* Main Content Column - Scoring Interface (2/3 width on desktop) */}
+        <div className='lg:col-span-2 space-y-4 lg:space-y-6'>
+          {match.played && winnerName && (
+            <WinnerCelebration
+              winnerName={winnerName}
+              player1Wins={setWins.player1}
+              player2Wins={setWins.player2}
+              matchDate={match.matchDate}
+            />
+          )}
 
-      <MatchDetailsSection match={match} />
+          {currentSet && !match.played && isDateSet && (
+            <CurrentSetEditor
+              currentSet={currentSet}
+              match={match}
+              onScoreUpdate={actions.updateScore}
+              onMarkAsPlayed={actions.markSetPlayed}
+            />
+          )}
 
-      <MatchCard match={match} />
+          {!currentSet && !match.played && isDateSet && (
+            <AddSetCard
+              matchId={matchId}
+              currentSetCount={match.sets?.length || 0}
+              bestOf={bestOf}
+              allSetsPlayed={allSetsPlayed}
+              hasMajorityReached={majorityReached}
+              majorityWinnerName={majorityWinnerName}
+              onCreateSet={actions.createSet}
+            />
+          )}
 
-      {match.played && winnerName && (
-        <WinnerCelebration
-          winnerName={winnerName}
-          player1Wins={setWins.player1}
-          player2Wins={setWins.player2}
-          matchDate={match.matchDate}
-        />
-      )}
+          {!isDateSet && !match.played && <DateNotSetCard />}
+        </div>
 
-      {currentSet && !match.played && isDateSet && (
-        <CurrentSetEditor
-          currentSet={currentSet}
-          match={match}
-          onScoreUpdate={actions.updateScore}
-          onMarkAsPlayed={actions.markSetPlayed}
-        />
-      )}
+        {/* Sidebar Column - Match Info (1/3 width on desktop) */}
+        <div className='space-y-4 lg:space-y-6'>
+          <MatchDateSection
+            matchDate={match.matchDate || ''}
+            isDateSet={isDateSet}
+            isDateSaving={isDateSaving}
+            isMatchPlayed={match.played}
+            onDateChange={actions.updateDate}
+            hasSets={hasSets}
+          />
 
-      {!currentSet && !match.played && isDateSet && (
-        <AddSetCard
-          matchId={matchId}
-          currentSetCount={match.sets?.length || 0}
-          bestOf={bestOf}
-          allSetsPlayed={allSetsPlayed}
-          hasMajorityReached={majorityReached}
-          majorityWinnerName={majorityWinnerName}
-          onCreateSet={actions.createSet}
-        />
-      )}
+          <MatchDetailsSection match={match} />
 
-      {!isDateSet && !match.played && <DateNotSetCard />}
+          <MatchCard match={match} />
+        </div>
+      </div>
     </div>
   )
 }

@@ -57,10 +57,9 @@ const MatchesFilters = ({
       )}
 
       <div className='flex items-center gap-2'>
-        <span className='text-sm text-muted-foreground'>Status:</span>
         <Select value={statusFilter} onValueChange={onStatusChange}>
           <SelectTrigger className='w-[130px] h-8'>
-            <SelectValue placeholder='All Matches' />
+            <SelectValue placeholder='Status' />
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((option) => (
@@ -76,4 +75,3 @@ const MatchesFilters = ({
 }
 
 export default MatchesFilters
-

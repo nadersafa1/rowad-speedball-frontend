@@ -46,10 +46,10 @@ const AddSetButton = ({
     <Button
       onClick={handleAddSet}
       disabled={isLoading}
-      className='w-full'
+      className='w-full h-12 sm:h-14 text-base sm:text-lg font-semibold'
       size='lg'
     >
-      <Plus className='mr-2 h-4 w-4' />
+      <Plus className='mr-2 h-5 w-5 sm:h-6 sm:w-6' />
       {isLoading ? 'Creating Set...' : 'Add Set'}
     </Button>
   )

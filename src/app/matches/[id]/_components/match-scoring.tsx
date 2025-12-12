@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent} from '@/components/ui/card'
 import { Calendar } from 'lucide-react'
 import LiveScoreEditor from '@/components/matches/live-score-editor'
 import AddSetButton from '@/components/matches/add-set-button'
@@ -9,28 +9,31 @@ import type { Match, Set } from '@/types'
 interface CurrentSetEditorProps {
   currentSet: Set
   match: Match
-  onScoreUpdate: (setId: string, reg1Score: number, reg2Score: number) => Promise<void>
+  onScoreUpdate: (
+    setId: string,
+    reg1Score: number,
+    reg2Score: number
+  ) => Promise<void>
   onMarkAsPlayed: (setId: string) => Promise<void>
 }
 
 /**
  * Editor for the current active set.
+ * Compact design focused on scoring action.
  */
-const CurrentSetEditor = ({ currentSet, match, onScoreUpdate, onMarkAsPlayed }: CurrentSetEditorProps) => {
+const CurrentSetEditor = ({
+  currentSet,
+  match,
+  onScoreUpdate,
+  onMarkAsPlayed,
+}: CurrentSetEditorProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Current Set - Set {currentSet.setNumber}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <LiveScoreEditor
-          set={currentSet}
-          match={match}
-          onScoreUpdate={onScoreUpdate}
-          onMarkAsPlayed={onMarkAsPlayed}
-        />
-      </CardContent>
-    </Card>
+    <LiveScoreEditor
+      set={currentSet}
+      match={match}
+      onScoreUpdate={onScoreUpdate}
+      onMarkAsPlayed={onMarkAsPlayed}
+    />
   )
 }
 
@@ -46,6 +49,7 @@ interface AddSetCardProps {
 
 /**
  * Card for adding a new set to the match.
+ * Optimized for quick action on mobile and desktop.
  */
 const AddSetCard = ({
   matchId,
@@ -63,27 +67,49 @@ const AddSetCard = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{getTitle()}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card className='border-2 border-dashed'>
+      <CardContent className='pt-6'>
         {hasMajorityReached && majorityWinnerName ? (
-          <p className='text-center text-muted-foreground mb-4'>
-            {majorityWinnerName} has won the majority of sets. The match will be marked as complete.
-          </p>
+          <div className='space-y-4'>
+            <p className='text-center text-sm sm:text-base text-muted-foreground'>
+              {majorityWinnerName} has won the majority of sets. The match will
+              be marked as complete.
+            </p>
+            <AddSetButton
+              matchId={matchId}
+              currentSetCount={currentSetCount}
+              bestOf={bestOf}
+              allSetsPlayed={allSetsPlayed}
+              onCreateSet={onCreateSet}
+            />
+          </div>
         ) : allSetsPlayed && currentSetCount > 0 ? (
-          <p className='text-center text-muted-foreground mb-4'>
-            All sets have been played. Add another set to continue.
-          </p>
-        ) : null}
-        <AddSetButton
-          matchId={matchId}
-          currentSetCount={currentSetCount}
-          bestOf={bestOf}
-          allSetsPlayed={allSetsPlayed}
-          onCreateSet={onCreateSet}
-        />
+          <div className='space-y-4'>
+            <p className='text-center text-sm sm:text-base text-muted-foreground'>
+              All sets have been played. Add another set to continue.
+            </p>
+            <AddSetButton
+              matchId={matchId}
+              currentSetCount={currentSetCount}
+              bestOf={bestOf}
+              allSetsPlayed={allSetsPlayed}
+              onCreateSet={onCreateSet}
+            />
+          </div>
+        ) : (
+          <div className='space-y-2'>
+            <h3 className='text-center text-base sm:text-lg font-semibold'>
+              {getTitle()}
+            </h3>
+            <AddSetButton
+              matchId={matchId}
+              currentSetCount={currentSetCount}
+              bestOf={bestOf}
+              allSetsPlayed={allSetsPlayed}
+              onCreateSet={onCreateSet}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -98,7 +124,7 @@ const DateNotSetCard = () => {
       <CardContent className='pt-6'>
         <div className='flex items-center gap-3 text-yellow-600'>
           <Calendar className='h-5 w-5' />
-          <p>Please set a match date above to start scoring</p>
+          <p>Please set a match date to enable scoring</p>
         </div>
       </CardContent>
     </Card>
@@ -106,4 +132,3 @@ const DateNotSetCard = () => {
 }
 
 export { CurrentSetEditor, AddSetCard, DateNotSetCard }
-

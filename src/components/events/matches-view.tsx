@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Dialog } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { LayoutGrid, List, Columns } from 'lucide-react'
@@ -133,6 +133,10 @@ const MatchesView = ({
 
   const handleEditMatch = (match: Match) => setSelectedMatch(match)
 
+  useEffect(() => {
+    setStatusFilter(viewMode === 'list' ? 'upcoming' : 'all')
+  }, [viewMode])
+
   return (
     <div className='space-y-4'>
       {/* Header with filters and view toggle */}
@@ -148,7 +152,6 @@ const MatchesView = ({
               showGroupFilter={!isSingleElimination && !isDoubleElimination}
             />
             <div className='flex items-center gap-2'>
-              <span className='text-sm text-muted-foreground'>View:</span>
               <div className='flex items-center gap-1 p-1 bg-muted rounded-lg'>
                 {(isSingleElimination || isDoubleElimination) && (
                   <Button
