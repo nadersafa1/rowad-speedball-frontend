@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import EventMatchItem from './event-match-item'
+import { getRoundLabel, getRoundNameWithLabel } from '@/lib/utils/round-labels'
+import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
 
 interface DoubleElimListProps {
   matches: Match[]
@@ -62,22 +64,28 @@ const groupByBracketAndRound = (
   return map
 }
 
-const getRoundName = (bracket: BracketGroup, round: number, totalRounds: number) => {
+const getRoundName = (
+  bracket: BracketGroup,
+  round: number,
+  totalRounds: number,
+  bracketSize?: number
+) => {
   const roundsFromFinal = totalRounds - round
-  
-  if (bracket === 'winners') {
-    switch (roundsFromFinal) {
-      case 0:
-        return 'Winners Final'
-      case 1:
-        return 'Winners Semifinals'
-      case 2:
-        return 'Winners Quarterfinals'
-      default:
-        return `Winners Round ${round}`
+
+  if (bracket === 'winners' && bracketSize) {
+    // Use standard round labels for winners bracket
+    if (roundsFromFinal === 0) {
+      return 'Winners Final'
+    } else if (roundsFromFinal === 1) {
+      return 'Winners Semifinals'
+    } else if (roundsFromFinal === 2) {
+      return 'Winners Quarterfinals'
+    } else {
+      const label = getRoundLabel(bracketSize, round)
+      return `Winners Round ${round} (${label})`
     }
   }
-  
+
   // Losers bracket
   switch (roundsFromFinal) {
     case 0:
@@ -94,9 +102,7 @@ const placementBadge = (match: Match) => {
     match.winnerTo === 'first-place' ||
     match.winnerToPlacement === 'first-place'
   ) {
-    return (
-      <Badge className='bg-yellow-500 text-yellow-950'>🏆 1st place</Badge>
-    )
+    return <Badge className='bg-yellow-500 text-yellow-950'>🏆 1st place</Badge>
   }
   if (
     match.loserTo === 'second-place' ||
@@ -128,8 +134,18 @@ const DoubleElimList = ({
   const grouped = groupByBracketAndRound(matches)
   const brackets: BracketGroup[] = ['winners', 'losers']
 
+  // Calculate bracket size for round labels
+  const uniqueRegs = new Set<string>()
+  matches.forEach((m) => {
+    if (m.registration1Id) uniqueRegs.add(m.registration1Id)
+    if (m.registration2Id) uniqueRegs.add(m.registration2Id)
+  })
+  const bracketSize = nextPowerOf2(uniqueRegs.size)
+
   // Count visible matches (exclude played BYE matches)
-  const visibleMatchCount = matches.filter((m) => !(isByeMatch(m) && m.played)).length
+  const visibleMatchCount = matches.filter(
+    (m) => !(isByeMatch(m) && m.played)
+  ).length
 
   if (visibleMatchCount === 0) {
     return (
@@ -140,7 +156,8 @@ const DoubleElimList = ({
   }
 
   // Collect all rounds for quick navigation
-  const allRounds: { bracket: BracketGroup; round: number; label: string }[] = []
+  const allRounds: { bracket: BracketGroup; round: number; label: string }[] =
+    []
   brackets.forEach((bracket) => {
     const rounds = grouped.get(bracket)
     if (rounds) {
@@ -150,7 +167,7 @@ const DoubleElimList = ({
         allRounds.push({
           bracket,
           round,
-          label: getRoundName(bracket, round, totalRounds),
+          label: getRoundName(bracket, round, totalRounds, bracketSize),
         })
       })
     }
@@ -211,7 +228,12 @@ const DoubleElimList = ({
             {/* Rounds */}
             {roundNumbers.map((round) => {
               const roundMatches = rounds.get(round) ?? []
-              const roundName = getRoundName(bracket, round, totalRoundsInBracket)
+              const roundName = getRoundName(
+                bracket,
+                round,
+                totalRoundsInBracket,
+                bracketSize
+              )
               const placement = placementBadge(roundMatches[0])
 
               return (

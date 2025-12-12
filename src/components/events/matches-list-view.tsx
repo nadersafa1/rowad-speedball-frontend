@@ -2,8 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import type { Match, Group } from '@/types'
+import type { Match, Group, EventFormat } from '@/types'
 import EventMatchItem from './event-match-item'
+import { getRoundNameWithLabel } from '@/lib/utils/round-labels'
+import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
 
 interface MatchesListViewProps {
   matches: Match[]
@@ -11,6 +13,8 @@ interface MatchesListViewProps {
   canUpdate: boolean
   liveMatchIds: Set<string>
   onEditMatch: (match: Match) => void
+  eventFormat?: EventFormat
+  allMatches?: Match[] // All matches to calculate bracket size
 }
 
 const MatchesListView = ({
@@ -19,7 +23,19 @@ const MatchesListView = ({
   canUpdate,
   liveMatchIds,
   onEditMatch,
+  eventFormat,
+  allMatches = matches,
 }: MatchesListViewProps) => {
+  const isSingleElimination = eventFormat === 'single-elimination'
+
+  // Calculate bracket size for round labels (for single elimination)
+  const uniqueRegs = new Set<string>()
+  allMatches.forEach((m) => {
+    if (m.registration1Id) uniqueRegs.add(m.registration1Id)
+    if (m.registration2Id) uniqueRegs.add(m.registration2Id)
+  })
+  const bracketSize = nextPowerOf2(uniqueRegs.size)
+
   // Helper function to get group name by ID
   const getGroupName = (groupId: string | null | undefined): string | null => {
     if (!groupId) return null
@@ -40,6 +56,14 @@ const MatchesListView = ({
     .map(Number)
     .sort((a, b) => a - b)
 
+  // Get round display name
+  const getRoundDisplayName = (round: number): string => {
+    if (isSingleElimination) {
+      return getRoundNameWithLabel(bracketSize, round)
+    }
+    return `Round ${round}`
+  }
+
   const scrollToRound = (round: number) => {
     const element = document.getElementById(`round-${round}`)
     if (element) {
@@ -59,8 +83,14 @@ const MatchesListView = ({
               onClick={() => scrollToRound(round)}
               className='text-sm'
             >
-              <span className='md:hidden'>R{round}</span>
-              <span className='hidden md:inline'>Round {round}</span>
+              <span className='md:hidden'>
+                {isSingleElimination
+                  ? getRoundNameWithLabel(bracketSize, round).split(' ')[1]
+                  : `R${round}`}
+              </span>
+              <span className='hidden md:inline'>
+                {getRoundDisplayName(round)}
+              </span>
             </Button>
           ))}
         </div>
@@ -68,7 +98,7 @@ const MatchesListView = ({
       {rounds.map((round) => (
         <Card key={round} id={`round-${round}`} className='mb-4'>
           <CardHeader>
-            <CardTitle>Round {round}</CardTitle>
+            <CardTitle>{getRoundDisplayName(round)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='space-y-4'>
@@ -91,4 +121,3 @@ const MatchesListView = ({
 }
 
 export default MatchesListView
-

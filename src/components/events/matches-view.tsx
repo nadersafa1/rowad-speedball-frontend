@@ -3,10 +3,11 @@
 import { useState, useMemo } from 'react'
 import { Dialog } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { LayoutGrid, List } from 'lucide-react'
+import { LayoutGrid, List, Columns } from 'lucide-react'
 import type { Match, Group, EventFormat } from '@/types'
 import MatchResultsForm from './match-results-form'
 import MatchesListView from './matches-list-view'
+import MatchesColumnView from './matches-column-view'
 import BracketStats from './bracket-stats'
 import BracketVisualization from '@/components/tournaments/bracket-visualization'
 import DoubleElimList from './double-elim-list'
@@ -14,8 +15,9 @@ import DoubleElimBracket from '@/components/tournaments/double-elim-bracket'
 import { useMatchesSocket } from './use-matches-socket'
 import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
 import MatchesFilters, { type MatchStatus } from './matches-filters'
+import { useOrganizationContext } from '@/hooks/use-organization-context'
 
-type ViewMode = 'bracket' | 'list'
+type ViewMode = 'bracket' | 'list' | 'column'
 
 interface MatchesViewProps {
   matches: Match[]
@@ -34,7 +36,28 @@ const MatchesView = ({
 }: MatchesViewProps) => {
   const isSingleElimination = eventFormat === 'single-elimination'
   const isDoubleElimination = eventFormat === 'double-elimination'
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
+
+  // Determine if user is a privileged user (coach, admin, owner, or system admin)
+  const isPrivilegedUser = isSystemAdmin || isAdmin || isOwner || isCoach
+
+  // Calculate default view mode based on user role and event format
+  const getDefaultViewMode = (): ViewMode => {
+    if (isPrivilegedUser) {
+      // Coaches, admins, owners, system admins: column view for all formats
+      return 'column'
+    } else {
+      // Players/normal users and unauthenticated users:
+      // bracket view for knockouts, column view for groups
+      if (isSingleElimination || isDoubleElimination) {
+        return 'bracket'
+      }
+      return 'column'
+    }
+  }
+
+  const [viewMode, setViewMode] = useState<ViewMode>(getDefaultViewMode)
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
   const [groupFilter, setGroupFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<MatchStatus>('all')
@@ -124,10 +147,10 @@ const MatchesView = ({
               onStatusChange={setStatusFilter}
               showGroupFilter={!isSingleElimination && !isDoubleElimination}
             />
-            {(isSingleElimination || isDoubleElimination) && (
-              <div className='flex items-center gap-2'>
-                <span className='text-sm text-muted-foreground'>View:</span>
-                <div className='flex items-center gap-1 p-1 bg-muted rounded-lg'>
+            <div className='flex items-center gap-2'>
+              <span className='text-sm text-muted-foreground'>View:</span>
+              <div className='flex items-center gap-1 p-1 bg-muted rounded-lg'>
+                {(isSingleElimination || isDoubleElimination) && (
                   <Button
                     variant={viewMode === 'bracket' ? 'default' : 'ghost'}
                     size='sm'
@@ -137,24 +160,43 @@ const MatchesView = ({
                     <LayoutGrid className='h-4 w-4' />
                     <span className='hidden sm:inline'>Bracket</span>
                   </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size='sm'
-                    onClick={() => setViewMode('list')}
-                    className='gap-1.5 h-8 px-3'
-                  >
-                    <List className='h-4 w-4' />
-                    <span className='hidden sm:inline'>List</span>
-                  </Button>
-                </div>
+                )}
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size='sm'
+                  onClick={() => setViewMode('list')}
+                  className='gap-1.5 h-8 px-3'
+                >
+                  <List className='h-4 w-4' />
+                  <span className='hidden sm:inline'>List</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'column' ? 'default' : 'ghost'}
+                  size='sm'
+                  onClick={() => setViewMode('column')}
+                  className='gap-1.5 h-8 px-3'
+                >
+                  <Columns className='h-4 w-4' />
+                  <span className='hidden sm:inline'>Column</span>
+                </Button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
 
       {/* Content based on view mode */}
-      {isSingleElimination && viewMode === 'bracket' ? (
+      {viewMode === 'column' ? (
+        <MatchesColumnView
+          matches={filteredMatches}
+          allMatches={localMatches}
+          groups={groups}
+          canUpdate={canUpdate}
+          liveMatchIds={liveMatchIds}
+          onEditMatch={handleEditMatch}
+          eventFormat={eventFormat}
+        />
+      ) : isSingleElimination && viewMode === 'bracket' ? (
         <>
           <BracketStats
             matches={localMatches}
@@ -182,6 +224,8 @@ const MatchesView = ({
           canUpdate={canUpdate}
           liveMatchIds={liveMatchIds}
           onEditMatch={handleEditMatch}
+          eventFormat={eventFormat}
+          allMatches={localMatches}
         />
       )}
 

@@ -226,7 +226,7 @@ const EventDetailPage = () => {
             Registrations
           </TabsTrigger>
           <TabsTrigger value='groups' className='whitespace-nowrap'>
-            {selectedEvent.format === 'groups' ? 'Groups' : 'Bracket'}
+            {selectedEvent.format === 'groups' ? 'Groups' : 'Seeds'}
           </TabsTrigger>
           {matches.length > 0 && (
             <TabsTrigger value='matches' className='whitespace-nowrap'>
