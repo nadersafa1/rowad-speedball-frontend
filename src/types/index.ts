@@ -27,7 +27,7 @@ export type Player = {
   nameRtl?: string | null
   dateOfBirth: string
   gender: 'male' | 'female'
-  preferredHand: 'left' | 'right'
+  preferredHand: 'left' | 'right' | 'both'
   age: number
   ageGroup: string
   userId?: string | null
