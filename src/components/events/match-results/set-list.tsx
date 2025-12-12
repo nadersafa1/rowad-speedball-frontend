@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, X, Loader2 } from 'lucide-react'
+import { CheckCircle2, X, Loader2, Trash2 } from 'lucide-react'
 import type { Set } from '@/types'
 import SetEditor from './set-editor'
 
@@ -72,7 +72,7 @@ const SetList = ({
                 isLoading={isLoading}
               />
             ) : (
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div className='text-center'>
                   <p className='text-sm font-medium text-muted-foreground mb-1 break-words'>
                     {player1Name}
@@ -99,45 +99,47 @@ const SetList = ({
             )}
 
             {!set.played && !isMatchPlayed && editingSetId !== set.id && (
-              <div className='flex flex-col sm:flex-row gap-2 mt-2'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => setEditingSetId(set.id)}
-                  disabled={isLoading}
-                  className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant='default'
-                  size='sm'
-                  onClick={() => onMarkSetPlayed(set.id)}
-                  disabled={
-                    isLoading ||
-                    !canMarkSetAsPlayed(set, index) ||
-                    !hasMatchDate
-                  }
-                  className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                      Loading...
-                    </>
-                  ) : (
-                    'Mark as Played'
-                  )}
-                </Button>
+              <div className='flex justify-between gap-2 mt-4'>
                 <Button
                   variant='destructive'
                   size='sm'
                   onClick={() => onDeleteSet(set.id)}
                   disabled={isLoading}
-                  className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
+                  className='flex-shrink-0'
                 >
-                  <X className='h-4 w-4' />
+                  <Trash2 className='h-4 w-4' />
                 </Button>
+                <div className='flex gap-2'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setEditingSetId(set.id)}
+                    disabled={isLoading}
+                    className='flex-shrink-0'
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant='default'
+                    size='sm'
+                    onClick={() => onMarkSetPlayed(set.id)}
+                    disabled={
+                      isLoading ||
+                      !canMarkSetAsPlayed(set, index) ||
+                      !hasMatchDate
+                    }
+                    className='flex-shrink-0'
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                        Loading...
+                      </>
+                    ) : (
+                      'Mark as Played'
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           </div>

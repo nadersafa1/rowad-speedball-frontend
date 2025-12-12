@@ -15,7 +15,11 @@ import type { Match } from '@/types'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { MatchDatePicker, SetList, AddSetForm } from './match-results'
-import { formatRegistrationName, hasMajorityFromSets, areAllSetsPlayed } from '@/lib/utils/match'
+import {
+  formatRegistrationName,
+  hasMajorityFromSets,
+  areAllSetsPlayed,
+} from '@/lib/utils/match'
 
 interface MatchResultsFormProps {
   match: Match
@@ -25,24 +29,38 @@ interface MatchResultsFormProps {
 
 /**
  * REST-based match results form for quick admin edits.
- * 
+ *
  * Use this in dialogs on the events page for simple score corrections.
  * For live scoring with real-time updates, use /matches/[id] page instead.
- * 
+ *
  * Benefits over socket:
  * - Works even if socket server is down
  * - Simpler for one-off edits
  * - No persistent connection needed
- * 
+ *
  * Uses store as single source of truth - no local state duplication.
  */
 
-const MatchResultsForm = ({ match: initialMatch, onSuccess, onCancel }: MatchResultsFormProps) => {
-  const { createSet, updateSet, markSetAsPlayed, deleteSet, fetchMatch, updateMatch, isLoading, selectedMatch } = useMatchesStore()
+const MatchResultsForm = ({
+  match: initialMatch,
+  onSuccess,
+  onCancel,
+}: MatchResultsFormProps) => {
+  const {
+    createSet,
+    updateSet,
+    markSetAsPlayed,
+    deleteSet,
+    fetchMatch,
+    updateMatch,
+    isLoading,
+    selectedMatch,
+  } = useMatchesStore()
 
   // Use store as single source of truth, fallback to initialMatch
   // Store is updated optimistically by actions, so we trust it
-  const match: Match = selectedMatch?.id === initialMatch.id ? selectedMatch : initialMatch
+  const match: Match =
+    selectedMatch?.id === initialMatch.id ? selectedMatch : initialMatch
 
   // Ensure we have the match in store on mount
   useEffect(() => {
@@ -60,7 +78,12 @@ const MatchResultsForm = ({ match: initialMatch, onSuccess, onCancel }: MatchRes
   const hasMatchDate = !!matchDate
   const allSetsPlayed = areAllSetsPlayed(sets)
   const hasMajority = hasMajorityFromSets(sets, bestOf)
-  const canAddSet = !match.played && hasMatchDate && sets.length < bestOf && allSetsPlayed && !hasMajority
+  const canAddSet =
+    !match.played &&
+    hasMatchDate &&
+    sets.length < bestOf &&
+    allSetsPlayed &&
+    !hasMajority
 
   const handleDateChange = async (date: Date | undefined) => {
     if (!date) return
@@ -73,16 +96,26 @@ const MatchResultsForm = ({ match: initialMatch, onSuccess, onCancel }: MatchRes
     }
   }
 
-  const handleAddSet = async (scores: { registration1Score: number; registration2Score: number }) => {
+  const handleAddSet = async (scores: {
+    registration1Score: number
+    registration2Score: number
+  }) => {
     try {
-      await createSet({ matchId: match.id, setNumber: sets.length + 1, ...scores })
+      await createSet({
+        matchId: match.id,
+        setNumber: sets.length + 1,
+        ...scores,
+      })
       toast.success('Set added successfully')
     } catch (error: any) {
       toast.error(error.message || 'Failed to add set')
     }
   }
 
-  const handleUpdateSet = async (setId: string, scores: { registration1Score: number; registration2Score: number }) => {
+  const handleUpdateSet = async (
+    setId: string,
+    scores: { registration1Score: number; registration2Score: number }
+  ) => {
     try {
       await updateSet(setId, scores)
       toast.success('Set updated')
@@ -129,7 +162,9 @@ const MatchResultsForm = ({ match: initialMatch, onSuccess, onCancel }: MatchRes
       <div className='space-y-4'>
         {match.played && (
           <div className='p-3 bg-green-50 dark:bg-green-900/20 rounded-lg'>
-            <p className='text-sm font-medium text-green-800 dark:text-green-200'>Match Completed</p>
+            <p className='text-sm font-medium text-green-800 dark:text-green-200'>
+              Match Completed
+            </p>
           </div>
         )}
 
@@ -165,7 +200,8 @@ const MatchResultsForm = ({ match: initialMatch, onSuccess, onCancel }: MatchRes
         {sets.length >= bestOf && !hasMajority && !match.played && (
           <div className='p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg'>
             <p className='text-sm text-yellow-800 dark:text-yellow-200'>
-              All sets are played but no majority reached. Please mark match as played manually.
+              All sets are played but no majority reached. Please mark match as
+              played manually.
             </p>
           </div>
         )}
