@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   User,
   Calendar,
@@ -12,6 +13,7 @@ import {
   Edit,
   Trash2,
   BadgeCheck,
+  UserCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageBreadcrumb } from '@/components/ui'
@@ -41,6 +43,7 @@ import ResultsForm from '@/components/results/results-form'
 import PlayerForm from '@/components/players/player-form'
 import RecentMatchesCard from './components/recent-matches-card'
 import { formatDate } from '@/lib/utils'
+import { apiClient } from '@/lib/api-client'
 
 const PlayerDetailPage = () => {
   const params = useParams()
@@ -53,12 +56,35 @@ const PlayerDetailPage = () => {
   const [resultFormOpen, setResultFormOpen] = useState(false)
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [userImage, setUserImage] = useState<string | null>(null)
 
   useEffect(() => {
     if (playerId) {
       fetchPlayer(playerId)
     }
   }, [playerId, fetchPlayer])
+
+  useEffect(() => {
+    const fetchUserImage = async () => {
+      if (selectedPlayer?.userId) {
+        try {
+          const user = await apiClient.getUser(selectedPlayer.userId)
+          if (user?.image) {
+            setUserImage(user.image)
+          }
+        } catch (error) {
+          // Silently fail - user image is optional
+          console.error('Failed to fetch user image:', error)
+        }
+      } else {
+        setUserImage(null)
+      }
+    }
+
+    if (selectedPlayer) {
+      fetchUserImage()
+    }
+  }, [selectedPlayer])
 
   if (isLoading || !selectedPlayer) {
     return (
@@ -185,9 +211,21 @@ const PlayerDetailPage = () => {
         <Card>
           <CardContent>
             <div className='flex flex-col sm:flex-row items-start gap-4 sm:gap-6'>
-              <div className='bg-rowad-100 rounded-full p-3 sm:p-4 shrink-0'>
-                <Trophy className='h-8 w-8 sm:h-12 sm:w-12 text-rowad-600' />
-              </div>
+              {userImage ? (
+                <div className='shrink-0'>
+                  <Image
+                    src={userImage}
+                    alt={selectedPlayer.name}
+                    width={80}
+                    height={80}
+                    className='rounded-full object-cover'
+                  />
+                </div>
+              ) : (
+                <div className='bg-rowad-100 rounded-full p-3 sm:p-4 shrink-0'>
+                  <UserCircle className='h-8 w-8 sm:h-12 sm:w-12 text-rowad-600' />
+                </div>
+              )}
               <div className='flex-1 w-full min-w-0'>
                 <div className='mb-2'>
                   <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 break-words flex items-center gap-2'>
