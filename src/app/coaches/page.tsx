@@ -3,7 +3,7 @@
 import CoachForm from '@/components/coaches/coach-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, PageBreadcrumb } from '@/components/ui'
 import { Plus, Users } from 'lucide-react'
 import { useState } from 'react'
 import CoachesTable from './components/coaches-table'
@@ -66,6 +66,9 @@ const CoachesPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <div className='mb-4'>
+        <PageBreadcrumb />
+      </div>
       {/* Header */}
       <PageHeader
         icon={Users}

@@ -1,6 +1,4 @@
-import { ArrowLeft } from 'lucide-react'
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -13,6 +11,7 @@ import { OrganizationInfo } from './_components/organization-info'
 import { UnassignedPlayersList } from './_components/unassigned-players-list'
 import { UnassignedCoachesList } from './_components/unassigned-coaches-list'
 import { UnassignedUsersList } from './_components/unassigned-users-list'
+import { BreadcrumbWrapper } from './_components/breadcrumb-wrapper'
 
 const OrganizationDetailPage = async ({
   params,
@@ -44,10 +43,7 @@ const OrganizationDetailPage = async ({
 
   return (
     <div className='mx-auto container my-6 px-4'>
-      <Link href='/admin/clubs' className='inline-flex items-center mb-6'>
-        <ArrowLeft className='size-4 mr-2' />
-        Back to Clubs
-      </Link>
+      <BreadcrumbWrapper currentPageLabel={organization.name} />
 
       <Card>
         <CardHeader>

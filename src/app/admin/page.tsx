@@ -7,10 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { AdminBreadcrumbWrapper } from './_components/breadcrumb-wrapper'
 
 const AdminPage = () => {
   return (
     <div className='mx-auto container my-6 px-4'>
+      <AdminBreadcrumbWrapper />
       <div className='mb-8'>
         <h1 className='text-3xl font-bold tracking-tight'>Admin Dashboard</h1>
         <p className='text-muted-foreground mt-2'>

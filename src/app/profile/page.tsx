@@ -12,6 +12,7 @@ import SetPasswordButton from './_components/set-password-button'
 import PlayerProfileForm from './_components/player-profile-form'
 import CoachProfileForm from './_components/coach-profile-form'
 import { UserCircle } from 'lucide-react'
+import { ProfileBreadcrumbWrapper } from './_components/breadcrumb-wrapper'
 
 const ProfilePage = async () => {
   const session = await auth.api.getSession({
@@ -52,6 +53,7 @@ const ProfilePage = async () => {
 
   return (
     <div className="max-w-4xl mx-auto my-6 px-4">
+      <ProfileBreadcrumbWrapper />
       <div className="mb-8">
         <div className="flex items-center gap-4">
           {user?.image ? (

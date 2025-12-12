@@ -3,7 +3,7 @@
 import TrainingSessionForm from '@/components/training-sessions/training-session-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, Dialog } from '@/components/ui'
+import { PageHeader, Dialog, PageBreadcrumb } from '@/components/ui'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
@@ -146,6 +146,9 @@ const TrainingSessionsPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <div className='mb-4'>
+        <PageBreadcrumb />
+      </div>
       <PageHeader
         icon={Calendar}
         title='Training Sessions'

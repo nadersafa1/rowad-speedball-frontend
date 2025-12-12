@@ -1,6 +1,5 @@
-import { ArrowLeft, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
   Card,
@@ -22,6 +21,7 @@ import * as schema from '@/db/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { UserRow } from './_components/user-row'
 import { SetupOrganizationButton } from './_components/setup-organization-button'
+import { AdminBreadcrumbWrapper } from '../_components/breadcrumb-wrapper'
 
 const UsersPage = async () => {
   const session = await auth.api.getSession({
@@ -78,10 +78,7 @@ const UsersPage = async () => {
 
   return (
     <div className='mx-auto container my-6 px-4'>
-      <Link href='/admin' className='inline-flex items-center mb-6'>
-        <ArrowLeft className='size-4 mr-2' />
-        Back to Admin
-      </Link>
+      <AdminBreadcrumbWrapper />
 
       {!hasOrganization && (
         <Card className='mb-6'>

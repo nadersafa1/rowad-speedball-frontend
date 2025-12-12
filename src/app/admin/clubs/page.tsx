@@ -1,6 +1,5 @@
-import { ArrowLeft, Building2 } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
   Card,
@@ -23,6 +22,7 @@ import { OrganizationRow } from './_components/organization-row'
 import { CreateOrganizationDialog } from './_components/create-organization-dialog'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { eq, count, desc, and, not } from 'drizzle-orm'
+import { AdminBreadcrumbWrapper } from '../_components/breadcrumb-wrapper'
 
 const OrganizationsPage = async () => {
   const session = await auth.api.getSession({
@@ -65,10 +65,7 @@ const OrganizationsPage = async () => {
 
   return (
     <div className='mx-auto container my-6 px-4'>
-      <Link href='/admin' className='inline-flex items-center mb-6'>
-        <ArrowLeft className='size-4 mr-2' />
-        Back to Admin
-      </Link>
+      <AdminBreadcrumbWrapper />
 
       <Card>
         <CardHeader>

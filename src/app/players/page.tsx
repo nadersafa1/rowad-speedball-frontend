@@ -3,7 +3,7 @@
 import PlayerForm from '@/components/players/player-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, PageBreadcrumb } from '@/components/ui'
 import { Plus, Volleyball } from 'lucide-react'
 import { useState } from 'react'
 import PlayersStats from './components/players-stats'
@@ -63,6 +63,9 @@ const PlayersPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <div className='mb-4'>
+        <PageBreadcrumb />
+      </div>
       {/* Header */}
       <PageHeader
         icon={Volleyball}

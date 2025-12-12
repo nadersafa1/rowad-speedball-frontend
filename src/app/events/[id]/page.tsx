@@ -39,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { BackButton } from '@/components/ui'
+import { PageBreadcrumb } from '@/components/ui'
 import { EVENT_FORMAT_LABELS } from '@/types'
 
 const EventDetailPage = () => {
@@ -161,9 +161,9 @@ const EventDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Back Navigation with Edit/Delete Actions */}
+      {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-4 sm:mb-6 flex items-center justify-between gap-2'>
-        <BackButton href='/events' longText='Back to Events' />
+        <PageBreadcrumb currentPageLabel={selectedEvent?.name} />
         {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
             {canUpdate && (

@@ -1,4 +1,3 @@
-export { default as MatchHeader } from './match-header'
 export { MatchDateSection, MatchDetailsSection } from './match-info'
 export { CurrentSetEditor, AddSetCard, DateNotSetCard } from './match-scoring'
 export { default as WinnerCelebration } from './winner-celebration'

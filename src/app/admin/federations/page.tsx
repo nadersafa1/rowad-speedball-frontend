@@ -3,7 +3,7 @@
 import FederationForm from '@/components/federations/federation-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, PageBreadcrumb } from '@/components/ui'
 import { Plus, Building2 } from 'lucide-react'
 import { useState } from 'react'
 import FederationsTable from './components/federations-table'
@@ -58,6 +58,9 @@ const FederationsPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <div className='mb-4'>
+        <PageBreadcrumb />
+      </div>
       {/* Header */}
       <PageHeader
         icon={Building2}

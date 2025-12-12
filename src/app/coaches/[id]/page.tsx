@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { User, Edit, Trash2, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { BackButton } from '@/components/ui'
+import { PageBreadcrumb } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -83,9 +83,9 @@ const CoachDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Back Navigation with Edit/Delete Actions */}
+      {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-6 flex items-center justify-between gap-2'>
-        <BackButton href='/coaches' longText='Back to Coaches' />
+        <PageBreadcrumb currentPageLabel={selectedCoach?.name} />
         {(isSystemAdmin || isAdmin || isOwner) && (
           <div className='flex gap-2'>
             <Button

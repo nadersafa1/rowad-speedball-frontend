@@ -1,7 +1,7 @@
 'use client'
 
 import TestForm from '@/components/tests/test-form'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, PageBreadcrumb } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import Loading from '@/components/ui/loading'
@@ -128,6 +128,9 @@ const TestsPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <div className='mb-4'>
+        <PageBreadcrumb />
+      </div>
       {/* Header */}
       <PageHeader
         icon={Table2}
