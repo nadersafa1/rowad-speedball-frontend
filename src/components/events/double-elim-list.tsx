@@ -10,7 +10,7 @@ import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
 
 interface DoubleElimListProps {
   matches: Match[]
-  canUpdate?: boolean
+  canUpdateMatch: (match: Match) => boolean
   liveMatchIds: Set<string>
   onEditMatch: (match: Match) => void
 }
@@ -127,7 +127,7 @@ const placementBadge = (match: Match) => {
 
 const DoubleElimList = ({
   matches,
-  canUpdate = false,
+  canUpdateMatch,
   liveMatchIds,
   onEditMatch,
 }: DoubleElimListProps) => {
@@ -253,7 +253,7 @@ const DoubleElimList = ({
                         <EventMatchItem
                           key={match.id}
                           match={match}
-                          showEditButton={canUpdate && !match.played}
+                          showEditButton={canUpdateMatch(match)}
                           onEditClick={() => onEditMatch(match)}
                           isLive={liveMatchIds.has(match.id)}
                         />
