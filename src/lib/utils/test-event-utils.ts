@@ -10,8 +10,11 @@ import {
   isTeamTestEventType,
   isCompetitionEventType,
   DEFAULT_PLAYERS_PER_HEAT,
+  getEventTypePlayerLimits,
   type EventTypeLimits,
 } from '@/types/event-types'
+import type { PositionScores } from '@/types/position-scores'
+import { POSITION_KEYS } from '@/types/position-scores'
 
 // Re-export from event-types for convenience
 export {
@@ -21,14 +24,17 @@ export {
   isTeamTestEventType,
   isCompetitionEventType,
   DEFAULT_PLAYERS_PER_HEAT,
+  getEventTypePlayerLimits,
 }
 
-// Type for registration with score fields
-interface RegistrationWithScores {
-  leftHandScore: number
-  rightHandScore: number
-  forehandScore: number
-  backhandScore: number
+// Type for player with positionScores (compatible with types/index.ts)
+interface PlayerWithScores {
+  positionScores?: PositionScores | null | undefined
+}
+
+// Type for registration with players that have positionScores
+interface RegistrationWithPlayers {
+  players?: PlayerWithScores[]
 }
 
 // Type for event with format and eventType
@@ -39,17 +45,58 @@ interface EventWithFormat {
 }
 
 /**
- * Calculates the total score from registration scores (L+R+F+B)
+ * Calculates score from a single positionScores object
+ */
+export const calculatePositionScoresTotal = (
+  positionScores: PositionScores | null | undefined
+): number => {
+  if (!positionScores) return 0
+  return POSITION_KEYS.reduce((sum, key) => {
+    const score = positionScores[key]
+    return sum + (typeof score === 'number' ? score : 0)
+  }, 0)
+}
+
+/**
+ * Calculates total score from all players' positionScores in a registration
  */
 export const calculateRegistrationTotalScore = (
-  registration: RegistrationWithScores
+  registration: RegistrationWithPlayers
 ): number => {
-  return (
-    registration.leftHandScore +
-    registration.rightHandScore +
-    registration.forehandScore +
-    registration.backhandScore
+  if (!registration.players || registration.players.length === 0) {
+    return 0
+  }
+  return registration.players.reduce(
+    (sum, player) => sum + calculatePositionScoresTotal(player.positionScores),
+    0
   )
+}
+
+/**
+ * Checks if all four positions have numeric scores (not null) for solo events
+ */
+export const hasCompleteScores = (
+  positionScores: PositionScores | null | undefined
+): boolean => {
+  if (!positionScores) return false
+  return POSITION_KEYS.every((key) => typeof positionScores[key] === 'number')
+}
+
+/**
+ * Gets individual score breakdowns from positionScores
+ */
+export const getScoreBreakdown = (
+  positionScores: PositionScores | null | undefined
+): { L: number; R: number; F: number; B: number } => {
+  if (!positionScores) {
+    return { L: 0, R: 0, F: 0, B: 0 }
+  }
+  return {
+    L: typeof positionScores.L === 'number' ? positionScores.L : 0,
+    R: typeof positionScores.R === 'number' ? positionScores.R : 0,
+    F: typeof positionScores.F === 'number' ? positionScores.F : 0,
+    B: typeof positionScores.B === 'number' ? positionScores.B : 0,
+  }
 }
 
 /**
@@ -96,26 +143,10 @@ export const getNextHeatName = (existingHeatCount: number): string => {
 
 /**
  * Gets min/max players for an event type
+ * @deprecated Use getEventTypePlayerLimits from event-types.ts instead
  */
 export const getPlayersLimitsForEventType = (
   eventType: string
 ): EventTypeLimits => {
-  if (isSoloTestEventType(eventType)) {
-    return { min: 1, max: 1 }
-  }
-  if (isTeamTestEventType(eventType)) {
-    // Team events can have 2-6 players (4 positions + 2 substitutes)
-    return { min: 2, max: 6 }
-  }
-  if (eventType === EventType.Singles) {
-    return { min: 1, max: 1 }
-  }
-  if (eventType === EventType.Doubles) {
-    return { min: 2, max: 2 }
-  }
-  if (eventType === EventType.SinglesTeams) {
-    return { min: 2, max: 4 }
-  }
-  // Default
-  return { min: 1, max: 2 }
+  return getEventTypePlayerLimits(eventType)
 }

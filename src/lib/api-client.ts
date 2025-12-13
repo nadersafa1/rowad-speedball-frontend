@@ -524,18 +524,29 @@ export class ApiClient {
     })
   }
 
-  async updateRegistrationScores(
-    id: string,
-    scores: {
-      leftHandScore?: number
-      rightHandScore?: number
-      forehandScore?: number
-      backhandScore?: number
+  async updatePlayerPositionScores(
+    registrationId: string,
+    payload: {
+      playerId: string
+      positionScores: Record<string, number | null>
     }
   ) {
-    return this.request(`/registrations/${id}/scores`, {
+    return this.request(`/registrations/${registrationId}/scores`, {
       method: 'PATCH',
-      body: JSON.stringify(scores),
+      body: JSON.stringify(payload),
+    })
+  }
+
+  async updatePlayerPositionScoresBatch(
+    registrationId: string,
+    updates: {
+      playerId: string
+      positionScores: Record<string, number | null>
+    }[]
+  ) {
+    return this.request(`/registrations/${registrationId}/scores`, {
+      method: 'PATCH',
+      body: JSON.stringify({ updates }),
     })
   }
 

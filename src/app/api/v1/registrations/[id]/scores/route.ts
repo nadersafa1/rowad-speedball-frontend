@@ -5,15 +5,42 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import {
   registrationsParamsSchema,
-  registrationScoresUpdateSchema,
+  playerPositionScoresUpdateSchema,
 } from '@/types/api/registrations.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventUpdateAuthorization } from '@/lib/event-authorization-helpers'
 import {
-  updateRegistrationScores,
+  updatePlayerPositionScores,
   enrichRegistrationWithPlayers,
+  getPlayersForRegistration,
 } from '@/lib/registration-helpers'
 import { isTestEventType } from '@/lib/event-helpers'
+import {
+  validatePositionScores,
+  hasAllPositionScores,
+} from '@/lib/validations/registration-validation'
+import { isSoloTestEventType } from '@/types/event-types'
+
+// Schema for a single player's position scores update
+const singlePlayerScoreSchema = z.object({
+  playerId: z.string().uuid('Invalid player ID format'),
+  positionScores: z.object({
+    R: z.number().int().min(0).nullable().optional(),
+    L: z.number().int().min(0).nullable().optional(),
+    F: z.number().int().min(0).nullable().optional(),
+    B: z.number().int().min(0).nullable().optional(),
+  }),
+})
+
+// Schema for updating player scores - supports both single and batch updates
+const updatePlayerScoresSchema = z.union([
+  // Single player update (legacy format)
+  singlePlayerScoreSchema,
+  // Batch update format
+  z.object({
+    updates: z.array(singlePlayerScoreSchema),
+  }),
+])
 
 export async function PATCH(
   request: NextRequest,
@@ -29,14 +56,26 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const parseResult = registrationScoresUpdateSchema.safeParse(body)
+    const parseResult = updatePlayerScoresSchema.safeParse(body)
 
     if (!parseResult.success) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
     const { id } = parseParams.data
-    const scores = parseResult.data
+    
+    // Normalize to array of updates
+    const updates = 'updates' in parseResult.data
+      ? parseResult.data.updates
+      : [parseResult.data]
+
+    // Validate all position scores
+    for (const update of updates) {
+      const scoresValidation = validatePositionScores(update.positionScores)
+      if (!scoresValidation.valid) {
+        return Response.json({ message: scoresValidation.error }, { status: 400 })
+      }
+    }
 
     // Check if registration exists
     const existing = await db
@@ -79,12 +118,25 @@ export async function PATCH(
       return authError
     }
 
-    // Update scores
-    const updatedRegistration = await updateRegistrationScores(id, scores)
+    // Update all players' position scores
+    for (const update of updates) {
+      const updated = await updatePlayerPositionScores(
+        id,
+        update.playerId,
+        update.positionScores
+      )
+
+      if (!updated) {
+        return Response.json(
+          { message: `Player ${update.playerId} not found in registration` },
+          { status: 404 }
+        )
+      }
+    }
 
     // Return enriched registration with players and total score
     const enrichedRegistration = await enrichRegistrationWithPlayers(
-      updatedRegistration
+      existing[0]
     )
 
     return Response.json(enrichedRegistration)

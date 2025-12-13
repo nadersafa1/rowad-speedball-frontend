@@ -101,9 +101,19 @@ const EventDialogs = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Registration</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this registration? This action
-              cannot be undone and will also delete all related matches and
-              sets.
+              {event.format === 'tests' ? (
+                <>
+                  Are you sure you want to delete this registration? This action
+                  cannot be undone and will permanently delete all scores and
+                  heat assignments.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete this registration? This action
+                  cannot be undone and will also delete all related matches and
+                  sets.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

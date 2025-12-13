@@ -171,6 +171,11 @@ export type Group = {
   updatedAt: string
 }
 
+// Position scores type
+import type { PositionScores } from './position-scores'
+export type { PositionScores, PositionKey } from './position-scores'
+export { POSITION_KEYS, POSITION_LABELS } from './position-scores'
+
 export type Registration = {
   id: string
   eventId: string
@@ -183,22 +188,20 @@ export type Registration = {
   points: number
   qualified: boolean
   teamName?: string | null
-  // Score fields for test events
-  leftHandScore: number
-  rightHandScore: number
-  forehandScore: number
-  backhandScore: number
-  totalScore?: number // Calculated field
+  totalScore?: number // Calculated field (sum of all player positionScores)
   createdAt: string
   updatedAt: string
-  players?: PlayerWithRegistrationPosition[]
+  players?: PlayerWithPositionScores[]
 }
 
-// Player with registration position info
-export type PlayerWithRegistrationPosition = Player & {
-  registrationPosition?: 'R' | 'L' | 'F' | 'B' | 'S1' | 'S2' | null
+// Player with positionScores for test events
+export type PlayerWithPositionScores = Player & {
+  positionScores?: PositionScores | null
   registrationOrder?: number
 }
+
+// Legacy type alias for backward compatibility
+export type PlayerWithRegistrationPosition = PlayerWithPositionScores
 
 export type Match = {
   id: string

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { and, eq, SQL } from 'drizzle-orm'
+import { and, eq, SQL, desc, asc, sql } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { eventId, groupId } = parseResult.data
+    const { eventId, groupId, sortBy, sortOrder } = parseResult.data
 
     // Authorization checks
     if (eventId) {
@@ -89,9 +89,66 @@ export async function GET(request: NextRequest) {
           )
         : undefined
 
+    // Use database-level sorting with JSONB aggregation for totalScore
+    if (sortBy === 'totalScore') {
+      // Query with JSONB aggregation for total score
+      const totalScoreExpr = sql<number>`
+        COALESCE((
+          SELECT SUM(
+            COALESCE((rp.position_scores->>'R')::int, 0) +
+            COALESCE((rp.position_scores->>'L')::int, 0) +
+            COALESCE((rp.position_scores->>'F')::int, 0) +
+            COALESCE((rp.position_scores->>'B')::int, 0)
+          )
+          FROM registration_players rp
+          WHERE rp.registration_id = ${schema.registrations.id}
+        ), 0)
+      `
+
+      let query = db
+        .select({
+          registration: schema.registrations,
+          totalScore: totalScoreExpr.as('total_score'),
+        })
+        .from(schema.registrations)
+
+      if (combinedCondition) {
+        query = query.where(combinedCondition) as typeof query
+      }
+
+      // Apply sorting
+      const orderDirection = sortOrder === 'asc' ? asc : desc
+      query = query.orderBy(orderDirection(totalScoreExpr)) as typeof query
+
+      const results = await query
+
+      // Enrich with player data
+      const registrationsWithPlayers = await Promise.all(
+        results.map(async (row) => {
+          const enriched = await enrichRegistrationWithPlayers(row.registration)
+          return {
+            ...enriched,
+            totalScore: row.totalScore,
+          }
+        })
+      )
+
+      return Response.json({ registrations: registrationsWithPlayers })
+    }
+
+    // Default query without totalScore sorting
     let query = db.select().from(schema.registrations)
-    if (combinedCondition)
+    if (combinedCondition) {
       query = query.where(combinedCondition) as typeof query
+    }
+
+    // Apply default sorting
+    if (sortBy === 'createdAt') {
+      const orderDirection = sortOrder === 'asc' ? asc : desc
+      query = query.orderBy(
+        orderDirection(schema.registrations.createdAt)
+      ) as typeof query
+    }
 
     const registrations = await query
 
@@ -213,6 +270,54 @@ export async function POST(request: NextRequest) {
 
     const registration = result[0]
 
+    // Validate position uniqueness for relay and solo-teams events
+    if (
+      (eventData.eventType === 'relay' || eventData.eventType === 'solo-teams') &&
+      playersWithPositions
+    ) {
+      const positions = playersWithPositions
+        .map((p) => (p.positionScores ? Object.keys(p.positionScores) : []))
+        .flat()
+      const uniquePositions = new Set(positions)
+      if (positions.length !== uniquePositions.size) {
+        return Response.json(
+          { message: 'Each player must have a unique position for relay/solo-teams events' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate category-based position uniqueness for speed-solo-teams
+    if (eventData.eventType === 'speed-solo-teams' && playersWithPositions) {
+      const oneHandedPositions: string[] = []
+      const twoHandedPositions: string[] = []
+      
+      for (const p of playersWithPositions) {
+        if (p.positionScores) {
+          for (const pos of Object.keys(p.positionScores)) {
+            if (pos === 'R' || pos === 'L') oneHandedPositions.push(pos)
+            if (pos === 'F' || pos === 'B') twoHandedPositions.push(pos)
+          }
+        }
+      }
+      
+      const uniqueOneHanded = new Set(oneHandedPositions)
+      const uniqueTwoHanded = new Set(twoHandedPositions)
+      
+      if (oneHandedPositions.length !== uniqueOneHanded.size) {
+        return Response.json(
+          { message: 'Each one-handed position (R/L) can only be assigned to one player' },
+          { status: 400 }
+        )
+      }
+      if (twoHandedPositions.length !== uniqueTwoHanded.size) {
+        return Response.json(
+          { message: 'Each two-handed position (F/B) can only be assigned to one player' },
+          { status: 400 }
+        )
+      }
+    }
+    
     // Add players to junction table (with positions if provided)
     await addPlayersToRegistration(
       registration.id,

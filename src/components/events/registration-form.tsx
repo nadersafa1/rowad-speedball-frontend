@@ -33,45 +33,99 @@ import {
 } from '../ui'
 import { isTeamTestEventType } from '@/types/event-types'
 import {
-  PLAYER_POSITIONS,
-  type PlayerPosition,
-} from '@/types/api/registrations.schemas'
+  POSITION_KEYS,
+  POSITION_LABELS,
+  type PositionKey,
+} from '@/types/position-scores'
+import { getPositions } from '@/lib/validations/registration-validation'
 
-// Position labels for display
-const POSITION_LABELS: Record<PlayerPosition, string> = {
-  R: 'Right (R)',
-  L: 'Left (L)',
-  F: 'Forehand (F)',
-  B: 'Backhand (B)',
-  S1: 'Substitute 1 (S1)',
-  S2: 'Substitute 2 (S2)',
-}
+// Position categories
+const ONE_HANDED_POSITIONS: PositionKey[] = ['R', 'L']
+const TWO_HANDED_POSITIONS: PositionKey[] = ['F', 'B']
 
 // Dynamic validation schema based on min/max players and event type
 const createRegistrationSchema = (
   minPlayers: number,
   maxPlayers: number,
-  isTeamTest: boolean
+  isTeamTest: boolean,
+  eventType: string
 ) => {
+  // For speed-solo-teams: each player has two positions (one R/L, one F/B)
+  const isSpeedSoloTeams = eventType === 'speed-solo-teams'
+  
   const playerSchema = isTeamTest
-    ? z.object({
-        playerId: z.string().uuid('Invalid player ID'),
-        position: z.enum(PLAYER_POSITIONS).nullable().optional(),
-      })
+    ? isSpeedSoloTeams
+      ? z.object({
+          playerId: z.string().uuid('Invalid player ID'),
+          oneHandedPosition: z.enum(['R', 'L'] as const).nullable().optional(),
+          twoHandedPosition: z.enum(['F', 'B'] as const).nullable().optional(),
+        })
+      : z.object({
+          playerId: z.string().uuid('Invalid player ID'),
+          position: z.enum(['R', 'L', 'F', 'B'] as const).nullable().optional(),
+        })
     : z.object({
         playerId: z.string().uuid('Invalid player ID'),
       })
 
-  return z.object({
+  const baseSchema = z.object({
     players: z
       .array(playerSchema)
       .min(minPlayers, `At least ${minPlayers} player(s) required`)
       .max(maxPlayers, `Maximum ${maxPlayers} players allowed`),
   })
+
+  // For relay and solo-teams, positions must be unique (single position per player)
+  if (isTeamTest && (eventType === 'relay' || eventType === 'solo-teams')) {
+    return baseSchema.refine(
+      (data) => {
+        const positions = data.players
+          .map((p) => (p as { position?: string | null }).position)
+          .filter(Boolean)
+        const uniquePositions = new Set(positions)
+        return positions.length === uniquePositions.size
+      },
+      {
+        message: 'Each player must have a unique position',
+        path: ['players'],
+      }
+    )
+  }
+
+  // For speed-solo-teams, positions must be unique within each category
+  if (isTeamTest && isSpeedSoloTeams) {
+    return baseSchema.refine(
+      (data) => {
+        const oneHandedPositions = data.players
+          .map((p) => (p as { oneHandedPosition?: string | null }).oneHandedPosition)
+          .filter(Boolean)
+        const twoHandedPositions = data.players
+          .map((p) => (p as { twoHandedPosition?: string | null }).twoHandedPosition)
+          .filter(Boolean)
+        const uniqueOneHanded = new Set(oneHandedPositions)
+        const uniqueTwoHanded = new Set(twoHandedPositions)
+        return (
+          oneHandedPositions.length === uniqueOneHanded.size &&
+          twoHandedPositions.length === uniqueTwoHanded.size
+        )
+      },
+      {
+        message: 'Positions cannot be repeated within each category (R/L and F/B)',
+        path: ['players'],
+      }
+    )
+  }
+
+  return baseSchema
 }
 
 type RegistrationFormData = {
-  players: { playerId: string; position?: PlayerPosition | null }[]
+  players: {
+    playerId: string
+    position?: PositionKey | null
+    oneHandedPosition?: 'R' | 'L' | null
+    twoHandedPosition?: 'F' | 'B' | null
+  }[]
 }
 
 interface RegistrationFormProps {
@@ -107,23 +161,43 @@ const RegistrationForm = ({
 
   const isEditing = !!registration
   const isTeamTest = isTeamTestEventType(eventType)
+  const isSpeedSoloTeams = eventType === 'speed-solo-teams'
 
   const schema = useMemo(
-    () => createRegistrationSchema(minPlayers, maxPlayers, isTeamTest),
-    [minPlayers, maxPlayers, isTeamTest]
+    () => createRegistrationSchema(minPlayers, maxPlayers, isTeamTest, eventType),
+    [minPlayers, maxPlayers, isTeamTest, eventType]
   )
+
+  // Helper to extract positions from positionScores for editing
+  const getDefaultPlayerData = (player: { id: string; positionScores?: Record<string, number | null> | null }) => {
+    const positions = getPositions(player.positionScores)
+    if (isSpeedSoloTeams) {
+      const oneHanded = positions.find((p) => ONE_HANDED_POSITIONS.includes(p as PositionKey)) as 'R' | 'L' | null
+      const twoHanded = positions.find((p) => TWO_HANDED_POSITIONS.includes(p as PositionKey)) as 'F' | 'B' | null
+      return {
+        playerId: player.id,
+        oneHandedPosition: oneHanded ?? null,
+        twoHandedPosition: twoHanded ?? null,
+      }
+    }
+    return {
+      playerId: player.id,
+      position: (positions[0] as PositionKey) ?? null,
+    }
+  }
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       players: registration?.players
-        ? registration.players.map((p) => ({
-            playerId: p.id,
-            position: p.registrationPosition ?? null,
-          }))
+        ? registration.players.map(getDefaultPlayerData)
         : Array(minPlayers)
             .fill(null)
-            .map(() => ({ playerId: '', position: null })),
+            .map(() =>
+              isSpeedSoloTeams
+                ? { playerId: '', oneHandedPosition: null, twoHandedPosition: null }
+                : { playerId: '', position: null }
+            ),
     },
   })
 
@@ -166,19 +240,64 @@ const RegistrationForm = ({
     return [...excludedPlayerIds, ...selectedInOtherSlots]
   }
 
+  // Get positions already selected by other players (for relay/solo-teams)
+  const getExcludedPositionsForSlot = (slotIndex: number): PositionKey[] => {
+    if (eventType !== 'relay' && eventType !== 'solo-teams') return []
+    return watchedPlayers
+      .filter((_, idx) => idx !== slotIndex)
+      .map((p) => p.position)
+      .filter((pos): pos is PositionKey => pos !== null && pos !== undefined)
+  }
+
+  // Get excluded one-handed positions for speed-solo-teams (R or L already taken)
+  const getExcludedOneHandedForSlot = (slotIndex: number): ('R' | 'L')[] => {
+    if (!isSpeedSoloTeams) return []
+    return watchedPlayers
+      .filter((_, idx) => idx !== slotIndex)
+      .map((p) => p.oneHandedPosition)
+      .filter((pos): pos is 'R' | 'L' => pos !== null && pos !== undefined)
+  }
+
+  // Get excluded two-handed positions for speed-solo-teams (F or B already taken)
+  const getExcludedTwoHandedForSlot = (slotIndex: number): ('F' | 'B')[] => {
+    if (!isSpeedSoloTeams) return []
+    return watchedPlayers
+      .filter((_, idx) => idx !== slotIndex)
+      .map((p) => p.twoHandedPosition)
+      .filter((pos): pos is 'F' | 'B' => pos !== null && pos !== undefined)
+  }
+
   const onSubmit = async (data: RegistrationFormData) => {
     try {
       clearError()
       const playerIds = data.players.map((p) => p.playerId)
 
-      // For team test events, include players array with positions
-      const playersWithPositions = isTeamTest
-        ? data.players.map((p, index) => ({
+      // For team test events, include players array with positionScores
+      // Convert position selection(s) to positionScores format
+      let playersWithPositions: { playerId: string; positionScores: Record<string, null> | null; order: number }[] | undefined
+      
+      if (isTeamTest) {
+        if (isSpeedSoloTeams) {
+          // Speed-solo-teams: combine both positions into positionScores
+          playersWithPositions = data.players.map((p, index) => {
+            const scores: Record<string, null> = {}
+            if (p.oneHandedPosition) scores[p.oneHandedPosition] = null
+            if (p.twoHandedPosition) scores[p.twoHandedPosition] = null
+            return {
+              playerId: p.playerId,
+              positionScores: Object.keys(scores).length > 0 ? scores : null,
+              order: index + 1,
+            }
+          })
+        } else {
+          // Relay/solo-teams: single position
+          playersWithPositions = data.players.map((p, index) => ({
             playerId: p.playerId,
-            position: p.position ?? null,
+            positionScores: p.position ? { [p.position]: null } : null,
             order: index + 1,
           }))
-        : undefined
+        }
+      }
 
       if (isEditing && registration) {
         await updateRegistration(registration.id, {
@@ -214,9 +333,12 @@ const RegistrationForm = ({
         </DialogTitle>
         <DialogDescription>
           {isEditing
-            ? `Update ${maxPlayers === 1 ? 'the player' : 'players'} for this registration`
+            ? `Update ${
+                maxPlayers === 1 ? 'the player' : 'players'
+              } for this registration`
             : `Select ${maxPlayers === 1 ? 'a player' : 'players'} to register`}
-          {minPlayers !== maxPlayers && ` (${minPlayers}-${maxPlayers} players)`}
+          {minPlayers !== maxPlayers &&
+            ` (${minPlayers}-${maxPlayers} players)`}
           .
         </DialogDescription>
       </DialogHeader>
@@ -225,71 +347,178 @@ const RegistrationForm = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
           {fields.map((field, index) => (
             <div key={field.id} className='space-y-2'>
-              <FormField
-                control={form.control}
-                name={`players.${index}.playerId`}
-                render={({ field: formField }) => (
-                  <FormItem>
-                    <div className='flex items-center justify-between'>
-                      <FormLabel>{getPlayerLabel(index)}</FormLabel>
-                      {canRemovePlayer && index >= minPlayers && (
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => remove(index)}
-                          className='h-6 w-6 p-0 text-destructive'
-                        >
-                          <Trash2 className='h-4 w-4' />
-                        </Button>
-                      )}
-                    </div>
-                    <FormControl>
-                      <PlayerCombobox
-                        value={formField.value || undefined}
-                        onValueChange={formField.onChange}
-                        placeholder={`Select ${getPlayerLabel(index).toLowerCase()}`}
-                        excludedPlayerIds={getExcludedIdsForSlot(index)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              {/* Header with label and remove button */}
+              <div className='flex items-center justify-between'>
+                <FormLabel>{getPlayerLabel(index)}</FormLabel>
+                {canRemovePlayer && index >= minPlayers && (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => remove(index)}
+                    className='h-6 w-6 p-0 text-destructive'
+                  >
+                    <Trash2 className='h-4 w-4' />
+                  </Button>
                 )}
-              />
+              </div>
 
-              {isTeamTest && (
+              {/* For relay/solo-teams: player and position on same line */}
+              {isTeamTest && !isSpeedSoloTeams ? (
+                <div className='flex gap-2 items-start'>
+                  <FormField
+                    control={form.control}
+                    name={`players.${index}.playerId`}
+                    render={({ field: formField }) => (
+                      <FormItem className='flex-1'>
+                        <FormControl>
+                          <PlayerCombobox
+                            value={formField.value || undefined}
+                            onValueChange={formField.onChange}
+                            placeholder='Select player'
+                            excludedPlayerIds={getExcludedIdsForSlot(index)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`players.${index}.position`}
+                    render={({ field: positionField }) => (
+                      <FormItem className='w-32'>
+                        <Select
+                          onValueChange={(value) =>
+                            positionField.onChange(
+                              value === 'none' ? null : value
+                            )
+                          }
+                          value={positionField.value ?? 'none'}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='Position' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value='none'>-</SelectItem>
+                            {POSITION_KEYS.filter(
+                              (pos) =>
+                                !getExcludedPositionsForSlot(index).includes(pos)
+                            ).map((pos) => (
+                              <SelectItem key={pos} value={pos}>
+                                {POSITION_LABELS[pos]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              ) : (
+                /* For non-team or speed-solo-teams: player only (positions handled separately) */
                 <FormField
                   control={form.control}
-                  name={`players.${index}.position`}
-                  render={({ field: positionField }) => (
+                  name={`players.${index}.playerId`}
+                  render={({ field: formField }) => (
                     <FormItem>
-                      <FormLabel className='text-xs text-muted-foreground'>
-                        Position (optional)
-                      </FormLabel>
-                      <Select
-                        onValueChange={(value) =>
-                          positionField.onChange(value === 'none' ? null : value)
-                        }
-                        value={positionField.value ?? 'none'}
-                      >
-                        <FormControl>
-                          <SelectTrigger className='h-8'>
-                            <SelectValue placeholder='Select position' />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value='none'>No position</SelectItem>
-                          {PLAYER_POSITIONS.map((pos) => (
-                            <SelectItem key={pos} value={pos}>
-                              {POSITION_LABELS[pos]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <PlayerCombobox
+                          value={formField.value || undefined}
+                          onValueChange={formField.onChange}
+                          placeholder={`Select ${getPlayerLabel(
+                            index
+                          ).toLowerCase()}`}
+                          excludedPlayerIds={getExcludedIdsForSlot(index)}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              )}
+
+              {/* For speed-solo-teams: dual position selects (R/L and F/B) */}
+              {isSpeedSoloTeams && (
+                <div className='grid grid-cols-2 gap-2'>
+                  <FormField
+                    control={form.control}
+                    name={`players.${index}.oneHandedPosition`}
+                    render={({ field: positionField }) => (
+                      <FormItem>
+                        <FormLabel className='text-xs text-muted-foreground'>
+                          One-Handed (R/L)
+                        </FormLabel>
+                        <Select
+                          onValueChange={(value) =>
+                            positionField.onChange(
+                              value === 'none' ? null : value
+                            )
+                          }
+                          value={positionField.value ?? 'none'}
+                        >
+                          <FormControl>
+                            <SelectTrigger className='h-8'>
+                              <SelectValue placeholder='R or L' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value='none'>-</SelectItem>
+                            {ONE_HANDED_POSITIONS.filter(
+                              (pos) =>
+                                !getExcludedOneHandedForSlot(index).includes(pos)
+                            ).map((pos) => (
+                              <SelectItem key={pos} value={pos}>
+                                {POSITION_LABELS[pos]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`players.${index}.twoHandedPosition`}
+                    render={({ field: positionField }) => (
+                      <FormItem>
+                        <FormLabel className='text-xs text-muted-foreground'>
+                          Two-Handed (F/B)
+                        </FormLabel>
+                        <Select
+                          onValueChange={(value) =>
+                            positionField.onChange(
+                              value === 'none' ? null : value
+                            )
+                          }
+                          value={positionField.value ?? 'none'}
+                        >
+                          <FormControl>
+                            <SelectTrigger className='h-8'>
+                              <SelectValue placeholder='F or B' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value='none'>-</SelectItem>
+                            {TWO_HANDED_POSITIONS.filter(
+                              (pos) =>
+                                !getExcludedTwoHandedForSlot(index).includes(pos)
+                            ).map((pos) => (
+                              <SelectItem key={pos} value={pos}>
+                                {POSITION_LABELS[pos]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
             </div>
           ))}
@@ -299,7 +528,13 @@ const RegistrationForm = ({
               type='button'
               variant='outline'
               size='sm'
-              onClick={() => append({ playerId: '', position: null })}
+              onClick={() =>
+                append(
+                  isSpeedSoloTeams
+                    ? { playerId: '', oneHandedPosition: null, twoHandedPosition: null }
+                    : { playerId: '', position: null }
+                )
+              }
               className='w-full'
             >
               <Plus className='mr-2 h-4 w-4' />
@@ -331,8 +566,8 @@ const RegistrationForm = ({
                   ? 'Updating...'
                   : 'Registering...'
                 : isEditing
-                  ? 'Update Registration'
-                  : 'Register'}
+                ? 'Update Registration'
+                : 'Register'}
             </Button>
           </DialogFooter>
         </form>

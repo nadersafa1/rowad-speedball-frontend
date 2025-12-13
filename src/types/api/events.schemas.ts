@@ -3,6 +3,8 @@ import {
   EVENT_TYPES,
   isTestEventType,
   isSoloTestEventType,
+  isFixedPlayerCount,
+  getEventTypePlayerLimits,
 } from '../event-types'
 
 // Event format types
@@ -207,18 +209,26 @@ export const eventsCreateSchema = z
     }
   )
   .transform((data) => {
+    let result = { ...data }
+
     // Auto-set format to 'tests' for test events if not explicitly set
     if (isTestEventType(data.eventType) && data.format === 'groups') {
-      return { ...data, format: 'tests' as const }
+      result = { ...result, format: 'tests' as const }
     }
-    // Auto-set minPlayers/maxPlayers for solo test events
-    if (isSoloTestEventType(data.eventType)) {
-      return { ...data, minPlayers: 1, maxPlayers: 1 }
+
+    // For fixed player count events, override min/max with correct values
+    if (isFixedPlayerCount(data.eventType)) {
+      const limits = getEventTypePlayerLimits(data.eventType)
+      result = { ...result, minPlayers: limits.min, maxPlayers: limits.max }
     }
-    return data
+
+    return result
   })
 
 // Update event schema for PATCH /events/:id
+// Note: For fixed player count events (super-solo, speed-solo, juniors-solo),
+// min/max players cannot be changed. This is validated at runtime in the API route
+// since we need the existing event's eventType to validate.
 export const eventsUpdateSchema = z
   .object({
     name: z
@@ -310,6 +320,25 @@ export const eventsUpdateSchema = z
       path: ['minPlayers'],
     }
   )
+
+/**
+ * Validates that min/max players cannot be changed for fixed player count events.
+ * This is used at runtime in the API route since we need the existing event's eventType.
+ */
+export const validatePlayerLimitsUpdate = (
+  existingEventType: string,
+  updateData: { minPlayers?: number; maxPlayers?: number }
+): { valid: boolean; error?: string } => {
+  if (isFixedPlayerCount(existingEventType)) {
+    if (updateData.minPlayers !== undefined || updateData.maxPlayers !== undefined) {
+      return {
+        valid: false,
+        error: `Cannot change min/max players for ${existingEventType} events. Player limits are fixed.`,
+      }
+    }
+  }
+  return { valid: true }
+}
 
 // Inferred TypeScript types
 export type EventsQuery = z.infer<typeof eventsQuerySchema>

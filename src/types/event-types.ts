@@ -37,6 +37,7 @@ export interface EventTypeMetadata {
 export interface EventTypeLimits {
   min: number
   max: number
+  isFixed: boolean // If true, min/max cannot be changed by user
 }
 
 // ============================================
@@ -241,6 +242,43 @@ export const isCompetitionEventType = (eventType: string): boolean => {
 // Check if a string is a valid EventType
 export const isValidEventType = (value: string): value is EventType => {
   return Object.values(EventType).includes(value as EventType)
+}
+
+// ============================================
+// PLAYER LIMITS
+// ============================================
+
+// Default player limits for each event type
+// isFixed: true means the min/max cannot be changed by user
+export const EVENT_TYPE_PLAYER_LIMITS: Record<EventType, EventTypeLimits> = {
+  [EventType.SuperSolo]: { min: 1, max: 1, isFixed: true },
+  [EventType.SpeedSolo]: { min: 1, max: 1, isFixed: true },
+  [EventType.JuniorsSolo]: { min: 1, max: 1, isFixed: true },
+  [EventType.Singles]: { min: 1, max: 1, isFixed: false },
+  [EventType.Doubles]: { min: 2, max: 2, isFixed: false },
+  [EventType.SinglesTeams]: { min: 3, max: 4, isFixed: false },
+  [EventType.SpeedSoloTeams]: { min: 2, max: 4, isFixed: false },
+  [EventType.Relay]: { min: 4, max: 6, isFixed: false },
+  [EventType.SoloTeams]: { min: 4, max: 6, isFixed: false },
+}
+
+// Get player limits for an event type
+export const getEventTypePlayerLimits = (
+  eventType: EventType | string
+): EventTypeLimits => {
+  return (
+    EVENT_TYPE_PLAYER_LIMITS[eventType as EventType] ?? {
+      min: 1,
+      max: 2,
+      isFixed: false,
+    }
+  )
+}
+
+// Check if event type has fixed player count (cannot be changed)
+export const isFixedPlayerCount = (eventType: EventType | string): boolean => {
+  const limits = getEventTypePlayerLimits(eventType)
+  return limits.isFixed
 }
 
 // ============================================

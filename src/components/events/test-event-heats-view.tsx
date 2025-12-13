@@ -4,22 +4,54 @@ import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Pencil, Users, Shuffle, RefreshCw } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Pencil, Users, Shuffle, RefreshCw, Trash2 } from 'lucide-react'
 import EmptyState from '@/components/shared/empty-state'
-import type { Event, Registration, Group, PlayerWithRegistrationPosition } from '@/types'
-import { calculateRegistrationTotalScore } from '@/lib/utils/test-event-utils'
+import type { Event, Registration, Group, PlayerWithPositionScores } from '@/types'
+import {
+  calculateRegistrationTotalScore,
+  getScoreBreakdown,
+} from '@/lib/utils/test-event-utils'
+import { getPositions } from '@/lib/validations/registration-validation'
 
-// Format player name with position
-const formatPlayerWithPosition = (player: PlayerWithRegistrationPosition): string => {
-  if (player.registrationPosition) {
-    return `${player.name} (${player.registrationPosition})`
+// Get aggregated score display from all players in a registration
+const getRegistrationScores = (
+  players: PlayerWithPositionScores[] | undefined
+): { L: number; R: number; F: number; B: number } => {
+  if (!players || players.length === 0) {
+    return { L: 0, R: 0, F: 0, B: 0 }
+  }
+  return players.reduce(
+    (acc, player) => {
+      const scores = getScoreBreakdown(player.positionScores)
+      return {
+        L: acc.L + scores.L,
+        R: acc.R + scores.R,
+        F: acc.F + scores.F,
+        B: acc.B + scores.B,
+      }
+    },
+    { L: 0, R: 0, F: 0, B: 0 }
+  )
+}
+
+// Format player name with positions from positionScores
+const formatPlayerWithPosition = (player: PlayerWithPositionScores): string => {
+  const positions = getPositions(player.positionScores)
+  if (positions.length > 0) {
+    return `${player.name} (${positions.join(',')})`
   }
   return player.name
 }
 
 // Format all players in a registration
 const formatPlayersWithPositions = (
-  players: PlayerWithRegistrationPosition[] | undefined
+  players: PlayerWithPositionScores[] | undefined
 ): string => {
   if (!players || players.length === 0) return 'Unknown'
   return players.map(formatPlayerWithPosition).join(' & ')
@@ -33,6 +65,8 @@ interface TestEventHeatsViewProps {
   onEditScores: (registration: Registration) => void
   onGenerateHeats?: () => Promise<void>
   isGenerating?: boolean
+  canDelete?: boolean
+  onDeleteRegistration?: (registrationId: string) => void
 }
 
 const TestEventHeatsView = ({
@@ -43,6 +77,8 @@ const TestEventHeatsView = ({
   onEditScores,
   onGenerateHeats,
   isGenerating = false,
+  canDelete = false,
+  onDeleteRegistration,
 }: TestEventHeatsViewProps) => {
   // Group registrations by heat (groupId)
   const registrationsByHeat = useMemo(() => {
@@ -151,12 +187,17 @@ const TestEventHeatsView = ({
                           </span>
                           <div>
                             <p className='font-medium'>{playerName}</p>
-                            <div className='flex gap-2 text-xs text-muted-foreground'>
-                              <span>L:{reg.leftHandScore}</span>
-                              <span>R:{reg.rightHandScore}</span>
-                              <span>F:{reg.forehandScore}</span>
-                              <span>B:{reg.backhandScore}</span>
-                            </div>
+                            {(() => {
+                              const scores = getRegistrationScores(reg.players)
+                              return (
+                                <div className='flex gap-2 text-xs text-muted-foreground'>
+                                  <span>L:{scores.L}</span>
+                                  <span>R:{scores.R}</span>
+                                  <span>F:{scores.F}</span>
+                                  <span>B:{scores.B}</span>
+                                </div>
+                              )
+                            })()}
                           </div>
                         </div>
                         <div className='flex items-center gap-3'>
@@ -168,15 +209,44 @@ const TestEventHeatsView = ({
                               Total
                             </p>
                           </div>
-                          {canUpdate && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              onClick={() => onEditScores(reg)}
-                            >
-                              <Pencil className='h-4 w-4' />
-                            </Button>
-                          )}
+                          <div className='flex items-center gap-2'>
+                            {canUpdate && (
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => onEditScores(reg)}
+                              >
+                                <Pencil className='h-4 w-4' />
+                              </Button>
+                            )}
+                            {canDelete && onDeleteRegistration && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>
+                                      <Button
+                                        variant='destructive'
+                                        size='sm'
+                                        disabled={!!reg.groupId}
+                                        onClick={() => {
+                                          if (!reg.groupId) {
+                                            onDeleteRegistration(reg.id)
+                                          }
+                                        }}
+                                      >
+                                        <Trash2 className='h-4 w-4' />
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  {reg.groupId && (
+                                    <TooltipContent>
+                                      <p>Cannot delete registration assigned to a heat</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )
@@ -210,27 +280,43 @@ const TestEventHeatsView = ({
                   >
                     <div>
                       <p className='font-medium'>{playerName}</p>
-                      <div className='flex gap-2 text-xs text-muted-foreground'>
-                        <span>L:{reg.leftHandScore}</span>
-                        <span>R:{reg.rightHandScore}</span>
-                        <span>F:{reg.forehandScore}</span>
-                        <span>B:{reg.backhandScore}</span>
-                      </div>
+                      {(() => {
+                        const scores = getRegistrationScores(reg.players)
+                        return (
+                          <div className='flex gap-2 text-xs text-muted-foreground'>
+                            <span>L:{scores.L}</span>
+                            <span>R:{scores.R}</span>
+                            <span>F:{scores.F}</span>
+                            <span>B:{scores.B}</span>
+                          </div>
+                        )
+                      })()}
                     </div>
                     <div className='flex items-center gap-3'>
                       <div className='text-right'>
                         <p className='text-xl font-bold'>{totalScore}</p>
                         <p className='text-xs text-muted-foreground'>Total</p>
                       </div>
-                      {canUpdate && (
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => onEditScores(reg)}
-                        >
-                          <Pencil className='h-4 w-4' />
-                        </Button>
-                      )}
+                      <div className='flex items-center gap-2'>
+                        {canUpdate && (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => onEditScores(reg)}
+                          >
+                            <Pencil className='h-4 w-4' />
+                          </Button>
+                        )}
+                        {canDelete && onDeleteRegistration && (
+                          <Button
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => onDeleteRegistration(reg.id)}
+                          >
+                            <Trash2 className='h-4 w-4' />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )

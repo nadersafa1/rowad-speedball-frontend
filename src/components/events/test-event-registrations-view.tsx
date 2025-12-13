@@ -7,7 +7,12 @@ import { Button } from '@/components/ui/button'
 import TestEventHeatsView from './test-event-heats-view'
 import TestEventLeaderboard from './test-event-leaderboard'
 import TestEventScoreForm from './test-event-score-form'
-import type { Event, Registration, Group } from '@/types'
+import type { Event, Registration, Group, PositionScores } from '@/types'
+
+interface ScoreUpdatePayload {
+  playerId: string
+  positionScores: PositionScores
+}
 
 interface TestEventRegistrationsViewProps {
   event: Event
@@ -15,16 +20,13 @@ interface TestEventRegistrationsViewProps {
   groups: Group[]
   canCreate: boolean
   canUpdate: boolean
+  canDelete?: boolean
   onAddRegistration: () => void
   onUpdateScores: (
     registrationId: string,
-    scores: {
-      leftHandScore: number
-      rightHandScore: number
-      forehandScore: number
-      backhandScore: number
-    }
+    payload: ScoreUpdatePayload | ScoreUpdatePayload[]
   ) => Promise<void>
+  onDeleteRegistration?: (registrationId: string) => void
   onGenerateHeats?: () => Promise<void>
   isLoading?: boolean
   isGeneratingHeats?: boolean
@@ -36,8 +38,10 @@ const TestEventRegistrationsView = ({
   groups,
   canCreate,
   canUpdate,
+  canDelete = false,
   onAddRegistration,
   onUpdateScores,
+  onDeleteRegistration,
   onGenerateHeats,
   isLoading = false,
   isGeneratingHeats = false,
@@ -58,14 +62,9 @@ const TestEventRegistrationsView = ({
 
   const handleSubmitScores = async (
     registrationId: string,
-    scores: {
-      leftHandScore: number
-      rightHandScore: number
-      forehandScore: number
-      backhandScore: number
-    }
+    payload: ScoreUpdatePayload | ScoreUpdatePayload[]
   ) => {
-    await onUpdateScores(registrationId, scores)
+    await onUpdateScores(registrationId, payload)
   }
 
   const canAddRegistration =
@@ -104,7 +103,6 @@ const TestEventRegistrationsView = ({
           <TestEventLeaderboard
             registrations={registrations}
             groups={groups}
-            onSelectRegistration={canUpdate ? handleEditScores : undefined}
           />
         </TabsContent>
         <TabsContent value='heats'>
@@ -116,6 +114,8 @@ const TestEventRegistrationsView = ({
             onEditScores={handleEditScores}
             onGenerateHeats={onGenerateHeats}
             isGenerating={isGeneratingHeats}
+            canDelete={canDelete}
+            onDeleteRegistration={onDeleteRegistration}
           />
         </TabsContent>
       </Tabs>
@@ -124,6 +124,7 @@ const TestEventRegistrationsView = ({
       {selectedRegistration && (
         <TestEventScoreForm
           registration={selectedRegistration}
+          eventType={event.eventType}
           isOpen={isScoreFormOpen}
           onClose={handleCloseScoreForm}
           onSubmit={handleSubmitScores}

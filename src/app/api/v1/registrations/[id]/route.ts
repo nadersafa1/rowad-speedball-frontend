@@ -174,13 +174,13 @@ export async function PATCH(
           .delete(schema.registrationPlayers)
           .where(eq(schema.registrationPlayers.registrationId, id))
 
-        // Add new players with positions (if provided) or just playerIds
+        // Add new players with positionScores (if provided) or just playerIds
         const playersWithPositions = updateData.players
         if (playersWithPositions && playersWithPositions.length > 0) {
           const values = playersWithPositions.map((p, index) => ({
             registrationId: id,
             playerId: p.playerId,
-            position: p.position ?? null,
+            positionScores: p.positionScores ?? null,
             order: p.order ?? index + 1,
           }))
           await tx.insert(schema.registrationPlayers).values(values)
@@ -188,7 +188,7 @@ export async function PATCH(
           const values = playerIds.map((playerId, index) => ({
             registrationId: id,
             playerId,
-            position: null,
+            positionScores: null,
             order: index + 1,
           }))
           await tx.insert(schema.registrationPlayers).values(values)

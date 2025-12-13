@@ -120,18 +120,17 @@ const EventDetailPage = () => {
     }
   }
 
-  // Handle score update for test events
+  // Handle score update for test events (supports single or batch updates)
   const handleUpdateScores = async (
     registrationId: string,
-    scores: {
-      leftHandScore: number
-      rightHandScore: number
-      forehandScore: number
-      backhandScore: number
-    }
+    payload:
+      | { playerId: string; positionScores: Record<string, number | null> }
+      | { playerId: string; positionScores: Record<string, number | null> }[]
   ) => {
     try {
-      await apiClient.updateRegistrationScores(registrationId, scores)
+      // Support both single and batch payloads
+      const updates = Array.isArray(payload) ? payload : [payload]
+      await apiClient.updatePlayerPositionScoresBatch(registrationId, updates)
       toast.success('Scores updated successfully')
       handleRefresh()
     } catch (error: any) {
@@ -203,8 +202,10 @@ const EventDetailPage = () => {
               groups={groups}
               canCreate={canCreate}
               canUpdate={canUpdate}
+              canDelete={canDelete}
               onAddRegistration={() => dialogs.openRegistrationForm()}
               onUpdateScores={handleUpdateScores}
+              onDeleteRegistration={dialogs.openDeleteRegistration}
               onGenerateHeats={handleGenerateHeats}
               isGeneratingHeats={isGeneratingHeats}
             />

@@ -90,11 +90,6 @@ const createMockRegistration = (
   setsLost: 0,
   points: 0,
   qualified: false,
-  // Score fields for test events
-  leftHandScore: 0,
-  rightHandScore: 0,
-  forehandScore: 0,
-  backhandScore: 0,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   players: [player],

@@ -1,14 +1,33 @@
 import { z } from 'zod'
+import type { PositionScores, PositionKey } from '@/types/position-scores'
+import { POSITION_KEYS } from '@/types/position-scores'
 
-// Position enum for team test events
-export const PLAYER_POSITIONS = ['R', 'L', 'F', 'B', 'S1', 'S2'] as const
-export type PlayerPosition = (typeof PLAYER_POSITIONS)[number]
+// Position scores schema for JSONB column
+// Keys: R, L, F, B - represent positions
+// Values: number (score) or null (position assigned but score pending)
+export const positionScoresSchema = z
+  .object({
+    R: z.number().int().min(0).nullable().optional(),
+    L: z.number().int().min(0).nullable().optional(),
+    F: z.number().int().min(0).nullable().optional(),
+    B: z.number().int().min(0).nullable().optional(),
+  })
+  .nullable()
+  .optional()
+  .refine((data) => {
+    if (data === null || data === undefined) return true
+    // If provided, must have at least one position key
+    const keys = Object.keys(data) as PositionKey[]
+    return keys.length === 0 || keys.some((k) => POSITION_KEYS.includes(k))
+  }, 'If provided, positionScores must have at least one valid position key')
 
 // Query parameters for GET /registrations
 export const registrationsQuerySchema = z
   .object({
     eventId: z.uuid('Invalid event ID format').optional(),
     groupId: z.uuid('Invalid group ID format').optional(),
+    sortBy: z.enum(['totalScore', 'createdAt']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   })
   .strict()
 
@@ -17,10 +36,10 @@ export const registrationsParamsSchema = z.object({
   id: z.uuid('Invalid registration ID format'),
 })
 
-// Player with position and order for team events
+// Player with position scores and order for team events
 export const playerWithPositionSchema = z.object({
   playerId: z.uuid('Invalid player ID format'),
-  position: z.enum(PLAYER_POSITIONS).nullable().optional(),
+  positionScores: positionScoresSchema,
   order: z.number().int().min(1).optional(),
 })
 
@@ -30,7 +49,7 @@ export const registrationsCreateSchema = z.object({
   playerIds: z
     .array(z.uuid('Invalid player ID format'))
     .min(1, 'At least one player is required'),
-  // Optional: players with positions and order for team events
+  // Optional: players with position scores and order for team events
   players: z.array(playerWithPositionSchema).optional(),
 })
 
@@ -43,7 +62,7 @@ export const registrationsUpdateSchema = z
       .array(z.uuid('Invalid player ID format'))
       .min(1, 'At least one player is required')
       .optional(),
-    // Optional: players with positions and order for team events
+    // Optional: players with position scores and order for team events
     players: z.array(playerWithPositionSchema).optional(),
   })
   .refine(
@@ -52,25 +71,29 @@ export const registrationsUpdateSchema = z
   )
   .strict()
 
-// Update registration scores schema for test events
-export const registrationScoresUpdateSchema = z
-  .object({
-    leftHandScore: z.number().int().min(0).optional(),
-    rightHandScore: z.number().int().min(0).optional(),
-    forehandScore: z.number().int().min(0).optional(),
-    backhandScore: z.number().int().min(0).optional(),
-  })
-  .refine(
-    (data) => Object.keys(data).length > 0,
-    'At least one score field must be provided'
-  )
+// Update player position scores schema for test events
+// Used to update a single player's positionScores
+export const playerPositionScoresUpdateSchema = z.object({
+  positionScores: z
+    .object({
+      R: z.number().int().min(0).nullable().optional(),
+      L: z.number().int().min(0).nullable().optional(),
+      F: z.number().int().min(0).nullable().optional(),
+      B: z.number().int().min(0).nullable().optional(),
+    })
+    .refine(
+      (data) => Object.keys(data).length > 0,
+      'At least one position score must be provided'
+    ),
+})
 
 // Inferred TypeScript types
 export type RegistrationsQuery = z.infer<typeof registrationsQuerySchema>
 export type RegistrationsParams = z.infer<typeof registrationsParamsSchema>
 export type RegistrationsCreate = z.infer<typeof registrationsCreateSchema>
 export type RegistrationsUpdate = z.infer<typeof registrationsUpdateSchema>
-export type RegistrationScoresUpdate = z.infer<
-  typeof registrationScoresUpdateSchema
+export type PlayerPositionScoresUpdate = z.infer<
+  typeof playerPositionScoresUpdateSchema
 >
 export type PlayerWithPosition = z.infer<typeof playerWithPositionSchema>
+export type { PositionScores, PositionKey }
