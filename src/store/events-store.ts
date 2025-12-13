@@ -4,7 +4,7 @@ import { apiClient } from '@/lib/api-client'
 import type { Event, PaginatedResponse, EventFormat } from '@/types'
 import type { EventsStats } from '@/types/api/pagination'
 import { isEventsStats } from '@/lib/utils/stats-type-guards'
-import type { EventType } from '@/types/event-types'
+import { EventType } from '@/types/event-types'
 
 interface EventsState {
   events: Event[]

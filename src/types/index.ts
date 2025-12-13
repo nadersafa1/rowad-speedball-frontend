@@ -1,11 +1,33 @@
 // Re-export event types from centralized location
 export {
+  // Enum
+  EventType,
+  // Arrays for runtime iteration
   EVENT_TYPES,
   UI_EVENT_TYPES,
+  TEST_EVENT_TYPES,
+  SOLO_TEST_EVENT_TYPES,
+  TEAM_TEST_EVENT_TYPES,
+  // Labels
   EVENT_TYPE_LABELS,
+  EVENT_TYPE_METADATA,
+  // Constants
+  DEFAULT_PLAYERS_PER_HEAT,
+  // Helper functions
+  getEventTypeMetadata,
   isSinglePlayerEventType,
+  isTestEventType,
+  isSoloTestEventType,
+  isTeamTestEventType,
+  isCompetitionEventType,
+  isValidEventType,
 } from './event-types'
-export type { EventType, UIEventType } from './event-types'
+export type {
+  UIEventType,
+  TestEventType,
+  EventTypeMetadata,
+  EventTypeLimits,
+} from './event-types'
 
 // Re-export team level types from centralized location
 export {
@@ -105,8 +127,8 @@ export type AuthResponse = {
   user?: AuthUser
 }
 
-// Events types
-import type { EventType } from './event-types'
+// Events types - imports for local use
+import { EventType } from './event-types'
 import type { EventFormat } from './event-format'
 
 export type Event = {
@@ -126,6 +148,8 @@ export type Event = {
   pointsPerLoss: number
   completed: boolean
   hasThirdPlaceMatch?: boolean
+  // For test events: number of players per heat (default 8)
+  playersPerHeat?: number | null
   organizationId?: string | null
   trainingSessionId?: string | null
   registrationsCount?: number
@@ -158,9 +182,22 @@ export type Registration = {
   setsLost: number
   points: number
   qualified: boolean
+  teamName?: string | null
+  // Score fields for test events
+  leftHandScore: number
+  rightHandScore: number
+  forehandScore: number
+  backhandScore: number
+  totalScore?: number // Calculated field
   createdAt: string
   updatedAt: string
-  players?: Player[]
+  players?: PlayerWithRegistrationPosition[]
+}
+
+// Player with registration position info
+export type PlayerWithRegistrationPosition = Player & {
+  registrationPosition?: 'R' | 'L' | 'F' | 'B' | 'S1' | 'S2' | null
+  registrationOrder?: number
 }
 
 export type Match = {

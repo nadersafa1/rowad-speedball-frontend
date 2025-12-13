@@ -1,5 +1,5 @@
 // Seeder Types
-import type { EventType } from '@/types/event-types'
+import { EventType } from '@/types/event-types'
 
 export interface SeededUser {
   id: string

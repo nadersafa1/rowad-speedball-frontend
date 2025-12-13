@@ -1,5 +1,5 @@
 // Registration Validation Utilities
-import type { EventType } from '@/types/event-types'
+import { EventType, isSoloTestEventType } from '@/types/event-types'
 
 type ValidationResult = { valid: boolean; error?: string }
 
@@ -7,7 +7,7 @@ type ValidationResult = { valid: boolean; error?: string }
  * Validates player count based on min/max configuration
  */
 export const validateRegistrationPlayerCount = (
-  _eventType: EventType, // Kept for backward compatibility but no longer used for logic
+  _eventType: EventType | string, // Kept for backward compatibility but no longer used for logic
   playerCount: number,
   minPlayers: number = 1,
   maxPlayers: number = 2
@@ -43,7 +43,7 @@ export const validateRegistrationPlayerCount = (
 export const validateGenderRulesForPlayers = (
   eventGender: 'male' | 'female' | 'mixed',
   playerGenders: ('male' | 'female')[],
-  eventType: EventType
+  eventType: EventType | string
 ): ValidationResult => {
   if (playerGenders.length === 0) {
     return { valid: false, error: 'At least one player is required' }
@@ -52,8 +52,8 @@ export const validateGenderRulesForPlayers = (
   const maleCount = playerGenders.filter((g) => g === 'male').length
   const femaleCount = playerGenders.filter((g) => g === 'female').length
 
-  // Solo and Singles: single player events
-  if (eventType === 'solo' || eventType === 'singles') {
+  // Solo test events and Singles: single player events
+  if (isSoloTestEventType(eventType) || eventType === EventType.Singles) {
     if (eventGender === 'male' && playerGenders[0] !== 'male') {
       return { valid: false, error: "Men's event requires a male player" }
     }
@@ -63,7 +63,7 @@ export const validateGenderRulesForPlayers = (
     return { valid: true }
   }
 
-  // For doubles and team events (doubles, singles-teams, solo-teams, relay)
+  // For doubles and team events
   if (eventGender === 'male') {
     if (femaleCount > 0) {
       return {
@@ -80,7 +80,7 @@ export const validateGenderRulesForPlayers = (
     }
   } else if (eventGender === 'mixed') {
     // For mixed doubles specifically, require at least 1 of each gender
-    if (eventType === 'doubles') {
+    if (eventType === EventType.Doubles) {
       if (maleCount !== 1 || femaleCount !== 1) {
         return {
           valid: false,

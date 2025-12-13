@@ -9,18 +9,26 @@ interface EventTabsProps {
 }
 
 const EventTabs = ({ eventFormat, hasMatches }: EventTabsProps) => {
+  const isTestEvent = eventFormat === 'tests'
+
+  const getGroupsTabLabel = () => {
+    if (isTestEvent) return 'Heats'
+    if (eventFormat === 'groups') return 'Groups'
+    return 'Seeds'
+  }
+
   return (
     <TabsList className='w-full overflow-x-auto flex-nowrap sm:flex-wrap'>
       <TabsTrigger value='overview' className='whitespace-nowrap'>
         Overview
       </TabsTrigger>
       <TabsTrigger value='registrations' className='whitespace-nowrap'>
-        Registrations
+        {isTestEvent ? 'Results' : 'Registrations'}
       </TabsTrigger>
       <TabsTrigger value='groups' className='whitespace-nowrap'>
-        {eventFormat === 'groups' ? 'Groups' : 'Seeds'}
+        {getGroupsTabLabel()}
       </TabsTrigger>
-      {hasMatches && (
+      {hasMatches && !isTestEvent && (
         <TabsTrigger value='matches' className='whitespace-nowrap'>
           Matches
         </TabsTrigger>

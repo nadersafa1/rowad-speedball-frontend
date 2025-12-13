@@ -102,7 +102,7 @@ const trainingSessionSchema = z.object({
     )
     .min(1, 'At least one age group is required'),
   coachIds: z.array(z.uuid()).min(1, 'At least one coach is required'),
-  organizationId: z.string().uuid().nullable().optional(),
+  organizationId: z.uuid().nullable().optional(),
   teamLevels: z.array(z.enum(TEAM_LEVELS)).optional(),
   autoCreateAttendance: z.boolean().optional(),
 })

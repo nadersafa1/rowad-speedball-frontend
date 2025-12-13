@@ -1,5 +1,9 @@
 import { z } from 'zod'
-import { EVENT_TYPES } from '../event-types'
+import {
+  EVENT_TYPES,
+  isTestEventType,
+  isSoloTestEventType,
+} from '../event-types'
 
 // Event format types
 export const EVENT_FORMATS = [
@@ -7,6 +11,7 @@ export const EVENT_FORMATS = [
   'single-elimination',
   'groups-knockout',
   'double-elimination',
+  'tests',
 ] as const
 export type EventFormat = (typeof EVENT_FORMATS)[number]
 
@@ -140,6 +145,12 @@ export const eventsCreateSchema = z
       .nullable()
       .optional(),
     trainingSessionId: z.uuid('Invalid training session ID format').optional(),
+    // For test events: number of players per heat (default 8)
+    playersPerHeat: z
+      .number()
+      .int('playersPerHeat must be an integer')
+      .min(1, 'playersPerHeat must be at least 1')
+      .optional(),
   })
   .strict()
   .refine((data) => data.minPlayers <= data.maxPlayers, {
@@ -179,6 +190,33 @@ export const eventsCreateSchema = z
       path: ['losersStartRoundsBeforeFinal'],
     }
   )
+  .refine(
+    (data) => {
+      // playersPerHeat is only valid for test events
+      if (
+        data.playersPerHeat !== undefined &&
+        !isTestEventType(data.eventType)
+      ) {
+        return false
+      }
+      return true
+    },
+    {
+      message: 'playersPerHeat is only valid for test events',
+      path: ['playersPerHeat'],
+    }
+  )
+  .transform((data) => {
+    // Auto-set format to 'tests' for test events if not explicitly set
+    if (isTestEventType(data.eventType) && data.format === 'groups') {
+      return { ...data, format: 'tests' as const }
+    }
+    // Auto-set minPlayers/maxPlayers for solo test events
+    if (isSoloTestEventType(data.eventType)) {
+      return { ...data, minPlayers: 1, maxPlayers: 1 }
+    }
+    return data
+  })
 
 // Update event schema for PATCH /events/:id
 export const eventsUpdateSchema = z
@@ -245,6 +283,13 @@ export const eventsUpdateSchema = z
       .optional(),
     organizationId: z
       .uuid('Invalid organization ID format')
+      .nullable()
+      .optional(),
+    // For test events: number of players per heat (default 8)
+    playersPerHeat: z
+      .number()
+      .int('playersPerHeat must be an integer')
+      .min(1, 'playersPerHeat must be at least 1')
       .nullable()
       .optional(),
   })

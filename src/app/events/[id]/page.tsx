@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEventsStore } from '@/store/events-store'
 import { toast } from 'sonner'
@@ -10,12 +10,16 @@ import { useMatchesStore } from '@/store/matches-store'
 import { useEventPermissions } from '@/hooks/use-event-permissions'
 import GroupManagement from '@/components/events/group-management'
 import BracketSeeding from '@/components/events/bracket-seeding'
+import HeatManagement from '@/components/events/heat-management'
 import StandingsTable from '@/components/events/standings-table'
 import MatchesView from '@/components/events/matches-view'
 import EventHeader from '@/components/events/event-header'
 import EventTabs from '@/components/events/event-tabs'
 import EventOverviewTab from '@/components/events/event-overview-tab'
 import EventRegistrationsTab from '@/components/events/event-registrations-tab'
+import TestEventRegistrationsView from '@/components/events/test-event-registrations-view'
+import { isTestEventType } from '@/lib/utils/test-event-utils'
+import { apiClient } from '@/lib/api-client'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import LoadingState from '@/components/shared/loading-state'
 import { useEventDialogs } from './_hooks/use-event-dialogs'
@@ -29,6 +33,7 @@ const EventDetailPage = () => {
 
   const tabFromUrl = searchParams.get('tab') || 'overview'
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl)
+  const [isGeneratingHeats, setIsGeneratingHeats] = useState(false)
 
   const dialogs = useEventDialogs()
 
@@ -115,6 +120,49 @@ const EventDetailPage = () => {
     }
   }
 
+  // Handle score update for test events
+  const handleUpdateScores = async (
+    registrationId: string,
+    scores: {
+      leftHandScore: number
+      rightHandScore: number
+      forehandScore: number
+      backhandScore: number
+    }
+  ) => {
+    try {
+      await apiClient.updateRegistrationScores(registrationId, scores)
+      toast.success('Scores updated successfully')
+      handleRefresh()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update scores')
+    }
+  }
+
+  // Handle heat generation for test events
+  const handleGenerateHeats = useCallback(async () => {
+    if (!selectedEvent) return
+    setIsGeneratingHeats(true)
+    try {
+      const hasExistingHeats = groups.length > 0
+      await apiClient.generateHeats(eventId, {
+        regenerate: hasExistingHeats,
+      })
+      toast.success(
+        hasExistingHeats
+          ? 'Heats regenerated successfully'
+          : 'Heats generated successfully'
+      )
+      handleRefresh()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate heats')
+    } finally {
+      setIsGeneratingHeats(false)
+    }
+  }, [selectedEvent, groups.length, eventId])
+
+  const isTestEvent = isTestEventType(selectedEvent?.eventType || '')
+
   if (eventLoading || !selectedEvent) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
@@ -148,35 +196,58 @@ const EventDetailPage = () => {
         </TabsContent>
 
         <TabsContent value='registrations' className='space-y-4'>
-          <EventRegistrationsTab
-            event={selectedEvent}
-            registrations={registrations}
-            groups={groups}
-            canCreate={canCreate}
-            canUpdate={canUpdate}
-            canDelete={canDelete}
-            onAddRegistration={() => dialogs.openRegistrationForm()}
-            onEditRegistration={(id) => dialogs.openRegistrationForm(id)}
-            onDeleteRegistration={dialogs.openDeleteRegistration}
-          />
+          {isTestEvent ? (
+            <TestEventRegistrationsView
+              event={selectedEvent}
+              registrations={registrations}
+              groups={groups}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+              onAddRegistration={() => dialogs.openRegistrationForm()}
+              onUpdateScores={handleUpdateScores}
+              onGenerateHeats={handleGenerateHeats}
+              isGeneratingHeats={isGeneratingHeats}
+            />
+          ) : (
+            <EventRegistrationsTab
+              event={selectedEvent}
+              registrations={registrations}
+              groups={groups}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
+              onAddRegistration={() => dialogs.openRegistrationForm()}
+              onEditRegistration={(id) => dialogs.openRegistrationForm(id)}
+              onDeleteRegistration={dialogs.openDeleteRegistration}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          {selectedEvent.format !== 'groups' ? (
-            <BracketSeeding
+          {isTestEvent ? (
+            <HeatManagement
               eventId={eventId}
               registrations={registrations}
-              hasExistingMatches={matches.length > 0}
-              canManage={canCreate}
-              onBracketGenerated={handleRefresh}
+              groups={groups}
+              defaultPlayersPerHeat={selectedEvent.playersPerHeat}
+              canManage={canUpdate}
+              onHeatsGenerated={handleRefresh}
             />
-          ) : (
+          ) : selectedEvent.format === 'groups' ? (
             <GroupManagement
               eventId={eventId}
               groups={groups}
               registrations={registrations}
               onGroupCreated={handleRefresh}
               canManage={canCreate}
+            />
+          ) : (
+            <BracketSeeding
+              eventId={eventId}
+              registrations={registrations}
+              hasExistingMatches={matches.length > 0}
+              canManage={canCreate}
+              onBracketGenerated={handleRefresh}
             />
           )}
         </TabsContent>

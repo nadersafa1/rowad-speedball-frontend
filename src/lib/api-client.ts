@@ -449,6 +449,28 @@ export class ApiClient {
     })
   }
 
+  // Heat generation methods (for test events)
+  async generateHeats(
+    eventId: string,
+    options?: {
+      playersPerHeat?: number
+      shuffleRegistrations?: boolean
+      regenerate?: boolean
+    }
+  ) {
+    return this.request(`/events/${eventId}/generate-heats`, {
+      method: 'POST',
+      body: options ? JSON.stringify(options) : undefined,
+    })
+  }
+
+  async resetHeats(eventId: string) {
+    return this.request(`/events/${eventId}/generate-heats`, {
+      method: 'POST',
+      body: JSON.stringify({ regenerate: true }),
+    })
+  }
+
   // Groups methods
   async getGroups(eventId?: string) {
     const params = eventId ? `?eventId=${eventId}` : ''
@@ -495,6 +517,21 @@ export class ApiClient {
   async deleteRegistration(id: string) {
     return this.request(`/registrations/${id}`, {
       method: 'DELETE',
+    })
+  }
+
+  async updateRegistrationScores(
+    id: string,
+    scores: {
+      leftHandScore?: number
+      rightHandScore?: number
+      forehandScore?: number
+      backhandScore?: number
+    }
+  ) {
+    return this.request(`/registrations/${id}/scores`, {
+      method: 'PATCH',
+      body: JSON.stringify(scores),
     })
   }
 

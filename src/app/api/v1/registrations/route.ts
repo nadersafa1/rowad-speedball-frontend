@@ -118,7 +118,11 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { eventId, playerIds } = parseResult.data
+    const {
+      eventId,
+      playerIds,
+      players: playersWithPositions,
+    } = parseResult.data
 
     // Get event
     const event = await db
@@ -139,13 +143,7 @@ export async function POST(request: NextRequest) {
 
     // Validate player count based on min/max configuration
     const countValidation = validateRegistrationPlayerCount(
-      eventData.eventType as
-        | 'solo'
-        | 'singles'
-        | 'doubles'
-        | 'singles-teams'
-        | 'solo-teams'
-        | 'relay',
+      eventData.eventType,
       playerIds.length,
       eventData.minPlayers,
       eventData.maxPlayers
@@ -189,13 +187,7 @@ export async function POST(request: NextRequest) {
     const genderValidation = validateGenderRulesForPlayers(
       eventData.gender as 'male' | 'female' | 'mixed',
       genders,
-      eventData.eventType as
-        | 'solo'
-        | 'singles'
-        | 'doubles'
-        | 'singles-teams'
-        | 'solo-teams'
-        | 'relay'
+      eventData.eventType
     )
     if (!genderValidation.valid) {
       return Response.json({ message: genderValidation.error }, { status: 400 })
@@ -221,8 +213,12 @@ export async function POST(request: NextRequest) {
 
     const registration = result[0]
 
-    // Add players to junction table
-    await addPlayersToRegistration(registration.id, playerIds)
+    // Add players to junction table (with positions if provided)
+    await addPlayersToRegistration(
+      registration.id,
+      playerIds,
+      playersWithPositions
+    )
 
     // Return enriched registration
     const enrichedRegistration = await enrichRegistrationWithPlayers(

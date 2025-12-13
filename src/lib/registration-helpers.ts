@@ -1,20 +1,23 @@
 import { eq, and, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
+import type { PlayerWithPosition } from '@/types/api/registrations.schemas'
+import { calculateRegistrationTotalScore } from '@/lib/utils/test-event-utils'
 
 /**
  * Fetches players for a registration from the junction table
- * Returns players ordered by position
+ * Returns players ordered by order field
  */
 export const getPlayersForRegistration = async (registrationId: string) => {
   const registrationPlayers = await db
     .select({
       playerId: schema.registrationPlayers.playerId,
       position: schema.registrationPlayers.position,
+      order: schema.registrationPlayers.order,
     })
     .from(schema.registrationPlayers)
     .where(eq(schema.registrationPlayers.registrationId, registrationId))
-    .orderBy(schema.registrationPlayers.position)
+    .orderBy(schema.registrationPlayers.order)
 
   if (registrationPlayers.length === 0) {
     return []
@@ -26,29 +29,53 @@ export const getPlayersForRegistration = async (registrationId: string) => {
     .from(schema.players)
     .where(inArray(schema.players.id, playerIds))
 
-  // Sort players by their position in the registration
+  // Sort players by their order in the registration and include position
   const positionMap = new Map(
-    registrationPlayers.map((rp) => [rp.playerId, rp.position])
+    registrationPlayers.map((rp) => [
+      rp.playerId,
+      { position: rp.position, order: rp.order },
+    ])
   )
-  return players.sort(
-    (a, b) => (positionMap.get(a.id) || 0) - (positionMap.get(b.id) || 0)
-  )
+  return players
+    .sort(
+      (a, b) =>
+        (positionMap.get(a.id)?.order || 0) -
+        (positionMap.get(b.id)?.order || 0)
+    )
+    .map((player) => ({
+      ...player,
+      registrationPosition: positionMap.get(player.id)?.position || null,
+      registrationOrder: positionMap.get(player.id)?.order || 1,
+    }))
 }
 
 /**
  * Adds players to a registration via the junction table
+ * Supports optional position and order fields for team events
  */
 export const addPlayersToRegistration = async (
   registrationId: string,
-  playerIds: string[]
+  playerIds: string[],
+  playersWithPositions?: PlayerWithPosition[]
 ) => {
-  const values = playerIds.map((playerId, index) => ({
-    registrationId,
-    playerId,
-    position: index + 1,
-  }))
-
-  await db.insert(schema.registrationPlayers).values(values)
+  // If playersWithPositions is provided, use it; otherwise create from playerIds
+  if (playersWithPositions && playersWithPositions.length > 0) {
+    const values = playersWithPositions.map((p, index) => ({
+      registrationId,
+      playerId: p.playerId,
+      position: p.position ?? null,
+      order: p.order ?? index + 1,
+    }))
+    await db.insert(schema.registrationPlayers).values(values)
+  } else {
+    const values = playerIds.map((playerId, index) => ({
+      registrationId,
+      playerId,
+      position: null,
+      order: index + 1,
+    }))
+    await db.insert(schema.registrationPlayers).values(values)
+  }
 }
 
 /**
@@ -91,14 +118,55 @@ export const checkPlayersAlreadyRegistered = async (
 
 /**
  * Enriches a registration with player data from the junction table
+ * Also calculates total score for test events
  */
 export const enrichRegistrationWithPlayers = async (
   registration: typeof schema.registrations.$inferSelect
 ) => {
   const players = await getPlayersForRegistration(registration.id)
+  const totalScore = calculateRegistrationTotalScore(registration)
 
   return {
     ...registration,
     players,
+    totalScore,
   }
+}
+
+/**
+ * Updates scores on a registration for test events
+ */
+export const updateRegistrationScores = async (
+  registrationId: string,
+  scores: {
+    leftHandScore?: number
+    rightHandScore?: number
+    forehandScore?: number
+    backhandScore?: number
+  }
+) => {
+  const updateData: Record<string, number | Date> = {
+    updatedAt: new Date(),
+  }
+
+  if (scores.leftHandScore !== undefined) {
+    updateData.leftHandScore = scores.leftHandScore
+  }
+  if (scores.rightHandScore !== undefined) {
+    updateData.rightHandScore = scores.rightHandScore
+  }
+  if (scores.forehandScore !== undefined) {
+    updateData.forehandScore = scores.forehandScore
+  }
+  if (scores.backhandScore !== undefined) {
+    updateData.backhandScore = scores.backhandScore
+  }
+
+  const result = await db
+    .update(schema.registrations)
+    .set(updateData)
+    .where(eq(schema.registrations.id, registrationId))
+    .returning()
+
+  return result[0]
 }

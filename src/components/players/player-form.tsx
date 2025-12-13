@@ -67,7 +67,7 @@ const playerSchema = z.object({
   teamLevel: z.enum(TEAM_LEVELS, {
     message: 'Team level is required',
   }),
-  organizationId: z.string().uuid().nullable().optional(),
+  organizationId: z.uuid().nullable().optional(),
 })
 
 type PlayerFormData = z.infer<typeof playerSchema>
