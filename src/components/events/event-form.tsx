@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   Select,
@@ -41,6 +42,7 @@ import {
   EVENT_TYPE_LABELS,
   isTestEventType,
   isSoloTestEventType,
+  isSoloEventType,
 } from '@/types/event-types'
 import { EVENT_FORMATS, EVENT_FORMAT_LABELS } from '@/types/event-format'
 
@@ -103,6 +105,8 @@ const eventSchema = z
       ),
     pointsPerWin: z.number().int().min(0).optional(),
     pointsPerLoss: z.number().int().min(0).optional(),
+    // For single-elimination: whether to include a third place match
+    hasThirdPlaceMatch: z.boolean().optional(),
     // For double-elimination: how many rounds before finals the losers bracket starts
     losersStartRoundsBeforeFinal: z
       .number()
@@ -231,6 +235,10 @@ const EventForm = ({
         event?.format === 'groups' || event?.format === 'groups-knockout'
           ? event?.pointsPerLoss ?? 0
           : undefined,
+      hasThirdPlaceMatch:
+        event?.format === 'single-elimination'
+          ? event?.hasThirdPlaceMatch ?? false
+          : false,
       losersStartRoundsBeforeFinal:
         event?.format === 'double-elimination'
           ? event?.losersStartRoundsBeforeFinal ?? null
@@ -273,6 +281,7 @@ const EventForm = ({
   const selectedFormat = form.watch('format')
   const selectedEventType = form.watch('eventType')
   const isTestEvent = isTestEventType(selectedEventType)
+  const isSoloEvent = isSoloEventType(selectedEventType)
 
   // Handle event type changes - auto-set format and player counts for test events
   useEffect(() => {
@@ -291,7 +300,7 @@ const EventForm = ({
     }
   }, [selectedEventType, form, isTestEvent])
 
-  // Handle format changes - clear or set default points values
+  // Handle format changes - clear or set default values
   useEffect(() => {
     if (selectedFormat === 'single-elimination') {
       // Clear points fields for single-elimination
@@ -301,9 +310,10 @@ const EventForm = ({
         shouldValidate: false,
       })
     } else if (selectedFormat === 'double-elimination') {
-      // Clear points fields for double-elimination
+      // Clear points fields and hasThirdPlaceMatch for double-elimination
       form.setValue('pointsPerWin', undefined, { shouldValidate: false })
       form.setValue('pointsPerLoss', undefined, { shouldValidate: false })
+      form.setValue('hasThirdPlaceMatch', false, { shouldValidate: false })
     } else if (selectedFormat === 'tests') {
       // Clear all competition-related fields for test events
       form.setValue('pointsPerWin', undefined, { shouldValidate: false })
@@ -311,6 +321,7 @@ const EventForm = ({
       form.setValue('losersStartRoundsBeforeFinal', null, {
         shouldValidate: false,
       })
+      form.setValue('hasThirdPlaceMatch', false, { shouldValidate: false })
     } else if (
       (selectedFormat === 'groups' || selectedFormat === 'groups-knockout') &&
       !form.getValues('pointsPerWin')
@@ -321,6 +332,7 @@ const EventForm = ({
       form.setValue('losersStartRoundsBeforeFinal', null, {
         shouldValidate: false,
       })
+      form.setValue('hasThirdPlaceMatch', false, { shouldValidate: false })
     }
   }, [selectedFormat, form])
 
@@ -329,6 +341,7 @@ const EventForm = ({
     try {
       const isGroupsFormat =
         data.format === 'groups' || data.format === 'groups-knockout'
+      const isSingleElimination = data.format === 'single-elimination'
       const isDoubleElimination = data.format === 'double-elimination'
       const isTestFormat = data.format === 'tests'
 
@@ -340,6 +353,10 @@ const EventForm = ({
         // For single-elimination and test events, set to 0 since they're not used
         pointsPerWin: isGroupsFormat ? data.pointsPerWin ?? 3 : 0,
         pointsPerLoss: isGroupsFormat ? data.pointsPerLoss ?? 0 : 0,
+        // hasThirdPlaceMatch is only for single-elimination
+        hasThirdPlaceMatch: isSingleElimination
+          ? data.hasThirdPlaceMatch ?? false
+          : false,
         // losersStartRoundsBeforeFinal is only for double-elimination
         losersStartRoundsBeforeFinal: isDoubleElimination
           ? data.losersStartRoundsBeforeFinal ?? null
@@ -607,6 +624,32 @@ const EventForm = ({
                   )}
                 />
               )}
+
+              {selectedFormat === 'single-elimination' && (
+                <FormField
+                  control={form.control}
+                  name='hasThirdPlaceMatch'
+                  render={({ field }) => (
+                    <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isEditing && hasRegistrations}
+                        />
+                      </FormControl>
+                      <div className='space-y-1 leading-none'>
+                        <FormLabel>Third Place Match</FormLabel>
+                        <p className='text-xs text-muted-foreground'>
+                          Include a match for 3rd/4th place between semi-final
+                          losers
+                        </p>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
           )}
 
@@ -733,8 +776,8 @@ const EventForm = ({
             />
           </div>
 
-          {/* Match configuration fields - Hidden for test events */}
-          {!isTestEvent && (
+          {/* Match configuration fields - Hidden for test events and solo events */}
+          {!isTestEvent && !isSoloEvent && (
             <div
               className={`grid gap-4 ${
                 selectedFormat === 'groups' ||

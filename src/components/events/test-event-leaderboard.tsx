@@ -3,8 +3,30 @@
 import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Trophy, Medal } from 'lucide-react'
-import type { Registration, Group } from '@/types'
+import type {
+  Registration,
+  Group,
+  PlayerWithRegistrationPosition,
+} from '@/types'
 import { calculateRegistrationTotalScore } from '@/lib/utils/test-event-utils'
+
+// Format player name with position
+const formatPlayerWithPosition = (
+  player: PlayerWithRegistrationPosition
+): string => {
+  if (player.registrationPosition) {
+    return `${player.name} (${player.registrationPosition})`
+  }
+  return player.name
+}
+
+// Format all players in a registration
+const formatPlayersWithPositions = (
+  players: PlayerWithRegistrationPosition[] | undefined
+): string => {
+  if (!players || players.length === 0) return 'Unknown'
+  return players.map(formatPlayerWithPosition).join(' & ')
+}
 
 interface TestEventLeaderboardProps {
   registrations: Registration[]
@@ -70,8 +92,7 @@ const TestEventLeaderboard = ({
         <div className='space-y-2'>
           {rankedRegistrations.map((reg, index) => {
             const rank = index + 1
-            const playerName =
-              reg.players?.map((p) => p.name).join(' & ') || 'Unknown'
+            const playerName = formatPlayersWithPositions(reg.players)
             const heatName = getGroupName(reg.groupId ?? null)
 
             return (

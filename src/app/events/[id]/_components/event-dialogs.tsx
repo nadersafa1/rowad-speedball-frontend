@@ -74,6 +74,7 @@ const EventDialogs = ({
         {registrationFormOpen && (
           <RegistrationForm
             eventId={event.id}
+            eventType={event.eventType}
             eventGender={event.gender}
             minPlayers={event.minPlayers}
             maxPlayers={event.maxPlayers}

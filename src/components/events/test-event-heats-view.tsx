@@ -6,8 +6,24 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Pencil, Users, Shuffle, RefreshCw } from 'lucide-react'
 import EmptyState from '@/components/shared/empty-state'
-import type { Event, Registration, Group } from '@/types'
+import type { Event, Registration, Group, PlayerWithRegistrationPosition } from '@/types'
 import { calculateRegistrationTotalScore } from '@/lib/utils/test-event-utils'
+
+// Format player name with position
+const formatPlayerWithPosition = (player: PlayerWithRegistrationPosition): string => {
+  if (player.registrationPosition) {
+    return `${player.name} (${player.registrationPosition})`
+  }
+  return player.name
+}
+
+// Format all players in a registration
+const formatPlayersWithPositions = (
+  players: PlayerWithRegistrationPosition[] | undefined
+): string => {
+  if (!players || players.length === 0) return 'Unknown'
+  return players.map(formatPlayerWithPosition).join(' & ')
+}
 
 interface TestEventHeatsViewProps {
   event: Event
@@ -123,8 +139,7 @@ const TestEventHeatsView = ({
               ) : (
                 <div className='space-y-2'>
                   {sortedRegs.map((reg, index) => {
-                    const playerName =
-                      reg.players?.map((p) => p.name).join(' & ') || 'Unknown'
+                    const playerName = formatPlayersWithPositions(reg.players)
                     return (
                       <div
                         key={reg.id}
@@ -186,8 +201,7 @@ const TestEventHeatsView = ({
           <CardContent>
             <div className='space-y-2'>
               {unassignedRegistrations.map((reg) => {
-                const playerName =
-                  reg.players?.map((p) => p.name).join(' & ') || 'Unknown'
+                const playerName = formatPlayersWithPositions(reg.players)
                 const totalScore = calculateRegistrationTotalScore(reg)
                 return (
                   <div

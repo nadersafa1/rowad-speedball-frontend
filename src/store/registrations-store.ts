@@ -13,6 +13,7 @@ interface RegistrationsState {
   createRegistration: (data: {
     eventId: string
     playerIds: string[]
+    players?: { playerId: string; position?: string | null; order?: number }[]
   }) => Promise<void>
   updateRegistration: (id: string, data: any) => Promise<void>
   deleteRegistration: (id: string) => Promise<void>

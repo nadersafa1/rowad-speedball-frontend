@@ -76,6 +76,9 @@ export const UI_EVENT_TYPES = [
   EventType.Singles,
   EventType.Doubles,
   EventType.SinglesTeams,
+  EventType.SoloTeams,
+  EventType.SpeedSoloTeams,
+  EventType.Relay,
 ] as const
 
 export type UIEventType = (typeof UI_EVENT_TYPES)[number]
@@ -164,7 +167,7 @@ export const EVENT_TYPE_METADATA: Record<EventType, EventTypeMetadata> = {
     isSolo: false,
     isTeam: true,
     isCompetition: false,
-    isUI: false,
+    isUI: true,
   },
   [EventType.SpeedSoloTeams]: {
     label: 'Speed Solo Teams',
@@ -173,7 +176,7 @@ export const EVENT_TYPE_METADATA: Record<EventType, EventTypeMetadata> = {
     isSolo: false,
     isTeam: true,
     isCompetition: false,
-    isUI: false,
+    isUI: true,
   },
   [EventType.Relay]: {
     label: 'Relay',
@@ -182,7 +185,7 @@ export const EVENT_TYPE_METADATA: Record<EventType, EventTypeMetadata> = {
     isSolo: false,
     isTeam: true,
     isCompetition: false,
-    isUI: false,
+    isUI: true,
   },
 }
 
@@ -209,6 +212,12 @@ export const isSinglePlayerEventType = (
 export const isTestEventType = (eventType: string): boolean => {
   const metadata = getEventTypeMetadata(eventType)
   return metadata?.isTest ?? false
+}
+
+// Check if event type is a solo event (SuperSolo, SpeedSolo, JuniorsSolo, Singles)
+export const isSoloEventType = (eventType: string): boolean => {
+  const metadata = getEventTypeMetadata(eventType)
+  return metadata?.isSolo ?? false
 }
 
 // Check if event type is a solo test event

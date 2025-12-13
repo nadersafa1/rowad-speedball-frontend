@@ -500,7 +500,11 @@ export class ApiClient {
     return this.request(`/registrations${query ? `?${query}` : ''}`)
   }
 
-  async createRegistration(data: { eventId: string; playerIds: string[] }) {
+  async createRegistration(data: {
+    eventId: string
+    playerIds: string[]
+    players?: { playerId: string; position?: string | null; order?: number }[]
+  }) {
     return this.request('/registrations', {
       method: 'POST',
       body: JSON.stringify(data),
