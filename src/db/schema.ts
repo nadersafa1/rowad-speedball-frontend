@@ -225,11 +225,14 @@ export const events = pgTable('events', {
   name: varchar('name', { length: 255 }).notNull(),
   eventType: text('event_type', {
     enum: [
-      'solo',
+      'super-solo',
+      'speed-solo',
+      'juniors-solo',
       'singles',
-      'doubles',
-      'singles-teams',
       'solo-teams',
+      'speed-solo-teams',
+      'singles-teams',
+      'doubles',
       'relay',
     ],
   }).notNull(),
@@ -240,6 +243,7 @@ export const events = pgTable('events', {
       'single-elimination',
       'groups-knockout',
       'double-elimination',
+      'tests',
     ],
   })
     .notNull()
@@ -260,15 +264,20 @@ export const events = pgTable('events', {
   // For double-elimination: how many rounds before finals the losers bracket starts
   // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
   losersStartRoundsBeforeFinal: integer('losers_start_rounds_before_final'),
+  // For test events: number of players per heat (default 8)
+  playersPerHeat: integer('players_per_heat'),
   championshipId: uuid('championship_id').references(() => championships.id, {
     onDelete: 'cascade',
   }),
   organizationId: uuid('organization_id').references(() => organization.id, {
     onDelete: 'cascade',
   }),
-  trainingSessionId: uuid('training_session_id').references(() => trainingSessions.id, {
-    onDelete: 'cascade',
-  }),
+  trainingSessionId: uuid('training_session_id').references(
+    () => trainingSessions.id,
+    {
+      onDelete: 'cascade',
+    }
+  ),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -301,6 +310,11 @@ export const registrations = pgTable('registrations', {
   setsLost: integer('sets_lost').notNull().default(0),
   points: integer('points').notNull().default(0),
   qualified: boolean('qualified').notNull().default(false),
+  teamName: varchar('team_name', { length: 255 }),
+  leftHandScore: integer('left_hand_score').notNull().default(0),
+  rightHandScore: integer('right_hand_score').notNull().default(0),
+  forehandScore: integer('forehand_score').notNull().default(0),
+  backhandScore: integer('backhand_score').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -316,7 +330,13 @@ export const registrationPlayers = pgTable(
     playerId: uuid('player_id')
       .notNull()
       .references(() => players.id, { onDelete: 'cascade' }),
-    position: integer('position').notNull(), // 1, 2, 3, 4... for play order
+    // Position in team: R=Right, L=Left, F=Forehand, B=Backhand, S1/S2=Substitutes
+    // Nullable for solo events
+    position: text('position', {
+      enum: ['R', 'L', 'F', 'B', 'S1', 'S2'],
+    }),
+    // Order for play sequence and display (1, 2, 3...)
+    order: integer('order').notNull().default(1),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
