@@ -367,12 +367,81 @@ const EventForm = ({
         bestOf: isTestFormat ? 1 : data.bestOf,
         // Training session events are always private
         visibility: trainingSessionId ? 'private' : data.visibility,
-        // Include trainingSessionId if provided
-        ...(trainingSessionId && { trainingSessionId }),
+        // Include trainingSessionId if provided (only for creation)
+        ...(trainingSessionId && !isEditing && { trainingSessionId }),
       }
 
       if (isEditing) {
-        await updateEvent(event.id, formattedData)
+        // Filter out fields that cannot be changed when editing
+        const updateData: any = {}
+
+        // Fields that can always be changed
+        if (formattedData.name !== undefined) {
+          updateData.name = formattedData.name
+        }
+        if (formattedData.visibility !== undefined) {
+          updateData.visibility = formattedData.visibility
+        }
+
+        // Fields that cannot be changed if registrations exist
+        if (!hasRegistrations) {
+          if (formattedData.eventType !== undefined) {
+            updateData.eventType = formattedData.eventType
+          }
+          if (formattedData.gender !== undefined) {
+            updateData.gender = formattedData.gender
+          }
+          if (formattedData.minPlayers !== undefined) {
+            updateData.minPlayers = formattedData.minPlayers
+          }
+          if (formattedData.maxPlayers !== undefined) {
+            updateData.maxPlayers = formattedData.maxPlayers
+          }
+          if (formattedData.format !== undefined) {
+            updateData.format = formattedData.format
+          }
+          if (formattedData.losersStartRoundsBeforeFinal !== undefined) {
+            updateData.losersStartRoundsBeforeFinal =
+              formattedData.losersStartRoundsBeforeFinal
+          }
+          if (formattedData.hasThirdPlaceMatch !== undefined) {
+            updateData.hasThirdPlaceMatch = formattedData.hasThirdPlaceMatch
+          }
+          if (formattedData.playersPerHeat !== undefined) {
+            updateData.playersPerHeat = formattedData.playersPerHeat
+          }
+        }
+
+        // Fields that cannot be changed if sets are played
+        if (!hasPlayedSets) {
+          if (formattedData.bestOf !== undefined) {
+            updateData.bestOf = formattedData.bestOf
+          }
+          if (formattedData.pointsPerWin !== undefined) {
+            updateData.pointsPerWin = formattedData.pointsPerWin
+          }
+          if (formattedData.pointsPerLoss !== undefined) {
+            updateData.pointsPerLoss = formattedData.pointsPerLoss
+          }
+          if (formattedData.registrationStartDate !== undefined) {
+            updateData.registrationStartDate = formattedData.registrationStartDate
+          }
+          if (formattedData.registrationEndDate !== undefined) {
+            updateData.registrationEndDate = formattedData.registrationEndDate
+          }
+        }
+
+        // organizationId is handled by backend based on user permissions
+        // Only include if it's different and user is system admin
+        if (
+          isSystemAdmin &&
+          formattedData.organizationId !== undefined &&
+          formattedData.organizationId !== event?.organizationId
+        ) {
+          updateData.organizationId = formattedData.organizationId
+        }
+
+        await updateEvent(event.id, updateData)
       } else {
         await createEvent(formattedData)
       }

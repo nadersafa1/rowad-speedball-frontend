@@ -18,10 +18,8 @@ interface TestEventRegistrationsViewProps {
   event: Event
   registrations: Registration[]
   groups: Group[]
-  canCreate: boolean
   canUpdate: boolean
   canDelete?: boolean
-  onAddRegistration: () => void
   onUpdateScores: (
     registrationId: string,
     payload: ScoreUpdatePayload | ScoreUpdatePayload[]
@@ -36,10 +34,8 @@ const TestEventRegistrationsView = ({
   event,
   registrations,
   groups,
-  canCreate,
   canUpdate,
   canDelete = false,
-  onAddRegistration,
   onUpdateScores,
   onDeleteRegistration,
   onGenerateHeats,
@@ -67,11 +63,6 @@ const TestEventRegistrationsView = ({
     await onUpdateScores(registrationId, payload)
   }
 
-  const canAddRegistration =
-    canCreate &&
-    (!event.registrationEndDate ||
-      new Date(event.registrationEndDate) >= new Date())
-
   return (
     <div className='space-y-4'>
       {/* Header with Add button */}
@@ -79,46 +70,19 @@ const TestEventRegistrationsView = ({
         <h2 className='text-lg font-semibold'>
           Test Event ({registrations.length} registrations)
         </h2>
-        {canAddRegistration && (
-          <Button onClick={onAddRegistration}>
-            <Plus className='mr-2 h-4 w-4' />
-            Add Registration
-          </Button>
-        )}
       </div>
 
-      {/* Tabs for Heats and Leaderboard */}
-      <Tabs defaultValue='leaderboard'>
-        <TabsList>
-          <TabsTrigger value='leaderboard' className='flex items-center gap-2'>
-            <Trophy className='h-4 w-4' />
-            Leaderboard
-          </TabsTrigger>
-          <TabsTrigger value='heats' className='flex items-center gap-2'>
-            <Users className='h-4 w-4' />
-            Heats
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value='leaderboard'>
-          <TestEventLeaderboard
-            registrations={registrations}
-            groups={groups}
-          />
-        </TabsContent>
-        <TabsContent value='heats'>
-          <TestEventHeatsView
-            event={event}
-            registrations={registrations}
-            groups={groups}
-            canUpdate={canUpdate}
-            onEditScores={handleEditScores}
-            onGenerateHeats={onGenerateHeats}
-            isGenerating={isGeneratingHeats}
-            canDelete={canDelete}
-            onDeleteRegistration={onDeleteRegistration}
-          />
-        </TabsContent>
-      </Tabs>
+      <TestEventHeatsView
+        event={event}
+        registrations={registrations}
+        groups={groups}
+        canUpdate={canUpdate}
+        onEditScores={handleEditScores}
+        onGenerateHeats={onGenerateHeats}
+        isGenerating={isGeneratingHeats}
+        canDelete={canDelete}
+        onDeleteRegistration={onDeleteRegistration}
+      />
 
       {/* Score Form Dialog */}
       {selectedRegistration && (

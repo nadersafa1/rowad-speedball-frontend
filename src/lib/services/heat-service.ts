@@ -8,11 +8,13 @@ import * as schema from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { isTestEventType } from '@/lib/utils/test-event-utils'
 import { DEFAULT_PLAYERS_PER_HEAT } from '@/types/event-types'
+import { SeedMapping } from '@/lib/utils/single-elimination-types'
 
 export interface GenerateHeatsParams {
   eventId: string
   playersPerHeat?: number
   shuffleRegistrations?: boolean
+  seeds?: SeedMapping[]
 }
 
 export interface GenerateHeatsResult {
@@ -97,6 +99,7 @@ export const generateHeats = async (
     eventId,
     playersPerHeat = DEFAULT_PLAYERS_PER_HEAT,
     shuffleRegistrations = true,
+    seeds,
   } = params
 
   // Get all registrations for the event
@@ -113,10 +116,22 @@ export const generateHeats = async (
     }
   }
 
-  // Optionally shuffle registrations for random heat assignment
-  const orderedRegistrations = shuffleRegistrations
-    ? shuffleArray(registrations)
-    : registrations
+  // Determine registration order based on seeds or shuffle
+  let orderedRegistrations
+  if (seeds && seeds.length > 0) {
+    // Sort registrations by seed order (lower seed = higher priority)
+    const seedMap = new Map(seeds.map((s) => [s.registrationId, s.seed]))
+    orderedRegistrations = [...registrations].sort((a, b) => {
+      const seedA = seedMap.get(a.id) ?? Infinity
+      const seedB = seedMap.get(b.id) ?? Infinity
+      return seedA - seedB
+    })
+  } else {
+    // Optionally shuffle registrations for random heat assignment
+    orderedRegistrations = shuffleRegistrations
+      ? shuffleArray(registrations)
+      : registrations
+  }
 
   // Calculate number of heats needed
   const totalHeats = Math.ceil(orderedRegistrations.length / playersPerHeat)
@@ -127,7 +142,7 @@ export const generateHeats = async (
   for (let heatIndex = 0; heatIndex < totalHeats; heatIndex++) {
     const heatName = getHeatName(heatIndex)
     const startIndex = heatIndex * playersPerHeat
-    const endIndex = Math.min(startIndex + playersPerHeat, registrations.length)
+    const endIndex = Math.min(startIndex + playersPerHeat, orderedRegistrations.length)
     const heatRegistrations = orderedRegistrations.slice(startIndex, endIndex)
 
     // Create the heat (group)

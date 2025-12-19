@@ -455,7 +455,7 @@ export class ApiClient {
     options?: {
       playersPerHeat?: number
       shuffleRegistrations?: boolean
-      regenerate?: boolean
+      seeds?: Array<{ registrationId: string; seed: number }>
     }
   ) {
     return this.request(`/events/${eventId}/generate-heats`, {
@@ -465,9 +465,8 @@ export class ApiClient {
   }
 
   async resetHeats(eventId: string) {
-    return this.request(`/events/${eventId}/generate-heats`, {
+    return this.request(`/events/${eventId}/reset-heats`, {
       method: 'POST',
-      body: JSON.stringify({ regenerate: true }),
     })
   }
 

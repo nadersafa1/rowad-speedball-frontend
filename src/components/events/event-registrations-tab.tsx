@@ -2,14 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import EmptyState from '@/components/shared/empty-state'
-import type { Event, Registration, Group } from '@/types'
+import type { Event, Registration } from '@/types'
+import RegistrationItem from '@/app/events/[id]/_components/registration-item'
 
 interface EventRegistrationsTabProps {
   event: Event
   registrations: Registration[]
-  groups: Group[]
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
@@ -21,7 +21,6 @@ interface EventRegistrationsTabProps {
 const EventRegistrationsTab = ({
   event,
   registrations,
-  groups,
   canCreate,
   canUpdate,
   canDelete,
@@ -56,55 +55,15 @@ const EventRegistrationsTab = ({
         ) : (
           <div className='space-y-2'>
             {registrations.map((reg) => (
-              <div
+              <RegistrationItem
                 key={reg.id}
-                className='p-3 border rounded-lg flex items-center justify-between'
-              >
-                <div>
-                  <p className='font-medium'>
-                    {reg.players?.map((p) => p.name).join(' & ') || 'Unknown'}
-                  </p>
-                  {reg.groupId && (
-                    <p className='text-sm text-muted-foreground'>
-                      Group: {groups.find((g) => g.id === reg.groupId)?.name}
-                    </p>
-                  )}
-                </div>
-                <div className='flex items-center gap-2'>
-                  {event.format !== 'groups' ? (
-                    <div className='text-right'>
-                      {reg.seed && (
-                        <p className='text-sm font-medium'>Seed #{reg.seed}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className='text-right'>
-                      <p className='text-sm'>
-                        {reg.matchesWon}W - {reg.matchesLost}L
-                      </p>
-                      <p className='text-sm font-bold'>{reg.points} pts</p>
-                    </div>
-                  )}
-                  {canUpdate && (
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => onEditRegistration(reg.id)}
-                    >
-                      <Pencil className='h-4 w-4' />
-                    </Button>
-                  )}
-                  {canDelete && !reg.groupId && (
-                    <Button
-                      variant='destructive'
-                      size='sm'
-                      onClick={() => onDeleteRegistration(reg.id)}
-                    >
-                      <Trash2 className='h-4 w-4' />
-                    </Button>
-                  )}
-                </div>
-              </div>
+                registration={reg}
+                event={event}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+                onEditRegistration={onEditRegistration}
+                onDeleteRegistration={onDeleteRegistration}
+              />
             ))}
           </div>
         )}

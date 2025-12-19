@@ -23,7 +23,7 @@ import { isSoloTestEventType } from '@/types/event-types'
 
 // Schema for a single player's position scores update
 const singlePlayerScoreSchema = z.object({
-  playerId: z.string().uuid('Invalid player ID format'),
+  playerId: z.uuid('Invalid player ID format'),
   positionScores: z.object({
     R: z.number().int().min(0).nullable().optional(),
     L: z.number().int().min(0).nullable().optional(),
@@ -63,17 +63,21 @@ export async function PATCH(
     }
 
     const { id } = parseParams.data
-    
+
     // Normalize to array of updates
-    const updates = 'updates' in parseResult.data
-      ? parseResult.data.updates
-      : [parseResult.data]
+    const updates =
+      'updates' in parseResult.data
+        ? parseResult.data.updates
+        : [parseResult.data]
 
     // Validate all position scores
     for (const update of updates) {
       const scoresValidation = validatePositionScores(update.positionScores)
       if (!scoresValidation.valid) {
-        return Response.json({ message: scoresValidation.error }, { status: 400 })
+        return Response.json(
+          { message: scoresValidation.error },
+          { status: 400 }
+        )
       }
     }
 

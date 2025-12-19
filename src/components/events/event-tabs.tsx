@@ -5,17 +5,11 @@ import type { EventFormat } from '@/types'
 
 interface EventTabsProps {
   eventFormat: EventFormat
-  hasMatches: boolean
 }
 
-const EventTabs = ({ eventFormat, hasMatches }: EventTabsProps) => {
+const EventTabs = ({ eventFormat }: EventTabsProps) => {
   const isTestEvent = eventFormat === 'tests'
-
-  const getGroupsTabLabel = () => {
-    if (isTestEvent) return 'Heats'
-    if (eventFormat === 'groups') return 'Groups'
-    return 'Seeds'
-  }
+  const isGroupsFormat = eventFormat === 'groups'
 
   return (
     <TabsList className='w-full overflow-x-auto flex-nowrap sm:flex-wrap'>
@@ -23,17 +17,28 @@ const EventTabs = ({ eventFormat, hasMatches }: EventTabsProps) => {
         Overview
       </TabsTrigger>
       <TabsTrigger value='registrations' className='whitespace-nowrap'>
-        {isTestEvent ? 'Results' : 'Registrations'}
+        Registrations
       </TabsTrigger>
-      <TabsTrigger value='groups' className='whitespace-nowrap'>
-        {getGroupsTabLabel()}
-      </TabsTrigger>
-      {hasMatches && !isTestEvent && (
+      {isGroupsFormat ? (
+        <TabsTrigger value='groups' className='whitespace-nowrap'>
+          Groups
+        </TabsTrigger>
+      ) : (
+        <TabsTrigger value='seeds' className='whitespace-nowrap'>
+          Seeds
+        </TabsTrigger>
+      )}
+
+      {isTestEvent ? (
+        <TabsTrigger value='heats' className='whitespace-nowrap'>
+          Heats
+        </TabsTrigger>
+      ) : (
         <TabsTrigger value='matches' className='whitespace-nowrap'>
           Matches
         </TabsTrigger>
       )}
-      {eventFormat === 'groups' && (
+      {(isGroupsFormat || isTestEvent) && (
         <TabsTrigger value='standings' className='whitespace-nowrap'>
           Standings
         </TabsTrigger>

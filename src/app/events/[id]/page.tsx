@@ -24,6 +24,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import LoadingState from '@/components/shared/loading-state'
 import { useEventDialogs } from './_hooks/use-event-dialogs'
 import EventDialogs from './_components/event-dialogs'
+import TestEventLeaderboard from '@/components/events/test-event-leaderboard'
 
 const EventDetailPage = () => {
   const params = useParams()
@@ -31,7 +32,7 @@ const EventDetailPage = () => {
   const searchParams = useSearchParams()
   const eventId = params.id as string
 
-  const tabFromUrl = searchParams.get('tab') || 'overview'
+  const tabFromUrl = searchParams.get('activeTab') || 'overview'
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl)
   const [isGeneratingHeats, setIsGeneratingHeats] = useState(false)
 
@@ -50,53 +51,43 @@ const EventDetailPage = () => {
   const { matches, fetchMatches } = useMatchesStore()
   const { canUpdate, canDelete, canCreate } = useEventPermissions(selectedEvent)
 
-  // Update active tab when URL changes
+  // Update activeTab when URL changes
   useEffect(() => {
-    const tab = searchParams.get('tab') || 'overview'
-    setActiveTab(tab)
+    const activeTab = searchParams.get('activeTab') || 'overview'
+    setActiveTab(activeTab)
   }, [searchParams])
 
-  // Redirect away from standings tab if event is not groups
-  // or from matches tab if no matches exist
-  useEffect(() => {
-    if (
-      selectedEvent &&
-      selectedEvent.format !== 'groups' &&
-      activeTab === 'standings'
-    ) {
-      router.push(`/events/${eventId}?tab=overview`, { scroll: false })
-      setActiveTab('overview')
-    }
-    // Redirect away from matches tab if no matches exist
-    if (activeTab === 'matches' && matches.length === 0) {
-      router.push(`/events/${eventId}?tab=overview`, { scroll: false })
-      setActiveTab('overview')
-    }
-  }, [selectedEvent, activeTab, eventId, router, matches.length])
-
-  // Handle tab change - update URL
+  // Handle activeTab change - update URL
   const handleTabChange = (value: string) => {
     setActiveTab(value)
-    router.push(`/events/${eventId}?tab=${value}`, { scroll: false })
+
+    router.push(`/events/${eventId}?activeTab=${value}`, { scroll: false })
   }
 
   useEffect(() => {
     if (eventId) {
       fetchEvent(eventId)
-      fetchGroups(eventId)
       fetchRegistrations(eventId)
-      fetchMatches(eventId)
     }
-  }, [eventId, fetchEvent, fetchGroups, fetchRegistrations, fetchMatches])
+  }, [eventId, fetchEvent, fetchRegistrations])
 
-  const handleRefresh = async () => {
-    await Promise.all([
-      fetchEvent(eventId),
-      fetchGroups(eventId),
-      fetchRegistrations(eventId),
-      fetchMatches(eventId),
-    ])
-  }
+  useEffect(() => {
+    if (!selectedEvent) return
+    if (['groups', 'tests'].includes(selectedEvent.format)) {
+      fetchGroups(selectedEvent.id)
+    }
+    if (
+      ['single-elimination', 'double-elimination', 'groups'].includes(
+        selectedEvent.format
+      )
+    ) {
+      fetchMatches(selectedEvent.id)
+    }
+  }, [selectedEvent, fetchGroups, fetchMatches])
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([fetchEvent(eventId), fetchRegistrations(eventId)])
+  }, [eventId, fetchEvent, fetchRegistrations])
 
   const handleDeleteRegistration = async () => {
     if (!dialogs.deleteRegistrationId) return
@@ -143,22 +134,15 @@ const EventDetailPage = () => {
     if (!selectedEvent) return
     setIsGeneratingHeats(true)
     try {
-      const hasExistingHeats = groups.length > 0
-      await apiClient.generateHeats(eventId, {
-        regenerate: hasExistingHeats,
-      })
-      toast.success(
-        hasExistingHeats
-          ? 'Heats regenerated successfully'
-          : 'Heats generated successfully'
-      )
+      await apiClient.generateHeats(eventId, {})
+      toast.success('Heats generated successfully')
       handleRefresh()
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate heats')
     } finally {
       setIsGeneratingHeats(false)
     }
-  }, [selectedEvent, groups.length, eventId])
+  }, [selectedEvent, eventId, handleRefresh])
 
   const isTestEvent = isTestEventType(selectedEvent?.eventType || '')
 
@@ -185,46 +169,36 @@ const EventDetailPage = () => {
         onValueChange={handleTabChange}
         className='space-y-4'
       >
-        <EventTabs
-          eventFormat={selectedEvent.format}
-          hasMatches={matches.length > 0}
-        />
+        <EventTabs eventFormat={selectedEvent.format} />
 
         <TabsContent value='overview' className='space-y-4'>
           <EventOverviewTab event={selectedEvent} />
         </TabsContent>
 
         <TabsContent value='registrations' className='space-y-4'>
-          {isTestEvent ? (
-            <TestEventRegistrationsView
-              event={selectedEvent}
-              registrations={registrations}
-              groups={groups}
-              canCreate={canCreate}
-              canUpdate={canUpdate}
-              canDelete={canDelete}
-              onAddRegistration={() => dialogs.openRegistrationForm()}
-              onUpdateScores={handleUpdateScores}
-              onDeleteRegistration={dialogs.openDeleteRegistration}
-              onGenerateHeats={handleGenerateHeats}
-              isGeneratingHeats={isGeneratingHeats}
-            />
-          ) : (
-            <EventRegistrationsTab
-              event={selectedEvent}
-              registrations={registrations}
-              groups={groups}
-              canCreate={canCreate}
-              canUpdate={canUpdate}
-              canDelete={canDelete}
-              onAddRegistration={() => dialogs.openRegistrationForm()}
-              onEditRegistration={(id) => dialogs.openRegistrationForm(id)}
-              onDeleteRegistration={dialogs.openDeleteRegistration}
-            />
-          )}
+          <EventRegistrationsTab
+            event={selectedEvent}
+            registrations={registrations}
+            canCreate={canCreate}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+            onAddRegistration={() => dialogs.openRegistrationForm()}
+            onEditRegistration={(id) => dialogs.openRegistrationForm(id)}
+            onDeleteRegistration={dialogs.openDeleteRegistration}
+          />
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
+          <GroupManagement
+            eventId={eventId}
+            groups={groups}
+            registrations={registrations}
+            onGroupCreated={handleRefresh}
+            canManage={canCreate}
+          />
+        </TabsContent>
+
+        <TabsContent value='seeds' className='space-y-4'>
           {isTestEvent ? (
             <HeatManagement
               eventId={eventId}
@@ -233,14 +207,6 @@ const EventDetailPage = () => {
               defaultPlayersPerHeat={selectedEvent.playersPerHeat}
               canManage={canUpdate}
               onHeatsGenerated={handleRefresh}
-            />
-          ) : selectedEvent.format === 'groups' ? (
-            <GroupManagement
-              eventId={eventId}
-              groups={groups}
-              registrations={registrations}
-              onGroupCreated={handleRefresh}
-              canManage={canCreate}
             />
           ) : (
             <BracketSeeding
@@ -253,21 +219,40 @@ const EventDetailPage = () => {
           )}
         </TabsContent>
 
-        {matches.length > 0 && (
-          <TabsContent value='matches' className='space-y-4'>
-            <MatchesView
-              matches={matches}
-              groups={groups}
-              canUpdate={canUpdate}
-              onMatchUpdate={handleRefresh}
-              eventFormat={selectedEvent.format}
-            />
-          </TabsContent>
-        )}
+        <TabsContent value='matches' className='space-y-4'>
+          <MatchesView
+            matches={matches}
+            groups={groups}
+            canUpdate={canUpdate}
+            onMatchUpdate={handleRefresh}
+            eventFormat={selectedEvent.format}
+          />
+        </TabsContent>
 
-        {selectedEvent.format === 'groups' && (
+        <TabsContent value='heats' className='space-y-4'>
+          <TestEventRegistrationsView
+            event={selectedEvent}
+            registrations={registrations}
+            groups={groups}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+            onUpdateScores={handleUpdateScores}
+            onDeleteRegistration={dialogs.openDeleteRegistration}
+            onGenerateHeats={handleGenerateHeats}
+            isGeneratingHeats={isGeneratingHeats}
+          />
+        </TabsContent>
+
+        {(selectedEvent.format === 'groups' || isTestEvent) && (
           <TabsContent value='standings' className='space-y-4'>
-            <StandingsTable registrations={registrations} groups={groups} />
+            {isTestEvent ? (
+              <TestEventLeaderboard
+                registrations={registrations}
+                groups={groups}
+              />
+            ) : (
+              <StandingsTable registrations={registrations} groups={groups} />
+            )}
           </TabsContent>
         )}
       </Tabs>

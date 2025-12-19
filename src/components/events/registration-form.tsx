@@ -23,7 +23,7 @@ import {
 import { useRegistrationsStore } from '@/store/registrations-store'
 import { useEffect, useMemo } from 'react'
 import PlayerCombobox from '@/components/players/player-combobox'
-import type { Registration } from '@/types'
+import type { Event, Registration } from '@/types'
 import {
   DialogContent,
   DialogDescription,
@@ -44,28 +44,35 @@ const ONE_HANDED_POSITIONS: PositionKey[] = ['R', 'L']
 const TWO_HANDED_POSITIONS: PositionKey[] = ['F', 'B']
 
 // Dynamic validation schema based on min/max players and event type
-const createRegistrationSchema = (
-  minPlayers: number,
-  maxPlayers: number,
-  isTeamTest: boolean,
-  eventType: string
-) => {
+const createRegistrationSchema = (event: Event) => {
+  const { minPlayers, maxPlayers, eventType } = event
+
+  const isTeamTest = isTeamTestEventType(eventType)
   // For speed-solo-teams: each player has two positions (one R/L, one F/B)
   const isSpeedSoloTeams = eventType === 'speed-solo-teams'
-  
+
   const playerSchema = isTeamTest
     ? isSpeedSoloTeams
       ? z.object({
-          playerId: z.string().uuid('Invalid player ID'),
-          oneHandedPosition: z.enum(['R', 'L'] as const).nullable().optional(),
-          twoHandedPosition: z.enum(['F', 'B'] as const).nullable().optional(),
+          playerId: z.uuid('Invalid player ID'),
+          oneHandedPosition: z
+            .enum(['R', 'L'] as const)
+            .nullable()
+            .optional(),
+          twoHandedPosition: z
+            .enum(['F', 'B'] as const)
+            .nullable()
+            .optional(),
         })
       : z.object({
-          playerId: z.string().uuid('Invalid player ID'),
-          position: z.enum(['R', 'L', 'F', 'B'] as const).nullable().optional(),
+          playerId: z.uuid('Invalid player ID'),
+          position: z
+            .enum(['R', 'L', 'F', 'B'] as const)
+            .nullable()
+            .optional(),
         })
     : z.object({
-        playerId: z.string().uuid('Invalid player ID'),
+        playerId: z.uuid('Invalid player ID'),
       })
 
   const baseSchema = z.object({
@@ -97,10 +104,16 @@ const createRegistrationSchema = (
     return baseSchema.refine(
       (data) => {
         const oneHandedPositions = data.players
-          .map((p) => (p as { oneHandedPosition?: string | null }).oneHandedPosition)
+          .map(
+            (p) =>
+              (p as { oneHandedPosition?: string | null }).oneHandedPosition
+          )
           .filter(Boolean)
         const twoHandedPositions = data.players
-          .map((p) => (p as { twoHandedPosition?: string | null }).twoHandedPosition)
+          .map(
+            (p) =>
+              (p as { twoHandedPosition?: string | null }).twoHandedPosition
+          )
           .filter(Boolean)
         const uniqueOneHanded = new Set(oneHandedPositions)
         const uniqueTwoHanded = new Set(twoHandedPositions)
@@ -110,7 +123,8 @@ const createRegistrationSchema = (
         )
       },
       {
-        message: 'Positions cannot be repeated within each category (R/L and F/B)',
+        message:
+          'Positions cannot be repeated within each category (R/L and F/B)',
         path: ['players'],
       }
     )
@@ -129,22 +143,14 @@ type RegistrationFormData = {
 }
 
 interface RegistrationFormProps {
-  eventId: string
-  eventType: string
-  eventGender: 'male' | 'female' | 'mixed'
-  minPlayers: number
-  maxPlayers: number
+  event: Event
   registration?: Registration | null
   onSuccess?: () => void
   onCancel?: () => void
 }
 
 const RegistrationForm = ({
-  eventId,
-  eventType,
-  eventGender,
-  minPlayers,
-  maxPlayers,
+  event,
   registration,
   onSuccess,
   onCancel,
@@ -160,20 +166,24 @@ const RegistrationForm = ({
   } = useRegistrationsStore()
 
   const isEditing = !!registration
-  const isTeamTest = isTeamTestEventType(eventType)
-  const isSpeedSoloTeams = eventType === 'speed-solo-teams'
+  const isTeamTest = isTeamTestEventType(event.eventType)
+  const isSpeedSoloTeams = event.eventType === 'speed-solo-teams'
 
-  const schema = useMemo(
-    () => createRegistrationSchema(minPlayers, maxPlayers, isTeamTest, eventType),
-    [minPlayers, maxPlayers, isTeamTest, eventType]
-  )
+  const schema = useMemo(() => createRegistrationSchema(event), [event])
 
   // Helper to extract positions from positionScores for editing
-  const getDefaultPlayerData = (player: { id: string; positionScores?: Record<string, number | null> | null }) => {
+  const getDefaultPlayerData = (player: {
+    id: string
+    positionScores?: Record<string, number | null> | null
+  }) => {
     const positions = getPositions(player.positionScores)
     if (isSpeedSoloTeams) {
-      const oneHanded = positions.find((p) => ONE_HANDED_POSITIONS.includes(p as PositionKey)) as 'R' | 'L' | null
-      const twoHanded = positions.find((p) => TWO_HANDED_POSITIONS.includes(p as PositionKey)) as 'F' | 'B' | null
+      const oneHanded = positions.find((p) =>
+        ONE_HANDED_POSITIONS.includes(p as PositionKey)
+      ) as 'R' | 'L' | null
+      const twoHanded = positions.find((p) =>
+        TWO_HANDED_POSITIONS.includes(p as PositionKey)
+      ) as 'F' | 'B' | null
       return {
         playerId: player.id,
         oneHandedPosition: oneHanded ?? null,
@@ -191,11 +201,15 @@ const RegistrationForm = ({
     defaultValues: {
       players: registration?.players
         ? registration.players.map(getDefaultPlayerData)
-        : Array(minPlayers)
+        : Array(event.minPlayers)
             .fill(null)
             .map(() =>
               isSpeedSoloTeams
-                ? { playerId: '', oneHandedPosition: null, twoHandedPosition: null }
+                ? {
+                    playerId: '',
+                    oneHandedPosition: null,
+                    twoHandedPosition: null,
+                  }
                 : { playerId: '', position: null }
             ),
     },
@@ -208,8 +222,8 @@ const RegistrationForm = ({
 
   // Fetch existing registrations to exclude already-registered players
   useEffect(() => {
-    fetchRegistrations(eventId)
-  }, [eventId, fetchRegistrations])
+    fetchRegistrations(event.id)
+  }, [event.id, fetchRegistrations])
 
   const watchedPlayers = form.watch('players')
 
@@ -242,7 +256,8 @@ const RegistrationForm = ({
 
   // Get positions already selected by other players (for relay/solo-teams)
   const getExcludedPositionsForSlot = (slotIndex: number): PositionKey[] => {
-    if (eventType !== 'relay' && eventType !== 'solo-teams') return []
+    if (event.eventType !== 'relay' && event.eventType !== 'solo-teams')
+      return []
     return watchedPlayers
       .filter((_, idx) => idx !== slotIndex)
       .map((p) => p.position)
@@ -274,8 +289,14 @@ const RegistrationForm = ({
 
       // For team test events, include players array with positionScores
       // Convert position selection(s) to positionScores format
-      let playersWithPositions: { playerId: string; positionScores: Record<string, null> | null; order: number }[] | undefined
-      
+      let playersWithPositions:
+        | {
+            playerId: string
+            positionScores: Record<string, null> | null
+            order: number
+          }[]
+        | undefined
+
       if (isTeamTest) {
         if (isSpeedSoloTeams) {
           // Speed-solo-teams: combine both positions into positionScores
@@ -306,7 +327,7 @@ const RegistrationForm = ({
         })
       } else {
         await createRegistration({
-          eventId,
+          eventId: event.id,
           playerIds,
           players: playersWithPositions,
         })
@@ -317,11 +338,11 @@ const RegistrationForm = ({
     }
   }
 
-  const canAddPlayer = fields.length < maxPlayers
-  const canRemovePlayer = fields.length > minPlayers
+  const canAddPlayer = fields.length < event.maxPlayers
+  const canRemovePlayer = fields.length > event.minPlayers
 
   const getPlayerLabel = (index: number) => {
-    if (maxPlayers === 1) return 'Player'
+    if (event.maxPlayers === 1) return 'Player'
     return `Player ${index + 1}`
   }
 
@@ -334,11 +355,13 @@ const RegistrationForm = ({
         <DialogDescription>
           {isEditing
             ? `Update ${
-                maxPlayers === 1 ? 'the player' : 'players'
+                event.maxPlayers === 1 ? 'the player' : 'players'
               } for this registration`
-            : `Select ${maxPlayers === 1 ? 'a player' : 'players'} to register`}
-          {minPlayers !== maxPlayers &&
-            ` (${minPlayers}-${maxPlayers} players)`}
+            : `Select ${
+                event.maxPlayers === 1 ? 'a player' : 'players'
+              } to register`}
+          {event.minPlayers !== event.maxPlayers &&
+            ` (${event.minPlayers}-${event.maxPlayers} players)`}
           .
         </DialogDescription>
       </DialogHeader>
@@ -350,7 +373,7 @@ const RegistrationForm = ({
               {/* Header with label and remove button */}
               <div className='flex items-center justify-between'>
                 <FormLabel>{getPlayerLabel(index)}</FormLabel>
-                {canRemovePlayer && index >= minPlayers && (
+                {canRemovePlayer && index >= event.minPlayers && (
                   <Button
                     type='button'
                     variant='ghost'
@@ -374,6 +397,9 @@ const RegistrationForm = ({
                         <FormControl>
                           <PlayerCombobox
                             value={formField.value || undefined}
+                            gender={
+                              event.gender === 'mixed' ? 'all' : event.gender
+                            }
                             onValueChange={formField.onChange}
                             placeholder='Select player'
                             excludedPlayerIds={getExcludedIdsForSlot(index)}
@@ -405,7 +431,9 @@ const RegistrationForm = ({
                             <SelectItem value='none'>-</SelectItem>
                             {POSITION_KEYS.filter(
                               (pos) =>
-                                !getExcludedPositionsForSlot(index).includes(pos)
+                                !getExcludedPositionsForSlot(index).includes(
+                                  pos
+                                )
                             ).map((pos) => (
                               <SelectItem key={pos} value={pos}>
                                 {POSITION_LABELS[pos]}
@@ -429,6 +457,9 @@ const RegistrationForm = ({
                         <PlayerCombobox
                           value={formField.value || undefined}
                           onValueChange={formField.onChange}
+                          gender={
+                            event.gender === 'mixed' ? 'all' : event.gender
+                          }
                           placeholder={`Select ${getPlayerLabel(
                             index
                           ).toLowerCase()}`}
@@ -469,7 +500,9 @@ const RegistrationForm = ({
                             <SelectItem value='none'>-</SelectItem>
                             {ONE_HANDED_POSITIONS.filter(
                               (pos) =>
-                                !getExcludedOneHandedForSlot(index).includes(pos)
+                                !getExcludedOneHandedForSlot(index).includes(
+                                  pos as 'R' | 'L'
+                                )
                             ).map((pos) => (
                               <SelectItem key={pos} value={pos}>
                                 {POSITION_LABELS[pos]}
@@ -506,7 +539,9 @@ const RegistrationForm = ({
                             <SelectItem value='none'>-</SelectItem>
                             {TWO_HANDED_POSITIONS.filter(
                               (pos) =>
-                                !getExcludedTwoHandedForSlot(index).includes(pos)
+                                !getExcludedTwoHandedForSlot(index).includes(
+                                  pos as 'F' | 'B'
+                                )
                             ).map((pos) => (
                               <SelectItem key={pos} value={pos}>
                                 {POSITION_LABELS[pos]}
@@ -531,7 +566,11 @@ const RegistrationForm = ({
               onClick={() =>
                 append(
                   isSpeedSoloTeams
-                    ? { playerId: '', oneHandedPosition: null, twoHandedPosition: null }
+                    ? {
+                        playerId: '',
+                        oneHandedPosition: null,
+                        twoHandedPosition: null,
+                      }
                     : { playerId: '', position: null }
                 )
               }

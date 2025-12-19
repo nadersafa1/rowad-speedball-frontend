@@ -9,14 +9,21 @@ import {
   generateHeats,
   validateEventForHeatGeneration,
   checkHeatsExist,
-  deleteAllHeats,
 } from '@/lib/services/heat-service'
+import { validateSeeds } from '@/lib/services/bracket-service'
 
 // Request body schema
 const generateHeatsSchema = z.object({
   playersPerHeat: z.number().int().min(1).max(50).optional(),
   shuffleRegistrations: z.boolean().optional().default(true),
-  regenerate: z.boolean().optional().default(false),
+  seeds: z
+    .array(
+      z.object({
+        registrationId: z.string().uuid(),
+        seed: z.number().int().min(1),
+      })
+    )
+    .optional(),
 })
 
 export async function POST(
@@ -74,24 +81,39 @@ export async function POST(
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { playersPerHeat, shuffleRegistrations, regenerate } =
-      parseResult.data
+    const { playersPerHeat, shuffleRegistrations, seeds } = parseResult.data
 
-    // Check if heats already exist
+    // Check if heats already exist - prevent generation if heats exist
     const heatsExist = await checkHeatsExist(eventId)
-    if (heatsExist && !regenerate) {
+    if (heatsExist) {
       return Response.json(
         {
           message:
-            'Heats already generated. Set regenerate=true to delete and regenerate.',
+            'Heats already generated. Reset heats first before generating new ones.',
         },
         { status: 400 }
       )
     }
 
-    // Delete existing heats if regenerating
-    if (heatsExist && regenerate) {
-      await deleteAllHeats(eventId)
+    // Get registrations for seed validation
+    const registrations = await db
+      .select()
+      .from(schema.registrations)
+      .where(eq(schema.registrations.eventId, eventId))
+
+    const registrationIds = registrations.map((r) => r.id)
+
+    // Validate seeds if provided
+    if (seeds && seeds.length > 0) {
+      const seedValidation = validateSeeds(seeds, registrationIds)
+      if (!seedValidation.valid) {
+        return Response.json(
+          {
+            message: `Invalid registration ID in seeds: ${seedValidation.invalidId}`,
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Use event's playersPerHeat or provided value or default
@@ -103,6 +125,7 @@ export async function POST(
       eventId,
       playersPerHeat: effectivePlayersPerHeat,
       shuffleRegistrations,
+      seeds,
     })
 
     return Response.json(

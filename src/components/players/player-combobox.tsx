@@ -26,6 +26,7 @@ interface PlayerComboboxProps {
   disabled?: boolean
   placeholder?: string
   className?: string
+  gender?: 'all' | 'male' | 'female'
   excludedPlayerIds?: string[]
   unassigned?: boolean
   organizationId?: string | null
@@ -38,6 +39,7 @@ const PlayerCombobox = ({
   placeholder = 'Select player...',
   className,
   excludedPlayerIds = [],
+  gender = 'all',
   unassigned = false,
   organizationId,
 }: PlayerComboboxProps) => {
@@ -53,13 +55,13 @@ const PlayerCombobox = ({
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim() || open) {
-        fetchPlayers(searchQuery.trim())
+        fetchPlayers(searchQuery.trim(), gender)
       }
     }, 300)
 
     return () => clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, open])
+  }, [searchQuery, open, gender])
 
   // Fetch selected player when value changes
   React.useEffect(() => {
@@ -71,12 +73,16 @@ const PlayerCombobox = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
 
-  const fetchPlayers = async (query: string = '') => {
+  const fetchPlayers = async (
+    query: string = '',
+    gender: 'all' | 'male' | 'female' = 'all'
+  ) => {
     setIsLoading(true)
     try {
       const response = (await apiClient.getPlayers({
         q: query,
         limit: 50,
+        gender: gender,
         unassigned: unassigned,
         organizationId: organizationId,
       })) as PaginatedResponse<Player>

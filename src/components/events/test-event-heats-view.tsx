@@ -110,6 +110,13 @@ const TestEventHeatsView = ({
   const hasHeats = groups.length > 0
   const hasUnassigned = unassignedRegistrations.length > 0
 
+  const scrollToHeat = (heatId: string) => {
+    const element = document.getElementById(`heat-${heatId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   if (registrations.length === 0) {
     return (
       <EmptyState
@@ -121,28 +128,69 @@ const TestEventHeatsView = ({
 
   return (
     <div className='space-y-6'>
-      {/* Generate/Regenerate Heats Button */}
-      {canUpdate && onGenerateHeats && (
+      {/* Generate Heats Button - Only show when no heats exist */}
+      {canUpdate && onGenerateHeats && !hasHeats && (
         <div className='flex items-center justify-between'>
           <div className='text-sm text-muted-foreground'>
-            {hasHeats
-              ? `${groups.length} heat${groups.length > 1 ? 's' : ''} • ${
-                  event.playersPerHeat || 8
-                } players per heat`
-              : `${registrations.length} registrations ready to be organized`}
+            {registrations.length} registrations ready to be organized
           </div>
-          <Button
-            onClick={onGenerateHeats}
-            disabled={isGenerating}
-            variant={hasHeats ? 'outline' : 'default'}
-          >
+          <Button onClick={onGenerateHeats} disabled={isGenerating}>
             {isGenerating ? (
               <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
             ) : (
               <Shuffle className='mr-2 h-4 w-4' />
             )}
-            {hasHeats ? 'Regenerate Heats' : 'Generate Heats'}
+            Generate Heats
           </Button>
+        </div>
+      )}
+      {/* Sticky Heat Navigation Header */}
+      {hasHeats && (
+        <div className='sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border pb-2 pt-2'>
+          <div className='flex items-center gap-2 flex-wrap'>
+            <span className='text-sm font-medium text-muted-foreground mr-2'>
+              Navigate:
+            </span>
+            {sortedGroups.map((group) => {
+              const heatRegistrations = registrationsByHeat.get(group.id) || []
+              return (
+                <Button
+                  key={group.id}
+                  variant='outline'
+                  size='sm'
+                  onClick={() => scrollToHeat(group.id)}
+                  className='h-8 text-xs'
+                >
+                  H{group.name}
+                  {heatRegistrations.length > 0 && (
+                    <Badge variant='secondary' className='ml-1.5 h-4 px-1 text-[10px]'>
+                      {heatRegistrations.length}
+                    </Badge>
+                  )}
+                </Button>
+              )
+            })}
+            {hasUnassigned && (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => scrollToHeat('unassigned')}
+                className='h-8 text-xs'
+              >
+                Unassigned
+                <Badge variant='outline' className='ml-1.5 h-4 px-1 text-[10px]'>
+                  {unassignedRegistrations.length}
+                </Badge>
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Heat info when heats exist */}
+      {hasHeats && (
+        <div className='text-sm text-muted-foreground'>
+          {groups.length} heat{groups.length > 1 ? 's' : ''} •{' '}
+          {event.playersPerHeat || 8} players per heat
         </div>
       )}
       {/* Heats */}
@@ -156,7 +204,7 @@ const TestEventHeatsView = ({
           .sort((a, b) => b.totalScore - a.totalScore)
 
         return (
-          <Card key={group.id}>
+          <Card key={group.id} id={`heat-${group.id}`} className='scroll-mt-20'>
             <CardHeader>
               <div className='flex items-center justify-between'>
                 <CardTitle className='flex items-center gap-2'>
@@ -260,7 +308,7 @@ const TestEventHeatsView = ({
 
       {/* Unassigned Registrations */}
       {unassignedRegistrations.length > 0 && (
-        <Card>
+        <Card id='heat-unassigned' className='scroll-mt-20'>
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <Users className='h-5 w-5' />
