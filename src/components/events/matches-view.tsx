@@ -18,6 +18,7 @@ import MatchesFilters from './matches-filters'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { useMatchFilters, type MatchStatus } from '@/hooks/use-match-filters'
 import { formatRegistrationName } from '@/lib/utils/match'
+import { canPlayerUpdateMatch } from '@/hooks/use-match-permissions'
 
 type ViewMode = 'bracket' | 'list' | 'column'
 
@@ -39,10 +40,32 @@ const MatchesView = ({
   const isSingleElimination = eventFormat === 'single-elimination'
   const isDoubleElimination = eventFormat === 'double-elimination'
   const { context } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
+  const {
+    isSystemAdmin,
+    isAdmin,
+    isOwner,
+    isCoach,
+    userId,
+    isPlayer,
+    organization,
+  } = context
 
   // Determine if user is a privileged user (coach, admin, owner, or system admin)
   const isPrivilegedUser = isSystemAdmin || isAdmin || isOwner || isCoach
+
+  // Function to check if a match can be updated
+  // Returns true if user is privileged OR if player can update their own match
+  const canUpdateMatch = (match: Match): boolean => {
+    if (isPrivilegedUser && canUpdate) {
+      return true
+    }
+    return canPlayerUpdateMatch(
+      match,
+      userId,
+      isPlayer,
+      organization?.id ?? null
+    )
+  }
 
   // Calculate default view mode based on user role and event format
   const getDefaultViewMode = (): ViewMode => {
@@ -251,7 +274,7 @@ const MatchesView = ({
           matches={filteredMatches}
           allMatches={localMatches}
           groups={groups}
-          canUpdate={canUpdate}
+          canUpdateMatch={canUpdateMatch}
           liveMatchIds={liveMatchIds}
           onEditMatch={handleEditMatch}
           eventFormat={eventFormat}
@@ -273,7 +296,7 @@ const MatchesView = ({
       ) : isDoubleElimination ? (
         <DoubleElimList
           matches={filteredMatches}
-          canUpdate={canUpdate}
+          canUpdateMatch={canUpdateMatch}
           liveMatchIds={liveMatchIds}
           onEditMatch={handleEditMatch}
         />
@@ -281,7 +304,7 @@ const MatchesView = ({
         <MatchesListView
           matches={filteredMatches}
           groups={groups}
-          canUpdate={canUpdate}
+          canUpdateMatch={canUpdateMatch}
           liveMatchIds={liveMatchIds}
           onEditMatch={handleEditMatch}
           eventFormat={eventFormat}

@@ -4,6 +4,7 @@ export const EVENT_FORMATS = [
   'single-elimination',
   'groups-knockout',
   'double-elimination',
+  'tests',
 ] as const
 
 export type EventFormat = (typeof EVENT_FORMATS)[number]
@@ -14,4 +15,5 @@ export const EVENT_FORMAT_LABELS: Record<EventFormat, string> = {
   'single-elimination': 'Single Elimination',
   'groups-knockout': 'Groups + Knockout',
   'double-elimination': 'Double Elimination',
+  tests: 'Test Event',
 }

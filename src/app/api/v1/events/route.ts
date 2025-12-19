@@ -22,6 +22,7 @@ import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateAttendanceAccess } from '@/lib/training-session-attendance-helpers'
 import { registerSessionAttendeesToEvent } from '@/lib/training-session-event-helpers'
+import { isSinglePlayerEventType } from '@/types/event-types'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -396,6 +397,7 @@ export async function POST(request: NextRequest) {
       pointsPerWin,
       pointsPerLoss,
       losersStartRoundsBeforeFinal,
+      playersPerHeat,
       organizationId: providedOrgId,
       trainingSessionId,
     } = parseResult.data
@@ -439,6 +441,7 @@ export async function POST(request: NextRequest) {
     const finalFormat = format || 'groups'
     const isGroupsFormat =
       finalFormat === 'groups' || finalFormat === 'groups-knockout'
+    const isTestsFormat = finalFormat === 'tests'
 
     // Training session events are always private
     const finalVisibility = trainingSessionId
@@ -469,6 +472,8 @@ export async function POST(request: NextRequest) {
           finalFormat === 'double-elimination'
             ? losersStartRoundsBeforeFinal ?? null
             : null,
+        // playersPerHeat is only for test events
+        playersPerHeat: isTestsFormat ? playersPerHeat ?? 8 : null,
         organizationId: finalOrganizationId,
         trainingSessionId: trainingSessionId || null,
       })
@@ -476,11 +481,8 @@ export async function POST(request: NextRequest) {
 
     const createdEvent = result[0]
 
-    // Auto-register attendees for solo/singles events only
-    if (
-      trainingSessionId &&
-      (eventType === 'solo' || eventType === 'singles')
-    ) {
+    // Auto-register attendees for single-player events only
+    if (trainingSessionId && isSinglePlayerEventType(eventType)) {
       try {
         await registerSessionAttendeesToEvent(
           createdEvent.id,

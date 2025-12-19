@@ -48,7 +48,7 @@ const testSchema = z.object({
     .string()
     .max(1000, 'Description cannot exceed 1000 characters')
     .optional(),
-  organizationId: z.string().uuid().nullable().optional(),
+  organizationId: z.uuid().nullable().optional(),
 })
 
 type TestFormData = z.infer<typeof testSchema>

@@ -40,7 +40,7 @@ const coachSchema = z.object({
   gender: z.enum(['male', 'female'], {
     message: 'Gender is required',
   }),
-  organizationId: z.string().uuid().nullable().optional(),
+  organizationId: z.uuid().nullable().optional(),
 })
 
 type CoachFormData = z.infer<typeof coachSchema>
@@ -93,9 +93,7 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
           {isEditing ? 'Edit Coach' : 'Add New Coach'}
         </DialogTitle>
         <DialogDescription className='text-sm'>
-          {isEditing
-            ? 'Update coach information'
-            : 'Register a new coach'}
+          {isEditing ? 'Update coach information' : 'Register a new coach'}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -243,4 +241,3 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
 }
 
 export default CoachForm
-

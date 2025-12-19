@@ -2,11 +2,11 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { addPlayersToRegistration } from './registration-helpers'
-import { validateGenderRulesForPlayers } from './validations/registration-validation'
 
 /**
- * Registers all attendees (present/late) from a training session to an event
+ * Registers eligible attendees (present/late) from a training session to an event
  * Only works for solo/singles events where each player gets their own registration
+ * Only registers players that match the event gender (male/female/mixed)
  * @param eventId - The event ID
  * @param trainingSessionId - The training session ID
  * @param eventType - The event type (must be 'solo' or 'singles')
@@ -51,26 +51,31 @@ export async function registerSessionAttendeesToEvent(
     return []
   }
 
-  // Get all player IDs
-  const playerIds = attendanceRecords.map((record) => record.player.id)
-  const players = attendanceRecords.map((record) => record.player)
+  // Filter players by event gender to get only eligible players
+  const eligibleRecords = attendanceRecords.filter((record) => {
+    const playerGender = record.player.gender as 'male' | 'female'
 
-  // Validate gender rules for all players
-  const genders = players.map((p) => p.gender as 'male' | 'female')
-  const genderValidation = validateGenderRulesForPlayers(
-    eventGender,
-    genders,
-    eventType as 'solo' | 'singles'
-  )
+    if (eventGender === 'male') {
+      return playerGender === 'male'
+    } else if (eventGender === 'female') {
+      return playerGender === 'female'
+    } else {
+      // 'mixed' - all players are eligible
+      return true
+    }
+  })
 
-  if (!genderValidation.valid) {
-    throw new Error(genderValidation.error || 'Gender validation failed')
+  if (eligibleRecords.length === 0) {
+    return []
   }
 
-  // Create individual registrations for each attendee
+  // Get eligible player IDs
+  const eligiblePlayerIds = eligibleRecords.map((record) => record.player.id)
+
+  // Create individual registrations for each eligible attendee
   const createdRegistrations = []
 
-  for (const playerId of playerIds) {
+  for (const playerId of eligiblePlayerIds) {
     // Create registration
     const [registration] = await db
       .insert(schema.registrations)

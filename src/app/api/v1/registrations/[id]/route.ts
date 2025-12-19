@@ -77,19 +77,13 @@ export async function PATCH(
     }
 
     const eventData = event[0]
-    const { playerIds, ...otherUpdateData } = updateData
+    const { playerIds, players, ...otherUpdateData } = updateData
 
     // Handle player updates if provided
     if (playerIds) {
       // Validate player count based on min/max configuration
       const countValidation = validateRegistrationPlayerCount(
-        eventData.eventType as
-          | 'solo'
-          | 'singles'
-          | 'doubles'
-          | 'singles-teams'
-          | 'solo-teams'
-          | 'relay',
+        eventData.eventType,
         playerIds.length,
         eventData.minPlayers,
         eventData.maxPlayers
@@ -136,13 +130,7 @@ export async function PATCH(
       const genderValidation = validateGenderRulesForPlayers(
         eventData.gender as 'male' | 'female' | 'mixed',
         genders,
-        eventData.eventType as
-          | 'solo'
-          | 'singles'
-          | 'doubles'
-          | 'singles-teams'
-          | 'solo-teams'
-          | 'relay'
+        eventData.eventType
       )
       if (!genderValidation.valid) {
         return Response.json(
@@ -186,13 +174,25 @@ export async function PATCH(
           .delete(schema.registrationPlayers)
           .where(eq(schema.registrationPlayers.registrationId, id))
 
-        // Add new players
-        const values = playerIds.map((playerId, index) => ({
-          registrationId: id,
-          playerId,
-          position: index + 1,
-        }))
-        await tx.insert(schema.registrationPlayers).values(values)
+        // Add new players with positionScores (if provided) or just playerIds
+        const playersWithPositions = updateData.players
+        if (playersWithPositions && playersWithPositions.length > 0) {
+          const values = playersWithPositions.map((p, index) => ({
+            registrationId: id,
+            playerId: p.playerId,
+            positionScores: p.positionScores ?? null,
+            order: p.order ?? index + 1,
+          }))
+          await tx.insert(schema.registrationPlayers).values(values)
+        } else {
+          const values = playerIds.map((playerId, index) => ({
+            registrationId: id,
+            playerId,
+            positionScores: null,
+            order: index + 1,
+          }))
+          await tx.insert(schema.registrationPlayers).values(values)
+        }
       })
     }
 

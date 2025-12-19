@@ -2,6 +2,7 @@
 
 import { TableCell, TableRow } from '@/components/ui/table'
 import type { Registration } from '@/types'
+import { formatPlayers } from '@/lib/utils/player-formatting'
 
 interface StandingsTableRowProps {
   registration: Registration
@@ -14,11 +15,7 @@ export const StandingsTableRow = ({
 }: StandingsTableRowProps) => {
   const matchesPlayed = registration.matchesWon + registration.matchesLost
   const setsDifference = registration.setsWon - registration.setsLost
-
-  const playerNames =
-    registration.players && registration.players.length > 0
-      ? registration.players.map((p) => p.name).join(' & ')
-      : 'Unknown'
+  const playerNames = formatPlayers(registration.players)
 
   return (
     <TableRow>

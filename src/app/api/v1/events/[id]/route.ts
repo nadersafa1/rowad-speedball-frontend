@@ -6,6 +6,7 @@ import * as schema from '@/db/schema'
 import {
   eventsParamsSchema,
   eventsUpdateSchema,
+  validatePlayerLimitsUpdate,
 } from '@/types/api/events.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { and } from 'drizzle-orm'
@@ -122,6 +123,18 @@ export async function PATCH(
     }
 
     const eventData = existing[0]
+
+    // Validate: Cannot change min/max players for fixed player count events
+    const playerLimitsValidation = validatePlayerLimitsUpdate(
+      eventData.eventType,
+      updateData
+    )
+    if (!playerLimitsValidation.valid) {
+      return Response.json(
+        { message: playerLimitsValidation.error },
+        { status: 400 }
+      )
+    }
 
     // Get organization context for authorization (only if event exists)
     const {

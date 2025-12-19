@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import {
+  EventType,
   EVENT_TYPE_LABELS,
   isSinglePlayerEventType,
-  type EventType,
 } from '@/types/event-types'
 
 export const NameCell = ({ event }: { event: Event }) => {

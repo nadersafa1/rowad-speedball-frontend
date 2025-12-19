@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useGroupsStore } from '@/store/groups-store'
 import { useRegistrationsStore } from '@/store/registrations-store'
-import { Plus, Users, Trash2, CheckCircle2 } from 'lucide-react'
+import { Plus, Users, Trash2, CheckCircle2, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { Registration, Group } from '@/types'
+import { formatPlayers } from '@/lib/utils/player-formatting'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,10 @@ interface GroupManagementProps {
   registrations: Registration[]
   onGroupCreated?: () => void
   canManage?: boolean
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
+  totalItems?: number
 }
 
 const GroupManagement = ({
@@ -34,6 +39,10 @@ const GroupManagement = ({
   registrations,
   onGroupCreated,
   canManage = true,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  totalItems,
 }: GroupManagementProps) => {
   const { createGroup, deleteGroup, isLoading } = useGroupsStore()
   const { fetchRegistrations } = useRegistrationsStore()
@@ -109,7 +118,7 @@ const GroupManagement = ({
                       <div className='flex flex-wrap items-center gap-2'>
                         <h4 className='font-medium'>Group {group.name}</h4>
                         {group.completed && (
-                          <Badge variant="default" className="bg-green-600">
+                          <Badge variant='default' className='bg-green-600'>
                             <CheckCircle2 className='h-3 w-3 mr-1' />
                             Completed
                           </Badge>
@@ -141,10 +150,8 @@ const GroupManagement = ({
               <h4 className='font-medium'>Unassigned Registrations</h4>
               <div className='space-y-2 max-h-60 overflow-y-auto'>
                 {unassignedRegistrations.map((reg) => {
-                  const playerNames = reg.players && reg.players.length > 0
-                    ? reg.players.map((p) => p.name).join(' & ')
-                    : 'Unknown'
-                  
+                  const playerNames = formatPlayers(reg.players)
+
                   return (
                     <div
                       key={reg.id}
@@ -154,13 +161,14 @@ const GroupManagement = ({
                           : ''
                       }`}
                     >
-                      <div className='flex items-center gap-2'>
+                      <label className='flex items-center gap-2 cursor-pointer'>
                         <Checkbox
                           checked={selectedRegistrations.includes(reg.id)}
                           onCheckedChange={() => toggleRegistration(reg.id)}
+                          id={`checkbox-${reg.id}`}
                         />
                         <span>{playerNames}</span>
-                      </div>
+                      </label>
                     </div>
                   )
                 })}
@@ -198,6 +206,24 @@ const GroupManagement = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {hasMore && onLoadMore && (
+        <div className='flex justify-center pt-4'>
+          <Button onClick={onLoadMore} disabled={isLoadingMore} variant='outline'>
+            {isLoadingMore ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Loading...
+              </>
+            ) : (
+              `Load More (${
+                totalItems && totalItems > registrations.length
+                  ? totalItems - registrations.length
+                  : ''
+              } remaining)`
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

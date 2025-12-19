@@ -45,10 +45,11 @@ export const useEventPermissions = (event: Event | null | undefined) => {
       (isSystemAdmin || isAdmin || isOwner || isCoach) &&
       (isSystemAdmin || (isEventFromUserOrg && !!organization?.id))
 
-    // Delete permission: System admins, org admins, org owners
+    // Delete permission: System admins, org admins, org owners, org coaches
     // Must be from user's org (unless system admin)
+    // Note: For registrations, coaches can delete. For events, only admins/owners can delete.
     const canDelete =
-      (isSystemAdmin || isAdmin || isOwner) &&
+      (isSystemAdmin || isAdmin || isOwner || isCoach) &&
       (isSystemAdmin || (isEventFromUserOrg && !!organization?.id))
 
     return {

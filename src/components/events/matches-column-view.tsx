@@ -16,7 +16,7 @@ interface MatchesColumnViewProps {
   matches: Match[] // Filtered matches to display
   allMatches: Match[] // All matches to determine round structure
   groups: Group[]
-  canUpdate: boolean
+  canUpdateMatch: (match: Match) => boolean
   liveMatchIds: Set<string>
   onEditMatch: (match: Match) => void
   eventFormat?: EventFormat
@@ -26,7 +26,7 @@ const MatchesColumnView = ({
   matches,
   allMatches,
   groups,
-  canUpdate,
+  canUpdateMatch,
   liveMatchIds,
   onEditMatch,
   eventFormat,
@@ -104,7 +104,7 @@ const MatchesColumnView = ({
                             <CompactMatchItem
                               key={match.id}
                               match={match}
-                              showEditButton={canUpdate}
+                              showEditButton={canUpdateMatch(match)}
                               onEditClick={() => onEditMatch(match)}
                               isLive={liveMatchIds.has(match.id)}
                             />
@@ -162,7 +162,7 @@ const MatchesColumnView = ({
                       <CompactMatchItem
                         key={match.id}
                         match={match}
-                        showEditButton={canUpdate}
+                        showEditButton={canUpdateMatch(match)}
                         onEditClick={() => onEditMatch(match)}
                         isLive={liveMatchIds.has(match.id)}
                       />
@@ -252,7 +252,7 @@ const MatchesColumnView = ({
                               <CompactMatchItem
                                 key={match.id}
                                 match={match}
-                                showEditButton={canUpdate}
+                                showEditButton={canUpdateMatch(match)}
                                 onEditClick={() => onEditMatch(match)}
                                 isLive={liveMatchIds.has(match.id)}
                               />

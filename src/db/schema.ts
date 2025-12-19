@@ -9,7 +9,12 @@ import {
   boolean,
   pgEnum,
   unique,
+  jsonb,
+  index,
+  check,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import type { PositionScores } from '@/types/position-scores'
 import { parse, getYear, getMonth } from 'date-fns'
 
 // Auth Tables
@@ -220,58 +225,77 @@ export const calculateTotalScore = (
 
 // Events Table
 // NOTE: eventType enum values must match EVENT_TYPES in src/types/event-types.ts
-export const events = pgTable('events', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
-  eventType: text('event_type', {
-    enum: [
-      'solo',
-      'singles',
-      'doubles',
-      'singles-teams',
-      'solo-teams',
-      'relay',
-    ],
-  }).notNull(),
-  gender: text('gender', { enum: ['male', 'female', 'mixed'] }).notNull(),
-  format: text('format', {
-    enum: [
-      'groups',
-      'single-elimination',
-      'groups-knockout',
-      'double-elimination',
-    ],
-  })
-    .notNull()
-    .default('groups'),
-  hasThirdPlaceMatch: boolean('has_third_place_match').default(false),
-  visibility: text('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('public'),
-  minPlayers: integer('min_players').notNull().default(1),
-  maxPlayers: integer('max_players').notNull().default(2),
-  registrationStartDate: date('registration_start_date'),
-  registrationEndDate: date('registration_end_date'),
-  eventDates: text('event_dates').array(), // Array of date strings
-  bestOf: integer('best_of').notNull(), // Must be odd: 1, 3, 5, 7, etc.
-  pointsPerWin: integer('points_per_win').notNull().default(3),
-  pointsPerLoss: integer('points_per_loss').notNull().default(0),
-  completed: boolean('completed').notNull().default(false),
-  // For double-elimination: how many rounds before finals the losers bracket starts
-  // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
-  losersStartRoundsBeforeFinal: integer('losers_start_rounds_before_final'),
-  championshipId: uuid('championship_id').references(() => championships.id, {
-    onDelete: 'cascade',
-  }),
-  organizationId: uuid('organization_id').references(() => organization.id, {
-    onDelete: 'cascade',
-  }),
-  trainingSessionId: uuid('training_session_id').references(() => trainingSessions.id, {
-    onDelete: 'cascade',
-  }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const events = pgTable(
+  'events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    eventType: text('event_type', {
+      enum: [
+        'super-solo',
+        'speed-solo',
+        'juniors-solo',
+        'singles',
+        'solo-teams',
+        'speed-solo-teams',
+        'singles-teams',
+        'doubles',
+        'relay',
+      ],
+    }).notNull(),
+    gender: text('gender', { enum: ['male', 'female', 'mixed'] }).notNull(),
+    format: text('format', {
+      enum: [
+        'groups',
+        'single-elimination',
+        'groups-knockout',
+        'double-elimination',
+        'tests',
+      ],
+    })
+      .notNull()
+      .default('groups'),
+    hasThirdPlaceMatch: boolean('has_third_place_match').default(false),
+    visibility: text('visibility', { enum: ['public', 'private'] })
+      .notNull()
+      .default('public'),
+    minPlayers: integer('min_players').notNull().default(1),
+    maxPlayers: integer('max_players').notNull().default(2),
+    registrationStartDate: date('registration_start_date'),
+    registrationEndDate: date('registration_end_date'),
+    eventDates: text('event_dates').array(), // Array of date strings
+    bestOf: integer('best_of').notNull(), // Must be odd: 1, 3, 5, 7, etc.
+    pointsPerWin: integer('points_per_win').notNull().default(3),
+    pointsPerLoss: integer('points_per_loss').notNull().default(0),
+    completed: boolean('completed').notNull().default(false),
+    // For double-elimination: how many rounds before finals the losers bracket starts
+    // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
+    losersStartRoundsBeforeFinal: integer('losers_start_rounds_before_final'),
+    // For test events: number of players per heat (default 8)
+    playersPerHeat: integer('players_per_heat'),
+    championshipId: uuid('championship_id').references(() => championships.id, {
+      onDelete: 'cascade',
+    }),
+    organizationId: uuid('organization_id').references(() => organization.id, {
+      onDelete: 'cascade',
+    }),
+    trainingSessionId: uuid('training_session_id').references(
+      () => trainingSessions.id,
+      {
+        onDelete: 'cascade',
+      }
+    ),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    // Constraint: max_players must be >= min_players
+    check(
+      'chk_max_gte_min_players',
+      sql`${table.maxPlayers} >= ${table.minPlayers}`
+    ),
+  ]
+)
 
 // Groups Table
 export const groups = pgTable('groups', {
@@ -301,6 +325,7 @@ export const registrations = pgTable('registrations', {
   setsLost: integer('sets_lost').notNull().default(0),
   points: integer('points').notNull().default(0),
   qualified: boolean('qualified').notNull().default(false),
+  teamName: varchar('team_name', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -316,12 +341,26 @@ export const registrationPlayers = pgTable(
     playerId: uuid('player_id')
       .notNull()
       .references(() => players.id, { onDelete: 'cascade' }),
-    position: integer('position').notNull(), // 1, 2, 3, 4... for play order
+    // Position scores: { R?: number | null, L?: number | null, F?: number | null, B?: number | null }
+    // Keys represent positions (R=Right, L=Left, F=Forehand, B=Backhand)
+    // Values: null = position assigned but score pending, number = score entered
+    // Nullable: null means no positions assigned yet
+    positionScores: jsonb('position_scores').$type<PositionScores>(),
+    // Order for play sequence and display (1, 2, 3...)
+    order: integer('order').notNull().default(1),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
-  (table) => ({
-    uniqueRegistrationPlayer: unique().on(table.registrationId, table.playerId),
-  })
+  (table) => [
+    unique('unique_registration_player').on(
+      table.registrationId,
+      table.playerId
+    ),
+    // GIN index for efficient JSONB queries on position_scores
+    index('idx_registration_players_position_scores').using(
+      'gin',
+      table.positionScores
+    ),
+  ]
 )
 
 // Matches Table
@@ -445,9 +484,9 @@ export const trainingSessionAttendance = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (table) => ({
-    uniquePlayerSession: unique().on(table.playerId, table.trainingSessionId),
-  })
+  (table) => [
+    unique('unique_player_session').on(table.playerId, table.trainingSessionId),
+  ]
 )
 
 // Federations Table
@@ -503,9 +542,9 @@ export const federationPlayers = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (table) => ({
-    uniqueFederationPlayer: unique().on(table.federationId, table.playerId),
-  })
+  (table) => [
+    unique('unique_federation_player').on(table.federationId, table.playerId),
+  ]
 )
 
 // Helper function to format date as "Nov 22, 2025"

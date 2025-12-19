@@ -13,6 +13,9 @@ interface EventOverviewTabProps {
 }
 
 const EventOverviewTab = ({ event }: EventOverviewTabProps) => {
+  const isTestEvent = event.format === 'tests'
+  const isGroupsFormat = event.format === 'groups'
+
   return (
     <Card>
       <CardHeader>
@@ -24,11 +27,18 @@ const EventOverviewTab = ({ event }: EventOverviewTabProps) => {
             <p className='text-sm text-muted-foreground'>Format</p>
             <p className='font-medium'>{EVENT_FORMAT_LABELS[event.format]}</p>
           </div>
-          <div>
-            <p className='text-sm text-muted-foreground'>Best Of</p>
-            <p className='font-medium'>{event.bestOf} sets</p>
-          </div>
-          {event.format === 'groups' && (
+          {isTestEvent ? (
+            <div>
+              <p className='text-sm text-muted-foreground'>Players Per Heat</p>
+              <p className='font-medium'>{event.playersPerHeat} players</p>
+            </div>
+          ) : (
+            <div>
+              <p className='text-sm text-muted-foreground'>Best Of</p>
+              <p className='font-medium'>{event.bestOf} sets</p>
+            </div>
+          )}
+          {isGroupsFormat && (
             <div>
               <p className='text-sm text-muted-foreground'>Points</p>
               <p className='font-medium'>

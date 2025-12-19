@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEventsStore } from '@/store/events-store'
 import { toast } from 'sonner'
@@ -10,16 +10,21 @@ import { useMatchesStore } from '@/store/matches-store'
 import { useEventPermissions } from '@/hooks/use-event-permissions'
 import GroupManagement from '@/components/events/group-management'
 import BracketSeeding from '@/components/events/bracket-seeding'
+import HeatManagement from '@/components/events/heat-management'
 import StandingsTable from '@/components/events/standings-table'
 import MatchesView from '@/components/events/matches-view'
 import EventHeader from '@/components/events/event-header'
 import EventTabs from '@/components/events/event-tabs'
 import EventOverviewTab from '@/components/events/event-overview-tab'
 import EventRegistrationsTab from '@/components/events/event-registrations-tab'
+import TestEventRegistrationsView from '@/components/events/test-event-registrations-view'
+import { isTestEventType } from '@/lib/utils/test-event-utils'
+import { apiClient } from '@/lib/api-client'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import LoadingState from '@/components/shared/loading-state'
 import { useEventDialogs } from './_hooks/use-event-dialogs'
 import EventDialogs from './_components/event-dialogs'
+import TestEventStandingsView from '@/components/events/test-event-standings-view'
 
 const EventDetailPage = () => {
   const params = useParams()
@@ -27,8 +32,9 @@ const EventDetailPage = () => {
   const searchParams = useSearchParams()
   const eventId = params.id as string
 
-  const tabFromUrl = searchParams.get('tab') || 'overview'
+  const tabFromUrl = searchParams.get('activeTab') || 'overview'
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl)
+  const [isGeneratingHeats, setIsGeneratingHeats] = useState(false)
 
   const dialogs = useEventDialogs()
 
@@ -40,58 +46,54 @@ const EventDetailPage = () => {
   } = useEventsStore()
 
   const { groups, fetchGroups } = useGroupsStore()
-  const { registrations, fetchRegistrations, deleteRegistration } =
-    useRegistrationsStore()
+  const {
+    registrations,
+    fetchRegistrations,
+    loadMoreRegistrations,
+    deleteRegistration,
+    pagination: registrationsPagination,
+    isLoadingMore: isLoadingMoreRegistrations,
+  } = useRegistrationsStore()
   const { matches, fetchMatches } = useMatchesStore()
   const { canUpdate, canDelete, canCreate } = useEventPermissions(selectedEvent)
 
-  // Update active tab when URL changes
+  // Update activeTab when URL changes
   useEffect(() => {
-    const tab = searchParams.get('tab') || 'overview'
-    setActiveTab(tab)
+    const activeTab = searchParams.get('activeTab') || 'overview'
+    setActiveTab(activeTab)
   }, [searchParams])
 
-  // Redirect away from standings tab if event is not groups
-  // or from matches tab if no matches exist
-  useEffect(() => {
-    if (
-      selectedEvent &&
-      selectedEvent.format !== 'groups' &&
-      activeTab === 'standings'
-    ) {
-      router.push(`/events/${eventId}?tab=overview`, { scroll: false })
-      setActiveTab('overview')
-    }
-    // Redirect away from matches tab if no matches exist
-    if (activeTab === 'matches' && matches.length === 0) {
-      router.push(`/events/${eventId}?tab=overview`, { scroll: false })
-      setActiveTab('overview')
-    }
-  }, [selectedEvent, activeTab, eventId, router, matches.length])
-
-  // Handle tab change - update URL
+  // Handle activeTab change - update URL
   const handleTabChange = (value: string) => {
     setActiveTab(value)
-    router.push(`/events/${eventId}?tab=${value}`, { scroll: false })
+
+    router.push(`/events/${eventId}?activeTab=${value}`, { scroll: false })
   }
 
   useEffect(() => {
     if (eventId) {
       fetchEvent(eventId)
-      fetchGroups(eventId)
       fetchRegistrations(eventId)
-      fetchMatches(eventId)
     }
-  }, [eventId, fetchEvent, fetchGroups, fetchRegistrations, fetchMatches])
+  }, [eventId, fetchEvent, fetchRegistrations])
 
-  const handleRefresh = async () => {
-    await Promise.all([
-      fetchEvent(eventId),
-      fetchGroups(eventId),
-      fetchRegistrations(eventId),
-      fetchMatches(eventId),
-    ])
-  }
+  useEffect(() => {
+    if (!selectedEvent) return
+    if (['groups', 'tests'].includes(selectedEvent.format)) {
+      fetchGroups(selectedEvent.id)
+    }
+    if (
+      ['single-elimination', 'double-elimination', 'groups'].includes(
+        selectedEvent.format
+      )
+    ) {
+      fetchMatches(selectedEvent.id)
+    }
+  }, [selectedEvent, fetchGroups, fetchMatches])
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([fetchEvent(eventId), fetchRegistrations(eventId)])
+  }, [eventId, fetchEvent, fetchRegistrations])
 
   const handleDeleteRegistration = async () => {
     if (!dialogs.deleteRegistrationId) return
@@ -114,6 +116,41 @@ const EventDetailPage = () => {
       toast.error(error.message || 'Failed to delete event')
     }
   }
+
+  // Handle score update for test events (supports single or batch updates)
+  const handleUpdateScores = async (
+    registrationId: string,
+    payload:
+      | { playerId: string; positionScores: Record<string, number | null> }
+      | { playerId: string; positionScores: Record<string, number | null> }[]
+  ) => {
+    try {
+      // Support both single and batch payloads
+      const updates = Array.isArray(payload) ? payload : [payload]
+      await apiClient.updatePlayerPositionScoresBatch(registrationId, updates)
+      toast.success('Scores updated successfully')
+      handleRefresh()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update scores')
+    }
+  }
+
+  // Handle heat generation for test events
+  const handleGenerateHeats = useCallback(async () => {
+    if (!selectedEvent) return
+    setIsGeneratingHeats(true)
+    try {
+      await apiClient.generateHeats(eventId, {})
+      toast.success('Heats generated successfully')
+      handleRefresh()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate heats')
+    } finally {
+      setIsGeneratingHeats(false)
+    }
+  }, [selectedEvent, eventId, handleRefresh])
+
+  const isTestEvent = isTestEventType(selectedEvent?.eventType || '')
 
   if (eventLoading || !selectedEvent) {
     return (
@@ -138,10 +175,7 @@ const EventDetailPage = () => {
         onValueChange={handleTabChange}
         className='space-y-4'
       >
-        <EventTabs
-          eventFormat={selectedEvent.format}
-          hasMatches={matches.length > 0}
-        />
+        <EventTabs eventFormat={selectedEvent.format} />
 
         <TabsContent value='overview' className='space-y-4'>
           <EventOverviewTab event={selectedEvent} />
@@ -151,18 +185,54 @@ const EventDetailPage = () => {
           <EventRegistrationsTab
             event={selectedEvent}
             registrations={registrations}
-            groups={groups}
             canCreate={canCreate}
             canUpdate={canUpdate}
             canDelete={canDelete}
             onAddRegistration={() => dialogs.openRegistrationForm()}
             onEditRegistration={(id) => dialogs.openRegistrationForm(id)}
             onDeleteRegistration={dialogs.openDeleteRegistration}
+            hasMore={
+              registrationsPagination.page < registrationsPagination.totalPages
+            }
+            isLoadingMore={isLoadingMoreRegistrations}
+            onLoadMore={() => loadMoreRegistrations(eventId)}
+            totalItems={registrationsPagination.totalItems}
           />
         </TabsContent>
 
         <TabsContent value='groups' className='space-y-4'>
-          {selectedEvent.format !== 'groups' ? (
+          <GroupManagement
+            eventId={eventId}
+            groups={groups}
+            registrations={registrations}
+            onGroupCreated={handleRefresh}
+            canManage={canCreate}
+            hasMore={
+              registrationsPagination.page < registrationsPagination.totalPages
+            }
+            isLoadingMore={isLoadingMoreRegistrations}
+            onLoadMore={() => loadMoreRegistrations(eventId)}
+            totalItems={registrationsPagination.totalItems}
+          />
+        </TabsContent>
+
+        <TabsContent value='seeds' className='space-y-4'>
+          {isTestEvent ? (
+            <HeatManagement
+              eventId={eventId}
+              registrations={registrations}
+              groups={groups}
+              defaultPlayersPerHeat={selectedEvent.playersPerHeat}
+              canManage={canUpdate}
+              onHeatsGenerated={handleRefresh}
+              hasMore={
+                registrationsPagination.page < registrationsPagination.totalPages
+              }
+              isLoadingMore={isLoadingMoreRegistrations}
+              onLoadMore={() => loadMoreRegistrations(eventId)}
+              totalItems={registrationsPagination.totalItems}
+            />
+          ) : (
             <BracketSeeding
               eventId={eventId}
               registrations={registrations}
@@ -170,40 +240,58 @@ const EventDetailPage = () => {
               canManage={canCreate}
               onBracketGenerated={handleRefresh}
             />
-          ) : (
-            <GroupManagement
-              eventId={eventId}
-              groups={groups}
-              registrations={registrations}
-              onGroupCreated={handleRefresh}
-              canManage={canCreate}
-            />
           )}
         </TabsContent>
 
-        {matches.length > 0 && (
-          <TabsContent value='matches' className='space-y-4'>
-            <MatchesView
-              matches={matches}
-              groups={groups}
-              canUpdate={canUpdate}
-              onMatchUpdate={handleRefresh}
-              eventFormat={selectedEvent.format}
-            />
-          </TabsContent>
-        )}
+        <TabsContent value='matches' className='space-y-4'>
+          <MatchesView
+            matches={matches}
+            groups={groups}
+            canUpdate={canUpdate}
+            onMatchUpdate={handleRefresh}
+            eventFormat={selectedEvent.format}
+          />
+        </TabsContent>
 
-        {selectedEvent.format === 'groups' && (
+        <TabsContent value='heats' className='space-y-4'>
+          <TestEventRegistrationsView
+            event={selectedEvent}
+            registrations={registrations}
+            groups={groups}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+            onUpdateScores={handleUpdateScores}
+            onDeleteRegistration={dialogs.openDeleteRegistration}
+            onGenerateHeats={handleGenerateHeats}
+            isGeneratingHeats={isGeneratingHeats}
+            hasMore={
+              registrationsPagination.page < registrationsPagination.totalPages
+            }
+            isLoadingMore={isLoadingMoreRegistrations}
+            onLoadMore={() => loadMoreRegistrations(eventId)}
+            totalItems={registrationsPagination.totalItems}
+          />
+        </TabsContent>
+
+        {(selectedEvent.format === 'groups' || isTestEvent) && (
           <TabsContent value='standings' className='space-y-4'>
-            <StandingsTable registrations={registrations} groups={groups} />
+            {isTestEvent ? (
+              <TestEventStandingsView
+                eventId={eventId}
+                registrations={registrations}
+                groups={groups}
+              />
+            ) : (
+              <StandingsTable registrations={registrations} groups={groups} />
+            )}
           </TabsContent>
         )}
       </Tabs>
 
       <EventDialogs
         event={selectedEvent}
-        registrations={registrations}
-        matches={matches}
+        registrations={registrations || []}
+        matches={matches || []}
         eventFormOpen={dialogs.eventFormOpen}
         registrationFormOpen={dialogs.registrationFormOpen}
         editingRegistration={dialogs.editingRegistration}

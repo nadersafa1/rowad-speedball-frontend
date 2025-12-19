@@ -7,8 +7,9 @@ import { setsCreateSchema, setsQuerySchema } from '@/types/api/sets.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateSetAddition } from '@/lib/validations/match-validation'
 import {
-  checkEventCreateAuthorization,
+  checkEventUpdateAuthorization,
   checkEventReadAuthorization,
+  canPlayerUpdateMatch,
 } from '@/lib/event-authorization-helpers'
 
 export async function GET(request: NextRequest) {
@@ -102,10 +103,21 @@ export async function POST(request: NextRequest) {
       return Response.json({ message: 'Event not found' }, { status: 404 })
     }
 
-    // Check authorization based on parent event
-    const authError = checkEventCreateAuthorization(context)
+    // Check authorization: coaches/admins/owners can always create sets
+    const authError = checkEventUpdateAuthorization(context, event[0])
+
+    // If standard authorization fails, check if player can update their own match
     if (authError) {
-      return authError
+      const playerCanUpdate = await canPlayerUpdateMatch(
+        context,
+        match[0],
+        event[0]
+      )
+
+      if (!playerCanUpdate) {
+        return authError
+      }
+      // Player can update - continue with set creation
     }
 
     // Check if match date is set

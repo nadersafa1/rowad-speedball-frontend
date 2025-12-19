@@ -20,9 +20,9 @@ import { Event, EventFormat, EVENT_FORMATS, EVENT_FORMAT_LABELS } from '@/types'
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import {
+  EventType,
   UI_EVENT_TYPES,
   EVENT_TYPE_LABELS,
-  type EventType,
 } from '@/types/event-types'
 
 interface EventsTableControlsProps {

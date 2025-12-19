@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import type { Registration } from '@/types'
+import { formatPlayers } from '@/lib/utils/player-formatting'
 
 interface SortableRegistrationItemProps {
   registration: Registration
@@ -28,11 +29,7 @@ const SortableRegistrationItem = ({
     transform: CSS.Transform.toString(transform),
     transition,
   }
-
-  const playerNames =
-    registration.players && registration.players.length > 0
-      ? registration.players.map((p) => p.name).join(' & ')
-      : 'Unknown'
+  const playerNames = formatPlayers(registration.players)
 
   return (
     <div

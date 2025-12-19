@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { events, registrations, registrationPlayers } from '@/db/schema'
 import type { SeededOrganization, SeededPlayer } from './types'
-import type { EventType } from '@/types/event-types'
+import { EventType } from '@/types/event-types'
 
 export interface SeededEvent {
   id: string
@@ -30,7 +30,7 @@ const eventTemplates: Array<{
 }> = [
   {
     name: 'Men Singles Championship',
-    eventType: 'singles',
+    eventType: EventType.Singles,
     gender: 'male',
     format: 'groups',
     bestOf: 3,
@@ -39,7 +39,7 @@ const eventTemplates: Array<{
   },
   {
     name: 'Women Singles Championship',
-    eventType: 'singles',
+    eventType: EventType.Singles,
     gender: 'female',
     format: 'groups',
     bestOf: 3,
@@ -48,7 +48,7 @@ const eventTemplates: Array<{
   },
   {
     name: 'Men Doubles Tournament',
-    eventType: 'doubles',
+    eventType: EventType.Doubles,
     gender: 'male',
     format: 'groups',
     bestOf: 3,
@@ -57,7 +57,7 @@ const eventTemplates: Array<{
   },
   {
     name: 'Women Doubles Tournament',
-    eventType: 'doubles',
+    eventType: EventType.Doubles,
     gender: 'female',
     format: 'groups',
     bestOf: 3,
@@ -66,7 +66,7 @@ const eventTemplates: Array<{
   },
   {
     name: 'Mixed Doubles Tournament',
-    eventType: 'doubles',
+    eventType: EventType.Doubles,
     gender: 'mixed',
     format: 'groups',
     bestOf: 5,
@@ -75,7 +75,7 @@ const eventTemplates: Array<{
   },
   {
     name: 'Men Singles Teams Championship',
-    eventType: 'singles-teams',
+    eventType: EventType.SinglesTeams,
     gender: 'male',
     format: 'groups',
     bestOf: 3,
@@ -131,7 +131,8 @@ const createRegistrationWithPlayers = async (
     playerIds.map((playerId, index) => ({
       registrationId: createdReg.id,
       playerId,
-      position: index + 1,
+      position: null, // Position enum is for team roles (R, L, F, B, S1, S2)
+      order: index + 1, // Order is for play order
     }))
   )
 

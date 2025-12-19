@@ -1,5 +1,11 @@
 import { z } from 'zod'
-import { EVENT_TYPES } from '../event-types'
+import {
+  EVENT_TYPES,
+  isTestEventType,
+  isSoloTestEventType,
+  isFixedPlayerCount,
+  getEventTypePlayerLimits,
+} from '../event-types'
 
 // Event format types
 export const EVENT_FORMATS = [
@@ -7,6 +13,7 @@ export const EVENT_FORMATS = [
   'single-elimination',
   'groups-knockout',
   'double-elimination',
+  'tests',
 ] as const
 export type EventFormat = (typeof EVENT_FORMATS)[number]
 
@@ -140,6 +147,12 @@ export const eventsCreateSchema = z
       .nullable()
       .optional(),
     trainingSessionId: z.uuid('Invalid training session ID format').optional(),
+    // For test events: number of players per heat (default 8)
+    playersPerHeat: z
+      .number()
+      .int('playersPerHeat must be an integer')
+      .min(1, 'playersPerHeat must be at least 1')
+      .optional(),
   })
   .strict()
   .refine((data) => data.minPlayers <= data.maxPlayers, {
@@ -179,8 +192,43 @@ export const eventsCreateSchema = z
       path: ['losersStartRoundsBeforeFinal'],
     }
   )
+  .refine(
+    (data) => {
+      // playersPerHeat is only valid for test events
+      if (
+        data.playersPerHeat !== undefined &&
+        !isTestEventType(data.eventType)
+      ) {
+        return false
+      }
+      return true
+    },
+    {
+      message: 'playersPerHeat is only valid for test events',
+      path: ['playersPerHeat'],
+    }
+  )
+  .transform((data) => {
+    let result = { ...data }
+
+    // Auto-set format to 'tests' for test events if not explicitly set
+    if (isTestEventType(data.eventType) && data.format === 'groups') {
+      result = { ...result, format: 'tests' as const }
+    }
+
+    // For fixed player count events, override min/max with correct values
+    if (isFixedPlayerCount(data.eventType)) {
+      const limits = getEventTypePlayerLimits(data.eventType)
+      result = { ...result, minPlayers: limits.min, maxPlayers: limits.max }
+    }
+
+    return result
+  })
 
 // Update event schema for PATCH /events/:id
+// Note: For fixed player count events (super-solo, speed-solo, juniors-solo),
+// min/max players cannot be changed. This is validated at runtime in the API route
+// since we need the existing event's eventType to validate.
 export const eventsUpdateSchema = z
   .object({
     name: z
@@ -247,6 +295,13 @@ export const eventsUpdateSchema = z
       .uuid('Invalid organization ID format')
       .nullable()
       .optional(),
+    // For test events: number of players per heat (default 8)
+    playersPerHeat: z
+      .number()
+      .int('playersPerHeat must be an integer')
+      .min(1, 'playersPerHeat must be at least 1')
+      .nullable()
+      .optional(),
   })
   .strict()
   .refine(
@@ -265,6 +320,25 @@ export const eventsUpdateSchema = z
       path: ['minPlayers'],
     }
   )
+
+/**
+ * Validates that min/max players cannot be changed for fixed player count events.
+ * This is used at runtime in the API route since we need the existing event's eventType.
+ */
+export const validatePlayerLimitsUpdate = (
+  existingEventType: string,
+  updateData: { minPlayers?: number; maxPlayers?: number }
+): { valid: boolean; error?: string } => {
+  if (isFixedPlayerCount(existingEventType)) {
+    if (updateData.minPlayers !== undefined || updateData.maxPlayers !== undefined) {
+      return {
+        valid: false,
+        error: `Cannot change min/max players for ${existingEventType} events. Player limits are fixed.`,
+      }
+    }
+  }
+  return { valid: true }
+}
 
 // Inferred TypeScript types
 export type EventsQuery = z.infer<typeof eventsQuerySchema>

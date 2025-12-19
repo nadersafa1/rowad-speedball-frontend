@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { apiClient } from '@/lib/api-client'
 import { formatDate } from '@/lib/utils'
 import Loading from '@/components/ui/loading'
-import { EVENT_TYPE_LABELS } from '@/types/event-types'
+import { EventType, EVENT_TYPE_LABELS } from '@/types/event-types'
 
 interface Event {
   id: string
@@ -122,9 +122,8 @@ const SessionEventsList = ({
                     <p className='font-medium'>{event.name}</p>
                     <div className='flex flex-wrap gap-2 mt-2'>
                       <Badge variant='outline'>
-                        {EVENT_TYPE_LABELS[
-                          event.eventType as keyof typeof EVENT_TYPE_LABELS
-                        ] || event.eventType}
+                        {EVENT_TYPE_LABELS[event.eventType as EventType] ||
+                          event.eventType}
                       </Badge>
                       <Badge variant='secondary'>
                         {genderLabels[event.gender]}

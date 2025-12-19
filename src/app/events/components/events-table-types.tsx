@@ -1,5 +1,5 @@
 import { Event, EventFormat } from '@/types'
-import type { EventType } from '@/types/event-types'
+import { EventType } from '@/types/event-types'
 
 type SortableField =
   | 'name'

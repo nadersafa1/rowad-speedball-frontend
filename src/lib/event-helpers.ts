@@ -1,6 +1,25 @@
+/**
+ * Server-side event helpers that require database access
+ * For client-safe helpers, use @/lib/utils/test-event-utils
+ */
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { eq } from 'drizzle-orm'
+
+// Re-export all client-safe utilities for server-side convenience
+export {
+  isTestEventType,
+  isSoloTestEventType,
+  isTeamTestEventType,
+  isCompetitionEventType,
+  DEFAULT_PLAYERS_PER_HEAT,
+  calculateRegistrationTotalScore,
+  isHeatGroup,
+  formatGroupNameForDisplay,
+  getPlayersPerHeat,
+  getNextHeatName,
+  getPlayersLimitsForEventType,
+} from '@/lib/utils/test-event-utils'
 
 /**
  * Calculates and updates the completed flag for an event

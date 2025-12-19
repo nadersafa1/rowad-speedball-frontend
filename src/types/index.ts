@@ -1,11 +1,55 @@
 // Re-export event types from centralized location
 export {
+  // Enum
+  EventType,
+  // Arrays for runtime iteration
   EVENT_TYPES,
   UI_EVENT_TYPES,
+  TEST_EVENT_TYPES,
+  SOLO_TEST_EVENT_TYPES,
+  TEAM_TEST_EVENT_TYPES,
+  // Labels
   EVENT_TYPE_LABELS,
+  EVENT_TYPE_METADATA,
+  // Constants
+  DEFAULT_PLAYERS_PER_HEAT,
+  // Helper functions
+  getEventTypeMetadata,
   isSinglePlayerEventType,
+  isTestEventType,
+  isSoloTestEventType,
+  isTeamTestEventType,
+  isCompetitionEventType,
+  isValidEventType,
 } from './event-types'
-export type { EventType, UIEventType } from './event-types'
+export type {
+  UIEventType,
+  TestEventType,
+  EventTypeMetadata,
+  EventTypeLimits,
+} from './event-types'
+
+// Re-export enhanced solo events types and type guards
+export {
+  isSoloTestEvent,
+  isTeamTestEvent,
+  isCompetitionEvent,
+  isTestEvent,
+  getExpectedPositionCount,
+  requiresPositions,
+  toEnhanced,
+  toLegacy,
+  isPositionScored,
+  areAllPositionsScored,
+} from './solo-events.types'
+export type {
+  SoloTestEvent,
+  TeamTestEvent,
+  CompetitionEvent,
+  PositionScoreState,
+  EnhancedPositionScores,
+  BasicPositionScores,
+} from './solo-events.types'
 
 // Re-export team level types from centralized location
 export {
@@ -105,8 +149,8 @@ export type AuthResponse = {
   user?: AuthUser
 }
 
-// Events types
-import type { EventType } from './event-types'
+// Events types - imports for local use
+import { EventType } from './event-types'
 import type { EventFormat } from './event-format'
 
 export type Event = {
@@ -126,6 +170,8 @@ export type Event = {
   pointsPerLoss: number
   completed: boolean
   hasThirdPlaceMatch?: boolean
+  // For test events: number of players per heat (default 8)
+  playersPerHeat?: number | null
   organizationId?: string | null
   trainingSessionId?: string | null
   registrationsCount?: number
@@ -147,6 +193,11 @@ export type Group = {
   updatedAt: string
 }
 
+// Position scores type
+import type { PositionScores } from './position-scores'
+export type { PositionScores, PositionKey } from './position-scores'
+export { POSITION_KEYS, POSITION_LABELS } from './position-scores'
+
 export type Registration = {
   id: string
   eventId: string
@@ -158,10 +209,21 @@ export type Registration = {
   setsLost: number
   points: number
   qualified: boolean
+  teamName?: string | null
+  totalScore?: number // Calculated field (sum of all player positionScores)
   createdAt: string
   updatedAt: string
-  players?: Player[]
+  players?: PlayerWithPositionScores[]
 }
+
+// Player with positionScores for test events
+export type PlayerWithPositionScores = Player & {
+  positionScores?: PositionScores | null
+  registrationOrder?: number
+}
+
+// Legacy type alias for backward compatibility
+export type PlayerWithRegistrationPosition = PlayerWithPositionScores
 
 export type Match = {
   id: string

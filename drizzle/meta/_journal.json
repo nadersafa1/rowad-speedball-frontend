@@ -162,6 +162,27 @@
       "when": 1765512979672,
       "tag": "0022_cheerful_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1765560203300,
+      "tag": "0023_swift_domino",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1765610452699,
+      "tag": "0024_position_scores_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1765610627434,
+      "tag": "0025_stormy_giant_girl",
+      "breakpoints": true
     }
   ]
 }

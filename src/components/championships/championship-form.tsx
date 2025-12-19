@@ -57,7 +57,7 @@ const championshipSchema = z.object({
     .min(1, 'Name is required')
     .min(2, 'Name must be at least 2 characters')
     .max(255, 'Name must be less than 255 characters'),
-  federationId: z.string().uuid('Please select a federation'),
+  federationId: z.uuid('Please select a federation'),
   description: z
     .string()
     .max(1000, 'Description must be less than 1000 characters')

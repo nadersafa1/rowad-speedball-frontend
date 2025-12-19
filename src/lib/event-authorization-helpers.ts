@@ -135,6 +135,60 @@ export function checkEventDeleteAuthorization(
 }
 
 /**
+ * Check if user has authorization to delete registrations
+ * Returns Response if unauthorized, null if authorized
+ * Allows coaches to delete registrations (but not events)
+ */
+export function checkRegistrationDeleteAuthorization(
+  context: OrganizationContext,
+  event: typeof schema.events.$inferSelect
+): ReturnType<typeof Response.json> | null {
+  const {
+    isSystemAdmin,
+    isAdmin,
+    isOwner,
+    isCoach,
+    organization,
+    isAuthenticated,
+  } = context
+
+  // Require authentication
+  if (!isAuthenticated) {
+    return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Authorization: System admins, org admins, org owners, and org coaches can delete registrations
+  // Additionally, org members (admin/owner/coach) must have an active organization
+  if (
+    (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
+    (!isSystemAdmin && !organization?.id)
+  ) {
+    return Response.json(
+      {
+        message:
+          'Only system admins, club admins, club owners, and club coaches can delete registrations',
+      },
+      { status: 403 }
+    )
+  }
+
+  // Organization ownership check: org members can only delete registrations from their own organization
+  if (!isSystemAdmin) {
+    if (!organization?.id || event.organizationId !== organization.id) {
+      return Response.json(
+        {
+          message:
+            'You can only delete registrations from your own organization',
+        },
+        { status: 403 }
+      )
+    }
+  }
+
+  return null
+}
+
+/**
  * Check if user has authorization to read/view events
  * Returns Response if unauthorized, null if authorized
  * Authorization logic matches GET events:

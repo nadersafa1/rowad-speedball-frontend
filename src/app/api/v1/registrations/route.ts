@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { and, eq, SQL } from 'drizzle-orm'
+import { and, eq, SQL, desc, asc, sql } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -21,6 +21,9 @@ import {
   addPlayersToRegistration,
   checkPlayersAlreadyRegistered,
 } from '@/lib/registration-helpers'
+import { validatePositionAssignments } from '@/lib/utils/position-utils'
+import { getRegistrationTotalScore } from '@/lib/utils/score-calculations'
+import { createPaginatedResponse } from '@/types/api/pagination'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -33,7 +36,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { eventId, groupId } = parseResult.data
+    const {
+      eventId,
+      groupId,
+      organizationId,
+      q,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    } = parseResult.data
 
     // Authorization checks
     if (eventId) {
@@ -89,18 +101,277 @@ export async function GET(request: NextRequest) {
           )
         : undefined
 
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit
+
+    // Handle position score sorting (R, L, F, B)
+    const positionScoreFields = [
+      'positionR',
+      'positionL',
+      'positionF',
+      'positionB',
+    ]
+    if (sortBy && positionScoreFields.includes(sortBy)) {
+      const positionKey = sortBy.replace('position', '') as
+        | 'R'
+        | 'L'
+        | 'F'
+        | 'B'
+      // Build SQL expression for position score extraction
+      const positionScoreExpr = sql<number>`COALESCE((
+        SELECT COALESCE((rp.position_scores->>${sql.raw(
+          `'${positionKey}'`
+        )})::int, 0)
+        FROM ${schema.registrationPlayers} rp
+        WHERE rp.registration_id = ${schema.registrations.id}
+        LIMIT 1
+      ), 0)`
+
+      let query = db
+        .select({
+          registration: schema.registrations,
+          positionScore: positionScoreExpr.as('position_score'),
+        })
+        .from(schema.registrations)
+
+      if (combinedCondition) {
+        query = query.where(combinedCondition) as typeof query
+      }
+
+      // Apply sorting
+      const orderDirection = sortOrder === 'asc' ? asc : desc
+      query = query.orderBy(orderDirection(positionScoreExpr)) as typeof query
+
+      const results = await query
+
+      // Enrich with player data
+      let registrationsWithPlayers = await Promise.all(
+        results.map(async (row) => {
+          const enriched = await enrichRegistrationWithPlayers(row.registration)
+          return {
+            ...enriched,
+            totalScore:
+              enriched.totalScore ?? getRegistrationTotalScore(enriched),
+          }
+        })
+      )
+
+      // Apply client-side filters (player name, organization)
+      if (q) {
+        registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+          reg.players?.some(
+            (p) =>
+              p.name.toLowerCase().includes(q.toLowerCase()) ||
+              p.nameRtl?.toLowerCase().includes(q.toLowerCase())
+          )
+        )
+      }
+
+      if (organizationId !== undefined) {
+        if (organizationId === null) {
+          registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+            reg.players?.some((p) => !p.organizationId)
+          )
+        } else {
+          registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+            reg.players?.some((p) => p.organizationId === organizationId)
+          )
+        }
+      }
+
+      // Calculate total count before pagination
+      const totalItems = registrationsWithPlayers.length
+      const totalPages = Math.ceil(totalItems / limit)
+
+      // Apply pagination
+      const paginatedRegistrations = registrationsWithPlayers.slice(
+        offset,
+        offset + limit
+      )
+
+      // Ensure totalScore is always a number (never undefined/null)
+      const registrationsWithTotalScore = paginatedRegistrations.map((reg) => ({
+        ...reg,
+        totalScore: typeof reg.totalScore === 'number' ? reg.totalScore : 0,
+      }))
+
+      return Response.json(
+        createPaginatedResponse(
+          registrationsWithTotalScore,
+          page,
+          limit,
+          totalItems
+        )
+      )
+    }
+
+    // Use database-level sorting with JSONB aggregation for totalScore
+    if (sortBy === 'totalScore') {
+      // Query with JSONB aggregation for total score
+      const totalScoreExpr = sql<number>`
+        COALESCE((
+          SELECT SUM(
+            COALESCE((rp.position_scores->>'R')::int, 0) +
+            COALESCE((rp.position_scores->>'L')::int, 0) +
+            COALESCE((rp.position_scores->>'F')::int, 0) +
+            COALESCE((rp.position_scores->>'B')::int, 0)
+          )
+          FROM registration_players rp
+          WHERE rp.registration_id = ${schema.registrations.id}
+        ), 0)
+      `
+
+      let query = db
+        .select({
+          registration: schema.registrations,
+          totalScore: totalScoreExpr.as('total_score'),
+        })
+        .from(schema.registrations)
+
+      if (combinedCondition) {
+        query = query.where(combinedCondition) as typeof query
+      }
+
+      // Apply sorting
+      const orderDirection = sortOrder === 'asc' ? asc : desc
+      query = query.orderBy(orderDirection(totalScoreExpr)) as typeof query
+
+      const results = await query
+
+      // Enrich with player data
+      let registrationsWithPlayers = await Promise.all(
+        results.map(async (row) => {
+          const enriched = await enrichRegistrationWithPlayers(row.registration)
+          // Use SQL-calculated totalScore (more accurate for sorting)
+          // Ensure it's always a number
+          const calculatedTotalScore =
+            typeof row.totalScore === 'number'
+              ? row.totalScore
+              : enriched.totalScore ?? 0
+          return {
+            ...enriched,
+            totalScore: calculatedTotalScore,
+          }
+        })
+      )
+
+      // Apply client-side filters (player name, organization)
+      if (q) {
+        registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+          reg.players?.some(
+            (p) =>
+              p.name.toLowerCase().includes(q.toLowerCase()) ||
+              p.nameRtl?.toLowerCase().includes(q.toLowerCase())
+          )
+        )
+      }
+
+      if (organizationId !== undefined) {
+        if (organizationId === null) {
+          registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+            reg.players?.some((p) => !p.organizationId)
+          )
+        } else {
+          registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+            reg.players?.some((p) => p.organizationId === organizationId)
+          )
+        }
+      }
+
+      // Calculate total count before pagination
+      const totalItems = registrationsWithPlayers.length
+      const totalPages = Math.ceil(totalItems / limit)
+
+      // Apply pagination
+      const paginatedRegistrations = registrationsWithPlayers.slice(
+        offset,
+        offset + limit
+      )
+
+      // Ensure totalScore is always a number (never undefined/null)
+      const registrationsWithTotalScore = paginatedRegistrations.map((reg) => ({
+        ...reg,
+        totalScore: typeof reg.totalScore === 'number' ? reg.totalScore : 0,
+      }))
+
+      return Response.json(
+        createPaginatedResponse(
+          registrationsWithTotalScore,
+          page,
+          limit,
+          totalItems
+        )
+      )
+    }
+
+    // Default query without totalScore sorting
     let query = db.select().from(schema.registrations)
-    if (combinedCondition)
+    if (combinedCondition) {
       query = query.where(combinedCondition) as typeof query
+    }
+
+    // Apply default sorting
+    if (sortBy === 'createdAt') {
+      const orderDirection = sortOrder === 'asc' ? asc : desc
+      query = query.orderBy(
+        orderDirection(schema.registrations.createdAt)
+      ) as typeof query
+    }
 
     const registrations = await query
 
     // Enrich with player data from junction table
-    const registrationsWithPlayers = await Promise.all(
+    let registrationsWithPlayers = await Promise.all(
       registrations.map(enrichRegistrationWithPlayers)
     )
 
-    return Response.json({ registrations: registrationsWithPlayers })
+    // Apply client-side filters (player name, organization)
+    if (q) {
+      registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+        reg.players?.some(
+          (p) =>
+            p.name.toLowerCase().includes(q.toLowerCase()) ||
+            p.nameRtl?.toLowerCase().includes(q.toLowerCase())
+        )
+      )
+    }
+
+    if (organizationId !== undefined) {
+      if (organizationId === null) {
+        registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+          reg.players?.some((p) => !p.organizationId)
+        )
+      } else {
+        registrationsWithPlayers = registrationsWithPlayers.filter((reg) =>
+          reg.players?.some((p) => p.organizationId === organizationId)
+        )
+      }
+    }
+
+    // Calculate total count before pagination
+    const totalItems = registrationsWithPlayers.length
+    const totalPages = Math.ceil(totalItems / limit)
+
+    // Apply pagination
+    const paginatedRegistrations = registrationsWithPlayers.slice(
+      offset,
+      offset + limit
+    )
+
+    // Ensure totalScore is always a number (never undefined/null)
+    const registrationsWithTotalScore = paginatedRegistrations.map((reg) => ({
+      ...reg,
+      totalScore: typeof reg.totalScore === 'number' ? reg.totalScore : 0,
+    }))
+
+    return Response.json(
+      createPaginatedResponse(
+        registrationsWithTotalScore,
+        page,
+        limit,
+        totalItems
+      )
+    )
   } catch (error) {
     console.error('Error fetching registrations:', error)
     return Response.json({ message: 'Internal server error' }, { status: 500 })
@@ -118,7 +389,11 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { eventId, playerIds } = parseResult.data
+    const {
+      eventId,
+      playerIds,
+      players: playersWithPositions,
+    } = parseResult.data
 
     // Get event
     const event = await db
@@ -139,13 +414,7 @@ export async function POST(request: NextRequest) {
 
     // Validate player count based on min/max configuration
     const countValidation = validateRegistrationPlayerCount(
-      eventData.eventType as
-        | 'solo'
-        | 'singles'
-        | 'doubles'
-        | 'singles-teams'
-        | 'solo-teams'
-        | 'relay',
+      eventData.eventType,
       playerIds.length,
       eventData.minPlayers,
       eventData.maxPlayers
@@ -189,13 +458,7 @@ export async function POST(request: NextRequest) {
     const genderValidation = validateGenderRulesForPlayers(
       eventData.gender as 'male' | 'female' | 'mixed',
       genders,
-      eventData.eventType as
-        | 'solo'
-        | 'singles'
-        | 'doubles'
-        | 'singles-teams'
-        | 'solo-teams'
-        | 'relay'
+      eventData.eventType
     )
     if (!genderValidation.valid) {
       return Response.json({ message: genderValidation.error }, { status: 400 })
@@ -221,8 +484,23 @@ export async function POST(request: NextRequest) {
 
     const registration = result[0]
 
-    // Add players to junction table
-    await addPlayersToRegistration(registration.id, playerIds)
+    // Validate position uniqueness using position-utils
+    if (playersWithPositions) {
+      const validation = validatePositionAssignments(
+        eventData.eventType,
+        playersWithPositions.map((p) => p.positionScores ?? null)
+      )
+      if (!validation.valid) {
+        return Response.json({ message: validation.error }, { status: 400 })
+      }
+    }
+
+    // Add players to junction table (with positions if provided)
+    await addPlayersToRegistration(
+      registration.id,
+      playerIds,
+      playersWithPositions
+    )
 
     // Return enriched registration
     const enrichedRegistration = await enrichRegistrationWithPlayers(

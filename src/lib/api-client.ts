@@ -449,6 +449,27 @@ export class ApiClient {
     })
   }
 
+  // Heat generation methods (for test events)
+  async generateHeats(
+    eventId: string,
+    options?: {
+      playersPerHeat?: number
+      shuffleRegistrations?: boolean
+      seeds?: Array<{ registrationId: string; seed: number }>
+    }
+  ) {
+    return this.request(`/events/${eventId}/generate-heats`, {
+      method: 'POST',
+      body: options ? JSON.stringify(options) : undefined,
+    })
+  }
+
+  async resetHeats(eventId: string) {
+    return this.request(`/events/${eventId}/reset-heats`, {
+      method: 'POST',
+    })
+  }
+
   // Groups methods
   async getGroups(eventId?: string) {
     const params = eventId ? `?eventId=${eventId}` : ''
@@ -469,16 +490,43 @@ export class ApiClient {
   }
 
   // Registrations methods
-  async getRegistrations(eventId?: string, groupId?: string) {
+  async getRegistrations(
+    eventId?: string,
+    groupId?: string,
+    params?: {
+      q?: string
+      organizationId?: string | null
+      sortBy?: string
+      sortOrder?: 'asc' | 'desc'
+      page?: number
+      limit?: number
+    }
+  ) {
     const searchParams = new URLSearchParams()
     if (eventId) searchParams.set('eventId', eventId)
     if (groupId) searchParams.set('groupId', groupId)
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.organizationId !== undefined) {
+      if (params.organizationId === null) {
+        searchParams.set('organizationId', 'null')
+      } else {
+        searchParams.set('organizationId', params.organizationId)
+      }
+    }
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
     return this.request(`/registrations${query ? `?${query}` : ''}`)
   }
 
-  async createRegistration(data: { eventId: string; playerIds: string[] }) {
+  async createRegistration(data: {
+    eventId: string
+    playerIds: string[]
+    players?: { playerId: string; position?: string | null; order?: number }[]
+  }) {
     return this.request('/registrations', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -495,6 +543,32 @@ export class ApiClient {
   async deleteRegistration(id: string) {
     return this.request(`/registrations/${id}`, {
       method: 'DELETE',
+    })
+  }
+
+  async updatePlayerPositionScores(
+    registrationId: string,
+    payload: {
+      playerId: string
+      positionScores: Record<string, number | null>
+    }
+  ) {
+    return this.request(`/registrations/${registrationId}/scores`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  }
+
+  async updatePlayerPositionScoresBatch(
+    registrationId: string,
+    updates: {
+      playerId: string
+      positionScores: Record<string, number | null>
+    }[]
+  ) {
+    return this.request(`/registrations/${registrationId}/scores`, {
+      method: 'PATCH',
+      body: JSON.stringify({ updates }),
     })
   }
 

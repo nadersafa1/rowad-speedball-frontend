@@ -10,7 +10,7 @@ import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
 interface MatchesListViewProps {
   matches: Match[]
   groups: Group[]
-  canUpdate: boolean
+  canUpdateMatch: (match: Match) => boolean
   liveMatchIds: Set<string>
   onEditMatch: (match: Match) => void
   eventFormat?: EventFormat
@@ -20,7 +20,7 @@ interface MatchesListViewProps {
 const MatchesListView = ({
   matches,
   groups,
-  canUpdate,
+  canUpdateMatch,
   liveMatchIds,
   onEditMatch,
   eventFormat,
@@ -107,7 +107,7 @@ const MatchesListView = ({
                   key={match.id}
                   match={match}
                   groupName={getGroupName(match.groupId)}
-                  showEditButton={canUpdate}
+                  showEditButton={canUpdateMatch(match)}
                   onEditClick={() => onEditMatch(match)}
                   isLive={liveMatchIds.has(match.id)}
                 />

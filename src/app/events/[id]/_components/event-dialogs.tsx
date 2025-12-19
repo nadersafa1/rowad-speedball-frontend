@@ -17,8 +17,8 @@ import type { Event, Registration, Match } from '@/types'
 
 interface EventDialogsProps {
   event: Event
-  registrations: Registration[]
-  matches: Match[]
+  registrations?: Registration[]
+  matches?: Match[]
   eventFormOpen: boolean
   registrationFormOpen: boolean
   editingRegistration: string | null
@@ -35,8 +35,8 @@ interface EventDialogsProps {
 
 const EventDialogs = ({
   event,
-  registrations,
-  matches,
+  registrations = [],
+  matches = [],
   eventFormOpen,
   registrationFormOpen,
   editingRegistration,
@@ -73,10 +73,7 @@ const EventDialogs = ({
       >
         {registrationFormOpen && (
           <RegistrationForm
-            eventId={event.id}
-            eventGender={event.gender}
-            minPlayers={event.minPlayers}
-            maxPlayers={event.maxPlayers}
+            event={event}
             registration={
               editingRegistration
                 ? registrations.find((r) => r.id === editingRegistration) ||
@@ -100,9 +97,19 @@ const EventDialogs = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Registration</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this registration? This action
-              cannot be undone and will also delete all related matches and
-              sets.
+              {event.format === 'tests' ? (
+                <>
+                  Are you sure you want to delete this registration? This action
+                  cannot be undone and will permanently delete all scores and
+                  heat assignments.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete this registration? This action
+                  cannot be undone and will also delete all related matches and
+                  sets.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
