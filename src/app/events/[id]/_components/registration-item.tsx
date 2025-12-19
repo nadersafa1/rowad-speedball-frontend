@@ -2,6 +2,8 @@ import { Button } from '@/components/ui'
 import { Event, Registration } from '@/types'
 import { Pencil, Trash2 } from 'lucide-react'
 import React from 'react'
+import { formatPlayers } from '@/lib/utils/player-formatting'
+import { isTestEventType } from '@/types/event-types'
 
 interface RegistrationItemProps {
   registration: Registration
@@ -27,7 +29,9 @@ const RegistrationItem = ({
     >
       <div>
         <p className='font-medium'>
-          {registration.players?.map((p) => p.name).join(' & ') || 'Unknown'}
+          {formatPlayers(registration.players, {
+            showPositions: isTestEventType(event.eventType),
+          })}
         </p>
       </div>
       <div className='flex items-center gap-2'>

@@ -26,6 +26,7 @@ import { apiClient } from '@/lib/api-client'
 import type { Registration, Group } from '@/types'
 import { DEFAULT_PLAYERS_PER_HEAT } from '@/types/event-types'
 import SortableRegistrationItem from './sortable-registration-item'
+import { formatPlayers } from '@/lib/utils/player-formatting'
 
 interface HeatManagementProps {
   eventId: string
@@ -264,9 +265,7 @@ const HeatManagement = ({
                     </div>
                     <div className='flex-1 min-w-0'>
                       <p className='font-medium truncate'>
-                        {registration.players && registration.players.length > 0
-                          ? registration.players.map((p) => p.name).join(' & ')
-                          : 'Unknown'}
+                        {formatPlayers(registration.players)}
                       </p>
                     </div>
                   </div>

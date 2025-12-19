@@ -9,6 +9,7 @@ import { Plus, Users, Trash2, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { Registration, Group } from '@/types'
+import { formatPlayers } from '@/lib/utils/player-formatting'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -141,10 +142,7 @@ const GroupManagement = ({
               <h4 className='font-medium'>Unassigned Registrations</h4>
               <div className='space-y-2 max-h-60 overflow-y-auto'>
                 {unassignedRegistrations.map((reg) => {
-                  const playerNames =
-                    reg.players && reg.players.length > 0
-                      ? reg.players.map((p) => p.name).join(' & ')
-                      : 'Unknown'
+                  const playerNames = formatPlayers(reg.players)
 
                   return (
                     <div

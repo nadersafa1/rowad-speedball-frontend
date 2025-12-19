@@ -17,7 +17,7 @@ import {
   calculateRegistrationTotalScore,
   getScoreBreakdown,
 } from '@/lib/utils/test-event-utils'
-import { getPositions } from '@/lib/validations/registration-validation'
+import { formatPlayers } from '@/lib/utils/player-formatting'
 
 // Get aggregated score display from all players in a registration
 const getRegistrationScores = (
@@ -40,22 +40,6 @@ const getRegistrationScores = (
   )
 }
 
-// Format player name with positions from positionScores
-const formatPlayerWithPosition = (player: PlayerWithPositionScores): string => {
-  const positions = getPositions(player.positionScores)
-  if (positions.length > 0) {
-    return `${player.name} (${positions.join(',')})`
-  }
-  return player.name
-}
-
-// Format all players in a registration
-const formatPlayersWithPositions = (
-  players: PlayerWithPositionScores[] | undefined
-): string => {
-  if (!players || players.length === 0) return 'Unknown'
-  return players.map(formatPlayerWithPosition).join(' & ')
-}
 
 interface TestEventHeatsViewProps {
   event: Event
@@ -223,7 +207,7 @@ const TestEventHeatsView = ({
               ) : (
                 <div className='space-y-2'>
                   {sortedRegs.map((reg, index) => {
-                    const playerName = formatPlayersWithPositions(reg.players)
+                    const playerName = formatPlayers(reg.players, { showPositions: true })
                     return (
                       <div
                         key={reg.id}
@@ -319,7 +303,7 @@ const TestEventHeatsView = ({
           <CardContent>
             <div className='space-y-2'>
               {unassignedRegistrations.map((reg) => {
-                const playerName = formatPlayersWithPositions(reg.players)
+                const playerName = formatPlayers(reg.players, { showPositions: true })
                 const totalScore = calculateRegistrationTotalScore(reg)
                 return (
                   <div

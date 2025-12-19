@@ -8,7 +8,7 @@ import {
   calculateRegistrationTotalScore,
   getScoreBreakdown,
 } from '@/lib/utils/test-event-utils'
-import { getPositions } from '@/lib/validations/registration-validation'
+import { formatPlayers } from '@/lib/utils/player-formatting'
 
 // Get display scores for a registration (aggregate from all players)
 const getRegistrationScoreDisplay = (
@@ -32,24 +32,6 @@ const getRegistrationScoreDisplay = (
   )
 }
 
-// Format player name with positions from positionScores
-const formatPlayerWithPositions = (
-  player: PlayerWithPositionScores
-): string => {
-  const positions = getPositions(player.positionScores)
-  if (positions.length > 0) {
-    return `${player.name} (${positions.join(',')})`
-  }
-  return player.name
-}
-
-// Format all players in a registration
-const formatPlayersWithPositions = (
-  players: PlayerWithPositionScores[] | undefined
-): string => {
-  if (!players || players.length === 0) return 'Unknown'
-  return players.map(formatPlayerWithPositions).join(' & ')
-}
 
 interface TestEventLeaderboardProps {
   registrations: Registration[]
@@ -114,7 +96,7 @@ const TestEventLeaderboard = ({
         <div className='space-y-2'>
           {rankedRegistrations.map((reg, index) => {
             const rank = index + 1
-            const playerName = formatPlayersWithPositions(reg.players)
+            const playerName = formatPlayers(reg.players, { showPositions: true })
             const heatName = getGroupName(reg.groupId ?? null)
 
             return (
