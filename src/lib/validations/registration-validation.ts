@@ -1,11 +1,12 @@
 // Registration Validation Utilities
 import { EventType, isSoloTestEventType } from '@/types/event-types'
 import type { PositionScores, PositionKey } from '@/types/position-scores'
+import { POSITION_KEYS } from '@/types/position-scores'
 import {
-  POSITION_KEYS,
   ONE_HANDED_POSITIONS,
   TWO_HANDED_POSITIONS,
-} from '@/types/position-scores'
+  getPositions as _getPositions,
+} from '@/lib/utils/position-utils'
 
 type ValidationResult = { valid: boolean; error?: string }
 
@@ -16,15 +17,10 @@ type ValidationResult = { valid: boolean; error?: string }
 /**
  * Extract position keys from positionScores object
  * Returns array of position keys that exist in the object (even if value is null)
+ *
+ * @deprecated Use getPositions from position-utils.ts instead
  */
-export const getPositions = (
-  positionScores: PositionScores | null | undefined
-): PositionKey[] => {
-  if (!positionScores) return []
-  return Object.keys(positionScores).filter((key) =>
-    POSITION_KEYS.includes(key as PositionKey)
-  ) as PositionKey[]
-}
+export const getPositions = _getPositions
 
 /**
  * Check if a specific position is assigned in positionScores

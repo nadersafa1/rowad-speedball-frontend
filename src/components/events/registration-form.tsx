@@ -37,11 +37,11 @@ import {
   POSITION_LABELS,
   type PositionKey,
 } from '@/types/position-scores'
-import { getPositions } from '@/lib/validations/registration-validation'
-
-// Position categories
-const ONE_HANDED_POSITIONS: PositionKey[] = ['R', 'L']
-const TWO_HANDED_POSITIONS: PositionKey[] = ['F', 'B']
+import {
+  getPositions,
+  ONE_HANDED_POSITIONS,
+  TWO_HANDED_POSITIONS,
+} from '@/lib/utils/position-utils'
 
 // Dynamic validation schema based on min/max players and event type
 const createRegistrationSchema = (event: Event) => {

@@ -3,10 +3,7 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import type { PlayerWithPosition } from '@/types/api/registrations.schemas'
 import type { PositionScores } from '@/types/position-scores'
-import {
-  sumPositionScores,
-  getRegistrationTotalScoreFromDb as _getRegistrationTotalScoreFromDb,
-} from '@/lib/utils/score-calculations'
+import { sumPositionScores } from '@/lib/utils/score-calculations'
 
 /**
  * Fetches players for a registration from the junction table
@@ -120,12 +117,38 @@ export const checkPlayersAlreadyRegistered = async (
 }
 
 /**
- * @deprecated Use getRegistrationTotalScoreFromDb from score-calculations.ts instead
  * Calculates total score for a registration using PostgreSQL JSONB aggregation
  * Returns sum of all positionScores (R+L+F+B) across all players
+ *
+ * SERVER-ONLY: This function requires database access.
+ * Use this for better performance when you only have a registrationId and
+ * don't need to fetch the full registration object with players.
+ */
+export const getRegistrationTotalScoreFromDb = async (
+  registrationId: string
+): Promise<number> => {
+  const result = await db
+    .select({
+      totalScore: sql<number>`
+        COALESCE(SUM(
+          COALESCE((${schema.registrationPlayers.positionScores}->>'R')::int, 0) +
+          COALESCE((${schema.registrationPlayers.positionScores}->>'L')::int, 0) +
+          COALESCE((${schema.registrationPlayers.positionScores}->>'F')::int, 0) +
+          COALESCE((${schema.registrationPlayers.positionScores}->>'B')::int, 0)
+        ), 0)
+      `.as('total_score'),
+    })
+    .from(schema.registrationPlayers)
+    .where(eq(schema.registrationPlayers.registrationId, registrationId))
+
+  return result[0]?.totalScore ?? 0
+}
+
+/**
+ * @deprecated Use getRegistrationTotalScoreFromDb instead
  */
 export const calculateRegistrationTotalScoreFromDb =
-  _getRegistrationTotalScoreFromDb
+  getRegistrationTotalScoreFromDb
 
 /**
  * Enriches a registration with player data from the junction table

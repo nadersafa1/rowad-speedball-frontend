@@ -21,6 +21,7 @@ import {
   addPlayersToRegistration,
   checkPlayersAlreadyRegistered,
 } from '@/lib/registration-helpers'
+import { validatePositionAssignments } from '@/lib/utils/position-utils'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -270,51 +271,14 @@ export async function POST(request: NextRequest) {
 
     const registration = result[0]
 
-    // Validate position uniqueness for relay and solo-teams events
-    if (
-      (eventData.eventType === 'relay' || eventData.eventType === 'solo-teams') &&
-      playersWithPositions
-    ) {
-      const positions = playersWithPositions
-        .map((p) => (p.positionScores ? Object.keys(p.positionScores) : []))
-        .flat()
-      const uniquePositions = new Set(positions)
-      if (positions.length !== uniquePositions.size) {
-        return Response.json(
-          { message: 'Each player must have a unique position for relay/solo-teams events' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Validate category-based position uniqueness for speed-solo-teams
-    if (eventData.eventType === 'speed-solo-teams' && playersWithPositions) {
-      const oneHandedPositions: string[] = []
-      const twoHandedPositions: string[] = []
-      
-      for (const p of playersWithPositions) {
-        if (p.positionScores) {
-          for (const pos of Object.keys(p.positionScores)) {
-            if (pos === 'R' || pos === 'L') oneHandedPositions.push(pos)
-            if (pos === 'F' || pos === 'B') twoHandedPositions.push(pos)
-          }
-        }
-      }
-      
-      const uniqueOneHanded = new Set(oneHandedPositions)
-      const uniqueTwoHanded = new Set(twoHandedPositions)
-      
-      if (oneHandedPositions.length !== uniqueOneHanded.size) {
-        return Response.json(
-          { message: 'Each one-handed position (R/L) can only be assigned to one player' },
-          { status: 400 }
-        )
-      }
-      if (twoHandedPositions.length !== uniqueTwoHanded.size) {
-        return Response.json(
-          { message: 'Each two-handed position (F/B) can only be assigned to one player' },
-          { status: 400 }
-        )
+    // Validate position uniqueness using position-utils
+    if (playersWithPositions) {
+      const validation = validatePositionAssignments(
+        eventData.eventType,
+        playersWithPositions.map((p) => p.positionScores ?? null)
+      )
+      if (!validation.valid) {
+        return Response.json({ message: validation.error }, { status: 400 })
       }
     }
     

@@ -4,14 +4,14 @@
  * Single source of truth for all score calculation logic across the application.
  * Consolidates 5 different implementations into one unified, well-tested module.
  *
+ * CLIENT-SAFE: This file contains only client-safe functions with no database dependencies.
+ * For server-only functions, see registration-helpers.ts
+ *
  * @module score-calculations
  */
 
 import type { PositionScores, PositionKey } from '@/types/position-scores'
 import { POSITION_KEYS } from '@/types/position-scores'
-import { eq, sql } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import * as schema from '@/db/schema'
 
 // ============================================
 // TYPE DEFINITIONS
@@ -263,31 +263,17 @@ export function getRegistrationTotalScore(
  * This uses SQL to sum scores directly in the database, which is ~10x faster
  * for large datasets compared to fetching all players and calculating client-side.
  *
- * @param registrationId - The registration ID
- * @returns Total score from database
+ * NOTE: This function has been moved to registration-helpers.ts to avoid
+ * bundling database dependencies in client components.
  *
- * @example
- * const totalScore = await getRegistrationTotalScoreFromDb('reg_123')
- * console.log(totalScore) // 39
+ * @deprecated Import from registration-helpers.ts instead
+ * @see {@link @/lib/registration-helpers.getRegistrationTotalScoreFromDb}
  */
-export async function getRegistrationTotalScoreFromDb(
-  registrationId: string
-): Promise<number> {
-  const result = await db
-    .select({
-      totalScore: sql<number>`
-        COALESCE(SUM(
-          COALESCE((${schema.registrationPlayers.positionScores}->>'R')::int, 0) +
-          COALESCE((${schema.registrationPlayers.positionScores}->>'L')::int, 0) +
-          COALESCE((${schema.registrationPlayers.positionScores}->>'F')::int, 0) +
-          COALESCE((${schema.registrationPlayers.positionScores}->>'B')::int, 0)
-        ), 0)
-      `.as('total_score'),
-    })
-    .from(schema.registrationPlayers)
-    .where(eq(schema.registrationPlayers.registrationId, registrationId))
-
-  return result[0]?.totalScore ?? 0
+export function getRegistrationTotalScoreFromDb(): never {
+  throw new Error(
+    'getRegistrationTotalScoreFromDb has been moved to registration-helpers.ts. ' +
+      'Import it from there instead: import { getRegistrationTotalScoreFromDb } from "@/lib/registration-helpers"'
+  )
 }
 
 // ============================================

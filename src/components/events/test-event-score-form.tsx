@@ -20,12 +20,13 @@ import {
 } from '@/components/ui/select'
 import type { Registration, PositionScores } from '@/types'
 import { isSoloTestEventType } from '@/types/event-types'
-import { getScoreBreakdown } from '@/lib/utils/test-event-utils'
-import { getPositions } from '@/lib/validations/registration-validation'
+import { getScoreBreakdown } from '@/lib/utils/score-calculations'
+import {
+  getPositions,
+  ONE_HANDED_POSITIONS as ONE_HANDED,
+  TWO_HANDED_POSITIONS as TWO_HANDED,
+} from '@/lib/utils/position-utils'
 import { POSITION_LABELS, type PositionKey } from '@/types/position-scores'
-
-const ONE_HANDED: PositionKey[] = ['R', 'L']
-const TWO_HANDED: PositionKey[] = ['F', 'B']
 
 interface PlayerScoreData {
   playerId: string
