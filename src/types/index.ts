@@ -29,6 +29,28 @@ export type {
   EventTypeLimits,
 } from './event-types'
 
+// Re-export enhanced solo events types and type guards
+export {
+  isSoloTestEvent,
+  isTeamTestEvent,
+  isCompetitionEvent,
+  isTestEvent,
+  getExpectedPositionCount,
+  requiresPositions,
+  toEnhanced,
+  toLegacy,
+  isPositionScored,
+  areAllPositionsScored,
+} from './solo-events.types'
+export type {
+  SoloTestEvent,
+  TeamTestEvent,
+  CompetitionEvent,
+  PositionScoreState,
+  EnhancedPositionScores,
+  BasicPositionScores,
+} from './solo-events.types'
+
 // Re-export team level types from centralized location
 export {
   TEAM_LEVELS,
