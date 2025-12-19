@@ -14,31 +14,10 @@ import { Pencil, Users, Shuffle, RefreshCw, Trash2 } from 'lucide-react'
 import EmptyState from '@/components/shared/empty-state'
 import type { Event, Registration, Group, PlayerWithPositionScores } from '@/types'
 import {
-  calculateRegistrationTotalScore,
-  getScoreBreakdown,
-} from '@/lib/utils/test-event-utils'
+  getRegistrationTotalScore,
+  aggregatePlayerScores,
+} from '@/lib/utils/score-calculations'
 import { formatPlayers } from '@/lib/utils/player-formatting'
-
-// Get aggregated score display from all players in a registration
-const getRegistrationScores = (
-  players: PlayerWithPositionScores[] | undefined
-): { L: number; R: number; F: number; B: number } => {
-  if (!players || players.length === 0) {
-    return { L: 0, R: 0, F: 0, B: 0 }
-  }
-  return players.reduce(
-    (acc, player) => {
-      const scores = getScoreBreakdown(player.positionScores)
-      return {
-        L: acc.L + scores.L,
-        R: acc.R + scores.R,
-        F: acc.F + scores.F,
-        B: acc.B + scores.B,
-      }
-    },
-    { L: 0, R: 0, F: 0, B: 0 }
-  )
-}
 
 
 interface TestEventHeatsViewProps {
@@ -183,7 +162,7 @@ const TestEventHeatsView = ({
         const sortedRegs = [...heatRegistrations]
           .map((r) => ({
             ...r,
-            totalScore: calculateRegistrationTotalScore(r),
+            totalScore: getRegistrationTotalScore(r),
           }))
           .sort((a, b) => b.totalScore - a.totalScore)
 
@@ -220,7 +199,7 @@ const TestEventHeatsView = ({
                           <div>
                             <p className='font-medium'>{playerName}</p>
                             {(() => {
-                              const scores = getRegistrationScores(reg.players)
+                              const scores = aggregatePlayerScores(reg.players)
                               return (
                                 <div className='flex gap-2 text-xs text-muted-foreground'>
                                   <span>L:{scores.L}</span>
@@ -304,7 +283,7 @@ const TestEventHeatsView = ({
             <div className='space-y-2'>
               {unassignedRegistrations.map((reg) => {
                 const playerName = formatPlayers(reg.players, { showPositions: true })
-                const totalScore = calculateRegistrationTotalScore(reg)
+                const totalScore = getRegistrationTotalScore(reg)
                 return (
                   <div
                     key={reg.id}
@@ -313,7 +292,7 @@ const TestEventHeatsView = ({
                     <div>
                       <p className='font-medium'>{playerName}</p>
                       {(() => {
-                        const scores = getRegistrationScores(reg.players)
+                        const scores = aggregatePlayerScores(reg.players)
                         return (
                           <div className='flex gap-2 text-xs text-muted-foreground'>
                             <span>L:{scores.L}</span>

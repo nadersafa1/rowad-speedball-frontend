@@ -15,6 +15,12 @@ import {
 } from '@/types/event-types'
 import type { PositionScores } from '@/types/position-scores'
 import { POSITION_KEYS } from '@/types/position-scores'
+import {
+  sumPositionScores as _sumPositionScores,
+  getScoreBreakdown as _getScoreBreakdown,
+  hasCompleteScores as _hasCompleteScores,
+  getRegistrationTotalScore as _getRegistrationTotalScore,
+} from './score-calculations'
 
 // Re-export from event-types for convenience
 export {
@@ -45,59 +51,28 @@ interface EventWithFormat {
 }
 
 /**
+ * @deprecated Use sumPositionScores from score-calculations.ts instead
  * Calculates score from a single positionScores object
  */
-export const calculatePositionScoresTotal = (
-  positionScores: PositionScores | null | undefined
-): number => {
-  if (!positionScores) return 0
-  return POSITION_KEYS.reduce((sum, key) => {
-    const score = positionScores[key]
-    return sum + (typeof score === 'number' ? score : 0)
-  }, 0)
-}
+export const calculatePositionScoresTotal = _sumPositionScores
 
 /**
+ * @deprecated Use getRegistrationTotalScore from score-calculations.ts instead
  * Calculates total score from all players' positionScores in a registration
  */
-export const calculateRegistrationTotalScore = (
-  registration: RegistrationWithPlayers
-): number => {
-  if (!registration.players || registration.players.length === 0) {
-    return 0
-  }
-  return registration.players.reduce(
-    (sum, player) => sum + calculatePositionScoresTotal(player.positionScores),
-    0
-  )
-}
+export const calculateRegistrationTotalScore = _getRegistrationTotalScore
 
 /**
+ * @deprecated Use hasCompleteScores from score-calculations.ts instead
  * Checks if all four positions have numeric scores (not null) for solo events
  */
-export const hasCompleteScores = (
-  positionScores: PositionScores | null | undefined
-): boolean => {
-  if (!positionScores) return false
-  return POSITION_KEYS.every((key) => typeof positionScores[key] === 'number')
-}
+export const hasCompleteScores = _hasCompleteScores
 
 /**
+ * @deprecated Use getScoreBreakdown from score-calculations.ts instead
  * Gets individual score breakdowns from positionScores
  */
-export const getScoreBreakdown = (
-  positionScores: PositionScores | null | undefined
-): { L: number; R: number; F: number; B: number } => {
-  if (!positionScores) {
-    return { L: 0, R: 0, F: 0, B: 0 }
-  }
-  return {
-    L: typeof positionScores.L === 'number' ? positionScores.L : 0,
-    R: typeof positionScores.R === 'number' ? positionScores.R : 0,
-    F: typeof positionScores.F === 'number' ? positionScores.F : 0,
-    B: typeof positionScores.B === 'number' ? positionScores.B : 0,
-  }
-}
+export const getScoreBreakdown = _getScoreBreakdown
 
 /**
  * Checks if an event uses heats (test events with format='tests')

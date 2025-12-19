@@ -5,32 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Trophy, Medal } from 'lucide-react'
 import type { Registration, Group, PlayerWithPositionScores } from '@/types'
 import {
-  calculateRegistrationTotalScore,
-  getScoreBreakdown,
-} from '@/lib/utils/test-event-utils'
+  getRegistrationTotalScore,
+  aggregatePlayerScores,
+} from '@/lib/utils/score-calculations'
 import { formatPlayers } from '@/lib/utils/player-formatting'
-
-// Get display scores for a registration (aggregate from all players)
-const getRegistrationScoreDisplay = (
-  players: PlayerWithPositionScores[] | undefined
-): { L: number; R: number; F: number; B: number } => {
-  if (!players || players.length === 0) {
-    return { L: 0, R: 0, F: 0, B: 0 }
-  }
-  // Sum scores across all players
-  return players.reduce(
-    (acc, player) => {
-      const scores = getScoreBreakdown(player.positionScores)
-      return {
-        L: acc.L + scores.L,
-        R: acc.R + scores.R,
-        F: acc.F + scores.F,
-        B: acc.B + scores.B,
-      }
-    },
-    { L: 0, R: 0, F: 0, B: 0 }
-  )
-}
 
 
 interface TestEventLeaderboardProps {
@@ -47,8 +25,8 @@ const TestEventLeaderboard = ({
     return [...registrations]
       .map((reg) => ({
         ...reg,
-        totalScore: reg.totalScore ?? calculateRegistrationTotalScore(reg),
-        scoreDisplay: getRegistrationScoreDisplay(reg.players),
+        totalScore: reg.totalScore ?? getRegistrationTotalScore(reg),
+        scoreDisplay: aggregatePlayerScores(reg.players),
       }))
       .sort((a, b) => b.totalScore - a.totalScore)
   }, [registrations])
