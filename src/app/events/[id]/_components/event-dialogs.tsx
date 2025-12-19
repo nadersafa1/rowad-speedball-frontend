@@ -17,8 +17,8 @@ import type { Event, Registration, Match } from '@/types'
 
 interface EventDialogsProps {
   event: Event
-  registrations: Registration[]
-  matches: Match[]
+  registrations?: Registration[]
+  matches?: Match[]
   eventFormOpen: boolean
   registrationFormOpen: boolean
   editingRegistration: string | null
@@ -35,8 +35,8 @@ interface EventDialogsProps {
 
 const EventDialogs = ({
   event,
-  registrations,
-  matches,
+  registrations = [],
+  matches = [],
   eventFormOpen,
   registrationFormOpen,
   editingRegistration,

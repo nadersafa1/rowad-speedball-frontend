@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Pencil, Users, Shuffle, RefreshCw, Trash2 } from 'lucide-react'
+import { Pencil, Users, Shuffle, RefreshCw, Trash2, Loader2 } from 'lucide-react'
 import EmptyState from '@/components/shared/empty-state'
 import type { Event, Registration, Group, PlayerWithPositionScores } from '@/types'
 import {
@@ -30,6 +30,10 @@ interface TestEventHeatsViewProps {
   isGenerating?: boolean
   canDelete?: boolean
   onDeleteRegistration?: (registrationId: string) => void
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
+  totalItems?: number
 }
 
 const TestEventHeatsView = ({
@@ -42,6 +46,10 @@ const TestEventHeatsView = ({
   isGenerating = false,
   canDelete = false,
   onDeleteRegistration,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  totalItems,
 }: TestEventHeatsViewProps) => {
   // Group registrations by heat (groupId)
   const registrationsByHeat = useMemo(() => {
@@ -335,6 +343,24 @@ const TestEventHeatsView = ({
             </div>
           </CardContent>
         </Card>
+      )}
+      {hasMore && onLoadMore && (
+        <div className='flex justify-center pt-4'>
+          <Button onClick={onLoadMore} disabled={isLoadingMore} variant='outline'>
+            {isLoadingMore ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Loading...
+              </>
+            ) : (
+              `Load More (${
+                totalItems && totalItems > registrations.length
+                  ? totalItems - registrations.length
+                  : ''
+              } remaining)`
+            )}
+          </Button>
+        </div>
       )}
     </div>
   )

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useGroupsStore } from '@/store/groups-store'
 import { useRegistrationsStore } from '@/store/registrations-store'
-import { Plus, Users, Trash2, CheckCircle2 } from 'lucide-react'
+import { Plus, Users, Trash2, CheckCircle2, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { Registration, Group } from '@/types'
@@ -27,6 +27,10 @@ interface GroupManagementProps {
   registrations: Registration[]
   onGroupCreated?: () => void
   canManage?: boolean
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
+  totalItems?: number
 }
 
 const GroupManagement = ({
@@ -35,6 +39,10 @@ const GroupManagement = ({
   registrations,
   onGroupCreated,
   canManage = true,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  totalItems,
 }: GroupManagementProps) => {
   const { createGroup, deleteGroup, isLoading } = useGroupsStore()
   const { fetchRegistrations } = useRegistrationsStore()
@@ -198,6 +206,24 @@ const GroupManagement = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {hasMore && onLoadMore && (
+        <div className='flex justify-center pt-4'>
+          <Button onClick={onLoadMore} disabled={isLoadingMore} variant='outline'>
+            {isLoadingMore ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Loading...
+              </>
+            ) : (
+              `Load More (${
+                totalItems && totalItems > registrations.length
+                  ? totalItems - registrations.length
+                  : ''
+              } remaining)`
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

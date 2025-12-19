@@ -12,16 +12,17 @@ import { formatPlayers } from '@/lib/utils/player-formatting'
 
 
 interface TestEventLeaderboardProps {
-  registrations: Registration[]
+  registrations?: Registration[]
   groups: Group[]
 }
 
 const TestEventLeaderboard = ({
-  registrations,
+  registrations = [],
   groups,
 }: TestEventLeaderboardProps) => {
   // Sort registrations by total score (descending)
   const rankedRegistrations = useMemo(() => {
+    if (!registrations || !Array.isArray(registrations)) return []
     return [...registrations]
       .map((reg) => ({
         ...reg,

@@ -16,7 +16,7 @@ interface ScoreUpdatePayload {
 
 interface TestEventRegistrationsViewProps {
   event: Event
-  registrations: Registration[]
+  registrations?: Registration[]
   groups: Group[]
   canUpdate: boolean
   canDelete?: boolean
@@ -28,11 +28,15 @@ interface TestEventRegistrationsViewProps {
   onGenerateHeats?: () => Promise<void>
   isLoading?: boolean
   isGeneratingHeats?: boolean
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
+  totalItems?: number
 }
 
 const TestEventRegistrationsView = ({
   event,
-  registrations,
+  registrations = [],
   groups,
   canUpdate,
   canDelete = false,
@@ -41,6 +45,10 @@ const TestEventRegistrationsView = ({
   onGenerateHeats,
   isLoading = false,
   isGeneratingHeats = false,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  totalItems,
 }: TestEventRegistrationsViewProps) => {
   const [selectedRegistration, setSelectedRegistration] =
     useState<Registration | null>(null)
@@ -63,12 +71,18 @@ const TestEventRegistrationsView = ({
     await onUpdateScores(registrationId, payload)
   }
 
+  const displayCount = totalItems ?? registrations.length
+
   return (
     <div className='space-y-4'>
       {/* Header with Add button */}
       <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold'>
-          Test Event ({registrations.length} registrations)
+          Test Event ({displayCount}
+          {totalItems && totalItems > registrations.length
+            ? ` of ${totalItems}`
+            : ''}{' '}
+          registrations)
         </h2>
       </div>
 
@@ -82,6 +96,10 @@ const TestEventRegistrationsView = ({
         isGenerating={isGeneratingHeats}
         canDelete={canDelete}
         onDeleteRegistration={onDeleteRegistration}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={onLoadMore}
+        totalItems={totalItems}
       />
 
       {/* Score Form Dialog */}

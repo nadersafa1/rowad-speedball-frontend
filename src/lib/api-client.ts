@@ -490,10 +490,33 @@ export class ApiClient {
   }
 
   // Registrations methods
-  async getRegistrations(eventId?: string, groupId?: string) {
+  async getRegistrations(
+    eventId?: string,
+    groupId?: string,
+    params?: {
+      q?: string
+      organizationId?: string | null
+      sortBy?: string
+      sortOrder?: 'asc' | 'desc'
+      page?: number
+      limit?: number
+    }
+  ) {
     const searchParams = new URLSearchParams()
     if (eventId) searchParams.set('eventId', eventId)
     if (groupId) searchParams.set('groupId', groupId)
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.organizationId !== undefined) {
+      if (params.organizationId === null) {
+        searchParams.set('organizationId', 'null')
+      } else {
+        searchParams.set('organizationId', params.organizationId)
+      }
+    }
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
     return this.request(`/registrations${query ? `?${query}` : ''}`)

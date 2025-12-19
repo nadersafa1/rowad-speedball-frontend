@@ -25,9 +25,63 @@ export const positionScoresSchema = z
 export const registrationsQuerySchema = z
   .object({
     eventId: z.uuid('Invalid event ID format').optional(),
-    groupId: z.uuid('Invalid group ID format').optional(),
-    sortBy: z.enum(['totalScore', 'createdAt']).optional(),
+    groupId: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (val === 'null' || val === 'all') return undefined
+        return val
+      })
+      .refine(
+        (val) =>
+          val === undefined || z.uuid().safeParse(val).success,
+        'Invalid group ID format'
+      ),
+    organizationId: z
+      .string()
+      .optional()
+      .transform((val) => {
+        if (val === 'null' || val === 'all') return undefined
+        return val
+      })
+      .refine(
+        (val) =>
+          val === undefined || z.uuid().safeParse(val).success,
+        'Invalid organization ID format'
+      ),
+    q: z
+      .string()
+      .trim()
+      .max(100, 'q must be less than 100 characters')
+      .optional(),
+    sortBy: z
+      .enum([
+        'totalScore',
+        'createdAt',
+        'rank',
+        'playerName',
+        'heat',
+        'club',
+        'positionR',
+        'positionL',
+        'positionF',
+        'positionB',
+      ])
+      .optional(),
     sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+    page: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 1))
+      .refine((val) => val >= 1, 'Page must be greater than 0'),
+    limit: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 10))
+      .refine(
+        (val) => val >= 1 && val <= 100,
+        'Limit must be between 1 and 100'
+      ),
   })
   .strict()
 

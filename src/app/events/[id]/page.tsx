@@ -24,7 +24,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import LoadingState from '@/components/shared/loading-state'
 import { useEventDialogs } from './_hooks/use-event-dialogs'
 import EventDialogs from './_components/event-dialogs'
-import TestEventLeaderboard from '@/components/events/test-event-leaderboard'
+import TestEventStandingsView from '@/components/events/test-event-standings-view'
 
 const EventDetailPage = () => {
   const params = useParams()
@@ -46,8 +46,14 @@ const EventDetailPage = () => {
   } = useEventsStore()
 
   const { groups, fetchGroups } = useGroupsStore()
-  const { registrations, fetchRegistrations, deleteRegistration } =
-    useRegistrationsStore()
+  const {
+    registrations,
+    fetchRegistrations,
+    loadMoreRegistrations,
+    deleteRegistration,
+    pagination: registrationsPagination,
+    isLoadingMore: isLoadingMoreRegistrations,
+  } = useRegistrationsStore()
   const { matches, fetchMatches } = useMatchesStore()
   const { canUpdate, canDelete, canCreate } = useEventPermissions(selectedEvent)
 
@@ -185,6 +191,12 @@ const EventDetailPage = () => {
             onAddRegistration={() => dialogs.openRegistrationForm()}
             onEditRegistration={(id) => dialogs.openRegistrationForm(id)}
             onDeleteRegistration={dialogs.openDeleteRegistration}
+            hasMore={
+              registrationsPagination.page < registrationsPagination.totalPages
+            }
+            isLoadingMore={isLoadingMoreRegistrations}
+            onLoadMore={() => loadMoreRegistrations(eventId)}
+            totalItems={registrationsPagination.totalItems}
           />
         </TabsContent>
 
@@ -195,6 +207,12 @@ const EventDetailPage = () => {
             registrations={registrations}
             onGroupCreated={handleRefresh}
             canManage={canCreate}
+            hasMore={
+              registrationsPagination.page < registrationsPagination.totalPages
+            }
+            isLoadingMore={isLoadingMoreRegistrations}
+            onLoadMore={() => loadMoreRegistrations(eventId)}
+            totalItems={registrationsPagination.totalItems}
           />
         </TabsContent>
 
@@ -207,6 +225,12 @@ const EventDetailPage = () => {
               defaultPlayersPerHeat={selectedEvent.playersPerHeat}
               canManage={canUpdate}
               onHeatsGenerated={handleRefresh}
+              hasMore={
+                registrationsPagination.page < registrationsPagination.totalPages
+              }
+              isLoadingMore={isLoadingMoreRegistrations}
+              onLoadMore={() => loadMoreRegistrations(eventId)}
+              totalItems={registrationsPagination.totalItems}
             />
           ) : (
             <BracketSeeding
@@ -240,13 +264,20 @@ const EventDetailPage = () => {
             onDeleteRegistration={dialogs.openDeleteRegistration}
             onGenerateHeats={handleGenerateHeats}
             isGeneratingHeats={isGeneratingHeats}
+            hasMore={
+              registrationsPagination.page < registrationsPagination.totalPages
+            }
+            isLoadingMore={isLoadingMoreRegistrations}
+            onLoadMore={() => loadMoreRegistrations(eventId)}
+            totalItems={registrationsPagination.totalItems}
           />
         </TabsContent>
 
         {(selectedEvent.format === 'groups' || isTestEvent) && (
           <TabsContent value='standings' className='space-y-4'>
             {isTestEvent ? (
-              <TestEventLeaderboard
+              <TestEventStandingsView
+                eventId={eventId}
                 registrations={registrations}
                 groups={groups}
               />
@@ -259,8 +290,8 @@ const EventDetailPage = () => {
 
       <EventDialogs
         event={selectedEvent}
-        registrations={registrations}
-        matches={matches}
+        registrations={registrations || []}
+        matches={matches || []}
         eventFormOpen={dialogs.eventFormOpen}
         registrationFormOpen={dialogs.registrationFormOpen}
         editingRegistration={dialogs.editingRegistration}

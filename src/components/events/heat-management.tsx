@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Shuffle, RefreshCw, Users, RotateCcw } from 'lucide-react'
+import { Shuffle, RefreshCw, Users, RotateCcw, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiClient } from '@/lib/api-client'
 import type { Registration, Group } from '@/types'
@@ -35,6 +35,10 @@ interface HeatManagementProps {
   defaultPlayersPerHeat?: number | null
   canManage: boolean
   onHeatsGenerated: () => void
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
+  totalItems?: number
 }
 
 const HeatManagement = ({
@@ -44,6 +48,10 @@ const HeatManagement = ({
   defaultPlayersPerHeat,
   canManage,
   onHeatsGenerated,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  totalItems,
 }: HeatManagementProps) => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
@@ -282,6 +290,24 @@ const HeatManagement = ({
             </p>
           </CardContent>
         </Card>
+      )}
+      {hasMore && onLoadMore && (
+        <div className='flex justify-center pt-4'>
+          <Button onClick={onLoadMore} disabled={isLoadingMore} variant='outline'>
+            {isLoadingMore ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Loading...
+              </>
+            ) : (
+              `Load More (${
+                totalItems && totalItems > registrations.length
+                  ? totalItems - registrations.length
+                  : ''
+              } remaining)`
+            )}
+          </Button>
+        </div>
       )}
     </div>
   )
