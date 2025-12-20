@@ -1,2 +1,5 @@
+[phases.install]
+cmds = ["npm ci --legacy-peer-deps"]
+
 [start]
 cmd = "npm run db:migrate && npm run start"
