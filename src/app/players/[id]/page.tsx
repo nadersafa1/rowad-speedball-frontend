@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { usePlayersStore } from '@/store/players-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { usePlayerNotesPermissions } from '@/hooks/use-player-notes-permissions'
 import { toast } from 'sonner'
 import PlayerForm from '@/components/players/player-form'
 import { apiClient } from '@/lib/api-client'
@@ -34,6 +35,7 @@ const PlayerDetailPage = () => {
   const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
   const { selectedPlayer, fetchPlayer, isLoading, deletePlayer } =
     usePlayersStore()
+  const { canReadNotes } = usePlayerNotesPermissions(selectedPlayer)
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [userImage, setUserImage] = useState<string | null>(null)
@@ -167,10 +169,12 @@ const PlayerDetailPage = () => {
 
       {/* Tabs for Overview and Notes */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-        </TabsList>
+        {canReadNotes && (
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+          </TabsList>
+        )}
 
         <TabsContent value="overview">
           <PlayerOverviewTab
@@ -181,9 +185,11 @@ const PlayerDetailPage = () => {
           />
         </TabsContent>
 
-        <TabsContent value="notes">
-          <PlayerNotesTab playerId={playerId} />
-        </TabsContent>
+        {canReadNotes && (
+          <TabsContent value="notes">
+            <PlayerNotesTab playerId={playerId} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )
