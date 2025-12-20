@@ -174,6 +174,45 @@ export const getAgeGroup = (dateOfBirth: string): string => {
   return 'Seniors'
 }
 
+// Note Type Enum
+export const noteTypeEnum = pgEnum('note_type', [
+  'performance',
+  'medical',
+  'behavioral',
+  'general',
+])
+
+// Player Notes Table
+export const playerNotes = pgTable(
+  'player_notes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    content: text('content').notNull(),
+    noteType: noteTypeEnum('note_type').notNull().default('general'),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => user.id, { onDelete: 'restrict' }),
+    updatedBy: uuid('updated_by').references(() => user.id, {
+      onDelete: 'restrict',
+    }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_player_notes_player_id').on(table.playerId),
+    index('idx_player_notes_note_type').on(table.noteType),
+    index('idx_player_notes_organization_id').on(table.organizationId),
+  ]
+)
+
+export type PlayerNote = typeof playerNotes.$inferSelect
+
 // Tests Table
 export const tests = pgTable('tests', {
   id: uuid('id').primaryKey().defaultRandom(),

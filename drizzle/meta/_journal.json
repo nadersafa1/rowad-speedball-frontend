@@ -183,6 +183,13 @@
       "when": 1765610627434,
       "tag": "0025_stormy_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1766191986296,
+      "tag": "0026_fresh_fenris",
+      "breakpoints": true
     }
   ]
 }

@@ -155,6 +155,61 @@ export class ApiClient {
     })
   }
 
+  // Player Notes methods
+  async getPlayerNotes(
+    playerId: string,
+    params?: {
+      noteType?: 'performance' | 'medical' | 'behavioral' | 'general' | 'all'
+      sortOrder?: 'asc' | 'desc'
+      page?: number
+      limit?: number
+    }
+  ) {
+    const searchParams = new URLSearchParams()
+    if (params?.noteType) searchParams.set('noteType', params.noteType)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request(
+      `/players/${playerId}/notes${query ? `?${query}` : ''}`
+    )
+  }
+
+  async createPlayerNote(
+    playerId: string,
+    data: {
+      content: string
+      noteType: 'performance' | 'medical' | 'behavioral' | 'general'
+    }
+  ) {
+    return this.request(`/players/${playerId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePlayerNote(
+    playerId: string,
+    noteId: string,
+    data: {
+      content?: string
+      noteType?: 'performance' | 'medical' | 'behavioral' | 'general'
+    }
+  ) {
+    return this.request(`/players/${playerId}/notes/${noteId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deletePlayerNote(playerId: string, noteId: string) {
+    return this.request(`/players/${playerId}/notes/${noteId}`, {
+      method: 'DELETE',
+    })
+  }
+
   // Federation methods
   async getFederations(params?: {
     q?: string
