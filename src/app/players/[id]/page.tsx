@@ -24,6 +24,7 @@ import { usePlayerNotesPermissions } from '@/hooks/use-player-notes-permissions'
 import { toast } from 'sonner'
 import PlayerForm from '@/components/players/player-form'
 import { apiClient } from '@/lib/api-client'
+import { Skeleton } from '@/components/ui/skeleton'
 import PlayerOverviewTab from './components/player-overview-tab'
 import PlayerNotesTab from './components/player-notes-tab'
 
@@ -71,10 +72,10 @@ const PlayerDetailPage = () => {
   if (isLoading || !selectedPlayer) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-        <div className='animate-pulse space-y-6'>
-          <div className='h-8 bg-gray-200 rounded w-1/3'></div>
-          <div className='h-32 bg-gray-200 rounded'></div>
-          <div className='h-64 bg-gray-200 rounded'></div>
+        <div className='space-y-6'>
+          <Skeleton className='h-8 w-1/3' />
+          <Skeleton className='h-32' />
+          <Skeleton className='h-64' />
         </div>
       </div>
     )
@@ -168,15 +169,15 @@ const PlayerDetailPage = () => {
       </div>
 
       {/* Tabs for Overview and Notes */}
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs defaultValue='overview' className='w-full'>
         {canReadNotes && (
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsList className='grid w-full grid-cols-2 mb-6'>
+            <TabsTrigger value='overview'>Overview</TabsTrigger>
+            <TabsTrigger value='notes'>Notes</TabsTrigger>
           </TabsList>
         )}
 
-        <TabsContent value="overview">
+        <TabsContent value='overview'>
           <PlayerOverviewTab
             selectedPlayer={selectedPlayer}
             playerId={playerId}
@@ -186,7 +187,7 @@ const PlayerDetailPage = () => {
         </TabsContent>
 
         {canReadNotes && (
-          <TabsContent value="notes">
+          <TabsContent value='notes'>
             <PlayerNotesTab playerId={playerId} />
           </TabsContent>
         )}

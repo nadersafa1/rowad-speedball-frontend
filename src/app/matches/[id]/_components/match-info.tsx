@@ -171,7 +171,7 @@ const MatchDetailsSection = ({ match }: MatchDetailsSectionProps) => {
         {match.event && (
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
-              <span className='text-sm font-medium text-gray-500'>Event:</span>
+              <span className='text-sm font-medium text-muted-foreground'>Event:</span>
               <Link
                 href={`/events/${match.event.id}`}
                 className='text-sm font-semibold text-rowad-600 hover:text-rowad-700 transition-colors'
@@ -192,8 +192,8 @@ const MatchDetailsSection = ({ match }: MatchDetailsSectionProps) => {
         {match.group && (
           <div className='space-y-2 pt-2 border-t'>
             <div className='flex items-center gap-2'>
-              <Users className='h-4 w-4 text-gray-500' />
-              <span className='text-sm font-medium text-gray-500'>Group:</span>
+              <Users className='h-4 w-4 text-muted-foreground' />
+              <span className='text-sm font-medium text-muted-foreground'>Group:</span>
               <span className='text-sm font-semibold'>{match.group.name}</span>
               {match.group.completed && (
                 <Badge variant='default' className='ml-2'>
@@ -206,10 +206,10 @@ const MatchDetailsSection = ({ match }: MatchDetailsSectionProps) => {
 
         <div className='pt-2 border-t'>
           <div className='flex items-center gap-2 text-sm'>
-            <span className='text-gray-500'>Round:</span>
+            <span className='text-muted-foreground'>Round:</span>
             <span className='font-medium'>{match.round}</span>
-            <span className='text-gray-400'>•</span>
-            <span className='text-gray-500'>Match:</span>
+            <span className='text-muted-foreground/60'>•</span>
+            <span className='text-muted-foreground'>Match:</span>
             <span className='font-medium'>{match.matchNumber}</span>
           </div>
         </div>

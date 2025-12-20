@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -327,10 +328,10 @@ const RichDashboard = () => {
     return (
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
         {[...Array(8)].map((_, i) => (
-          <Card key={i} className='animate-pulse'>
+          <Card key={i}>
             <CardContent className='pt-6'>
-              <div className='h-4 bg-muted rounded w-3/4 mb-2'></div>
-              <div className='h-8 bg-muted rounded w-1/2'></div>
+              <Skeleton className='h-4 w-3/4 mb-2' />
+              <Skeleton className='h-8 w-1/2' />
             </CardContent>
           </Card>
         ))}

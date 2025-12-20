@@ -13,7 +13,7 @@ const NotFound = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className='text-center space-y-6'>
-          <p className='text-gray-600'>
+          <p className='text-muted-foreground'>
             The page you are looking for does not exist or has been moved.
           </p>
           <div className='flex justify-center gap-4'>

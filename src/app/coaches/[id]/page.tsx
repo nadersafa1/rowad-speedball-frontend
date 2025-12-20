@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
+import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
 
 const CoachDetailPage = () => {
@@ -61,9 +62,9 @@ const CoachDetailPage = () => {
   if (isLoading || !selectedCoach) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-        <div className='animate-pulse space-y-6'>
-          <div className='h-8 bg-gray-200 rounded w-1/3'></div>
-          <div className='h-32 bg-gray-200 rounded'></div>
+        <div className='space-y-6'>
+          <Skeleton className='h-8 w-1/3' />
+          <Skeleton className='h-32' />
         </div>
       </div>
     )

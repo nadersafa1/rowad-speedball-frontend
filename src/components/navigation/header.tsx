@@ -381,8 +381,8 @@ const Header = () => {
                       className={cn(
                         'flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors',
                         isActive
-                          ? 'bg-rowad-100 text-rowad-700'
-                          : 'text-gray-600 hover:text-rowad-600 hover:bg-gray-50'
+                          ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
+                          : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
                       )}
                       onClick={() => setMobileMenuOpen(false)}
                     >

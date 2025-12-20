@@ -243,16 +243,16 @@ const ResultsForm = ({
             </div>
 
             {/* Total Score Display */}
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-medium text-gray-700">
+                <span className="text-lg font-medium text-foreground">
                   Total Score:
                 </span>
                 <span className="text-2xl font-bold text-green-600">
                   {totalScore}
                 </span>
               </div>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className="text-sm text-muted-foreground mt-1">
                 Individual scores: {leftHandScore} + {rightHandScore} +{" "}
                 {forehandScore} + {backhandScore} = {totalScore}
               </div>

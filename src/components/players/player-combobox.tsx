@@ -199,7 +199,7 @@ const PlayerCombobox = ({
         </PopoverContent>
       </Popover>
       {selectedPlayer && (
-        <div className='text-sm text-gray-600 mt-1'>
+        <div className='text-sm text-muted-foreground mt-1'>
           Age: {selectedPlayer.age} • Group: {selectedPlayer.ageGroup}
         </div>
       )}

@@ -39,6 +39,7 @@ import { useOrganizationContext } from '@/hooks/use-organization-context'
 import { toast } from 'sonner'
 import ResultsForm from '@/components/results/results-form'
 import TestForm from '@/components/tests/test-form'
+import { Skeleton } from '@/components/ui/skeleton'
 import ResultsTable from './components/results-table'
 import { useResults } from '../hooks/use-results'
 
@@ -105,10 +106,10 @@ const TestDetailPage = () => {
   if (isTestLoading || !selectedTest) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-        <div className='animate-pulse space-y-6'>
-          <div className='h-8 bg-gray-200 rounded w-1/3'></div>
-          <div className='h-32 bg-gray-200 rounded'></div>
-          <div className='h-64 bg-gray-200 rounded'></div>
+        <div className='space-y-6'>
+          <Skeleton className='h-8 w-1/3' />
+          <Skeleton className='h-32' />
+          <Skeleton className='h-64' />
         </div>
       </div>
     )
@@ -124,12 +125,12 @@ const TestDetailPage = () => {
 
   const getTestTypeColor = (playingTime: number, recoveryTime: number) => {
     if (playingTime === 60 && recoveryTime === 30)
-      return 'bg-red-100 text-red-800'
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
     if (playingTime === 30 && recoveryTime === 30)
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
     if (playingTime === 30 && recoveryTime === 60)
-      return 'bg-green-100 text-green-800'
-    return 'bg-gray-100 text-gray-800'
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
   }
 
   // Get unique values for filters from all results (we'll need to fetch all for this)
@@ -244,13 +245,13 @@ const TestDetailPage = () => {
         <Card>
           <CardContent>
             <div className='flex flex-col sm:flex-row items-start gap-4 sm:gap-6'>
-              <div className='bg-blue-100 rounded-full p-3 sm:p-4 shrink-0'>
-                <Trophy className='h-8 w-8 sm:h-12 sm:w-12 text-blue-600' />
+              <div className='bg-blue-100 dark:bg-blue-900 rounded-full p-3 sm:p-4 shrink-0'>
+                <Trophy className='h-8 w-8 sm:h-12 sm:w-12 text-blue-600 dark:text-blue-400' />
               </div>
               <div className='flex-1 w-full min-w-0'>
                 <div className='mb-2'>
                   <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
-                    <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 break-words'>
+                    <h1 className='text-2xl sm:text-3xl font-bold text-foreground break-words'>
                       {selectedTest.name}
                     </h1>
                     <span
@@ -266,7 +267,7 @@ const TestDetailPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4'>
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground mb-4'>
                   <div className='flex items-center gap-2'>
                     <Calendar className='h-4 w-4' />
                     <span>
@@ -292,7 +293,7 @@ const TestDetailPage = () => {
                   </div>
                 </div>
                 {selectedTest.description && (
-                  <p className='text-gray-600'>{selectedTest.description}</p>
+                  <p className='text-muted-foreground'>{selectedTest.description}</p>
                 )}
               </div>
             </div>
@@ -417,7 +418,7 @@ const TestDetailPage = () => {
                             return (
                               <div
                                 key={result.id}
-                                className='border rounded-lg p-3 bg-gray-50'
+                                className='border rounded-lg p-3 bg-muted/50'
                               >
                                 <div className='flex justify-between items-center mb-2'>
                                   <Link
@@ -430,7 +431,7 @@ const TestDetailPage = () => {
                                     {totalScore}
                                   </span>
                                 </div>
-                                <p className='text-xs text-gray-600'>
+                                <p className='text-xs text-muted-foreground'>
                                   {result.player?.gender === 'male'
                                     ? '👨'
                                     : '👩'}{' '}
