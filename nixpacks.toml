@@ -1,2 +1,2 @@
 [start]
-cmd = "npx run db:migrate && npm run start"
+cmd = "npm run db:migrate && npm run start"
