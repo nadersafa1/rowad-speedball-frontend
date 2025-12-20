@@ -23,6 +23,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
+import { passwordSchema } from "@/lib/validations/password-validation";
+import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator";
 
 // Validation schema
 const signupSchema = z
@@ -35,10 +37,7 @@ const signupSchema = z
       .string()
       .min(1, "Email is required")
       .email("Please enter a valid email address"),
-    password: z
-      .string()
-      .min(1, "Password is required")
-      .min(6, "Password must be at least 6 characters"),
+    password: passwordSchema,
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -178,6 +177,7 @@ const SignupForm = ({ onSuccess, onCancel }: SignupFormProps) => {
                       </Button>
                     </div>
                   </FormControl>
+                  <PasswordStrengthIndicator password={field.value} />
                   <FormMessage />
                 </FormItem>
               )}

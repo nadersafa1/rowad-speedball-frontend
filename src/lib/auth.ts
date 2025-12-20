@@ -10,6 +10,7 @@ import { sendOrganizationWelcomeEmail } from '@/actions/emails/send-organization
 import { sendOrganizationRemovalEmail } from '@/actions/emails/send-organization-removal-email'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
+import { validatePassword } from '@/lib/validations/password-validation'
 import {
   ac,
   admin as adminRole,
@@ -75,6 +76,16 @@ export const auth = betterAuth({
   advanced: {
     database: {
       generateId: false,
+    },
+    crossSubDomainCookies: {
+      enabled: false, // Prevent CSRF via subdomain attacks
+    },
+  },
+  // Enable CSRF protection for all state-changing operations
+  security: {
+    csrf: {
+      enabled: true,
+      tokenLength: 32,
     },
   },
   databaseHooks: {
