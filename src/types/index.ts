@@ -80,6 +80,20 @@ export type Player = {
   organizationName?: string | null
 }
 
+export type PlayerNoteWithUser = {
+  id: string
+  playerId: string
+  organizationId: string
+  content: string
+  noteType: 'performance' | 'medical' | 'behavioral' | 'general'
+  createdBy: string
+  createdByName: string
+  updatedBy: string | null
+  updatedByName: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export type PaginatedResponse<T> = {
   data: T[]
   page: number
