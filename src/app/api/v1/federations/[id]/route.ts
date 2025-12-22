@@ -8,12 +8,21 @@ import {
   federationsUpdateSchema,
 } from '@/types/api/federations.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  checkFederationReadAuthorization,
+  checkFederationUpdateAuthorization,
+  checkFederationDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Anyone can view federations - no auth required
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkFederationReadAuthorization(context)
+  if (authError) return authError
+
   const resolvedParams = await params
   const parseResult = federationsParamsSchema.safeParse(resolvedParams)
 
@@ -45,24 +54,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const { isSystemAdmin, isAuthenticated } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins can update federations
-  if (!isSystemAdmin) {
-    return Response.json(
-      {
-        message: 'Only system admins can update federations',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const paramsResult = federationsParamsSchema.safeParse(resolvedParams)
 
@@ -94,6 +85,13 @@ export async function PATCH(
       )
     }
 
+    const federation = existingFederation[0]
+
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkFederationUpdateAuthorization(context, federation)
+    if (authError) return authError
+
     const result = await db
       .update(schema.federations)
       .set({
@@ -114,24 +112,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const { isSystemAdmin, isAuthenticated } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins can delete federations
-  if (!isSystemAdmin) {
-    return Response.json(
-      {
-        message: 'Only system admins can delete federations',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const parseResult = federationsParamsSchema.safeParse(resolvedParams)
 
@@ -154,6 +134,13 @@ export async function DELETE(
         { status: 404 }
       )
     }
+
+    const federation = existingFederation[0]
+
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkFederationDeleteAuthorization(context, federation)
+    if (authError) return authError
 
     await db.delete(schema.federations).where(eq(schema.federations.id, id))
 

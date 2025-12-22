@@ -8,12 +8,21 @@ import {
   championshipsUpdateSchema,
 } from '@/types/api/championships.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  checkChampionshipReadAuthorization,
+  checkChampionshipUpdateAuthorization,
+  checkChampionshipDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Anyone can view championships - no auth required
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkChampionshipReadAuthorization(context)
+  if (authError) return authError
+
   const resolvedParams = await params
   const parseResult = championshipsParamsSchema.safeParse(resolvedParams)
 
@@ -60,31 +69,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isFederationAdmin,
-    isFederationEditor,
-    federationId: userFederationId,
-    isAuthenticated,
-  } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins or federation admins/editors can update
-  if (!isSystemAdmin && !isFederationAdmin && !isFederationEditor) {
-    return Response.json(
-      {
-        message:
-          'Only system admins and federation admins/editors can update championships',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const paramsResult = championshipsParamsSchema.safeParse(resolvedParams)
 
@@ -119,16 +103,10 @@ export async function PATCH(
 
     const championship = existingChampionship[0]
 
-    // Federation admins/editors can only update their own federation's championships
-    if (!isSystemAdmin && userFederationId !== championship.federationId) {
-      return Response.json(
-        {
-          message:
-            'You can only update championships from your own federation',
-        },
-        { status: 403 }
-      )
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkChampionshipUpdateAuthorization(context, championship)
+    if (authError) return authError
 
     const result = await db
       .update(schema.championships)
@@ -150,30 +128,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isFederationAdmin,
-    federationId: userFederationId,
-    isAuthenticated,
-  } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins or federation admins can delete
-  // (federation editors cannot delete)
-  if (!isSystemAdmin && !isFederationAdmin) {
-    return Response.json(
-      {
-        message: 'Only system admins and federation admins can delete championships',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const parseResult = championshipsParamsSchema.safeParse(resolvedParams)
 
@@ -200,16 +154,10 @@ export async function DELETE(
 
     const championship = existingChampionship[0]
 
-    // Federation admins can only delete their own federation's championships
-    if (!isSystemAdmin && userFederationId !== championship.federationId) {
-      return Response.json(
-        {
-          message:
-            'You can only delete championships from your own federation',
-        },
-        { status: 403 }
-      )
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkChampionshipDeleteAuthorization(context, championship)
+    if (authError) return authError
 
     await db.delete(schema.championships).where(eq(schema.championships.id, id))
 
