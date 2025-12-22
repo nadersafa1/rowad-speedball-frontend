@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useTestsStore } from '@/store/tests-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useTestPermissions } from '@/hooks/use-test-permissions'
 import { toast } from 'sonner'
 import ResultsForm from '@/components/results/results-form'
 import TestForm from '@/components/tests/test-form'
@@ -48,13 +49,13 @@ const TestDetailPage = () => {
   const router = useRouter()
   const testId = params.id as string
   const { context } = useOrganizationContext()
-  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
   const {
     selectedTest,
     fetchTest,
     isLoading: isTestLoading,
     deleteTest,
   } = useTestsStore()
+  const { canUpdate, canDelete } = useTestPermissions(selectedTest as any)
   const [resultFormOpen, setResultFormOpen] = useState(false)
   const [editTestFormOpen, setEditTestFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -181,25 +182,27 @@ const TestDetailPage = () => {
       {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-4 sm:mb-6 flex items-center justify-between gap-2'>
         <PageBreadcrumb currentPageLabel={selectedTest?.name} />
-        {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
+        {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
-            <Dialog open={editTestFormOpen} onOpenChange={setEditTestFormOpen}>
-              <DialogTrigger asChild>
-                <Button variant='outline' size='sm' className='gap-2'>
-                  <Edit className='h-4 w-4' />
-                  <span className='hidden sm:inline'>Edit Test</span>
-                </Button>
-              </DialogTrigger>
-              <TestForm
-                test={selectedTest}
-                onSuccess={() => {
-                  setEditTestFormOpen(false)
-                  fetchTest(testId, true)
-                }}
-                onCancel={() => setEditTestFormOpen(false)}
-              />
-            </Dialog>
-            {(isSystemAdmin || isAdmin || isOwner) && (
+            {canUpdate && (
+              <Dialog open={editTestFormOpen} onOpenChange={setEditTestFormOpen}>
+                <DialogTrigger asChild>
+                  <Button variant='outline' size='sm' className='gap-2'>
+                    <Edit className='h-4 w-4' />
+                    <span className='hidden sm:inline'>Edit Test</span>
+                  </Button>
+                </DialogTrigger>
+                <TestForm
+                  test={selectedTest}
+                  onSuccess={() => {
+                    setEditTestFormOpen(false)
+                    fetchTest(testId, true)
+                  }}
+                  onCancel={() => setEditTestFormOpen(false)}
+                />
+              </Dialog>
+            )}
+            {canDelete && (
               <AlertDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
@@ -317,8 +320,8 @@ const TestDetailPage = () => {
                 </CardDescription>
               </div>
 
-              {/* Add Result Button */}
-              {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
+              {/* Add Result Button - uses update permission (adding results to a test) */}
+              {canUpdate && (
                 <Dialog open={resultFormOpen} onOpenChange={setResultFormOpen}>
                   <DialogTrigger asChild>
                     <Button className='gap-2 bg-green-600 hover:bg-green-700 w-full sm:w-auto'>
