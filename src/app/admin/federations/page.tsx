@@ -9,12 +9,13 @@ import { useState } from 'react'
 import FederationsTable from './components/federations-table'
 import { useFederations } from './hooks/use-federations'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useFederationPermissions } from '@/hooks/use-federation-permissions'
 import Loading from '@/components/ui/loading'
 
 const FederationsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-  const { isSystemAdmin } = context
+  const { canCreate } = useFederationPermissions(null)
 
   const [federationFormOpen, setFederationFormOpen] = useState(false)
 
@@ -67,7 +68,7 @@ const FederationsPage = () => {
         title='Federations'
         description='Browse and manage all federations'
         actionDialog={
-          isSystemAdmin
+          canCreate
             ? {
                 open: federationFormOpen,
                 onOpenChange: setFederationFormOpen,
