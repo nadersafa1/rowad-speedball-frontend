@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { usePlayerNotePermissions } from '@/hooks/use-player-note-permissions'
 import { usePlayerNotesStore } from '@/store/player-notes-store'
 import { toast } from 'sonner'
 import type { PlayerNoteWithUser } from '@/types'
@@ -53,14 +53,8 @@ const NOTE_TYPE_LABELS = {
 const PlayerNoteCard = ({ note, playerId }: PlayerNoteCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const { context } = useOrganizationContext()
   const { deleteNote, isLoading } = usePlayerNotesStore()
-  const { isSystemAdmin, isAdmin, isOwner, userId } = context
-
-  // Permission checks
-  const canEdit = userId === note.createdBy || isSystemAdmin
-  const canDelete =
-    userId === note.createdBy || isSystemAdmin || isAdmin || isOwner
+  const { canUpdate, canDelete } = usePlayerNotePermissions(note as any)
 
   const handleDelete = async () => {
     try {
@@ -120,7 +114,7 @@ const PlayerNoteCard = ({ note, playerId }: PlayerNoteCardProps) => {
 
             {/* Actions */}
             <div className="flex gap-1">
-              {canEdit && (
+              {canUpdate && (
                 <Button
                   variant="ghost"
                   size="sm"

@@ -182,7 +182,10 @@ const PlayerDetailPage = () => {
 
         {canReadNotes && (
           <TabsContent value='notes'>
-            <PlayerNotesTab playerId={playerId} />
+            <PlayerNotesTab
+              playerId={playerId}
+              playerOrganizationId={selectedPlayer?.organizationId}
+            />
           </TabsContent>
         )}
       </Tabs>
