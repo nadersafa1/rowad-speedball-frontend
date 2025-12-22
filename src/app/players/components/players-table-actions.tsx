@@ -21,10 +21,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { LinkUserDialog } from '@/components/players/link-user-dialog'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { usePlayerPermissions } from '@/hooks/use-player-permissions'
 
 interface PlayersTableActionsProps {
-  player: Player & { userId?: string | null }
+  player: Player & { userId?: string | null; organizationId?: string | null }
   canEdit: boolean
   canDelete: boolean
   onEdit: (player: Player) => void
@@ -40,9 +40,8 @@ export const PlayersTableActions = ({
   onDelete,
   onRefetch,
 }: PlayersTableActionsProps) => {
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
-  const canLinkUser = isSystemAdmin || isAdmin || isOwner || isCoach
+  // Use player permissions hook to check link user permission (same as update)
+  const { canUpdate: canLinkUser } = usePlayerPermissions(player as any)
 
   if (!canEdit && !canDelete && !canLinkUser) return null
 

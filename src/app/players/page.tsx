@@ -12,12 +12,13 @@ import { usePlayers } from './hooks/use-players'
 import { PlayersFilters } from './types'
 import { AgeGroup, Gender, Team } from './types/enums'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { usePlayerPermissions } from '@/hooks/use-player-permissions'
 import Loading from '@/components/ui/loading'
 
 const PlayersPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
+  const { canCreate } = usePlayerPermissions(null)
 
   const [playerFormOpen, setPlayerFormOpen] = useState(false)
 
@@ -72,7 +73,7 @@ const PlayersPage = () => {
         title='Players'
         description='Browse and manage all registered players'
         actionDialog={
-          isSystemAdmin || isCoach || isAdmin || isOwner
+          canCreate
             ? {
                 open: playerFormOpen,
                 onOpenChange: setPlayerFormOpen,

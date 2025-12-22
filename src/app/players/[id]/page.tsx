@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { usePlayersStore } from '@/store/players-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { usePlayerPermissions } from '@/hooks/use-player-permissions'
 import { usePlayerNotesPermissions } from '@/hooks/use-player-notes-permissions'
 import { toast } from 'sonner'
 import PlayerForm from '@/components/players/player-form'
@@ -32,10 +33,9 @@ const PlayerDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const playerId = params.id as string
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
   const { selectedPlayer, fetchPlayer, isLoading, deletePlayer } =
     usePlayersStore()
+  const { canUpdate, canDelete } = usePlayerPermissions(selectedPlayer as any)
   const { canReadNotes } = usePlayerNotesPermissions(selectedPlayer)
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -98,15 +98,9 @@ const PlayerDetailPage = () => {
       {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-6 flex items-center justify-between gap-2'>
         <PageBreadcrumb currentPageLabel={selectedPlayer?.name} />
-        {(isSystemAdmin ||
-          isAdmin ||
-          isOwner ||
-          isCoach ||
-          isSystemAdmin ||
-          isAdmin ||
-          isOwner) && (
+        {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
-            {(isSystemAdmin || isAdmin || isOwner || isCoach) && (
+            {canUpdate && (
               <Dialog
                 open={editPlayerFormOpen}
                 onOpenChange={setEditPlayerFormOpen}
@@ -127,7 +121,7 @@ const PlayerDetailPage = () => {
                 />
               </Dialog>
             )}
-            {(isSystemAdmin || isAdmin || isOwner) && (
+            {canDelete && (
               <AlertDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
