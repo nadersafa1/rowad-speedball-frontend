@@ -37,6 +37,7 @@ import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 import { useTrainingSessionsStore } from '@/store/training-sessions-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useTrainingSessionPermissions } from '@/hooks/use-training-session-permissions'
 import { toast } from 'sonner'
 import TrainingSessionForm from '@/components/training-sessions/training-session-form'
 import EventForm from '@/components/events/event-form'
@@ -49,8 +50,7 @@ const TrainingSessionDetailPage = () => {
   const sessionId = params.id as string
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-
-  const { isSystemAdmin, isCoach, isAdmin, isOwner, isAuthenticated } = context
+  const { isAuthenticated } = context
 
   const {
     selectedTrainingSession,
@@ -58,37 +58,23 @@ const TrainingSessionDetailPage = () => {
     isLoading,
     deleteTrainingSession,
   } = useTrainingSessionsStore()
+  const { canRead, canUpdate, canDelete } = useTrainingSessionPermissions(
+    selectedTrainingSession as any
+  )
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false)
 
   useEffect(() => {
-    if (
-      sessionId &&
-      isAuthenticated &&
-      (isSystemAdmin || isCoach || isAdmin || isOwner)
-    ) {
+    if (sessionId && canRead) {
       fetchTrainingSession(sessionId)
     }
-  }, [
-    sessionId,
-    fetchTrainingSession,
-    isSystemAdmin,
-    isCoach,
-    isAdmin,
-    isOwner,
-    isAuthenticated,
-  ])
+  }, [sessionId, fetchTrainingSession, canRead])
 
   if (isOrganizationContextLoading) return <Loading />
 
-  // Training sessions are always private - require authentication
-  if (!isAuthenticated) {
-    return <Unauthorized />
-  }
-
-  // Only system admins, org admins, org owners, and org coaches can access training sessions
-  if (!isSystemAdmin && !isCoach && !isAdmin && !isOwner) {
+  // Training sessions are always private - require authentication and proper role
+  if (!canRead) {
     return <Unauthorized />
   }
 
@@ -133,40 +119,46 @@ const TrainingSessionDetailPage = () => {
       {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-6 flex items-center justify-between gap-2'>
         <PageBreadcrumb currentPageLabel={selectedTrainingSession?.name} />
-        {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
+        {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
-            {/* Create Event: system admin, org admin, org owner, or org coach */}
-            <Button
-              variant='default'
-              size='sm'
-              className='gap-2'
-              onClick={() => setCreateEventDialogOpen(true)}
-            >
-              <Plus className='h-4 w-4' />
-              <span className='hidden sm:inline'>Create Event</span>
-            </Button>
-            {/* Manage Attendance: system admin, org admin, org owner, or org coach */}
-            <Button
-              variant='default'
-              size='sm'
-              className='gap-2 bg-rowad-600 hover:bg-rowad-700'
-              onClick={() => router.push(`/sessions/${sessionId}/attendance`)}
-            >
-              <ClipboardList className='h-4 w-4' />
-              <span className='hidden sm:inline'>Manage Attendance</span>
-            </Button>
+            {/* Create Event: uses update permission (creating events for a session) */}
+            {canUpdate && (
+              <Button
+                variant='default'
+                size='sm'
+                className='gap-2'
+                onClick={() => setCreateEventDialogOpen(true)}
+              >
+                <Plus className='h-4 w-4' />
+                <span className='hidden sm:inline'>Create Event</span>
+              </Button>
+            )}
+            {/* Manage Attendance: uses update permission (managing session attendance) */}
+            {canUpdate && (
+              <Button
+                variant='default'
+                size='sm'
+                className='gap-2 bg-rowad-600 hover:bg-rowad-700'
+                onClick={() => router.push(`/sessions/${sessionId}/attendance`)}
+              >
+                <ClipboardList className='h-4 w-4' />
+                <span className='hidden sm:inline'>Manage Attendance</span>
+              </Button>
+            )}
             {/* Edit: system admin, org admin, org owner, or org coach */}
-            <Button
-              variant='outline'
-              size='sm'
-              className='gap-2'
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <Edit className='h-4 w-4' />
-              <span className='hidden sm:inline'>Edit Session</span>
-            </Button>
+            {canUpdate && (
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2'
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <Edit className='h-4 w-4' />
+                <span className='hidden sm:inline'>Edit Session</span>
+              </Button>
+            )}
             {/* Delete: only system admin, org admin, or org owner */}
-            {(isSystemAdmin || isAdmin || isOwner) && (
+            {canDelete && (
               <AlertDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
