@@ -23,6 +23,7 @@ import {
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
+import { checkPlayerCreateAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   // Get organization context (no auth required - players are public)
@@ -336,35 +337,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isAdmin,
-    isOwner,
-    isCoach,
-    organization,
-    isAuthenticated,
-  } = await getOrganizationContext()
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkPlayerCreateAuthorization(context)
+  if (authError) return authError
 
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, org owners, and org coaches can create players
-  // Additionally, org members (admin/owner/coach) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
-    (!isSystemAdmin && !organization?.id)
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, club owners, and club coaches can create players',
-      },
-      { status: 403 }
-    )
-  }
+  const { isSystemAdmin, organization } = context
 
   try {
     const body = await request.json()

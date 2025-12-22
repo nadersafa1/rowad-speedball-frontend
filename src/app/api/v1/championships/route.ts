@@ -9,6 +9,7 @@ import {
 } from '@/types/api/championships.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkChampionshipCreateAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   // Anyone can view championships - no auth required
@@ -119,30 +120,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isFederationAdmin,
-    isFederationEditor,
-    federationId: userFederationId,
-    isAuthenticated,
-  } = await getOrganizationContext()
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkChampionshipCreateAuthorization(context)
+  if (authError) return authError
 
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins or federation admins/editors can create
-  if (!isSystemAdmin && !isFederationAdmin && !isFederationEditor) {
-    return Response.json(
-      {
-        message:
-          'Only system admins and federation admins/editors can create championships',
-      },
-      { status: 403 }
-    )
-  }
+  const { isSystemAdmin, federationId: userFederationId } = context
 
   try {
     const body = await request.json()

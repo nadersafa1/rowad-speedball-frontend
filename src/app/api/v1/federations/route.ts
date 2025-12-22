@@ -9,6 +9,7 @@ import {
 } from '@/types/api/federations.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkFederationCreateAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   // Anyone can view federations - no auth required
@@ -89,23 +90,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Get organization context for authorization
-  const { isSystemAdmin, isAuthenticated } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins can create federations
-  if (!isSystemAdmin) {
-    return Response.json(
-      {
-        message: 'Only system admins can create federations',
-      },
-      { status: 403 }
-    )
-  }
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkFederationCreateAuthorization(context)
+  if (authError) return authError
 
   try {
     const body = await request.json()
