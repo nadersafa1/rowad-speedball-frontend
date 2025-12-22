@@ -16,10 +16,15 @@ export const useTrainingSessionPermissions = (
     context
 
   return useMemo(() => {
+    // Create permission: System admins, org admins, org owners, org coaches
+    // Must have an active organization (unless system admin)
+    const canCreate =
+      isSystemAdmin || ((isAdmin || isOwner || isCoach) && !!organization?.id)
+
     if (!trainingSession) {
       return {
-        canRead: false, // Training sessions are private - require authentication
-        canCreate: false,
+        canRead: isAuthenticated && (isSystemAdmin || isAdmin || isOwner || isCoach), // Training sessions are private - require authentication and proper role
+        canCreate, // Use the same logic for general creation permission
         canUpdate: false,
         canDelete: false,
       }
@@ -41,11 +46,6 @@ export const useTrainingSessionPermissions = (
       (isSystemAdmin ||
         isSessionFromUserOrg ||
         (!organization?.id && hasNoOrganization))
-
-    // Create permission: System admins, org admins, org owners, org coaches
-    // Must have an active organization (unless system admin)
-    const canCreate =
-      isSystemAdmin || ((isAdmin || isOwner || isCoach) && !!organization?.id)
 
     // Update permission: System admins, org admins, org owners, org coaches
     // Must be from user's org (unless system admin)

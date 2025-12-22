@@ -15,10 +15,13 @@ export const useOrganizationPermissions = (
   const { isSystemAdmin, isAdmin, isOwner, organization, isAuthenticated } = context
 
   return useMemo(() => {
+    // Create permission: System admins only
+    const canCreate = isSystemAdmin
+
     if (!targetOrganization) {
       return {
-        canRead: false, // Require authentication
-        canCreate: false,
+        canRead: isAuthenticated, // Require authentication
+        canCreate, // Use the same logic for general creation permission
         canUpdate: false,
         canDelete: false,
       }
@@ -30,9 +33,6 @@ export const useOrganizationPermissions = (
 
     // Read permission: Must be authenticated
     const canRead = isAuthenticated
-
-    // Create permission: System admins only
-    const canCreate = isSystemAdmin
 
     // Update permission: System admins OR (org admin/owner of the same organization)
     const canUpdate =

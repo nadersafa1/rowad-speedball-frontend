@@ -13,10 +13,15 @@ export const useTestPermissions = (test: Test | null | undefined) => {
   const { isSystemAdmin, isAdmin, isOwner, isCoach, organization } = context
 
   return useMemo(() => {
+    // Create permission: System admins, org admins, org owners, org coaches
+    // Must have an active organization (unless system admin)
+    const canCreate =
+      isSystemAdmin || ((isAdmin || isOwner || isCoach) && !!organization?.id)
+
     if (!test) {
       return {
         canRead: true, // Public tests are readable by anyone
-        canCreate: false,
+        canCreate, // Use the same logic for general creation permission
         canUpdate: false,
         canDelete: false,
       }
@@ -36,11 +41,6 @@ export const useTestPermissions = (test: Test | null | undefined) => {
     // - Non-authenticated can see public tests + tests without org
     const canRead =
       isSystemAdmin || isPublic || hasNoOrganization || isTestFromUserOrg
-
-    // Create permission: System admins, org admins, org owners, org coaches
-    // Must have an active organization (unless system admin)
-    const canCreate =
-      isSystemAdmin || ((isAdmin || isOwner || isCoach) && !!organization?.id)
 
     // Update permission: System admins, org admins, org owners, org coaches
     // Must be from user's org (unless system admin)

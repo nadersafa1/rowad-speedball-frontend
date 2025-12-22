@@ -13,10 +13,16 @@ export const useCoachPermissions = (coach: Coach | null | undefined) => {
   const { isSystemAdmin, isAdmin, isOwner, isCoach, organization } = context
 
   return useMemo(() => {
+    // Create permission: System admins, org admins, org owners
+    // Must have an active organization (unless system admin)
+    // Note: Coaches CANNOT create other coaches (only admins/owners)
+    const canCreate =
+      isSystemAdmin || ((isAdmin || isOwner) && !!organization?.id)
+
     if (!coach) {
       return {
         canRead: true, // Coaches are public
-        canCreate: false,
+        canCreate, // Use the same logic for general creation permission
         canUpdate: false,
         canDelete: false,
       }
@@ -28,11 +34,6 @@ export const useCoachPermissions = (coach: Coach | null | undefined) => {
 
     // Read permission: Anyone can read coaches (public)
     const canRead = true
-
-    // Create permission: System admins, org admins, org owners, org coaches
-    // Must have an active organization (unless system admin)
-    const canCreate =
-      isSystemAdmin || ((isAdmin || isOwner || isCoach) && !!organization?.id)
 
     // Update permission: System admins, org admins, org owners, org coaches
     // Must be from user's org (unless system admin)

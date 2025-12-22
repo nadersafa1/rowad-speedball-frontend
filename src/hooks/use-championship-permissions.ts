@@ -22,10 +22,13 @@ export const useChampionshipPermissions = (
   } = context
 
   return useMemo(() => {
+    // Create permission: System admins or federation admins or federation editors
+    const canCreate = isSystemAdmin || isFederationAdmin || isFederationEditor
+
     if (!championship) {
       return {
-        canRead: false, // Require authentication
-        canCreate: false,
+        canRead: isAuthenticated, // Require authentication
+        canCreate, // Use the same logic for general creation permission
         canUpdate: false,
         canDelete: false,
       }
@@ -37,9 +40,6 @@ export const useChampionshipPermissions = (
 
     // Read permission: Must be authenticated
     const canRead = isAuthenticated
-
-    // Create permission: System admins or federation admins
-    const canCreate = isSystemAdmin || isFederationAdmin
 
     // Update permission: System admins OR (federation admin/editor AND championship belongs to user's federation)
     const canUpdate =

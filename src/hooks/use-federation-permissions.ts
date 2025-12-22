@@ -21,10 +21,13 @@ export const useFederationPermissions = (
   } = context
 
   return useMemo(() => {
+    // Create permission: System admins only
+    const canCreate = isSystemAdmin
+
     if (!federation) {
       return {
-        canRead: false, // Require authentication
-        canCreate: false,
+        canRead: isAuthenticated, // Require authentication
+        canCreate, // Use the same logic for general creation permission
         canUpdate: false,
         canDelete: false,
       }
@@ -35,9 +38,6 @@ export const useFederationPermissions = (
 
     // Read permission: Must be authenticated
     const canRead = isAuthenticated
-
-    // Create permission: System admins only
-    const canCreate = isSystemAdmin
 
     // Update permission: System admins OR (federation admin/editor of the same federation)
     const canUpdate =
