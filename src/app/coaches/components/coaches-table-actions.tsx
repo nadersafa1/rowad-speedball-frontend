@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { LinkUserDialog } from '@/components/coaches/link-user-dialog'
-import { useCoachPermissions } from '@/hooks/use-coach-permissions'
+import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 
 interface CoachesTableActionsProps {
   coach: Coach
@@ -113,4 +113,3 @@ export const CoachesTableActions = ({
     </AlertDialog>
   )
 }
-

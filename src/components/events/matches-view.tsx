@@ -15,10 +15,10 @@ import DoubleElimBracket from '@/components/tournaments/double-elim-bracket'
 import { useMatchesSocket } from './use-matches-socket'
 import { nextPowerOf2 } from '@/lib/utils/single-elimination-helpers'
 import MatchesFilters from './matches-filters'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useMatchFilters, type MatchStatus } from '@/hooks/use-match-filters'
 import { formatRegistrationName } from '@/lib/utils/match'
-import { canPlayerUpdateMatch } from '@/hooks/use-match-permissions'
+import { canPlayerUpdateMatch } from '@/hooks/authorization/use-match-permissions'
 
 type ViewMode = 'bracket' | 'list' | 'column'
 

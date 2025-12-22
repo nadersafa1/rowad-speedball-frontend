@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Table } from '@/components/ui/table'
 import { Event } from '@/types'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './events-table-columns'
 import { useEventsTable } from './events-table-hooks'
 import { useEventsTableHandlers } from './events-table-handlers'

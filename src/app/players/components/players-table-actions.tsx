@@ -21,12 +21,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { LinkUserDialog } from '@/components/players/link-user-dialog'
-import { usePlayerPermissions } from '@/hooks/use-player-permissions'
+import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
 
 interface PlayersTableActionsProps {
   player: Player & { userId?: string | null; organizationId?: string | null }
-  canEdit: boolean
-  canDelete: boolean
   onEdit: (player: Player) => void
   onDelete: (player: Player) => void
   onRefetch?: () => void
@@ -34,37 +32,37 @@ interface PlayersTableActionsProps {
 
 export const PlayersTableActions = ({
   player,
-  canEdit,
-  canDelete,
   onEdit,
   onDelete,
   onRefetch,
 }: PlayersTableActionsProps) => {
   // Use player permissions hook to check link user permission (same as update)
-  const { canUpdate: canLinkUser } = usePlayerPermissions(player as any)
-
-  if (!canEdit && !canDelete && !canLinkUser) return null
+  const { canUpdate, canDelete } = usePlayerPermissions(player as any)
 
   return (
     <AlertDialog>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant='ghost' className='h-8 w-8 p-0'>
+          <Button
+            variant='ghost'
+            className='h-8 w-8 p-0'
+            disabled={!canDelete && !canUpdate}
+          >
             <span className='sr-only'>Open menu</span>
             <MoreHorizontal className='h-4 w-4' />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          {canEdit && (
+          {canUpdate && (
             <DropdownMenuItem onClick={() => onEdit(player)}>
               <Edit className='mr-2 h-4 w-4' />
               Edit
             </DropdownMenuItem>
           )}
-          {canLinkUser && (
+          {canUpdate && (
             <>
-              {canEdit && <DropdownMenuSeparator />}
+              <DropdownMenuSeparator />
               <LinkUserDialog
                 playerId={player.id}
                 playerName={player.name}
@@ -81,7 +79,7 @@ export const PlayersTableActions = ({
           )}
           {canDelete && (
             <>
-              {(canEdit || canLinkUser) && <DropdownMenuSeparator />}
+              <DropdownMenuSeparator />
               <AlertDialogTrigger asChild>
                 <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
                   <Trash2 className='mr-2 h-4 w-4' />

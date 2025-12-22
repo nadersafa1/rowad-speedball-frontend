@@ -36,7 +36,7 @@ import {
   DialogTitle,
 } from '../ui'
 import ClubCombobox from '@/components/organizations/club-combobox'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import {
   UI_EVENT_TYPES,
   EVENT_TYPE_LABELS,
@@ -424,7 +424,8 @@ const EventForm = ({
             updateData.pointsPerLoss = formattedData.pointsPerLoss
           }
           if (formattedData.registrationStartDate !== undefined) {
-            updateData.registrationStartDate = formattedData.registrationStartDate
+            updateData.registrationStartDate =
+              formattedData.registrationStartDate
           }
           if (formattedData.registrationEndDate !== undefined) {
             updateData.registrationEndDate = formattedData.registrationEndDate

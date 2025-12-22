@@ -33,8 +33,6 @@ export const createColumns = (
         <div className='text-right'>
           <PlayersTableActions
             player={row.original}
-            canEdit={canEdit}
-            canDelete={canDelete}
             onEdit={onEdit}
             onDelete={onDelete}
             onRefetch={onRefetch}

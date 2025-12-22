@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,51 +19,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { Event } from "@/types";
+} from '@/components/ui/alert-dialog'
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { Event } from '@/types'
+import { useEventPermissions } from '@/hooks/authorization/use-event-permissions'
 
 interface EventsTableActionsProps {
-  event: Event;
-  canEdit: boolean;
-  canDelete: boolean;
-  onEdit: (event: Event) => void;
-  onDelete: (event: Event) => void;
+  event: Event
+  onEdit: (event: Event) => void
+  onDelete: (event: Event) => void
 }
 
 export const EventsTableActions = ({
   event,
-  canEdit,
-  canDelete,
   onEdit,
   onDelete,
 }: EventsTableActionsProps) => {
   // Return null if user can neither edit nor delete
-  if (!canEdit && !canDelete) return null;
-
+  const { canUpdate, canDelete } = useEventPermissions(event)
   return (
     <AlertDialog>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
+          <Button
+            variant='ghost'
+            className='h-8 w-8 p-0'
+            disabled={!canDelete && !canUpdate}
+          >
+            <span className='sr-only'>Open menu</span>
+            <MoreHorizontal className='h-4 w-4' />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align='end'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          {canEdit && (
+          {canUpdate && (
             <DropdownMenuItem onClick={() => onEdit(event)}>
-              <Edit className="mr-2 h-4 w-4" />
+              <Edit className='mr-2 h-4 w-4' />
               Edit
             </DropdownMenuItem>
           )}
           {canDelete && (
             <>
-              {canEdit && <DropdownMenuSeparator />}
+              {canUpdate && <DropdownMenuSeparator />}
               <AlertDialogTrigger asChild>
-                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                  <Trash2 className="mr-2 h-4 w-4" />
+                <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
+                  <Trash2 className='mr-2 h-4 w-4' />
                   Delete
                 </DropdownMenuItem>
               </AlertDialogTrigger>
@@ -75,9 +75,9 @@ export const EventsTableActions = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Event</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete &quot;{event.name}&quot;? This action cannot be
-            undone and will permanently delete:
-            <ul className="list-disc list-inside mt-2 space-y-1">
+            Are you sure you want to delete &quot;{event.name}&quot;? This
+            action cannot be undone and will permanently delete:
+            <ul className='list-disc list-inside mt-2 space-y-1'>
               <li>All groups in this event</li>
               <li>All registrations</li>
               <li>All matches and their results</li>
@@ -88,7 +88,7 @@ export const EventsTableActions = ({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             onClick={() => onDelete(event)}
           >
             Delete
@@ -96,6 +96,5 @@ export const EventsTableActions = ({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
-};
-
+  )
+}

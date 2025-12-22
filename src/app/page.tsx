@@ -14,7 +14,7 @@ import {
   User,
 } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 
 const features = [
   {

@@ -19,9 +19,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { usePlayersStore } from '@/store/players-store'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
-import { usePlayerPermissions } from '@/hooks/use-player-permissions'
-import { usePlayerNotesPermissions } from '@/hooks/use-player-notes-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
+import { usePlayerNotesPermissions } from '@/hooks/authorization/use-player-notes-permissions'
 import { toast } from 'sonner'
 import PlayerForm from '@/components/players/player-form'
 import { apiClient } from '@/lib/api-client'

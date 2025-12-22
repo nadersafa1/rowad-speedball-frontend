@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Table } from '@/components/ui/table'
 import { Player } from '@/types'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './players-table-columns'
 import { PlayersTableControls } from './players-table-controls'
 import { PlayersTablePagination } from './players-table-pagination'
@@ -13,6 +13,7 @@ import { PlayersTableEditDialog } from './players-table-edit-dialog'
 import { usePlayersTableHandlers } from './players-table-handlers'
 import { usePlayersTable } from './players-table-hooks'
 import { PlayersTableProps } from './players-table-types'
+import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
 
 const PlayersTable = ({
   players,

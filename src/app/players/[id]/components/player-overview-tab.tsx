@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
-import { useResultPermissions } from '@/hooks/use-result-permissions'
+import { useResultPermissions } from '@/hooks/authorization/use-result-permissions'
 import ResultsForm from '@/components/results/results-form'
 import RecentMatchesCard from './recent-matches-card'
 import { formatDate } from '@/lib/utils'

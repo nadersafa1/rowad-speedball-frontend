@@ -35,8 +35,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useTestsStore } from '@/store/tests-store'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
-import { useTestPermissions } from '@/hooks/use-test-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useTestPermissions } from '@/hooks/authorization/use-test-permissions'
 import { toast } from 'sonner'
 import ResultsForm from '@/components/results/results-form'
 import TestForm from '@/components/tests/test-form'
@@ -185,7 +185,10 @@ const TestDetailPage = () => {
         {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
             {canUpdate && (
-              <Dialog open={editTestFormOpen} onOpenChange={setEditTestFormOpen}>
+              <Dialog
+                open={editTestFormOpen}
+                onOpenChange={setEditTestFormOpen}
+              >
                 <DialogTrigger asChild>
                   <Button variant='outline' size='sm' className='gap-2'>
                     <Edit className='h-4 w-4' />
@@ -296,7 +299,9 @@ const TestDetailPage = () => {
                   </div>
                 </div>
                 {selectedTest.description && (
-                  <p className='text-muted-foreground'>{selectedTest.description}</p>
+                  <p className='text-muted-foreground'>
+                    {selectedTest.description}
+                  </p>
                 )}
               </div>
             </div>

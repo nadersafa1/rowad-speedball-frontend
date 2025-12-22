@@ -27,7 +27,7 @@ import { z } from 'zod'
 import { parseDateFromAPI } from '@/lib/date-utils'
 import { TestDatePicker } from './test-date-picker'
 import ClubCombobox from '@/components/organizations/club-combobox'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 
 // Validation schema
 const testSchema = z.object({

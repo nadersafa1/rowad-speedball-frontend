@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Table } from '@/components/ui/table'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './championships-table-columns'
 import { ChampionshipsTableControls } from './championships-table-controls'
 import { ChampionshipsTablePagination } from './championships-table-pagination'
@@ -124,4 +124,3 @@ const ChampionshipsTable = ({
 }
 
 export default ChampionshipsTable
-

@@ -25,8 +25,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useCoachesStore } from '@/store/coaches-store'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
-import { useCoachPermissions } from '@/hooks/use-coach-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
 import Loading from '@/components/ui/loading'
@@ -117,24 +117,24 @@ const CoachDetailPage = () => {
                     <span className='hidden sm:inline'>Delete Coach</span>
                   </Button>
                 </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Coach</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete {selectedCoach.name}? This
-                    action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                    onClick={handleDelete}
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Coach</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {selectedCoach.name}? This
+                      action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
               </AlertDialog>
             )}
           </div>
@@ -179,9 +179,7 @@ const CoachDetailPage = () => {
               <p className='text-sm font-medium text-muted-foreground'>
                 Created At
               </p>
-              <p className='text-lg'>
-                {formatDate(selectedCoach.createdAt)}
-              </p>
+              <p className='text-lg'>{formatDate(selectedCoach.createdAt)}</p>
             </div>
           </CardContent>
         </Card>

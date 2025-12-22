@@ -9,8 +9,8 @@ import { useState } from 'react'
 import ChampionshipsTable from './components/championships-table'
 import { useChampionships } from './hooks/use-championships'
 import { ChampionshipsFilters } from './types'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
-import { useChampionshipPermissions } from '@/hooks/use-championship-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useChampionshipPermissions } from '@/hooks/authorization/use-championship-permissions'
 import Loading from '@/components/ui/loading'
 
 const ChampionshipsPage = () => {
@@ -132,4 +132,3 @@ const ChampionshipsPage = () => {
 }
 
 export default ChampionshipsPage
-

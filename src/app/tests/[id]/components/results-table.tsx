@@ -11,7 +11,7 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { Dialog } from '@/components/ui/dialog'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './results-table-columns'
 import { ResultsTableControls } from './results-table-controls'
 import { ResultsTablePagination } from './results-table-pagination'

@@ -11,8 +11,8 @@ import PlayersTable from './components/players-table'
 import { usePlayers } from './hooks/use-players'
 import { PlayersFilters } from './types'
 import { AgeGroup, Gender, Team } from './types/enums'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
-import { usePlayerPermissions } from '@/hooks/use-player-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
 import Loading from '@/components/ui/loading'
 
 const PlayersPage = () => {
