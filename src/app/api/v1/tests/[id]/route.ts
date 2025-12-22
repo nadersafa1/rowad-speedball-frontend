@@ -6,6 +6,10 @@ import * as schema from '@/db/schema'
 import { testsParamsSchema, testsUpdateSchema } from '@/types/api/tests.schemas'
 import { testsService } from '@/lib/services/tests.service'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  checkTestUpdateAuthorization,
+  checkTestDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
@@ -132,47 +136,12 @@ export async function PATCH(
 
     const testData = existing[0]
 
-    // Get organization context for authorization (only if test exists)
-    const {
-      isSystemAdmin,
-      isAdmin,
-      isCoach,
-      isOwner,
-      organization,
-      isAuthenticated,
-    } = await getOrganizationContext()
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTestUpdateAuthorization(context, testData)
+    if (authError) return authError
 
-    // Require authentication
-    if (!isAuthenticated) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Authorization: Only system admins, org admins, org owners, and org coaches can update tests
-    // Additionally, org members (admin/owner/coach) must have an active organization
-    if (
-      (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
-      (!isSystemAdmin && !organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, club owners, and club coaches can update tests',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only update tests from their own organization
-    if (!isSystemAdmin) {
-      if (!organization?.id || testData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only update tests from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    const { isSystemAdmin } = context
 
     // Handle organizationId updates:
     // - System admins can change organizationId to any organization or null
@@ -254,36 +223,10 @@ export async function DELETE(
 
     const testData = existing[0]
 
-    // Get organization context for authorization (only if test exists)
-    const { isSystemAdmin, isAdmin, isOwner, organization } =
-      await getOrganizationContext()
-
-    // Authorization: Only system admins, org admins, and org owners can delete tests
-    // Additionally, org members (admin/owner) must have an active organization
-    if (
-      (!isSystemAdmin && !isAdmin && !isOwner) ||
-      (!isSystemAdmin && !organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, and club owners can delete tests',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only delete tests from their own organization
-    if (!isSystemAdmin) {
-      if (!organization?.id || testData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only delete tests from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTestDeleteAuthorization(context, testData)
+    if (authError) return authError
 
     // Delete test
     // Cascade delete behavior (configured in schema):
