@@ -7,6 +7,7 @@ import { testsParamsSchema, testsUpdateSchema } from '@/types/api/tests.schemas'
 import { testsService } from '@/lib/services/tests.service'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
+  checkTestReadAuthorization,
   checkTestUpdateAuthorization,
   checkTestDeleteAuthorization,
 } from '@/lib/authorization'
@@ -46,25 +47,10 @@ export async function GET(
     const test = row[0].test
     const organizationName = row[0].organizationName ?? null
 
-    // Get organization context for authorization (only if test exists)
-    const { isSystemAdmin, organization } = await getOrganizationContext()
-
-    // Authorization check: matches GET all tests logic
-    // System admin: can see all tests
-    // Org members: can see their org tests (public + private) + public tests + tests without org
-    // Non-authenticated: can see public tests + tests without org
-    if (!isSystemAdmin) {
-      const isPublic = test.visibility === 'public'
-      const hasNoOrganization = test.organizationId === null
-      const isFromUserOrg =
-        organization?.id && test.organizationId === organization.id
-
-      // Allow if: public OR no organization OR from user's org
-      // Block if: private AND has organization AND not from user's org
-      if (!isPublic && !hasNoOrganization && !isFromUserOrg) {
-        return Response.json({ message: 'Forbidden' }, { status: 403 })
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTestReadAuthorization(context, test)
+    if (authError) return authError
 
     const testResults = await db
       .select({
@@ -107,11 +93,11 @@ export async function PATCH(
 ) {
   try {
     // Parse params and body first (quick validation, no DB calls)
-  const resolvedParams = await params
+    const resolvedParams = await params
     const parseParams = testsParamsSchema.safeParse(resolvedParams)
     if (!parseParams.success) {
       return Response.json(z.treeifyError(parseParams.error), { status: 400 })
-  }
+    }
 
     const body = await request.json()
     const parseResult = testsUpdateSchema.safeParse(body)
@@ -201,12 +187,12 @@ export async function DELETE(
 ) {
   try {
     // Parse params first (quick validation, no DB calls)
-  const resolvedParams = await params
-  const parseResult = testsParamsSchema.safeParse(resolvedParams)
+    const resolvedParams = await params
+    const parseResult = testsParamsSchema.safeParse(resolvedParams)
 
-  if (!parseResult.success) {
-    return Response.json(z.treeifyError(parseResult.error), { status: 400 })
-  }
+    if (!parseResult.success) {
+      return Response.json(z.treeifyError(parseResult.error), { status: 400 })
+    }
 
     const { id } = parseResult.data
 

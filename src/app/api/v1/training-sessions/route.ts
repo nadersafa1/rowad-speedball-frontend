@@ -22,14 +22,16 @@ import {
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { queryPlayersForAttendance } from '@/lib/training-session-attendance-helpers'
-import { checkTrainingSessionCreateAuthorization } from '@/lib/authorization'
+import {
+  checkTrainingSessionCreateAuthorization,
+  requireAuthentication,
+} from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   // Require authentication - training sessions are always private
-  const { isAuthenticated } = await getOrganizationContext()
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const context = await getOrganizationContext()
+  const authCheck = requireAuthentication(context)
+  if (authCheck) return authCheck
 
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())

@@ -115,7 +115,8 @@ export function checkUserDeleteAuthorization(
  *
  * Authorization rules:
  * - Must be authenticated
- * - Only system admins can list all users
+ * - System admins can list all users
+ * - Org admins and org coaches can list users (must have active organization)
  */
 export function checkUserListAuthorization(
   context: OrganizationContext
@@ -124,10 +125,18 @@ export function checkUserListAuthorization(
   const authCheck = requireAuthentication(context)
   if (authCheck) return authCheck
 
-  // Only system admins can list all users
-  if (!isSystemAdmin(context)) {
-    return forbiddenResponse('Only system admins can list users')
+  // System admins can list all users
+  if (isSystemAdmin(context)) {
+    return null
   }
 
-  return null
+  // Org admins and org coaches can list users if they have an active organization
+  // Using activeOrgId to match original route logic exactly
+  if (context.activeOrgId) {
+    return null
+  }
+
+  return forbiddenResponse(
+    'Only system admins, org admins, and org coaches can list users'
+  )
 }

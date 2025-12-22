@@ -2,6 +2,7 @@ import type { OrganizationContext } from '@/lib/organization-helpers'
 import type {
   AuthorizationResult,
   ResultResource,
+  TestResource,
 } from '@/lib/authorization/types'
 import {
   requireAuthentication,
@@ -9,6 +10,8 @@ import {
   hasCoachPermissions,
   forbiddenResponse,
   isSystemAdmin,
+  checkOrganizationAccess,
+  belongsToUserOrganization,
 } from '@/lib/authorization/types'
 
 /**
@@ -19,9 +22,11 @@ import {
  * - Must be authenticated
  * - Must be system admin, org admin, org owner, or org coach
  * - Must have an active organization (unless system admin)
+ * - Test must belong to user's organization (unless system admin)
  */
 export function checkResultCreateAuthorization(
-  context: OrganizationContext
+  context: OrganizationContext,
+  test: TestResource
 ): AuthorizationResult {
   // Require authentication
   const authCheck = requireAuthentication(context)
@@ -40,6 +45,14 @@ export function checkResultCreateAuthorization(
     if (orgCheck) return orgCheck
   }
 
+  // Organization ownership check: org members can only create results for tests from their own organization
+  const ownershipCheck = checkOrganizationAccess(
+    context,
+    test.organizationId,
+    'You can only create test results for tests from your own organization'
+  )
+  if (ownershipCheck) return ownershipCheck
+
   return null
 }
 
@@ -48,13 +61,35 @@ export function checkResultCreateAuthorization(
  * Returns Response if unauthorized, null if authorized
  *
  * Authorization rules:
- * - Must be authenticated
+ * - System admin: can see all results
+ * - Org members: can see results from their org tests (public + private) + public tests + tests without org
+ * - Non-authenticated: can see results from public tests + tests without org
  */
 export function checkResultReadAuthorization(
-  context: OrganizationContext
+  context: OrganizationContext,
+  test: TestResource | null
 ): AuthorizationResult {
-  // Require authentication
-  return requireAuthentication(context)
+  // System admin: can see all results
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // If test is null, allow (will be handled as 404 later)
+  if (!test) {
+    return null
+  }
+
+  const isPublic = test.visibility === 'public'
+  const hasNoOrganization = test.organizationId === null
+  const isFromUserOrg = belongsToUserOrganization(context, test.organizationId)
+
+  // Allow if: public OR no organization OR from user's org
+  // Block if: private AND has organization AND not from user's org
+  if (!isPublic && !hasNoOrganization && !isFromUserOrg) {
+    return forbiddenResponse('Forbidden')
+  }
+
+  return null
 }
 
 /**
@@ -65,10 +100,12 @@ export function checkResultReadAuthorization(
  * - Must be authenticated
  * - Must be system admin, org admin, org owner, or org coach
  * - Must have an active organization (unless system admin)
+ * - Test must belong to user's organization (unless system admin)
  */
 export function checkResultUpdateAuthorization(
   context: OrganizationContext,
-  result: ResultResource
+  result: ResultResource,
+  test: TestResource
 ): AuthorizationResult {
   // Require authentication
   const authCheck = requireAuthentication(context)
@@ -87,6 +124,14 @@ export function checkResultUpdateAuthorization(
     if (orgCheck) return orgCheck
   }
 
+  // Organization ownership check: org members can only update results for tests from their own organization
+  const ownershipCheck = checkOrganizationAccess(
+    context,
+    test.organizationId,
+    'You can only update test results for tests from your own organization'
+  )
+  if (ownershipCheck) return ownershipCheck
+
   return null
 }
 
@@ -98,10 +143,12 @@ export function checkResultUpdateAuthorization(
  * - Must be authenticated
  * - Must be system admin, org admin, or org owner (coaches CANNOT delete)
  * - Must have an active organization (unless system admin)
+ * - Test must belong to user's organization (unless system admin)
  */
 export function checkResultDeleteAuthorization(
   context: OrganizationContext,
-  result: ResultResource
+  result: ResultResource,
+  test: TestResource
 ): AuthorizationResult {
   // Require authentication
   const authCheck = requireAuthentication(context)
@@ -120,6 +167,14 @@ export function checkResultDeleteAuthorization(
     const orgCheck = requireOrganization(context)
     if (orgCheck) return orgCheck
   }
+
+  // Organization ownership check: org members can only delete results for tests from their own organization
+  const ownershipCheck = checkOrganizationAccess(
+    context,
+    test.organizationId,
+    'You can only delete test results for tests from your own organization'
+  )
+  if (ownershipCheck) return ownershipCheck
 
   return null
 }

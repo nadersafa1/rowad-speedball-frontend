@@ -10,6 +10,7 @@ import {
   checkOrganizationAccess,
   forbiddenResponse,
   isSystemAdmin,
+  belongsToUserOrganization,
 } from '@/lib/authorization/types'
 
 /**
@@ -49,13 +50,35 @@ export function checkTestCreateAuthorization(
  * Returns Response if unauthorized, null if authorized
  *
  * Authorization rules:
- * - Must be authenticated
+ * - System admin: can see all tests
+ * - Org members: can see their org tests (public + private) + public tests + tests without org
+ * - Non-authenticated: can see public tests + tests without org
  */
 export function checkTestReadAuthorization(
-  context: OrganizationContext
+  context: OrganizationContext,
+  test: TestResource | null
 ): AuthorizationResult {
-  // Require authentication
-  return requireAuthentication(context)
+  // System admin: can see all tests
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // If test is null, allow (will be handled as 404 later)
+  if (!test) {
+    return null
+  }
+
+  const isPublic = test.visibility === 'public'
+  const hasNoOrganization = test.organizationId === null
+  const isFromUserOrg = belongsToUserOrganization(context, test.organizationId)
+
+  // Allow if: public OR no organization OR from user's org
+  // Block if: private AND has organization AND not from user's org
+  if (!isPublic && !hasNoOrganization && !isFromUserOrg) {
+    return forbiddenResponse('Forbidden')
+  }
+
+  return null
 }
 
 /**

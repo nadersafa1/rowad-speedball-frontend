@@ -20,16 +20,16 @@ import {
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
-import { checkCoachCreateAuthorization } from '@/lib/authorization'
+import {
+  checkCoachCreateAuthorization,
+  checkCoachReadAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
-  // Get organization context (all authenticated users can view coaches)
-  const { isAuthenticated } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  // Authorization check (all authenticated users can view coaches)
+  const context = await getOrganizationContext()
+  const authError = checkCoachReadAuthorization(context)
+  if (authError) return authError
 
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())

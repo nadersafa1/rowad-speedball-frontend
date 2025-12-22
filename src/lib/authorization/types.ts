@@ -13,7 +13,8 @@ export type AuthorizationResult = ReturnType<typeof Response.json> | null
 export type PlayerResource = typeof schema.players.$inferSelect
 export type CoachResource = typeof schema.coaches.$inferSelect
 export type EventResource = typeof schema.events.$inferSelect
-export type TrainingSessionResource = typeof schema.trainingSessions.$inferSelect
+export type TrainingSessionResource =
+  typeof schema.trainingSessions.$inferSelect
 export type TestResource = typeof schema.tests.$inferSelect
 export type ResultResource = typeof schema.testResults.$inferSelect
 export type MatchResource = typeof schema.matches.$inferSelect
