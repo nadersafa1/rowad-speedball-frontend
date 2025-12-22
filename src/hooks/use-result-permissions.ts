@@ -17,9 +17,22 @@ export const useResultPermissions = (
   const { isSystemAdmin, isAdmin, isOwner, isCoach, organization } = context
 
   return useMemo(() => {
-    if (!result || !test) {
+    // When checking general permissions (no specific result/test)
+    if (!result && !test) {
       return {
         canRead: true, // Public results are readable by anyone
+        // Can create if user has coach+ permissions and an active organization (or is system admin)
+        canCreate:
+          isSystemAdmin ||
+          ((isAdmin || isOwner || isCoach) && !!organization?.id),
+        canUpdate: false,
+        canDelete: false,
+      }
+    }
+
+    if (!result || !test) {
+      return {
+        canRead: true,
         canCreate: false,
         canUpdate: false,
         canDelete: false,
