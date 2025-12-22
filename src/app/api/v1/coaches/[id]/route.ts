@@ -11,18 +11,20 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
 import { sendOrganizationRemovalEmail } from '@/actions/emails/send-organization-removal-email'
 import { sendOrganizationWelcomeEmail } from '@/actions/emails/send-organization-welcome-email'
+import {
+  checkCoachReadAuthorization,
+  checkCoachUpdateAuthorization,
+  checkCoachDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context (all authenticated users can view coaches)
-  const { isAuthenticated } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkCoachReadAuthorization(context)
+  if (authError) return authError
 
   const resolvedParams = await params
   const parseResult = coachesParamsSchema.safeParse(resolvedParams)
@@ -75,38 +77,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isAdmin,
-    isOwner,
-    isCoach,
-    organization,
-    isAuthenticated,
-  } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, and org owners can update coaches
-  // Coaches CANNOT update other coaches
-  // Additionally, org members (admin/owner) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner) ||
-    (!isSystemAdmin && !organization?.id) ||
-    isCoach
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, and club owners can update coaches',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const paramsResult = coachesParamsSchema.safeParse(resolvedParams)
 
@@ -137,17 +107,12 @@ export async function PATCH(
 
     const coachData = existingCoach[0]
 
-    // Organization ownership check: org members can only update coaches from their org
-    if (!isSystemAdmin) {
-      if (!organization?.id || coachData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only update coaches from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkCoachUpdateAuthorization(context, coachData)
+    if (authError) return authError
+
+    const { isSystemAdmin } = context
 
     // System admins can change organizationId, org members cannot
     let finalUpdateData = updateData
@@ -342,38 +307,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isAdmin,
-    isOwner,
-    isCoach,
-    organization,
-    isAuthenticated,
-  } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, and org owners can delete coaches
-  // Coaches CANNOT delete other coaches
-  // Additionally, org members (admin/owner) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner) ||
-    (!isSystemAdmin && !organization?.id) ||
-    isCoach
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, and club owners can delete coaches',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const parseResult = coachesParamsSchema.safeParse(resolvedParams)
 
@@ -396,17 +329,10 @@ export async function DELETE(
 
     const coachData = existingCoach[0]
 
-    // Organization ownership check: org members can only delete coaches from their org
-    if (!isSystemAdmin) {
-      if (!organization?.id || coachData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only delete coaches from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkCoachDeleteAuthorization(context, coachData)
+    if (authError) return authError
 
     // If coach has a linked user with organization membership, remove membership atomically
     if (coachData.userId && coachData.organizationId) {
