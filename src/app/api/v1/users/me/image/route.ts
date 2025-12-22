@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
-import { auth } from '@/lib/auth'
+import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkUserReadAuthorization } from '@/lib/authorization'
 import {
   isCloudinaryUrl,
   extractPublicId,
@@ -11,18 +11,13 @@ import {
 } from '@/lib/cloudinary-utils'
 
 export async function POST(request: NextRequest) {
+  // Authorization check
+  const context = await getOrganizationContext()
+  const userId = context.userId!
+  const authError = checkUserReadAuthorization(context, userId)
+  if (authError) return authError
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
     const { public_id, secure_url } = body
 
@@ -32,8 +27,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const userId = session.user.id
 
     // Get current user to check for old image
     const currentUser = await db.query.user.findFirst({

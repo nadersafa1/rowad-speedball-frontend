@@ -1,13 +1,13 @@
 import { NextRequest } from 'next/server'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkUserReadAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
+  // Authorization check
   const context = await getOrganizationContext()
-
-  // Check authentication
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const userId = context.userId!
+  const authError = checkUserReadAuthorization(context, userId)
+  if (authError) return authError
 
   try {
     return Response.json(context)

@@ -1,28 +1,18 @@
 import { NextRequest } from 'next/server'
-import { headers } from 'next/headers'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { auth } from '@/lib/auth'
+import { checkUserReadAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
+  // Authorization check
   const context = await getOrganizationContext()
-
-  // Check authentication
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const userId = context.userId!
+  const authError = checkUserReadAuthorization(context, userId)
+  if (authError) return authError
 
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
-
-    if (!session?.user) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
     // Get user's memberships with organization details
     const memberships = await db
       .select({
@@ -38,7 +28,7 @@ export async function GET(request: NextRequest) {
         schema.organization,
         eq(schema.member.organizationId, schema.organization.id)
       )
-      .where(eq(schema.member.userId, session.user.id))
+      .where(eq(schema.member.userId, userId))
 
     return Response.json(memberships)
   } catch (error) {

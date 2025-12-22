@@ -4,6 +4,7 @@ import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkUserReadAuthorization } from '@/lib/authorization'
 
 const userParamsSchema = z.object({
   id: z.uuid(),
@@ -20,15 +21,13 @@ export async function GET(
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
 
-  const context = await getOrganizationContext()
-
-  // Check authentication
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
     const { id } = resolvedParams
+
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkUserReadAuthorization(context, id)
+    if (authError) return authError
 
     const user = await db.query.user.findFirst({
       where: eq(schema.user.id, id),
