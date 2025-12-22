@@ -9,6 +9,7 @@ import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 import { useTrainingSessionsStore } from '@/store/training-sessions-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useTrainingSessionPermissions } from '@/hooks/use-training-session-permissions'
 import { useTrainingSessionAttendance } from '@/hooks/use-training-session-attendance'
 import { AttendanceSummary } from '@/components/training-sessions/attendance-summary'
 import { AttendanceTable } from './components/attendance-table'
@@ -31,13 +32,17 @@ const AttendanceManagementPage = () => {
   const sessionId = params.id as string
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-  const { isSystemAdmin, isCoach, isAdmin, isOwner, isAuthenticated } = context
+  const { isAuthenticated } = context
 
   const {
     selectedTrainingSession,
     fetchTrainingSession,
     isLoading: isSessionLoading,
   } = useTrainingSessionsStore()
+
+  const { canUpdate } = useTrainingSessionPermissions(
+    selectedTrainingSession as any
+  )
 
   const {
     attendanceRecords,
@@ -66,32 +71,15 @@ const AttendanceManagementPage = () => {
   const [limit, setLimit] = useState(25)
 
   useEffect(() => {
-    if (
-      sessionId &&
-      isAuthenticated &&
-      (isSystemAdmin || isCoach || isAdmin || isOwner)
-    ) {
+    if (sessionId && canUpdate) {
       fetchTrainingSession(sessionId)
     }
-  }, [
-    sessionId,
-    fetchTrainingSession,
-    isSystemAdmin,
-    isCoach,
-    isAdmin,
-    isOwner,
-    isAuthenticated,
-  ])
+  }, [sessionId, fetchTrainingSession, canUpdate])
 
   if (isOrganizationContextLoading || isSessionLoading) return <Loading />
 
-  // Training sessions are always private - require authentication
-  if (!isAuthenticated) {
-    return <Unauthorized />
-  }
-
-  // Only system admins, org admins, org owners, and org coaches can access attendance
-  if (!isSystemAdmin && !isCoach && !isAdmin && !isOwner) {
+  // Only users with update permission can manage attendance
+  if (!canUpdate) {
     return <Unauthorized />
   }
 
@@ -187,8 +175,8 @@ const AttendanceManagementPage = () => {
             { label: 'Attendance' },
           ]}
         />
-        {/* Add Player Button - Only show for admins/coaches/owners */}
-        {(isSystemAdmin || isCoach || isAdmin || isOwner) && (
+        {/* Add Player Button - requires update permission */}
+        {canUpdate && (
           <AddPlayerDialog
             onAdd={addPlayer}
             excludedPlayerIds={attendanceRecords.map((r) => r.playerId)}
