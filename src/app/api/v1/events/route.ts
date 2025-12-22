@@ -23,6 +23,7 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateAttendanceAccess } from '@/lib/training-session-attendance-helpers'
 import { registerSessionAttendeesToEvent } from '@/lib/training-session-event-helpers'
 import { isSinglePlayerEventType } from '@/types/event-types'
+import { checkEventCreateAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -343,35 +344,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Get organization context for authorization and organization assignment
-  const {
-    isSystemAdmin,
-    isAdmin,
-    isCoach,
-    isOwner,
-    organization,
-    isAuthenticated,
-  } = await getOrganizationContext()
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkEventCreateAuthorization(context)
+  if (authError) return authError
 
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, org owners, and org coaches can create events
-  // Additionally, org members (admin/owner/coach) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
-    (!isSystemAdmin && !organization?.id)
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, club owners, and club coaches can create events',
-      },
-      { status: 403 }
-    )
-  }
+  const { isSystemAdmin, organization } = context
 
   try {
     const body = await request.json()

@@ -17,6 +17,7 @@ export * from './types'
 // Export authorization helpers
 export * from './helpers/player-authorization'
 export * from './helpers/coach-authorization'
+export * from './helpers/event-authorization'
 export * from './helpers/training-session-authorization'
 export * from './helpers/test-authorization'
 export * from './helpers/result-authorization'
@@ -27,20 +28,7 @@ export * from './helpers/championship-authorization'
 export * from './helpers/federation-authorization'
 export * from './helpers/organization-authorization'
 export * from './helpers/user-authorization'
+export * from './helpers/player-notes-authorization'
 
-// Re-export existing authorization helpers for backward compatibility
-export {
-  checkEventCreateAuthorization,
-  checkEventUpdateAuthorization,
-  checkEventDeleteAuthorization,
-  checkEventReadAuthorization,
-  checkRegistrationDeleteAuthorization,
-  canPlayerUpdateMatch,
-} from '@/lib/event-authorization-helpers'
-
-export {
-  checkPlayerNotesReadAuthorization,
-  checkPlayerNotesCreateAuthorization,
-  checkPlayerNoteUpdateAuthorization,
-  checkPlayerNoteDeleteAuthorization,
-} from '@/lib/player-notes-authorization-helpers'
+// Re-export special event authorization helpers that require database queries
+export { canPlayerUpdateMatch } from '@/lib/event-authorization-helpers'

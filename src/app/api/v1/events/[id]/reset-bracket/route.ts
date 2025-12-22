@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { checkEventUpdateAuthorization } from '@/lib/event-authorization-helpers'
+import { checkEventUpdateAuthorization } from '@/lib/authorization'
 
 export async function POST(
   _request: Request,

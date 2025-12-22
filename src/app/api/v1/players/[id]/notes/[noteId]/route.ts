@@ -12,7 +12,7 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
   checkPlayerNoteUpdateAuthorization,
   checkPlayerNoteDeleteAuthorization,
-} from '@/lib/player-notes-authorization-helpers'
+} from '@/lib/authorization'
 
 /**
  * PATCH /api/v1/players/[id]/notes/[noteId]

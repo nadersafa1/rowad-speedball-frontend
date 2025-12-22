@@ -10,7 +10,7 @@ import {
   checkEventUpdateAuthorization,
   checkEventReadAuthorization,
   canPlayerUpdateMatch,
-} from '@/lib/event-authorization-helpers'
+} from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
