@@ -92,7 +92,7 @@ export const createBaseColumns = (
       id: 'totalTime',
       header: () => <div>Total Time</div>,
       cell: ({ row }) => (
-        <TotalTimeCell formattedTotalTime={row.getValue('formattedTotalTime')} />
+        <TotalTimeCell formattedTotalTime={row.original.formattedTotalTime} />
       ),
     }
   )

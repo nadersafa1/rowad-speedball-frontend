@@ -50,6 +50,12 @@ export const useMatchFilters = (
   const searchParams = useSearchParams()
   const isUpdatingRef = useRef(false)
 
+  // Extract searchParams string to avoid enumeration issues
+  const searchParamsString = useMemo(
+    () => searchParams.toString(),
+    [searchParams]
+  )
+
   const [filters, setFilters] = useState<MatchFilters>(() =>
     parseFiltersFromUrl(searchParams)
   )
@@ -66,7 +72,8 @@ export const useMatchFilters = (
     setFilters((currentFilters) =>
       filtersEqual(urlFilters, currentFilters) ? currentFilters : urlFilters
     )
-  }, [searchParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParamsString])
 
   // Update URL when filters change
   useEffect(() => {
@@ -109,7 +116,8 @@ export const useMatchFilters = (
     if (newUrl !== currentUrl) {
       router.replace(newUrl, { scroll: false })
     }
-  }, [filters, router, pathname, searchParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, router, pathname, searchParamsString])
 
   // Get available rounds from matches
   const availableRounds = useMemo(() => {
