@@ -10,12 +10,13 @@ import ChampionshipsTable from './components/championships-table'
 import { useChampionships } from './hooks/use-championships'
 import { ChampionshipsFilters } from './types'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useChampionshipPermissions } from '@/hooks/use-championship-permissions'
 import Loading from '@/components/ui/loading'
 
 const ChampionshipsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-  const { isSystemAdmin, isFederationAdmin, isFederationEditor } = context
+  const { canCreate } = useChampionshipPermissions(null)
 
   const [championshipFormOpen, setChampionshipFormOpen] = useState(false)
 
@@ -57,8 +58,6 @@ const ChampionshipsPage = () => {
       </div>
     )
   }
-
-  const canCreate = isSystemAdmin || isFederationAdmin || isFederationEditor
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
