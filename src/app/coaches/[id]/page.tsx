@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useCoachesStore } from '@/store/coaches-store'
 import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useCoachPermissions } from '@/hooks/use-coach-permissions'
 import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
 import Loading from '@/components/ui/loading'
@@ -39,9 +40,10 @@ const CoachDetailPage = () => {
   const coachId = params.id as string
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, isAuthenticated } = context
+  const { isAuthenticated } = context
   const { selectedCoach, fetchCoach, isLoading, deleteCoach } =
     useCoachesStore()
+  const { canUpdate, canDelete } = useCoachPermissions(selectedCoach as any)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
@@ -87,31 +89,34 @@ const CoachDetailPage = () => {
       {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-6 flex items-center justify-between gap-2'>
         <PageBreadcrumb currentPageLabel={selectedCoach?.name} />
-        {(isSystemAdmin || isAdmin || isOwner) && (
+        {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              size='sm'
-              className='gap-2'
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <Edit className='h-4 w-4' />
-              <span className='hidden sm:inline'>Edit Coach</span>
-            </Button>
-            <AlertDialog
-              open={deleteDialogOpen}
-              onOpenChange={setDeleteDialogOpen}
-            >
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='gap-2 text-destructive hover:text-destructive'
-                >
-                  <Trash2 className='h-4 w-4' />
-                  <span className='hidden sm:inline'>Delete Coach</span>
-                </Button>
-              </AlertDialogTrigger>
+            {canUpdate && (
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2'
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <Edit className='h-4 w-4' />
+                <span className='hidden sm:inline'>Edit Coach</span>
+              </Button>
+            )}
+            {canDelete && (
+              <AlertDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='gap-2 text-destructive hover:text-destructive'
+                  >
+                    <Trash2 className='h-4 w-4' />
+                    <span className='hidden sm:inline'>Delete Coach</span>
+                  </Button>
+                </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Coach</AlertDialogTitle>
@@ -130,7 +135,8 @@ const CoachDetailPage = () => {
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
-            </AlertDialog>
+              </AlertDialog>
+            )}
           </div>
         )}
       </div>
