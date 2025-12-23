@@ -19,7 +19,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { usePlayersStore } from '@/store/players-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
 import { usePlayerNotesPermissions } from '@/hooks/authorization/use-player-notes-permissions'
 import { toast } from 'sonner'
@@ -35,7 +34,7 @@ const PlayerDetailPage = () => {
   const playerId = params.id as string
   const { selectedPlayer, fetchPlayer, isLoading, deletePlayer } =
     usePlayersStore()
-  const { canUpdate, canDelete } = usePlayerPermissions(selectedPlayer as any)
+  const { canUpdate, canDelete } = usePlayerPermissions(selectedPlayer)
   const { canReadNotes } = usePlayerNotesPermissions(selectedPlayer)
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)

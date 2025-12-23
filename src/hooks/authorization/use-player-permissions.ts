@@ -2,8 +2,7 @@
 
 import { useMemo } from 'react'
 import { useOrganizationContext } from './use-organization-context'
-import type { Player } from '@/db/schema'
-
+import type { Player } from '@/types'
 /**
  * Hook to check player-based permissions
  * Returns permission flags based on player ownership and user role

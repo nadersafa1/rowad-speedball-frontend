@@ -11,13 +11,9 @@ import PlayersTable from './components/players-table'
 import { usePlayers } from './hooks/use-players'
 import { PlayersFilters } from './types'
 import { AgeGroup, Gender, Team } from './types/enums'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
-import Loading from '@/components/ui/loading'
 
 const PlayersPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
   const { canCreate } = usePlayerPermissions(null)
 
   const [playerFormOpen, setPlayerFormOpen] = useState(false)
@@ -42,10 +38,6 @@ const PlayersPage = () => {
     handlePageChange,
     refetch,
   } = usePlayers(filters)
-
-  if (isOrganizationContextLoading) {
-    return <Loading />
-  }
 
   if (error) {
     return (

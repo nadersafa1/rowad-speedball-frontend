@@ -37,7 +37,7 @@ export const PlayersTableActions = ({
   onRefetch,
 }: PlayersTableActionsProps) => {
   // Use player permissions hook to check link user permission (same as update)
-  const { canUpdate, canDelete } = usePlayerPermissions(player as any)
+  const { canUpdate, canDelete } = usePlayerPermissions(player)
 
   return (
     <AlertDialog>
