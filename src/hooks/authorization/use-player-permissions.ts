@@ -39,11 +39,10 @@ export const usePlayerPermissions = (player: Player | null | undefined) => {
       (isSystemAdmin || isAdmin || isOwner || isCoach) &&
       (isSystemAdmin || (isPlayerFromUserOrg && !!organization?.id))
 
-    // Delete permission: System admins, org admins, org owners
-    // Coaches CANNOT delete players (only admins/owners)
+    // Delete permission: System admins, org admins, org owners, org coaches
     // Must be from user's org (unless system admin)
     const canDelete =
-      (isSystemAdmin || isAdmin || isOwner) &&
+      (isSystemAdmin || isAdmin || isOwner || isCoach) &&
       (isSystemAdmin || (isPlayerFromUserOrg && !!organization?.id))
 
     return {

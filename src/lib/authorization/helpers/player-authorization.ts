@@ -122,10 +122,10 @@ export function checkPlayerDeleteAuthorization(
   if (authCheck) return authCheck
 
   // Check role permissions (more restrictive - no coaches)
-  const { isSystemAdmin, isAdmin, isOwner } = context
-  if (!isSystemAdmin && !isAdmin && !isOwner) {
+  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
+  if (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) {
     return forbiddenResponse(
-      'Only system admins, club admins, and club owners can delete players'
+      'Only system admins, club admins, club owners, and club coaches can delete players'
     )
   }
 
