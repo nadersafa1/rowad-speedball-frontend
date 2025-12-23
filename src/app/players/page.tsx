@@ -8,15 +8,18 @@ import { Plus, Volleyball } from 'lucide-react'
 import { useState } from 'react'
 import PlayersStats from './components/players-stats'
 import PlayersTable from './components/players-table'
+import PlayersTableRefactored from './components/players-table-refactored'
 import { usePlayers } from './hooks/use-players'
 import { PlayersFilters } from './types'
 import { AgeGroup, Gender, Team } from './types/enums'
 import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
+import { Badge } from '@/components/ui/badge'
 
 const PlayersPage = () => {
   const { canCreate } = usePlayerPermissions(null)
 
   const [playerFormOpen, setPlayerFormOpen] = useState(false)
+  const [useNewTable, setUseNewTable] = useState(false)
 
   // Local filter state
   const [filters, setFilters] = useState<PlayersFilters>({
@@ -89,49 +92,114 @@ const PlayersPage = () => {
         }
       />
 
+      {/* Table Implementation Toggle */}
+      <div className='mt-4 sm:mt-6 flex items-center gap-3'>
+        <span className='text-sm text-muted-foreground'>Table Implementation:</span>
+        <Button
+          variant={!useNewTable ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => setUseNewTable(false)}
+        >
+          Current
+        </Button>
+        <Button
+          variant={useNewTable ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => setUseNewTable(true)}
+        >
+          Table-Core (New)
+          <Badge className='ml-2' variant='secondary'>
+            Test
+          </Badge>
+        </Button>
+      </div>
+
       {/* Players Table */}
-      <Card className='mt-4 sm:mt-6'>
+      <Card className='mt-4'>
         <CardContent>
-          <PlayersTable
-            players={players}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onPageSizeChange={(pageSize) => {
-              setFilters({ ...filters, limit: pageSize, page: 1 })
-            }}
-            onSearchChange={(search) => {
-              setFilters({ ...filters, q: search, page: 1 })
-            }}
-            searchValue={filters.q}
-            gender={filters.gender}
-            ageGroup={filters.ageGroup}
-            onGenderChange={(gender) => {
-              setFilters({ ...filters, gender, page: 1 })
-            }}
-            onAgeGroupChange={(ageGroup) => {
-              setFilters({ ...filters, ageGroup, page: 1 })
-            }}
-            team={filters.team}
-            onTeamChange={(team) => {
-              setFilters({ ...filters, team, page: 1 })
-            }}
-            organizationId={filters.organizationId}
-            onOrganizationChange={(organizationId) => {
-              setFilters({ ...filters, organizationId, page: 1 })
-            }}
-            sortBy={filters.sortBy}
-            sortOrder={filters.sortOrder}
-            onSortingChange={(sortBy, sortOrder) => {
-              setFilters({
-                ...filters,
-                sortBy: sortBy as PlayersFilters['sortBy'],
-                sortOrder,
-                page: 1,
-              })
-            }}
-            isLoading={isLoading}
-            onRefetch={refetch}
-          />
+          {!useNewTable ? (
+            <PlayersTable
+              players={players}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onPageSizeChange={(pageSize) => {
+                setFilters({ ...filters, limit: pageSize, page: 1 })
+              }}
+              onSearchChange={(search) => {
+                setFilters({ ...filters, q: search, page: 1 })
+              }}
+              searchValue={filters.q}
+              gender={filters.gender}
+              ageGroup={filters.ageGroup}
+              onGenderChange={(gender) => {
+                setFilters({ ...filters, gender, page: 1 })
+              }}
+              onAgeGroupChange={(ageGroup) => {
+                setFilters({ ...filters, ageGroup, page: 1 })
+              }}
+              team={filters.team}
+              onTeamChange={(team) => {
+                setFilters({ ...filters, team, page: 1 })
+              }}
+              organizationId={filters.organizationId}
+              onOrganizationChange={(organizationId) => {
+                setFilters({ ...filters, organizationId, page: 1 })
+              }}
+              sortBy={filters.sortBy}
+              sortOrder={filters.sortOrder}
+              onSortingChange={(sortBy, sortOrder) => {
+                setFilters({
+                  ...filters,
+                  sortBy: sortBy as PlayersFilters['sortBy'],
+                  sortOrder,
+                  page: 1,
+                })
+              }}
+              isLoading={isLoading}
+              onRefetch={refetch}
+            />
+          ) : (
+            <PlayersTableRefactored
+              players={players}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onPageSizeChange={(pageSize) => {
+                setFilters({ ...filters, limit: pageSize, page: 1 })
+              }}
+              onSearchChange={(search) => {
+                setFilters({ ...filters, q: search, page: 1 })
+              }}
+              searchValue={filters.q}
+              gender={filters.gender}
+              ageGroup={filters.ageGroup}
+              onGenderChange={(gender) => {
+                setFilters({ ...filters, gender, page: 1 })
+              }}
+              onAgeGroupChange={(ageGroup) => {
+                setFilters({ ...filters, ageGroup, page: 1 })
+              }}
+              team={filters.team}
+              onTeamChange={(team) => {
+                setFilters({ ...filters, team, page: 1 })
+              }}
+              organizationId={filters.organizationId}
+              onOrganizationChange={(organizationId) => {
+                setFilters({ ...filters, organizationId, page: 1 })
+              }}
+              sortBy={filters.sortBy}
+              sortOrder={filters.sortOrder}
+              onSortingChange={(sortBy, sortOrder) => {
+                setFilters({
+                  ...filters,
+                  sortBy: sortBy as PlayersFilters['sortBy'],
+                  sortOrder,
+                  page: 1,
+                })
+              }}
+              isLoading={isLoading}
+              onRefetch={refetch}
+            />
+          )}
         </CardContent>
       </Card>
 
