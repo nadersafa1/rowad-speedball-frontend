@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import Loading from '@/components/ui/loading'
 import { Dialog } from '@/components/ui/dialog'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useTestPermissions } from '@/hooks/authorization/use-test-permissions'
 import { Plus, Table2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { type DateRange } from 'react-day-picker'
@@ -18,8 +19,7 @@ import TestsStats from './components/tests-stats'
 const TestsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-
-  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
+  const { canCreate } = useTestPermissions(null)
 
   const [testFormOpen, setTestFormOpen] = useState(false)
 
@@ -137,7 +137,7 @@ const TestsPage = () => {
         title='Tests'
         description='Browse and manage all conducted speedball tests'
         actionButton={
-          isSystemAdmin || isCoach || isAdmin || isOwner
+          canCreate
             ? {
                 label: 'Create Test',
                 icon: Plus,

@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import { LoadingSwap } from '@/components/ui/loading-swap'
 import { apiClient } from '@/lib/api-client'
 import { UserCombobox } from '@/app/admin/clubs/[id]/_components/user-combobox'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { Badge } from '@/components/ui/badge'
 import type { PaginatedResponse } from '@/types/api/pagination'
 
@@ -150,8 +150,8 @@ export const LinkUserDialog = ({
         <DialogHeader>
           <DialogTitle>Link User to Coach</DialogTitle>
           <DialogDescription>
-            Link a user account to {coachName}. A user can only be linked to
-            one player or coach.
+            Link a user account to {coachName}. A user can only be linked to one
+            player or coach.
           </DialogDescription>
         </DialogHeader>
         <div className='space-y-4 py-4'>
@@ -205,10 +205,7 @@ export const LinkUserDialog = ({
               <LoadingSwap isLoading={isLoading}>Unlink</LoadingSwap>
             </Button>
           )}
-          <Button
-            onClick={handleLink}
-            disabled={isLoading || !selectedUserId}
-          >
+          <Button onClick={handleLink} disabled={isLoading || !selectedUserId}>
             <LoadingSwap isLoading={isLoading}>
               {currentUserId ? 'Update Link' : 'Link'}
             </LoadingSwap>
@@ -218,4 +215,3 @@ export const LinkUserDialog = ({
     </Dialog>
   )
 }
-

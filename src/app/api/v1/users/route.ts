@@ -18,28 +18,15 @@ import * as schema from '@/db/schema'
 import { usersQuerySchema } from '@/types/api/users.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkUserListAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
+  // Authorization check
   const context = await getOrganizationContext()
+  const authError = checkUserListAuthorization(context)
+  if (authError) return authError
 
-  // Check authentication
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Check if user is system admin, org admin, or org coach
   const { isSystemAdmin: isSystemAdminResult, activeOrgId: activeOrganizationId } = context
-
-  // Only system admin, org admin, or org coach can list users
-  if (!isSystemAdminResult && !activeOrganizationId) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, org admins, and org coaches can list users',
-      },
-      { status: 403 }
-    )
-  }
 
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())

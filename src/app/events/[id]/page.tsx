@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEventsStore } from '@/store/events-store'
 import { toast } from 'sonner'
 import { useGroupsStore } from '@/store/groups-store'
 import { useRegistrationsStore } from '@/store/registrations-store'
 import { useMatchesStore } from '@/store/matches-store'
-import { useEventPermissions } from '@/hooks/use-event-permissions'
+import { useEventPermissions } from '@/hooks/authorization/use-event-permissions'
 import GroupManagement from '@/components/events/group-management'
 import BracketSeeding from '@/components/events/bracket-seeding'
 import HeatManagement from '@/components/events/heat-management'
@@ -32,8 +32,12 @@ const EventDetailPage = () => {
   const searchParams = useSearchParams()
   const eventId = params.id as string
 
-  const tabFromUrl = searchParams.get('activeTab') || 'overview'
-  const [activeTab, setActiveTab] = useState<string>(tabFromUrl)
+  // Extract activeTab value to avoid enumeration issues
+  const activeTabFromUrl = useMemo(
+    () => searchParams.get('activeTab') || 'overview',
+    [searchParams]
+  )
+  const [activeTab, setActiveTab] = useState<string>(activeTabFromUrl)
   const [isGeneratingHeats, setIsGeneratingHeats] = useState(false)
 
   const dialogs = useEventDialogs()
@@ -59,9 +63,8 @@ const EventDetailPage = () => {
 
   // Update activeTab when URL changes
   useEffect(() => {
-    const activeTab = searchParams.get('activeTab') || 'overview'
-    setActiveTab(activeTab)
-  }, [searchParams])
+    setActiveTab(activeTabFromUrl)
+  }, [activeTabFromUrl])
 
   // Handle activeTab change - update URL
   const handleTabChange = (value: string) => {
@@ -226,7 +229,8 @@ const EventDetailPage = () => {
               canManage={canUpdate}
               onHeatsGenerated={handleRefresh}
               hasMore={
-                registrationsPagination.page < registrationsPagination.totalPages
+                registrationsPagination.page <
+                registrationsPagination.totalPages
               }
               isLoadingMore={isLoadingMoreRegistrations}
               onLoadMore={() => loadMoreRegistrations(eventId)}

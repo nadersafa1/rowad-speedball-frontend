@@ -1,21 +1,18 @@
 import { NextRequest } from 'next/server'
-import { headers } from 'next/headers'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
-import { auth } from '@/lib/auth'
+import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkUserReadAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
+  // Authorization check
+  const context = await getOrganizationContext()
+  const userId = context.userId!
+  const authError = checkUserReadAuthorization(context, userId)
+  if (authError) return authError
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
-
-    if (!session?.user) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    const userId = session.user.id
 
     // Fetch user data
     const user = await db.query.user.findFirst({

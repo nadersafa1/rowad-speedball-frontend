@@ -11,7 +11,7 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
   checkEventCreateAuthorization,
   checkEventReadAuthorization,
-} from '@/lib/event-authorization-helpers'
+} from '@/lib/authorization'
 import {
   createGroup,
   validateRegistrations,

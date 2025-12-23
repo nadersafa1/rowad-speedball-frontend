@@ -11,14 +11,16 @@ import CoachesStats from './components/coaches-stats'
 import { useCoaches } from './hooks/use-coaches'
 import { CoachesFilters } from './types'
 import { Gender } from './types/enums'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 
 const CoachesPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-  const { isSystemAdmin, isCoach, isAdmin, isOwner, isAuthenticated } = context
+  const { isAuthenticated } = context
+  const { canCreate } = useCoachPermissions(null)
 
   const [coachFormOpen, setCoachFormOpen] = useState(false)
 
@@ -75,7 +77,7 @@ const CoachesPage = () => {
         title='Coaches'
         description='Browse and manage all registered coaches'
         actionDialog={
-          isSystemAdmin || isAdmin || isOwner
+          canCreate
             ? {
                 open: coachFormOpen,
                 onOpenChange: setCoachFormOpen,

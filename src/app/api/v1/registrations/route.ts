@@ -15,7 +15,7 @@ import {
 import {
   checkEventCreateAuthorization,
   checkEventReadAuthorization,
-} from '@/lib/event-authorization-helpers'
+} from '@/lib/authorization'
 import {
   enrichRegistrationWithPlayers,
   addPlayersToRegistration,

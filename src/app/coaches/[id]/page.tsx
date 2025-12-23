@@ -25,7 +25,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useCoachesStore } from '@/store/coaches-store'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
 import Loading from '@/components/ui/loading'
@@ -39,9 +40,10 @@ const CoachDetailPage = () => {
   const coachId = params.id as string
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, isAuthenticated } = context
+  const { isAuthenticated } = context
   const { selectedCoach, fetchCoach, isLoading, deleteCoach } =
     useCoachesStore()
+  const { canUpdate, canDelete } = useCoachPermissions(selectedCoach as any)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
@@ -87,50 +89,54 @@ const CoachDetailPage = () => {
       {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-6 flex items-center justify-between gap-2'>
         <PageBreadcrumb currentPageLabel={selectedCoach?.name} />
-        {(isSystemAdmin || isAdmin || isOwner) && (
+        {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              size='sm'
-              className='gap-2'
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <Edit className='h-4 w-4' />
-              <span className='hidden sm:inline'>Edit Coach</span>
-            </Button>
-            <AlertDialog
-              open={deleteDialogOpen}
-              onOpenChange={setDeleteDialogOpen}
-            >
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='gap-2 text-destructive hover:text-destructive'
-                >
-                  <Trash2 className='h-4 w-4' />
-                  <span className='hidden sm:inline'>Delete Coach</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Coach</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete {selectedCoach.name}? This
-                    action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                    onClick={handleDelete}
+            {canUpdate && (
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2'
+                onClick={() => setEditDialogOpen(true)}
+              >
+                <Edit className='h-4 w-4' />
+                <span className='hidden sm:inline'>Edit Coach</span>
+              </Button>
+            )}
+            {canDelete && (
+              <AlertDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='gap-2 text-destructive hover:text-destructive'
                   >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className='h-4 w-4' />
+                    <span className='hidden sm:inline'>Delete Coach</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Coach</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {selectedCoach.name}? This
+                      action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         )}
       </div>
@@ -173,9 +179,7 @@ const CoachDetailPage = () => {
               <p className='text-sm font-medium text-muted-foreground'>
                 Created At
               </p>
-              <p className='text-lg'>
-                {formatDate(selectedCoach.createdAt)}
-              </p>
+              <p className='text-lg'>{formatDate(selectedCoach.createdAt)}</p>
             </div>
           </CardContent>
         </Card>

@@ -4,6 +4,7 @@ import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkOrganizationMemberManagementAuthorization } from '@/lib/authorization'
 
 const addMemberSchema = z.object({
   userId: z.uuid('Invalid user ID format'),
@@ -14,42 +15,16 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const context = await getOrganizationContext()
-
-  // Check authentication
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
   const resolvedParams = await params
   const organizationId = resolvedParams.id
 
-  // Check if user is system admin, org admin/owner, or org coach
-  const {
-    isSystemAdmin: isSystemAdminResult,
-    activeOrgId: activeOrganizationId,
-    isAdmin,
-    isOwner,
-    isCoach: isOrgCoach,
-  } = context
-  const isOrgAdmin = isAdmin || isOwner
-
-  // System admin can add to any org, org admin/owner/coach can only add to their org
-  if (!isSystemAdminResult) {
-    if (!activeOrganizationId || activeOrganizationId !== organizationId) {
-      return Response.json(
-        { message: 'You can only add users to your own organization' },
-        { status: 403 }
-      )
-    }
-
-    if (!isOrgAdmin && !isOrgCoach) {
-      return Response.json(
-        { message: 'Only admins, owners, and coaches can add users' },
-        { status: 403 }
-      )
-    }
-  }
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkOrganizationMemberManagementAuthorization(
+    context,
+    organizationId
+  )
+  if (authError) return authError
 
   try {
     const body = await request.json()

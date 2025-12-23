@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useChampionshipsStore } from '@/store/championships-store'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { apiClient } from '@/lib/api-client'
 import type { Championship } from '@/db/schema'
 import {

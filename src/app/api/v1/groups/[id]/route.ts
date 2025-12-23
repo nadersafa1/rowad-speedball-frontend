@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { groupsParamsSchema } from '@/types/api/groups.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { checkEventDeleteAuthorization } from '@/lib/event-authorization-helpers'
+import { checkEventDeleteAuthorization } from '@/lib/authorization'
 
 export async function DELETE(
   request: NextRequest,

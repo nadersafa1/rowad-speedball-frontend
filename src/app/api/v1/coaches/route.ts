@@ -20,15 +20,16 @@ import {
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
+import {
+  checkCoachCreateAuthorization,
+  checkCoachReadAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
-  // Get organization context (all authenticated users can view coaches)
-  const { isAuthenticated } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  // Authorization check (all authenticated users can view coaches)
+  const context = await getOrganizationContext()
+  const authError = checkCoachReadAuthorization(context)
+  if (authError) return authError
 
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
@@ -223,37 +224,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isAdmin,
-    isOwner,
-    isCoach,
-    organization,
-    isAuthenticated,
-  } = await getOrganizationContext()
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkCoachCreateAuthorization(context)
+  if (authError) return authError
 
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, and org owners can create coaches
-  // Coaches CANNOT create other coaches
-  // Additionally, org members (admin/owner) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner) ||
-    (!isSystemAdmin && !organization?.id) ||
-    isCoach
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, and club owners can create coaches',
-      },
-      { status: 403 }
-    )
-  }
+  const { isSystemAdmin, organization } = context
 
   try {
     const body = await request.json()

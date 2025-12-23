@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useEventPermissions } from '@/hooks/authorization/use-event-permissions'
 import { useEventsStore } from '@/store/events-store'
 import { Plus, Trophy } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -18,8 +19,7 @@ import type { EventFormat } from '@/types/event-format'
 const EventsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-
-  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
+  const { canCreate } = useEventPermissions(null)
 
   const [eventFormOpen, setEventFormOpen] = useState(false)
   const [filters, setFilters] = useState({
@@ -146,7 +146,7 @@ const EventsPage = () => {
         title='Events'
         description='Manage tournaments and competitions'
         actionButton={
-          isSystemAdmin || isCoach || isAdmin || isOwner
+          canCreate
             ? {
                 label: 'Create Event',
                 icon: Plus,

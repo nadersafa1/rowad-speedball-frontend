@@ -13,10 +13,14 @@ export const useEventPermissions = (event: Event | null | undefined) => {
   const { isSystemAdmin, isAdmin, isOwner, isCoach, organization } = context
 
   return useMemo(() => {
+    // Create permission: System admins, org admins, org owners, org coaches
+    const canCreate =
+      isSystemAdmin || ((isAdmin || isOwner || isCoach) && !!organization?.id)
+
     if (!event) {
       return {
-        canRead: false,
-        canCreate: false,
+        canRead: true, // Events are public by default
+        canCreate, // Use the same logic for general creation permission
         canUpdate: false,
         canDelete: false,
       }
@@ -34,10 +38,6 @@ export const useEventPermissions = (event: Event | null | undefined) => {
     const hasNoOrganization = event.organizationId === null
     const canRead =
       isSystemAdmin || isPublic || hasNoOrganization || isEventFromUserOrg
-
-    // Create permission: System admins, org admins, org owners, org coaches
-    const canCreate =
-      isSystemAdmin || ((isAdmin || isOwner || isCoach) && !!organization?.id)
 
     // Update permission: System admins, org admins, org owners, org coaches
     // Must be from user's org (unless system admin)

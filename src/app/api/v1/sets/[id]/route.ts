@@ -9,7 +9,7 @@ import {
   checkEventUpdateAuthorization,
   checkEventDeleteAuthorization,
   canPlayerUpdateMatch,
-} from '@/lib/event-authorization-helpers'
+} from '@/lib/authorization'
 
 export async function PATCH(
   request: NextRequest,

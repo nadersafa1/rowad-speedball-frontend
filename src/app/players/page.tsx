@@ -11,13 +11,10 @@ import PlayersTable from './components/players-table'
 import { usePlayers } from './hooks/use-players'
 import { PlayersFilters } from './types'
 import { AgeGroup, Gender, Team } from './types/enums'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
-import Loading from '@/components/ui/loading'
+import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
 
 const PlayersPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
-  const { isSystemAdmin, isCoach, isAdmin, isOwner } = context
+  const { canCreate } = usePlayerPermissions(null)
 
   const [playerFormOpen, setPlayerFormOpen] = useState(false)
 
@@ -41,10 +38,6 @@ const PlayersPage = () => {
     handlePageChange,
     refetch,
   } = usePlayers(filters)
-
-  if (isOrganizationContextLoading) {
-    return <Loading />
-  }
 
   if (error) {
     return (
@@ -72,7 +65,7 @@ const PlayersPage = () => {
         title='Players'
         description='Browse and manage all registered players'
         actionDialog={
-          isSystemAdmin || isCoach || isAdmin || isOwner
+          canCreate
             ? {
                 open: playerFormOpen,
                 onOpenChange: setPlayerFormOpen,

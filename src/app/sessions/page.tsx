@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader, Dialog, PageBreadcrumb } from '@/components/ui'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useTrainingSessionPermissions } from '@/hooks/authorization/use-training-session-permissions'
 import { Plus, Calendar } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { type DateRange } from 'react-day-picker'
@@ -19,8 +20,8 @@ import TrainingSessionsStats from './components/training-sessions-stats'
 const TrainingSessionsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
     useOrganizationContext()
-
-  const { isSystemAdmin, isCoach, isAdmin, isOwner, isAuthenticated } = context
+  const { isAuthenticated } = context
+  const { canRead, canCreate } = useTrainingSessionPermissions(null)
 
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
 
@@ -63,11 +64,7 @@ const TrainingSessionsPage = () => {
     clearError,
     handlePageChange,
     refetch,
-  } = useTrainingSessions(
-    isAuthenticated && (isSystemAdmin || isCoach || isAdmin || isOwner)
-      ? filtersWithDates
-      : { page: 1, limit: 25 }
-  )
+  } = useTrainingSessions(canRead ? filtersWithDates : { page: 1, limit: 25 })
 
   // Filter change handlers
   const handleSearchChange = (value: string) => {
@@ -119,13 +116,8 @@ const TrainingSessionsPage = () => {
 
   if (isOrganizationContextLoading) return <Loading />
 
-  // Training sessions are always private - require authentication
-  if (!isAuthenticated) {
-    return <Unauthorized />
-  }
-
-  // Only system admins, org admins, org owners, and org coaches can access training sessions
-  if (!isSystemAdmin && !isCoach && !isAdmin && !isOwner) {
+  // Training sessions are always private - require authentication and proper role
+  if (!canRead) {
     return <Unauthorized />
   }
 
@@ -154,7 +146,7 @@ const TrainingSessionsPage = () => {
         title='Training Sessions'
         description='Browse and manage all training sessions'
         actionButton={
-          isSystemAdmin || isCoach || isAdmin || isOwner
+          canCreate
             ? {
                 label: 'Create Session',
                 icon: Plus,

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Table } from '@/components/ui/table'
 import type { Federation } from '@/db/schema'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './federations-table-columns'
 import { FederationsTableControls } from './federations-table-controls'
 import { FederationsTablePagination } from './federations-table-pagination'

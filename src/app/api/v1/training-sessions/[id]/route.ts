@@ -9,6 +9,11 @@ import {
   trainingSessionsUpdateSchema,
 } from '@/types/api/training-sessions.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  checkTrainingSessionReadAuthorization,
+  checkTrainingSessionUpdateAuthorization,
+  checkTrainingSessionDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
@@ -48,31 +53,13 @@ export async function GET(
     const trainingSession = row[0].trainingSession
     const organizationName = row[0].organizationName ?? null
 
-    // Get organization context for authorization (only if training session exists)
-    const { isSystemAdmin, organization, isAuthenticated } =
-      await getOrganizationContext()
-
-    // Require authentication - training sessions are always private
-    if (!isAuthenticated) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Authorization check: matches GET all training sessions logic
-    // System admin: can see all training sessions
-    // Org members: can only see training sessions from their organization
-    if (!isSystemAdmin) {
-      if (organization?.id) {
-        // Org members: can only see training sessions from their organization
-        if (trainingSession.organizationId !== organization.id) {
-          return Response.json({ message: 'Forbidden' }, { status: 403 })
-        }
-      } else {
-        // Authenticated user without organization: can only see training sessions without organization
-        if (trainingSession.organizationId !== null) {
-          return Response.json({ message: 'Forbidden' }, { status: 403 })
-        }
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTrainingSessionReadAuthorization(
+      context,
+      trainingSession
+    )
+    if (authError) return authError
 
     // Get related coaches
     const coaches = await db
@@ -137,51 +124,15 @@ export async function PATCH(
 
     const trainingSessionData = existing[0]
 
-    // Get organization context for authorization (only if training session exists)
-    const {
-      isSystemAdmin,
-      isAdmin,
-      isCoach,
-      isOwner,
-      organization,
-      isAuthenticated,
-    } = await getOrganizationContext()
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTrainingSessionUpdateAuthorization(
+      context,
+      trainingSessionData
+    )
+    if (authError) return authError
 
-    // Require authentication
-    if (!isAuthenticated) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Authorization: Only system admins, org admins, org owners, and org coaches can update training sessions
-    // Additionally, org members (admin/owner/coach) must have an active organization
-    if (
-      (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
-      (!isSystemAdmin && !organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, club owners, and club coaches can update training sessions',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only update training sessions from their own organization
-    if (!isSystemAdmin) {
-      if (
-        !organization?.id ||
-        trainingSessionData.organizationId !== organization.id
-      ) {
-        return Response.json(
-          {
-            message:
-              'You can only update training sessions from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    const { isSystemAdmin } = context
 
     // Handle name auto-generation if date is updated
     const finalUpdateData: any = { ...updateData }
@@ -275,40 +226,13 @@ export async function DELETE(
 
     const trainingSessionData = existing[0]
 
-    // Get organization context for authorization (only if training session exists)
-    const { isSystemAdmin, isAdmin, isOwner, organization } =
-      await getOrganizationContext()
-
-    // Authorization: Only system admins, org admins, and org owners can delete training sessions
-    // Additionally, org members (admin/owner) must have an active organization
-    if (
-      (!isSystemAdmin && !isAdmin && !isOwner) ||
-      (!isSystemAdmin && !organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, and club owners can delete training sessions',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only delete training sessions from their own organization
-    if (!isSystemAdmin) {
-      if (
-        !organization?.id ||
-        trainingSessionData.organizationId !== organization.id
-      ) {
-        return Response.json(
-          {
-            message:
-              'You can only delete training sessions from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTrainingSessionDeleteAuthorization(
+      context,
+      trainingSessionData
+    )
+    if (authError) return authError
 
     // Delete training session
     // Cascade delete behavior (configured in schema):

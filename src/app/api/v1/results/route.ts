@@ -23,6 +23,7 @@ import { createPaginatedResponse } from '@/types/api/pagination'
 import { resultsService } from '@/lib/services/results.service'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { calculateAge, getAgeGroup } from '@/db/schema'
+import { checkResultCreateAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -287,30 +288,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const context = await getOrganizationContext()
-
-  if (!context.isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, org owners, and org coaches can create results
-  // Additionally, org members (admin/owner/coach) must have an active organization
-  if (
-    (!context.isSystemAdmin &&
-      !context.isAdmin &&
-      !context.isOwner &&
-      !context.isCoach) ||
-    (!context.isSystemAdmin && !context.organization?.id)
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, club owners, and club coaches can create test results',
-      },
-      { status: 403 }
-    )
-  }
-
   try {
     const body = await request.json()
     const parseResult = resultsCreateSchema.safeParse(body)
@@ -351,21 +328,10 @@ export async function POST(request: NextRequest) {
 
     const test = testExists[0]
 
-    // Organization ownership check: org members can only create results for tests from their own organization
-    if (!context.isSystemAdmin) {
-      if (
-        !context.organization?.id ||
-        test.organizationId !== context.organization.id
-      ) {
-        return Response.json(
-          {
-            message:
-              'You can only create test results for tests from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkResultCreateAuthorization(context, test)
+    if (authError) return authError
 
     const result = await db
       .insert(schema.testResults)

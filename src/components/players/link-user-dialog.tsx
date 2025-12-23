@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import { LoadingSwap } from '@/components/ui/loading-swap'
 import { apiClient } from '@/lib/api-client'
 import { UserCombobox } from '@/app/admin/clubs/[id]/_components/user-combobox'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { Badge } from '@/components/ui/badge'
 import type { PaginatedResponse } from '@/types/api/pagination'
 

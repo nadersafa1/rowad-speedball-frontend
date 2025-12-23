@@ -12,6 +12,10 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
 import { sendOrganizationRemovalEmail } from '@/actions/emails/send-organization-removal-email'
 import { sendOrganizationWelcomeEmail } from '@/actions/emails/send-organization-welcome-email'
+import {
+  checkPlayerUpdateAuthorization,
+  checkPlayerDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
@@ -82,36 +86,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const {
-    isSystemAdmin,
-    isAdmin,
-    isOwner,
-    isCoach,
-    organization,
-    isAuthenticated,
-  } = await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, org owners, and org coaches can update players
-  // Additionally, org members (admin/owner/coach) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
-    (!isSystemAdmin && !organization?.id)
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, club owners, and club coaches can update players',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const paramsResult = playersParamsSchema.safeParse(resolvedParams)
 
@@ -142,17 +116,12 @@ export async function PATCH(
 
     const playerData = existingPlayer[0]
 
-    // Organization ownership check: org members can only update players from their org
-    if (!isSystemAdmin) {
-      if (!organization?.id || playerData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only update players from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkPlayerUpdateAuthorization(context, playerData)
+    if (authError) return authError
+
+    const { isSystemAdmin } = context
 
     // System admins can change organizationId, org members cannot
     let finalUpdateData = updateData
@@ -353,30 +322,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Get organization context for authorization
-  const { isSystemAdmin, isAdmin, isOwner, organization, isAuthenticated } =
-    await getOrganizationContext()
-
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, and org owners can delete players
-  // Additionally, org members (admin/owner) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner) ||
-    (!isSystemAdmin && !organization?.id)
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, and club owners can delete players',
-      },
-      { status: 403 }
-    )
-  }
-
   const resolvedParams = await params
   const parseResult = playersParamsSchema.safeParse(resolvedParams)
 
@@ -399,17 +344,10 @@ export async function DELETE(
 
     const playerData = existingPlayer[0]
 
-    // Organization ownership check: org members can only delete players from their org
-    if (!isSystemAdmin) {
-      if (!organization?.id || playerData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only delete players from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkPlayerDeleteAuthorization(context, playerData)
+    if (authError) return authError
 
     // If player has a linked user with organization membership, remove membership atomically
     if (playerData.userId && playerData.organizationId) {

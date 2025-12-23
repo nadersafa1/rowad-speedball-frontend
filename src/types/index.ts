@@ -75,6 +75,7 @@ export type Player = {
   age: number
   ageGroup: string
   userId?: string | null
+  organizationId?: string | null
   createdAt: string
   updatedAt: string
   organizationName?: string | null

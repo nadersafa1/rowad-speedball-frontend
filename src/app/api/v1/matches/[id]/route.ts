@@ -13,7 +13,7 @@ import {
   checkEventUpdateAuthorization,
   checkEventReadAuthorization,
   canPlayerUpdateMatch,
-} from '@/lib/event-authorization-helpers'
+} from '@/lib/authorization'
 import {
   handleMatchCompletion,
   handleMatchReset,

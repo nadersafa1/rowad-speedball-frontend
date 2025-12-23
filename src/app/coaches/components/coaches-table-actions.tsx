@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { LinkUserDialog } from '@/components/coaches/link-user-dialog'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 
 interface CoachesTableActionsProps {
   coach: Coach
@@ -40,9 +40,8 @@ export const CoachesTableActions = ({
   onDelete,
   onRefetch,
 }: CoachesTableActionsProps) => {
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner } = context
-  const canLinkUser = isSystemAdmin || isAdmin || isOwner
+  // Use coach permissions hook to check link user permission (same as update)
+  const { canUpdate: canLinkUser } = useCoachPermissions(coach)
 
   if (!canEdit && !canDelete && !canLinkUser) return null
 
@@ -114,4 +113,3 @@ export const CoachesTableActions = ({
     </AlertDialog>
   )
 }
-

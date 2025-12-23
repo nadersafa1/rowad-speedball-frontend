@@ -11,7 +11,7 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
   checkEventUpdateAuthorization,
   checkEventDeleteAuthorization,
-} from '@/lib/event-authorization-helpers'
+} from '@/lib/authorization'
 import {
   addPlayersToRegistration,
   checkPlayersAlreadyRegistered,

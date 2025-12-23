@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Table } from '@/components/ui/table'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './training-sessions-table-columns'
 import { useTrainingSessionsTable } from './training-sessions-table-hooks'
 import { TrainingSessionsTableControls } from './training-sessions-table-controls'
@@ -11,7 +11,10 @@ import { TrainingSessionsTableHeader } from './training-sessions-table-header'
 import { TrainingSessionsTableBody } from './training-sessions-table-body'
 import { TrainingSessionsTableEditDialog } from './training-sessions-table-edit-dialog'
 import { useTrainingSessionsTableHandlers } from './training-sessions-table-handlers'
-import { TrainingSessionsTableProps, SortableField } from './training-sessions-table-types'
+import {
+  TrainingSessionsTableProps,
+  SortableField,
+} from './training-sessions-table-types'
 import { Intensity } from '../types/enums'
 
 const TrainingSessionsTable = ({

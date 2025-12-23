@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Table } from '@/components/ui/table'
 import { Test } from '@/types'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './tests-table-columns'
 import { useTestsTable } from './tests-table-hooks'
 import { useTestsTableHandlers } from './tests-table-handlers'
@@ -137,4 +137,3 @@ const TestsTable = ({
 }
 
 export default TestsTable
-

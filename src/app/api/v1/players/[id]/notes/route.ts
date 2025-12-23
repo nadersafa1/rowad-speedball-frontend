@@ -14,7 +14,7 @@ import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
   checkPlayerNotesReadAuthorization,
   checkPlayerNotesCreateAuthorization,
-} from '@/lib/player-notes-authorization-helpers'
+} from '@/lib/authorization'
 
 /**
  * GET /api/v1/players/[id]/notes

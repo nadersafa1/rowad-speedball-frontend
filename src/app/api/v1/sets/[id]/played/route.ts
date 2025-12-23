@@ -12,7 +12,7 @@ import {
 import {
   checkEventUpdateAuthorization,
   canPlayerUpdateMatch,
-} from '@/lib/event-authorization-helpers'
+} from '@/lib/authorization'
 import { handleMatchCompletion } from '@/lib/services/match-service'
 
 export async function PATCH(

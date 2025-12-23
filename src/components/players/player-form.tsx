@@ -33,7 +33,7 @@ import {
   DialogTitle,
 } from '../ui'
 import ClubCombobox from '@/components/organizations/club-combobox'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import {
   TEAM_LEVELS,
   TEAM_LEVEL_LABELS,

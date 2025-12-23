@@ -5,34 +5,34 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { usePlayerNotePermissions } from '@/hooks/authorization/use-player-note-permissions'
 import PlayerNoteForm from './player-note-form'
 import PlayerNotesList from './player-notes-list'
 
 interface PlayerNotesTabProps {
   playerId: string
+  playerOrganizationId?: string | null
 }
 
-const PlayerNotesTab = ({ playerId }: PlayerNotesTabProps) => {
+const PlayerNotesTab = ({
+  playerId,
+  playerOrganizationId,
+}: PlayerNotesTabProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
-
-  // Only coaches and above can create notes
-  const canCreateNote = isSystemAdmin || isAdmin || isOwner || isCoach
+  const { canCreate } = usePlayerNotePermissions(null, playerOrganizationId)
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
           <CardTitle>Player Notes</CardTitle>
-          {canCreateNote && (
+          {canCreate && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-rowad-600 hover:bg-rowad-700"
+                className='bg-rowad-600 hover:bg-rowad-700'
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className='mr-2 h-4 w-4' />
                 Add Note
               </Button>
               <PlayerNoteForm

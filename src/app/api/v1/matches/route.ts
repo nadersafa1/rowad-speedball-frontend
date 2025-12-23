@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { matchesQuerySchema } from '@/types/api/matches.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { checkEventReadAuthorization } from '@/lib/event-authorization-helpers'
+import { checkEventReadAuthorization } from '@/lib/authorization'
 import { enrichMatch } from '@/lib/services/match-enrichment.service'
 
 export async function GET(request: NextRequest) {

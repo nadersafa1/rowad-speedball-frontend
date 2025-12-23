@@ -22,13 +22,16 @@ import {
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { queryPlayersForAttendance } from '@/lib/training-session-attendance-helpers'
+import {
+  checkTrainingSessionCreateAuthorization,
+  requireAuthentication,
+} from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   // Require authentication - training sessions are always private
-  const { isAuthenticated } = await getOrganizationContext()
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const context = await getOrganizationContext()
+  const authCheck = requireAuthentication(context)
+  if (authCheck) return authCheck
 
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
@@ -272,35 +275,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Get organization context for authorization and organization assignment
-  const {
-    isSystemAdmin,
-    isAdmin,
-    isCoach,
-    isOwner,
-    organization,
-    isAuthenticated,
-  } = await getOrganizationContext()
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkTrainingSessionCreateAuthorization(context)
+  if (authError) return authError
 
-  // Require authentication
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Authorization: Only system admins, org admins, org owners, and org coaches can create training sessions
-  // Additionally, org members (admin/owner/coach) must have an active organization
-  if (
-    (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
-    (!isSystemAdmin && !organization?.id)
-  ) {
-    return Response.json(
-      {
-        message:
-          'Only system admins, club admins, club owners, and club coaches can create training sessions',
-      },
-      { status: 403 }
-    )
-  }
+  const { isSystemAdmin, organization } = context
 
   try {
     const body = await request.json()

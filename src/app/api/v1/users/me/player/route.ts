@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
-import { headers } from 'next/headers'
 import { eq } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
-import { auth } from '@/lib/auth'
+import { getOrganizationContext } from '@/lib/organization-helpers'
+import { checkUserReadAuthorization } from '@/lib/authorization'
 import { TEAM_LEVELS } from '@/types/team-level'
 
 // Restricted schema for users updating their own player data
@@ -29,16 +29,13 @@ const myPlayerUpdateSchema = z
   .strict()
 
 export async function PATCH(request: NextRequest) {
+  // Authorization check
+  const context = await getOrganizationContext()
+  const userId = context.userId!
+  const authError = checkUserReadAuthorization(context, userId)
+  if (authError) return authError
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
-
-    if (!session?.user) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    const userId = session.user.id
 
     // Check if user has a linked player record
     const player = await db.query.players.findFirst({

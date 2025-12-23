@@ -13,7 +13,12 @@ export const createColumns = (
   onSort?: (columnId: string) => void,
   isSystemAdmin?: boolean
 ): ColumnDef<Test>[] => {
-  const baseColumns = createBaseColumns(sortBy, sortOrder, onSort, isSystemAdmin)
+  const baseColumns = createBaseColumns(
+    sortBy,
+    sortOrder,
+    onSort,
+    isSystemAdmin
+  )
 
   // Only add actions column if user can edit or delete
   if (!canEdit && !canDelete) {
@@ -30,8 +35,6 @@ export const createColumns = (
         <div className='text-right'>
           <TestsTableActions
             test={row.original}
-            canEdit={canEdit}
-            canDelete={canDelete}
             onEdit={onEdit}
             onDelete={onDelete}
           />
@@ -40,4 +43,3 @@ export const createColumns = (
     },
   ]
 }
-

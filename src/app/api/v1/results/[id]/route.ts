@@ -9,6 +9,11 @@ import {
 } from '@/types/api/results.schemas'
 import { resultsService } from '@/lib/services/results.service'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  checkResultReadAuthorization,
+  checkResultUpdateAuthorization,
+  checkResultDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
@@ -46,25 +51,10 @@ export async function GET(
     const row = result[0]
     const test = row.test
 
-    // Get organization context for authorization (only if result exists)
-    const { isSystemAdmin, organization } = await getOrganizationContext()
-
-    // Authorization check: matches GET all results logic
-    // System admin: can see all results
-    // Org members: can see results from their org tests (public + private) + public tests + tests without org
-    // Non-authenticated: can see results from public tests + tests without org
-    if (!isSystemAdmin && test) {
-      const isPublic = test.visibility === 'public'
-      const hasNoOrganization = test.organizationId === null
-      const isFromUserOrg =
-        organization?.id && test.organizationId === organization.id
-
-      // Allow if: public OR no organization OR from user's org
-      // Block if: private AND has organization AND not from user's org
-      if (!isPublic && !hasNoOrganization && !isFromUserOrg) {
-        return Response.json({ message: 'Forbidden' }, { status: 403 })
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkResultReadAuthorization(context, test)
+    if (authError) return authError
 
     const totalScore = resultsService.calculateTotalScore(row.result)
 
@@ -125,47 +115,17 @@ export async function PATCH(
       return Response.json({ message: 'Result not found' }, { status: 404 })
     }
 
+    const resultData = existingResultWithTest[0].result
     const test = existingResultWithTest[0].test
 
+    if (!test) {
+      return Response.json({ message: 'Test not found' }, { status: 404 })
+    }
+
+    // Authorization check
     const context = await getOrganizationContext()
-
-    if (!context.isAuthenticated) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Authorization: Only system admins, org admins, org owners, and org coaches can update results
-    // Additionally, org members (admin/owner/coach) must have an active organization
-    if (
-      (!context.isSystemAdmin &&
-        !context.isAdmin &&
-        !context.isOwner &&
-        !context.isCoach) ||
-      (!context.isSystemAdmin && !context.organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, club owners, and club coaches can update test results',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only update results for tests from their own organization
-    if (!context.isSystemAdmin && test) {
-      if (
-        !context.organization?.id ||
-        test.organizationId !== context.organization.id
-      ) {
-        return Response.json(
-          {
-            message:
-              'You can only update test results for tests from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    const authError = checkResultUpdateAuthorization(context, resultData, test)
+    if (authError) return authError
 
     const result = await db
       .update(schema.testResults)
@@ -225,47 +185,17 @@ export async function DELETE(
       return Response.json({ message: 'Result not found' }, { status: 404 })
     }
 
+    const resultData = existingResultWithTest[0].result
     const test = existingResultWithTest[0].test
 
+    if (!test) {
+      return Response.json({ message: 'Test not found' }, { status: 404 })
+    }
+
+    // Authorization check
     const context = await getOrganizationContext()
-
-    if (!context.isAuthenticated) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Authorization: Only system admins, org admins, org owners, and org coaches can delete results
-    // Additionally, org members (admin/owner/coach) must have an active organization
-    if (
-      (!context.isSystemAdmin &&
-        !context.isAdmin &&
-        !context.isOwner &&
-        !context.isCoach) ||
-      (!context.isSystemAdmin && !context.organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, club owners, and club coaches can delete test results',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only delete results for tests from their own organization
-    if (!context.isSystemAdmin && test) {
-      if (
-        !context.organization?.id ||
-        test.organizationId !== context.organization.id
-      ) {
-        return Response.json(
-          {
-            message:
-              'You can only delete test results for tests from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    const authError = checkResultDeleteAuthorization(context, resultData, test)
+    if (authError) return authError
 
     await db.delete(schema.testResults).where(eq(schema.testResults.id, id))
 

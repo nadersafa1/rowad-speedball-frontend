@@ -6,6 +6,11 @@ import * as schema from '@/db/schema'
 import { testsParamsSchema, testsUpdateSchema } from '@/types/api/tests.schemas'
 import { testsService } from '@/lib/services/tests.service'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  checkTestReadAuthorization,
+  checkTestUpdateAuthorization,
+  checkTestDeleteAuthorization,
+} from '@/lib/authorization'
 
 export async function GET(
   request: NextRequest,
@@ -42,25 +47,10 @@ export async function GET(
     const test = row[0].test
     const organizationName = row[0].organizationName ?? null
 
-    // Get organization context for authorization (only if test exists)
-    const { isSystemAdmin, organization } = await getOrganizationContext()
-
-    // Authorization check: matches GET all tests logic
-    // System admin: can see all tests
-    // Org members: can see their org tests (public + private) + public tests + tests without org
-    // Non-authenticated: can see public tests + tests without org
-    if (!isSystemAdmin) {
-      const isPublic = test.visibility === 'public'
-      const hasNoOrganization = test.organizationId === null
-      const isFromUserOrg =
-        organization?.id && test.organizationId === organization.id
-
-      // Allow if: public OR no organization OR from user's org
-      // Block if: private AND has organization AND not from user's org
-      if (!isPublic && !hasNoOrganization && !isFromUserOrg) {
-        return Response.json({ message: 'Forbidden' }, { status: 403 })
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTestReadAuthorization(context, test)
+    if (authError) return authError
 
     const testResults = await db
       .select({
@@ -103,11 +93,11 @@ export async function PATCH(
 ) {
   try {
     // Parse params and body first (quick validation, no DB calls)
-  const resolvedParams = await params
+    const resolvedParams = await params
     const parseParams = testsParamsSchema.safeParse(resolvedParams)
     if (!parseParams.success) {
       return Response.json(z.treeifyError(parseParams.error), { status: 400 })
-  }
+    }
 
     const body = await request.json()
     const parseResult = testsUpdateSchema.safeParse(body)
@@ -132,47 +122,12 @@ export async function PATCH(
 
     const testData = existing[0]
 
-    // Get organization context for authorization (only if test exists)
-    const {
-      isSystemAdmin,
-      isAdmin,
-      isCoach,
-      isOwner,
-      organization,
-      isAuthenticated,
-    } = await getOrganizationContext()
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTestUpdateAuthorization(context, testData)
+    if (authError) return authError
 
-    // Require authentication
-    if (!isAuthenticated) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Authorization: Only system admins, org admins, org owners, and org coaches can update tests
-    // Additionally, org members (admin/owner/coach) must have an active organization
-    if (
-      (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) ||
-      (!isSystemAdmin && !organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, club owners, and club coaches can update tests',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only update tests from their own organization
-    if (!isSystemAdmin) {
-      if (!organization?.id || testData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only update tests from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    const { isSystemAdmin } = context
 
     // Handle organizationId updates:
     // - System admins can change organizationId to any organization or null
@@ -232,12 +187,12 @@ export async function DELETE(
 ) {
   try {
     // Parse params first (quick validation, no DB calls)
-  const resolvedParams = await params
-  const parseResult = testsParamsSchema.safeParse(resolvedParams)
+    const resolvedParams = await params
+    const parseResult = testsParamsSchema.safeParse(resolvedParams)
 
-  if (!parseResult.success) {
-    return Response.json(z.treeifyError(parseResult.error), { status: 400 })
-  }
+    if (!parseResult.success) {
+      return Response.json(z.treeifyError(parseResult.error), { status: 400 })
+    }
 
     const { id } = parseResult.data
 
@@ -254,36 +209,10 @@ export async function DELETE(
 
     const testData = existing[0]
 
-    // Get organization context for authorization (only if test exists)
-    const { isSystemAdmin, isAdmin, isOwner, organization } =
-      await getOrganizationContext()
-
-    // Authorization: Only system admins, org admins, and org owners can delete tests
-    // Additionally, org members (admin/owner) must have an active organization
-    if (
-      (!isSystemAdmin && !isAdmin && !isOwner) ||
-      (!isSystemAdmin && !organization?.id)
-    ) {
-      return Response.json(
-        {
-          message:
-            'Only system admins, club admins, and club owners can delete tests',
-        },
-        { status: 403 }
-      )
-    }
-
-    // Organization ownership check: org members can only delete tests from their own organization
-    if (!isSystemAdmin) {
-      if (!organization?.id || testData.organizationId !== organization.id) {
-        return Response.json(
-          {
-            message: 'You can only delete tests from your own organization',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // Authorization check
+    const context = await getOrganizationContext()
+    const authError = checkTestDeleteAuthorization(context, testData)
+    if (authError) return authError
 
     // Delete test
     // Cascade delete behavior (configured in schema):

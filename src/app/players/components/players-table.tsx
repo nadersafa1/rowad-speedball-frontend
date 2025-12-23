@@ -2,8 +2,7 @@
 
 import * as React from 'react'
 import { Table } from '@/components/ui/table'
-import { Player } from '@/types'
-import { useOrganizationContext } from '@/hooks/use-organization-context'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { createColumns } from './players-table-columns'
 import { PlayersTableControls } from './players-table-controls'
 import { PlayersTablePagination } from './players-table-pagination'

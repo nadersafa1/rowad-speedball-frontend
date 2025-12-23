@@ -8,7 +8,7 @@ import {
   playerPositionScoresUpdateSchema,
 } from '@/types/api/registrations.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { checkEventUpdateAuthorization } from '@/lib/event-authorization-helpers'
+import { checkEventUpdateAuthorization } from '@/lib/authorization'
 import {
   updatePlayerPositionScores,
   enrichRegistrationWithPlayers,

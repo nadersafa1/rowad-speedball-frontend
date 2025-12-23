@@ -8,6 +8,7 @@ import {
   getOrganizationContext,
   getAllAppAdmins,
 } from '@/lib/organization-helpers'
+import { checkOrganizationCreateAuthorization } from '@/lib/authorization'
 
 export async function GET(request: NextRequest) {
   // Organizations list is public - anyone can see available clubs for filtering
@@ -30,18 +31,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Only system admin can create organizations
-  const { isAuthenticated, isSystemAdmin } = await getOrganizationContext()
-  if (!isAuthenticated) {
-    return Response.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!isSystemAdmin) {
-    return Response.json(
-      { message: 'Forbidden: Admin access required' },
-      { status: 403 }
-    )
-  }
+  // Authorization check
+  const context = await getOrganizationContext()
+  const authError = checkOrganizationCreateAuthorization(context)
+  if (authError) return authError
 
   try {
     const body = await request.json()
