@@ -91,8 +91,8 @@ export default function LandingPage() {
               {isAuthenticated ? (
                 <>
                   <Button asChild size='lg' className='text-lg px-8 py-6'>
-                    <Link href='/players'>
-                      View Players
+                    <Link href='/attendance'>
+                      My Attendance
                       <ArrowRight className='ml-2 h-5 w-5' />
                     </Link>
                   </Button>
@@ -206,8 +206,8 @@ export default function LandingPage() {
                 </p>
                 <div className='flex flex-col sm:flex-row gap-4 justify-center'>
                   <Button asChild size='lg' className='text-lg px-8 py-6'>
-                    <Link href='/players'>
-                      View Players
+                    <Link href='/attendance'>
+                      My Attendance
                       <ArrowRight className='ml-2 h-5 w-5' />
                     </Link>
                   </Button>
@@ -217,7 +217,7 @@ export default function LandingPage() {
                     size='lg'
                     className='text-lg px-8 py-6'
                   >
-                    <Link href='/events'>View Events</Link>
+                    <Link href='/profile'>My Profile</Link>
                   </Button>
                 </div>
               </>
