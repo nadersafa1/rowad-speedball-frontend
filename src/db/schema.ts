@@ -120,29 +120,42 @@ export const verification = pgTable('verification', {
 })
 
 // Players Table
-export const players = pgTable('players', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
-  nameRtl: varchar('name_rtl', { length: 255 }),
-  dateOfBirth: date('date_of_birth').notNull(),
-  gender: text('gender', { enum: ['male', 'female'] }).notNull(),
-  preferredHand: text('preferred_hand', {
-    enum: ['left', 'right', 'both'],
-  }).notNull(),
-  teamLevel: text('team_level', {
-    enum: ['team_a', 'team_b', 'team_c'],
-  })
-    .notNull()
-    .default('team_c'),
-  userId: uuid('user_id')
-    .references(() => user.id, { onDelete: 'set null' })
-    .unique(),
-  organizationId: uuid('organization_id').references(() => organization.id, {
-    onDelete: 'set null',
-  }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const players = pgTable(
+  'players',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    nameRtl: varchar('name_rtl', { length: 255 }),
+    dateOfBirth: date('date_of_birth').notNull(),
+    gender: text('gender', { enum: ['male', 'female'] }).notNull(),
+    preferredHand: text('preferred_hand', {
+      enum: ['left', 'right', 'both'],
+    }).notNull(),
+    teamLevel: text('team_level', {
+      enum: ['team_a', 'team_b', 'team_c'],
+    })
+      .notNull()
+      .default('team_c'),
+    userId: uuid('user_id')
+      .references(() => user.id, { onDelete: 'set null' })
+      .unique(),
+    organizationId: uuid('organization_id').references(() => organization.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_players_organization_id').on(table.organizationId),
+    index('idx_players_gender').on(table.gender),
+    index('idx_players_team_level').on(table.teamLevel),
+    index('idx_players_org_gender_team').on(
+      table.organizationId,
+      table.gender,
+      table.teamLevel
+    ),
+  ]
+)
 
 export const calculateAge = (dateOfBirth: string): number => {
   const today = new Date()
@@ -467,24 +480,32 @@ export const coaches = pgTable('coaches', {
 })
 
 // Training Sessions Table
-export const trainingSessions = pgTable('training_sessions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
-  intensity: text('intensity', {
-    enum: ['high', 'normal', 'low'],
-  })
-    .notNull()
-    .default('normal'),
-  type: text('type').array().notNull(),
-  date: date('date').notNull(),
-  description: text('description'),
-  ageGroups: text('age_groups').array().notNull(),
-  organizationId: uuid('organization_id').references(() => organization.id, {
-    onDelete: 'cascade',
-  }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const trainingSessions = pgTable(
+  'training_sessions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    intensity: text('intensity', {
+      enum: ['high', 'normal', 'low'],
+    })
+      .notNull()
+      .default('normal'),
+    type: text('type').array().notNull(),
+    date: date('date').notNull(),
+    description: text('description'),
+    ageGroups: text('age_groups').array().notNull(),
+    organizationId: uuid('organization_id').references(() => organization.id, {
+      onDelete: 'cascade',
+    }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_training_sessions_organization_id').on(table.organizationId),
+    index('idx_training_sessions_date').on(table.date),
+    index('idx_training_sessions_org_date').on(table.organizationId, table.date),
+  ]
+)
 
 // Training Session Coaches Junction Table
 export const trainingSessionCoaches = pgTable('training_session_coaches', {
@@ -525,6 +546,10 @@ export const trainingSessionAttendance = pgTable(
   },
   (table) => [
     unique('unique_player_session').on(table.playerId, table.trainingSessionId),
+    index('idx_attendance_player_id').on(table.playerId),
+    index('idx_attendance_session_id').on(table.trainingSessionId),
+    index('idx_attendance_status').on(table.status),
+    index('idx_attendance_player_status').on(table.playerId, table.status),
   ]
 )
 

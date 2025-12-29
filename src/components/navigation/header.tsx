@@ -16,6 +16,8 @@ import {
   X,
   User,
   ChevronDown,
+  ClipboardCheck,
+  Users,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -154,6 +156,25 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className='hidden md:flex md:space-x-8'>
+            {/* Attendance - Conditional routing based on role */}
+            {isAuthenticated && (
+              <Link
+                href={
+                  isSystemAdmin || isAdmin || isOwner || isCoach
+                    ? '/attendance/club'
+                    : '/attendance'
+                }
+                className={cn(
+                  'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  pathname === '/attendance' || pathname === '/attendance/club'
+                    ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
+                    : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
+                )}
+              >
+                <ClipboardCheck className='h-4 w-4' />
+                <span>Attendance</span>
+              </Link>
+            )}
             {navigation.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
@@ -337,6 +358,27 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className='md:hidden border-t pt-4 pb-4'>
             <div className='space-y-1'>
+              {/* Attendance - Conditional routing based on role */}
+              {isAuthenticated && (
+                <Link
+                  href={
+                    isSystemAdmin || isAdmin || isOwner || isCoach
+                      ? '/attendance/club'
+                      : '/attendance'
+                  }
+                  className={cn(
+                    'flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors',
+                    pathname === '/attendance' ||
+                      pathname === '/attendance/club'
+                      ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
+                      : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <ClipboardCheck className='h-5 w-5' />
+                  <span>Attendance</span>
+                </Link>
+              )}
               {navigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
