@@ -18,6 +18,7 @@ import {
 import { playersTableConfig, PlayersTableFilters } from '@/config/tables/players.config'
 import { createPlayersColumns } from '@/config/tables/columns/players-columns'
 import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import {
@@ -96,8 +97,15 @@ export default function PlayersTableRefactored({
   isLoading = false,
   onRefetch,
 }: PlayersTableProps) {
-  const { canUpdate, canDelete } = usePlayerPermissions(null)
+  const { canCreate } = usePlayerPermissions(null)
+  const { context } = useOrganizationContext()
+  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
   const { deletePlayer } = usePlayersStore()
+
+  // General permissions for showing actions column
+  // User can edit/delete if they have any of these roles
+  const canUpdate = isSystemAdmin || isAdmin || isOwner || isCoach
+  const canDelete = isSystemAdmin || isAdmin || isOwner || isCoach
 
   // State for edit/delete dialogs
   const [editingPlayer, setEditingPlayer] = React.useState<Player | null>(null)
