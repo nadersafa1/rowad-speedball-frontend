@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Header from '@/components/navigation/header'
+import { ConditionalLayout } from '@/components/layouts/conditional-layout'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ImpersonationIndicator } from '@/components/auth/impersonation-indicator'
@@ -27,8 +27,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
       <body className={inter.className}>
         <ThemeProvider attribute='class' defaultTheme='light' enableSystem>
           <TooltipProvider>
-            <Header />
-            <main className='min-h-[90dvh]'>{children}</main>
+            <ConditionalLayout>{children}</ConditionalLayout>
             <Toaster />
             <ImpersonationIndicator />
           </TooltipProvider>

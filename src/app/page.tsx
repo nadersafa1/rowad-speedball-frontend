@@ -66,7 +66,8 @@ const benefits = [
 
 export default function LandingPage() {
   const { data: session } = authClient.useSession()
-  const { isLoading: isContextLoading } = useOrganizationContext()
+  const { isLoading: isContextLoading, context } = useOrganizationContext()
+  const { isSystemAdmin, isPlayer } = context
   const isAuthenticated = !!session?.user
 
   const isLoading = isContextLoading
@@ -88,11 +89,11 @@ export default function LandingPage() {
           </p>
           {!isLoading && (
             <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-              {isAuthenticated ? (
+              {isAuthenticated && !isSystemAdmin ? (
                 <>
                   <Button asChild size='lg' className='text-lg px-8 py-6'>
-                    <Link href='/attendance'>
-                      My Attendance
+                    <Link href={isPlayer ? '/attendance' : '/attendance/club'}>
+                      {isPlayer ? 'My Attendance' : 'My Club Attendance'}
                       <ArrowRight className='ml-2 h-5 w-5' />
                     </Link>
                   </Button>
@@ -206,8 +207,8 @@ export default function LandingPage() {
                 </p>
                 <div className='flex flex-col sm:flex-row gap-4 justify-center'>
                   <Button asChild size='lg' className='text-lg px-8 py-6'>
-                    <Link href='/attendance'>
-                      My Attendance
+                    <Link href={isPlayer ? '/attendance' : '/attendance/club'}>
+                      {isPlayer ? 'My Attendance' : 'My Club Attendance'}
                       <ArrowRight className='ml-2 h-5 w-5' />
                     </Link>
                   </Button>
