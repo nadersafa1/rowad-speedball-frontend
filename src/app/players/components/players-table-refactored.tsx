@@ -40,6 +40,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { apiClient } from '@/lib/api-client'
 import { useReactTable, getCoreRowModel, VisibilityState, RowSelectionState } from '@tanstack/react-table'
+import { PlayersTableEditDialog } from './players-table-edit-dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { usePlayersStore } from '@/store/players-store'
 
 export interface PlayersTableProps {
   players: Player[]
@@ -85,10 +97,14 @@ export default function PlayersTableRefactored({
   onRefetch,
 }: PlayersTableProps) {
   const { canUpdate, canDelete } = usePlayerPermissions(null)
+  const { deletePlayer } = usePlayersStore()
 
   // State for edit/delete dialogs
   const [editingPlayer, setEditingPlayer] = React.useState<Player | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false)
   const [deletingPlayer, setDeletingPlayer] = React.useState<Player | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
+  const [isDeleting, setIsDeleting] = React.useState(false)
 
   // Fetch organizations for filter
   const [organizations, setOrganizations] = React.useState<Array<{ id: string; name: string }>>([])
@@ -141,10 +157,44 @@ export default function PlayersTableRefactored({
   // Handler functions
   const handleEdit = React.useCallback((player: Player) => {
     setEditingPlayer(player)
+    setEditDialogOpen(true)
   }, [])
 
   const handleDelete = React.useCallback((player: Player) => {
     setDeletingPlayer(player)
+    setDeleteDialogOpen(true)
+  }, [])
+
+  const handleEditSuccess = React.useCallback(() => {
+    setEditDialogOpen(false)
+    setEditingPlayer(null)
+    onRefetch?.()
+  }, [onRefetch])
+
+  const handleEditCancel = React.useCallback(() => {
+    setEditDialogOpen(false)
+    setEditingPlayer(null)
+  }, [])
+
+  const handleConfirmDelete = React.useCallback(async () => {
+    if (!deletingPlayer) return
+
+    setIsDeleting(true)
+    try {
+      await deletePlayer(deletingPlayer.id)
+      setDeleteDialogOpen(false)
+      setDeletingPlayer(null)
+      onRefetch?.()
+    } catch (error) {
+      console.error('Failed to delete player:', error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [deletingPlayer, deletePlayer, onRefetch])
+
+  const handleCancelDelete = React.useCallback(() => {
+    setDeleteDialogOpen(false)
+    setDeletingPlayer(null)
   }, [])
 
   const handleSort = React.useCallback(
@@ -441,8 +491,40 @@ export default function PlayersTableRefactored({
         showPageNumbers={true}
       />
 
-      {/* TODO: Add EditPlayerDialog and DeletePlayerDialog here */}
-      {/* These would be triggered by editingPlayer and deletingPlayer state */}
+      {/* Edit Player Dialog */}
+      <PlayersTableEditDialog
+        player={editingPlayer}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={handleEditSuccess}
+        onCancel={handleEditCancel}
+      />
+
+      {/* Delete Player Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Player</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold">{deletingPlayer?.name}</span>? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete} disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
