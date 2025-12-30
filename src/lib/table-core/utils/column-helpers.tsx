@@ -368,3 +368,78 @@ export function createLinkColumn<TData extends BaseTableEntity>(
     },
   }
 }
+
+/**
+ * Create an avatar column with image and optional text
+ */
+export function createAvatarColumn<TData extends BaseTableEntity>(
+  id: string,
+  header: string,
+  options: {
+    imageAccessorFn: (row: TData) => string | null | undefined
+    textAccessorFn?: (row: TData) => string | null | undefined
+    fallbackText?: (row: TData) => string
+    size?: 'sm' | 'md' | 'lg'
+    shape?: 'circle' | 'square'
+    sortable?: boolean
+    sortBy?: string
+    sortOrder?: 'asc' | 'desc'
+    onSort?: (columnId: string) => void
+    className?: string
+  }
+): ColumnDef<TData> {
+  const sizeClasses = {
+    sm: 'h-8 w-8 text-xs',
+    md: 'h-10 w-10 text-sm',
+    lg: 'h-12 w-12 text-base',
+  }
+
+  const shapeClasses = {
+    circle: 'rounded-full',
+    square: 'rounded-md',
+  }
+
+  const size = options.size || 'md'
+  const shape = options.shape || 'circle'
+
+  return {
+    id,
+    accessorFn: options.imageAccessorFn,
+    header: options.sortable
+      ? () =>
+          createSortableHeader(
+            header,
+            id,
+            options.sortBy,
+            options.sortOrder,
+            options.onSort
+          )
+      : header,
+    cell: ({ row }) => {
+      const imageUrl = options.imageAccessorFn(row.original)
+      const text = options.textAccessorFn?.(row.original)
+      const fallback = options.fallbackText?.(row.original) || text?.charAt(0)?.toUpperCase() || '?'
+
+      return (
+        <div className={`flex items-center gap-3 ${options.className || ''}`}>
+          <div
+            className={`${sizeClasses[size]} ${shapeClasses[shape]} bg-muted flex items-center justify-center overflow-hidden`}
+          >
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={text || 'Avatar'}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="font-semibold text-muted-foreground">
+                {fallback}
+              </span>
+            )}
+          </div>
+          {text && <span className="font-medium">{text}</span>}
+        </div>
+      )
+    },
+  }
+}

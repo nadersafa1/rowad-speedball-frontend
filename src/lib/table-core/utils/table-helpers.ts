@@ -192,7 +192,8 @@ export function exportToCSV<TData extends BaseTableEntity>(
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = `${filename}.csv`
+  // Only add .csv extension if not already present
+  link.download = filename.endsWith('.csv') ? filename : `${filename}.csv`
   link.click()
   URL.revokeObjectURL(link.href)
 }
@@ -258,14 +259,19 @@ export function getSelectedRowIds(
 
 /**
  * Get selected items from data based on row selection state
+ * Works correctly with pagination by matching row indices to actual data
  */
 export function getSelectedItems<TData extends { id: string }>(
   data: TData[],
   rowSelection: Record<string, boolean>
 ): TData[] {
-  const selectedIndices = getSelectedRowIds(rowSelection).map((id) =>
-    parseInt(id)
-  )
+  // Row selection state uses row indices (0, 1, 2, ...) from the current page
+  // We need to map these indices to actual data items
+  const selectedIndices = Object.keys(rowSelection)
+    .filter((key) => rowSelection[key])
+    .map((key) => parseInt(key, 10))
+    .filter((index) => !isNaN(index) && index >= 0 && index < data.length)
+
   return selectedIndices
     .map((index) => data[index])
     .filter((item): item is TData => Boolean(item))

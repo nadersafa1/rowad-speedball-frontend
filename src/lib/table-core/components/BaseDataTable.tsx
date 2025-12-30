@@ -139,13 +139,13 @@ export function BaseDataTable<
   }
 
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <div className="rounded-md border overflow-x-auto" role="region" aria-label="Data table">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
+                <TableHead key={header.id} scope="col">
                   {header.isPlaceholder
                     ? null
                     : flexRender(

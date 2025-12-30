@@ -58,12 +58,14 @@ export function TablePagination({
       {/* Page size selector */}
       {showPageSizeSelector && (
         <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">Rows per page</p>
+          <p className="text-sm text-muted-foreground" id="rows-per-page-label">
+            Rows per page
+          </p>
           <Select
             value={limit.toString()}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className="h-8 w-[70px]" aria-labelledby="rows-per-page-label">
               <SelectValue />
             </SelectTrigger>
             <SelectContent side="top">
@@ -79,10 +81,12 @@ export function TablePagination({
 
       {/* Pagination info */}
       <div className="flex items-center gap-4">
-        <p className="text-sm text-muted-foreground">{paginationRange}</p>
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {paginationRange}
+        </p>
 
         {/* Pagination controls */}
-        <div className="flex items-center gap-1">
+        <nav className="flex items-center gap-1" role="navigation" aria-label="Pagination navigation">
           {/* First page */}
           <Button
             variant="outline"
@@ -160,7 +164,7 @@ export function TablePagination({
           >
             <ChevronsRight className="h-4 w-4" />
           </Button>
-        </div>
+        </nav>
       </div>
     </div>
   )

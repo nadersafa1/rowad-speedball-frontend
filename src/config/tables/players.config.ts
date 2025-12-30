@@ -27,7 +27,7 @@ export const playersTableConfig: TableConfig<Player, PlayersTableFilters> = {
     filters: true,
     sorting: true,
     pagination: true,
-    selection: false,
+    selection: true,
     export: true,
     columnVisibility: true,
   },

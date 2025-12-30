@@ -153,7 +153,7 @@ export function createPlayersColumns({
       id: 'age',
       enableHiding: true,
       header: () =>
-        createSortableHeader('Age', 'age', sortBy, sortOrder, () => onSort?.('age')),
+        createSortableHeader('Age', 'age', sortBy, sortOrder, onSort),
       cell: ({ row }) => {
         const age = row.getValue('age') as number
         return <div>{age}</div>

@@ -584,6 +584,28 @@ createLinkColumn<TData>(
 )
 ```
 
+### createAvatarColumn
+
+Creates an avatar column with image and optional text.
+
+```typescript
+createAvatarColumn<TData>(
+  'avatar',
+  'Player',
+  {
+    imageAccessorFn: (row) => row.avatarUrl,
+    textAccessorFn: (row) => row.name,
+    fallbackText: (row) => row.name.charAt(0).toUpperCase(),
+    size: 'md', // 'sm' | 'md' | 'lg'
+    shape: 'circle', // 'circle' | 'square'
+    sortable: true,
+    sortBy,
+    sortOrder,
+    onSort,
+  }
+)
+```
+
 ### createSortableHeader
 
 Creates a sortable header with arrow icon.
@@ -644,9 +666,13 @@ exportToCSV<TData>(
 - Supports nested object fields
 - Handles null/undefined values gracefully
 
-## Row Selection
+## Row Selection & Bulk Actions
 
-The table-core system supports row selection with bulk actions.
+The table-core system supports row selection with customizable bulk actions.
+
+**📚 For complete bulk actions guide with examples, see:**
+- **[Bulk Actions Guide](./BULK_ACTIONS_GUIDE.md)** - Comprehensive guide with patterns and examples
+- **[Bulk Actions Quick Start](./BULK_ACTIONS_QUICKSTART.md)** - 5-minute setup guide
 
 ### Enable Row Selection
 

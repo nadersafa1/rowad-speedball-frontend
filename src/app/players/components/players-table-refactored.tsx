@@ -113,6 +113,7 @@ export default function PlayersTableRefactored({
   const [deletingPlayer, setDeletingPlayer] = React.useState<Player | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [isDeleting, setIsDeleting] = React.useState(false)
+  const [isExporting, setIsExporting] = React.useState(false)
 
   // Fetch organizations for filter
   const [organizations, setOrganizations] = React.useState<Array<{ id: string; name: string }>>([])
@@ -155,12 +156,39 @@ export default function PlayersTableRefactored({
     setRowSelection({})
   }, [])
 
-  // Bulk delete handler (example)
+  // Bulk action states
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = React.useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false)
+
+  // Bulk delete handler
   const handleBulkDelete = React.useCallback(() => {
-    console.log('Bulk delete players:', selectedPlayers.map(p => p.id))
-    // TODO: Implement bulk delete API call
-    handleClearSelection()
-  }, [selectedPlayers, handleClearSelection])
+    if (selectedPlayers.length === 0) return
+    setBulkDeleteDialogOpen(true)
+  }, [selectedPlayers])
+
+  // Confirm bulk delete
+  const handleConfirmBulkDelete = React.useCallback(async () => {
+    if (selectedPlayers.length === 0) return
+
+    setIsBulkDeleting(true)
+    try {
+      // Delete all selected players
+      await Promise.all(
+        selectedPlayers.map(player => deletePlayer(player.id))
+      )
+      setBulkDeleteDialogOpen(false)
+      handleClearSelection()
+      onRefetch?.()
+    } catch (error) {
+      console.error('Failed to delete players:', error)
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }, [selectedPlayers, deletePlayer, handleClearSelection, onRefetch])
+
+  const handleCancelBulkDelete = React.useCallback(() => {
+    setBulkDeleteDialogOpen(false)
+  }, [])
 
   // Handler functions
   const handleEdit = React.useCallback((player: Player) => {
@@ -227,21 +255,29 @@ export default function PlayersTableRefactored({
   }, [onSearchChange, onGenderChange, onAgeGroupChange, onTeamChange, onOrganizationChange])
 
   // Export handler
-  const handleExport = React.useCallback(() => {
-    const timestamp = new Date().toISOString().split('T')[0]
-    exportToCSV(
-      players,
-      [
-        { key: 'name', label: 'Name' },
-        { key: 'gender', label: 'Gender' },
-        { key: 'ageGroup', label: 'Age Group' },
-        { key: 'preferredHand', label: 'Preferred Hand' },
-        { key: 'organizationName', label: 'Club' },
-        { key: 'dateOfBirth', label: 'Date of Birth' },
-        { key: 'createdAt', label: 'Created At' },
-      ],
-      `players-${timestamp}.csv`
-    )
+  const handleExport = React.useCallback(async () => {
+    setIsExporting(true)
+    try {
+      // Add small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      const timestamp = new Date().toISOString().split('T')[0]
+      exportToCSV(
+        players,
+        [
+          { key: 'name', label: 'Name' },
+          { key: 'gender', label: 'Gender' },
+          { key: 'ageGroup', label: 'Age Group' },
+          { key: 'preferredHand', label: 'Preferred Hand' },
+          { key: 'organizationName', label: 'Club' },
+          { key: 'dateOfBirth', label: 'Date of Birth' },
+          { key: 'createdAt', label: 'Created At' },
+        ],
+        `players-${timestamp}.csv`
+      )
+    } finally {
+      setIsExporting(false)
+    }
   }, [players])
 
   // Create columns
@@ -271,15 +307,45 @@ export default function PlayersTableRefactored({
     onColumnVisibilityChange: setColumnVisibility,
   })
 
-  const getColumnLabel = (columnId: string) => {
+  // Memoized column label mapping for performance
+  const getColumnLabel = React.useCallback((columnId: string) => {
     const labels: Record<string, string> = {
       preferredHand: 'Preferred Hand',
       dateOfBirth: 'Date of Birth',
       createdAt: 'Created',
       organizationId: 'Club',
+      nameRtl: 'RTL Name',
+      age: 'Age',
+      ageGroup: 'Age Group',
     }
     return labels[columnId] || columnId
-  }
+  }, [])
+
+  // Bulk actions configuration
+  const bulkActions = React.useMemo(() => {
+    const actions = []
+
+    // Add bulk delete action if user has delete permission
+    if (canDelete) {
+      actions.push({
+        label: `Delete ${selectedPlayers.length} player${selectedPlayers.length !== 1 ? 's' : ''}`,
+        icon: <Trash2 className="h-4 w-4" />,
+        variant: 'destructive' as const,
+        onClick: handleBulkDelete,
+        disabled: selectedPlayers.length === 0,
+      })
+    }
+
+    // Example: Add more bulk actions here
+    // actions.push({
+    //   label: 'Export Selected',
+    //   icon: <Download className="h-4 w-4" />,
+    //   variant: 'outline' as const,
+    //   onClick: handleBulkExport,
+    // })
+
+    return actions
+  }, [canDelete, selectedPlayers.length, handleBulkDelete])
 
   return (
     <div className="w-full space-y-4">
@@ -288,15 +354,7 @@ export default function PlayersTableRefactored({
         <BulkActionsToolbar
           selectedCount={selectedPlayers.length}
           onClearSelection={handleClearSelection}
-          actions={[
-            {
-              label: 'Delete Selected',
-              icon: <Trash2 className="h-4 w-4" />,
-              variant: 'destructive',
-              onClick: handleBulkDelete,
-              disabled: !canDelete,
-            },
-          ]}
+          actions={bulkActions}
         />
       )}
 
@@ -323,21 +381,25 @@ export default function PlayersTableRefactored({
                   variant="outline"
                   className="flex-1 md:flex-none"
                   onClick={handleExport}
-                  disabled={players.length === 0}
+                  disabled={players.length === 0 || isExporting}
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Export
+                  {isExporting ? 'Exporting...' : 'Export'}
                 </Button>
               )}
 
               {/* Column Visibility */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex-1 md:flex-none">
+                  <Button
+                    variant="outline"
+                    className="flex-1 md:flex-none"
+                    aria-label="Toggle column visibility"
+                  >
                     Columns <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" aria-label="Column visibility options">
                   {table
                     .getAllColumns()
                     .filter((column) => column.getCanHide())
@@ -347,6 +409,7 @@ export default function PlayersTableRefactored({
                         className="capitalize"
                         checked={column.getIsVisible()}
                         onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        aria-label={`Toggle ${getColumnLabel(column.id)} column`}
                       >
                         {getColumnLabel(column.id)}
                       </DropdownMenuCheckboxItem>
@@ -529,6 +592,42 @@ export default function PlayersTableRefactored({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Players Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Multiple Players</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold">{selectedPlayers.length} player{selectedPlayers.length !== 1 ? 's' : ''}</span>?
+              This action cannot be undone.
+              {selectedPlayers.length <= 5 && (
+                <div className="mt-3 space-y-1">
+                  <p className="text-sm font-medium">Players to be deleted:</p>
+                  <ul className="list-disc list-inside text-sm">
+                    {selectedPlayers.map((player) => (
+                      <li key={player.id}>{player.name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelBulkDelete} disabled={isBulkDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? 'Deleting...' : `Delete ${selectedPlayers.length} Player${selectedPlayers.length !== 1 ? 's' : ''}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
