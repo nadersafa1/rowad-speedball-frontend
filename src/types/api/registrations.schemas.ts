@@ -2,6 +2,11 @@ import { z } from 'zod'
 import type { PositionScores, PositionKey } from '@/types/position-scores'
 import { POSITION_KEYS } from '@/types/position-scores'
 import { uuidSchema, nonNegativeIntSchema } from '@/lib/forms/patterns'
+import {
+  standardPaginationSchema,
+  standardSortSchema,
+  standardTextSearchSchema,
+} from '@/lib/api-helpers/query-builders'
 
 // Position scores schema for JSONB column
 // Keys: R, L, F, B - represent positions
@@ -25,6 +30,9 @@ export const positionScoresSchema = z
 // Query parameters for GET /registrations
 export const registrationsQuerySchema = z
   .object({
+    ...standardTextSearchSchema.shape,
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
     eventId: uuidSchema.optional(),
     groupId: z
       .string()
@@ -34,8 +42,7 @@ export const registrationsQuerySchema = z
         return val
       })
       .refine(
-        (val) =>
-          val === undefined || z.uuid().safeParse(val).success,
+        (val) => val === undefined || z.uuid().safeParse(val).success,
         'Invalid group ID format'
       ),
     organizationId: z
@@ -46,15 +53,10 @@ export const registrationsQuerySchema = z
         return val
       })
       .refine(
-        (val) =>
-          val === undefined || z.uuid().safeParse(val).success,
+        (val) => val === undefined || z.uuid().safeParse(val).success,
         'Invalid organization ID format'
       ),
-    q: z
-      .string()
-      .trim()
-      .max(100, 'q must be less than 100 characters')
-      .optional(),
+
     sortBy: z
       .enum([
         'totalScore',
@@ -69,20 +71,6 @@ export const registrationsQuerySchema = z
         'positionB',
       ])
       .optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
-    page: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 1))
-      .refine((val) => val >= 1, 'Page must be greater than 0'),
-    limit: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 10))
-      .refine(
-        (val) => val >= 1 && val <= 100,
-        'Limit must be between 1 and 100'
-      ),
   })
   .strict()
 
@@ -101,9 +89,7 @@ export const playerWithPositionSchema = z.object({
 // Create registration schema for POST /registrations
 export const registrationsCreateSchema = z.object({
   eventId: uuidSchema,
-  playerIds: z
-    .array(uuidSchema)
-    .min(1, 'At least one player is required'),
+  playerIds: z.array(uuidSchema).min(1, 'At least one player is required'),
   // Optional: players with position scores and order for team events
   players: z.array(playerWithPositionSchema).optional(),
 })

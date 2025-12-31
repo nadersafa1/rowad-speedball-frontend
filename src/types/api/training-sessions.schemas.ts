@@ -5,7 +5,11 @@ import {
   uuidSchema,
   optionalUuidSchema,
 } from '@/lib/forms/patterns'
-
+import {
+  standardTextSearchSchema,
+  standardPaginationSchema,
+  standardSortSchema,
+} from '@/lib/api-helpers/query-builders'
 // Team level enum for validation
 const teamLevelEnum = z.enum(TEAM_LEVELS)
 
@@ -35,11 +39,9 @@ const ageGroupEnum = z.enum([
 // Query parameters for GET /training-sessions
 export const trainingSessionsQuerySchema = z
   .object({
-    q: z
-      .string()
-      .trim()
-      .max(20, 'q must be less than 20 characters')
-      .optional(),
+    ...standardTextSearchSchema.shape,
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
     intensity: z.enum(['high', 'normal', 'low', 'all']).optional(),
     type: sessionTypeEnum.optional(),
     dateFrom: z
@@ -63,25 +65,9 @@ export const trainingSessionsQuerySchema = z
           val === undefined || val === null || z.uuid().safeParse(val).success,
         'Invalid organization ID format'
       ),
-    // Sorting parameters
     sortBy: z
       .enum(['name', 'intensity', 'date', 'createdAt', 'updatedAt'])
       .optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
-    // Pagination parameters
-    page: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 1))
-      .refine((val) => val >= 1, 'Page must be greater than 0'),
-    limit: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 10))
-      .refine(
-        (val) => val >= 1 && val <= 100,
-        'Limit must be between 1 and 100'
-      ),
   })
   .strict()
 
@@ -107,9 +93,7 @@ export const trainingSessionsCreateSchema = z
     ageGroups: z
       .array(ageGroupEnum)
       .min(1, 'At least one age group is required'),
-    coachIds: z
-      .array(uuidSchema)
-      .min(1, 'At least one coach is required'),
+    coachIds: z.array(uuidSchema).min(1, 'At least one coach is required'),
     organizationId: optionalUuidSchema,
     teamLevels: z
       .array(teamLevelEnum)
@@ -202,9 +186,7 @@ export const attendanceBulkUpdateSchema = z
 // Bulk delete attendance schema for DELETE /training-sessions/:id/attendance/bulk
 export const attendanceBulkDeleteSchema = z
   .object({
-    playerIds: z
-      .array(uuidSchema)
-      .min(1, 'At least one player ID is required'),
+    playerIds: z.array(uuidSchema).min(1, 'At least one player ID is required'),
   })
   .strict()
 
