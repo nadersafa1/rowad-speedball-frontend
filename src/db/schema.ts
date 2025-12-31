@@ -524,12 +524,18 @@ export const matches = pgTable(
     round: integer('round').notNull(),
     matchNumber: integer('match_number').notNull(),
     // Nullable for BYE matches in single elimination
-    registration1Id: uuid('registration1_id').references(() => registrations.id, {
-      onDelete: 'cascade',
-    }),
-    registration2Id: uuid('registration2_id').references(() => registrations.id, {
-      onDelete: 'cascade',
-    }),
+    registration1Id: uuid('registration1_id').references(
+      () => registrations.id,
+      {
+        onDelete: 'cascade',
+      }
+    ),
+    registration2Id: uuid('registration2_id').references(
+      () => registrations.id,
+      {
+        onDelete: 'cascade',
+      }
+    ),
     matchDate: date('match_date'),
     played: boolean('played').notNull().default(false),
     winnerId: uuid('winner_id').references(() => registrations.id, {
@@ -613,7 +619,10 @@ export const trainingSessions = pgTable(
   (table) => [
     index('idx_training_sessions_organization_id').on(table.organizationId),
     index('idx_training_sessions_date').on(table.date),
-    index('idx_training_sessions_org_date').on(table.organizationId, table.date),
+    index('idx_training_sessions_org_date').on(
+      table.organizationId,
+      table.date
+    ),
   ]
 )
 

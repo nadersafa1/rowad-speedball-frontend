@@ -5,14 +5,16 @@ export interface SeededUser {
   id: string
   name: string
   email: string
-  role: 'admin' | 'user'
+  role: 'admin' | 'user' | 'federation-admin' | 'federation-editor'
   password: string
+  federationId?: string | null
 }
 
 export interface SeededOrganization {
   id: string
   name: string
   slug: string
+  federationId?: string | null
 }
 
 export interface SeededMember {
@@ -77,6 +79,27 @@ export interface SeededRegistration {
   playerIds: string[]
 }
 
+export interface SeededFederation {
+  id: string
+  name: string
+  description: string | null
+}
+
+export interface SeededFederationClub {
+  id: string
+  federationId: string
+  organizationId: string
+}
+
+export interface SeededChampionship {
+  id: string
+  federationId: string
+  name: string
+  description: string | null
+  startDate: string | null
+  endDate: string | null
+}
+
 // JSON output structure
 export interface OrganizationSummary {
   id: string
@@ -96,7 +119,19 @@ export interface SeedDataOutput {
     id: string
     email: string
     name: string
-    role: 'admin' | 'user'
+    role: 'admin' | 'user' | 'federation-admin' | 'federation-editor'
+    federationId?: string | null
+  }>
+  federations: Array<{
+    id: string
+    name: string
+    description: string | null
+    championships: Array<{
+      id: string
+      name: string
+      startDate: string | null
+      endDate: string | null
+    }>
   }>
   organizations: OrganizationSummary[]
 }
@@ -104,6 +139,9 @@ export interface SeedDataOutput {
 // Seeder context passed between seeders
 export interface SeederContext {
   users: SeededUser[]
+  federations: SeededFederation[]
+  federationClubs: SeededFederationClub[]
+  championships: SeededChampionship[]
   organizations: SeededOrganization[]
   members: SeededMember[]
   players: SeededPlayer[]

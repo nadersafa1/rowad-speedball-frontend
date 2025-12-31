@@ -32,7 +32,15 @@ import { authClient } from '@/lib/auth-client'
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = authClient.useSession()
   const { context } = useOrganizationContext()
-  const { organization, isSystemAdmin, isAdmin, isOwner, isCoach } = context
+  const {
+    organization,
+    isSystemAdmin,
+    isAdmin,
+    isOwner,
+    isCoach,
+    isFederationAdmin,
+    isFederationEditor,
+  } = context
 
   const user = session?.user
     ? {
@@ -73,6 +81,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: false,
     },
   ]
+
+  const federationManagement =
+    isFederationAdmin || isFederationEditor
+      ? [
+          {
+            title: 'Championships',
+            url: '/championships',
+            icon: Trophy,
+            isActive: false,
+          },
+        ]
+      : []
 
   // Team Management section (admins, owners, coaches)
   const teamManagement =
@@ -123,7 +143,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ]
     : []
 
-  const allNavItems = [...navMain, ...teamManagement, ...administration]
+  const allNavItems = [
+    ...navMain,
+    ...teamManagement,
+    ...federationManagement,
+    ...administration,
+  ]
 
   // Quick actions
   const quickActions = [
