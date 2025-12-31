@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     // Build query with joins for filtering by player name and organization
     // We join to registration_players and players to enable filtering
-    let baseQuery = db
+    const baseQuery = db
       .select({
         registration: schema.registrations,
       })
