@@ -628,14 +628,26 @@ export class ApiClient {
   }
 
   // Matches methods
-  async getMatches(eventId?: string, groupId?: string, round?: number) {
+  async getMatches(params?: {
+    eventId?: string
+    groupId?: string
+    round?: number
+    sortBy?: 'round' | 'matchNumber' | 'matchDate' | 'played' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }) {
     const searchParams = new URLSearchParams()
-    if (eventId) searchParams.set('eventId', eventId)
-    if (groupId) searchParams.set('groupId', groupId)
-    if (round) searchParams.set('round', round.toString())
+    if (params?.eventId) searchParams.set('eventId', params.eventId)
+    if (params?.groupId) searchParams.set('groupId', params.groupId)
+    if (params?.round) searchParams.set('round', params.round.toString())
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/matches${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/matches${query ? `?${query}` : ''}`)
   }
 
   async getMatch(id: string) {
@@ -980,12 +992,32 @@ export class ApiClient {
   }
 
   // Organizations API
-  async getOrganizations(): Promise<
-    Array<{ id: string; name: string; slug: string }>
-  > {
-    return this.request<Array<{ id: string; name: string; slug: string }>>(
-      '/organizations'
-    )
+  async getOrganizations(params?: {
+    q?: string
+    sortBy?: 'name' | 'slug' | 'createdAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<Array<{ id: string; name: string; slug: string; createdAt?: Date }>> {
+    // For backward compatibility, if no params provided, fetch all with high limit
+    if (!params) {
+      params = { limit: 1000 }
+    }
+
+    const searchParams = new URLSearchParams()
+    if (params.q) searchParams.set('q', params.q)
+    if (params.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params.page) searchParams.set('page', params.page.toString())
+    if (params.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    const endpoint = query ? `/organizations?${query}` : '/organizations'
+
+    const response = await this.request<PaginatedResponse<{ id: string; name: string; slug: string; createdAt?: Date }>>(endpoint)
+
+    // Return just the data array for backward compatibility
+    return response.data
   }
 
   async createOrganization(data: {
