@@ -28,11 +28,17 @@ src/
 │   └── [features]/         # Feature pages (players, coaches, events, etc.)
 ├── components/             # React components (organized by feature)
 │   ├── ui/                 # 47 Radix UI + custom components
+│   ├── forms/              # Reusable form components
+│   │   ├── loading-button.tsx
+│   │   ├── form-error.tsx
+│   │   └── character-counter.tsx
 │   ├── shared/             # Reusable feature components
 │   └── [feature]/          # Feature-specific components
 ├── lib/                    # Core business logic
 │   ├── authorization/      # RBAC permission helpers
-│   ├── table-core/         # Reusable table system (NEW)
+│   ├── table-core/         # Reusable table system
+│   ├── forms/              # Shared form validation schemas
+│   │   └── patterns.ts     # Centralized Zod schemas
 │   ├── services/           # Business logic (brackets, groups, matches)
 │   ├── utils/              # Tournament algorithms, formatting
 │   ├── validations/        # Zod schemas
@@ -321,20 +327,35 @@ See `/docs/ENV_SETUP.md` for required environment variables:
 ## Documentation
 
 Available guides in `/docs/`:
+
+### Forms
+- `FORMS_GUIDE.md` - Comprehensive form development guide
+- `FORMS_REFERENCE.md` - Quick reference for validation schemas and components
+- `FORMS_CHECKLIST.md` - Migration and development checklists
+
+### Table System
 - `table-core-guide.md` - Table system documentation
 - `PLAYERS_TABLE_IMPLEMENTATION.md` - Implementation example
+
+### Authentication & Setup
 - `GOOGLE_AUTH_IMPLEMENTATION.md` - OAuth setup
 - `ENV_SETUP.md` - Environment configuration
+
+### Implementation Notes
 - `PHASE_1_UTILITIES.md` - Tournament utilities
 - `IMPLEMENTATION_COMPLETE.md` - Phase completion notes
 - `CHANGELOG_PHASE1.md` - Change tracking
 
 ## Recent Development Focus
 
-1. Backend authorization helpers (centralized)
-2. Frontend permission hooks (usePlayerPermissions, etc.)
-3. Component migration to use permission hooks
-4. Table-Core system introduction (v1.3.29)
+1. **Forms standardization** - All 26 forms now use React Hook Form + Zod
+   - Created shared validation schemas (`src/lib/forms/patterns.ts`)
+   - Created reusable form components (LoadingButton, FormError, CharacterCounter)
+   - Comprehensive documentation for form development
+2. **Backend authorization helpers** - Centralized authorization checks
+3. **Frontend permission hooks** - usePlayerPermissions, useEventPermissions, etc.
+4. **Component migration** - Using permission hooks throughout
+5. **Table-Core system** - Reusable data table abstraction (v1.3.29)
 
 ## When Implementing New Features
 
