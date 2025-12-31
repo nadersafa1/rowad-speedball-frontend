@@ -1,10 +1,11 @@
 import { z } from 'zod'
+import { uuidSchema } from '@/lib/forms/patterns'
 
 // Query parameters for GET /matches
 export const matchesQuerySchema = z
   .object({
-    eventId: z.uuid('Invalid event ID format').optional(),
-    groupId: z.uuid('Invalid group ID format').optional(),
+    eventId: uuidSchema.optional(),
+    groupId: uuidSchema.optional(),
     round: z
       .string()
       .optional()
@@ -15,14 +16,14 @@ export const matchesQuerySchema = z
 
 // Route parameters for GET /matches/:id
 export const matchesParamsSchema = z.object({
-  id: z.uuid('Invalid match ID format'),
+  id: uuidSchema,
 })
 
 // Update match schema for PATCH /matches/:id
 export const matchesUpdateSchema = z
   .object({
     played: z.boolean().optional(),
-    winnerId: z.uuid('Invalid winner ID format').nullable().optional(),
+    winnerId: uuidSchema.nullable().optional(),
     matchDate: z.string().optional().nullable(),
   })
   .refine(

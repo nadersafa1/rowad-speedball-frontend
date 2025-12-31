@@ -1,16 +1,17 @@
 import { z } from 'zod'
 import type { PositionScores, PositionKey } from '@/types/position-scores'
 import { POSITION_KEYS } from '@/types/position-scores'
+import { uuidSchema, nonNegativeIntSchema } from '@/lib/forms/patterns'
 
 // Position scores schema for JSONB column
 // Keys: R, L, F, B - represent positions
 // Values: number (score) or null (position assigned but score pending)
 export const positionScoresSchema = z
   .object({
-    R: z.number().int().min(0).nullable().optional(),
-    L: z.number().int().min(0).nullable().optional(),
-    F: z.number().int().min(0).nullable().optional(),
-    B: z.number().int().min(0).nullable().optional(),
+    R: nonNegativeIntSchema('Position R').nullable().optional(),
+    L: nonNegativeIntSchema('Position L').nullable().optional(),
+    F: nonNegativeIntSchema('Position F').nullable().optional(),
+    B: nonNegativeIntSchema('Position B').nullable().optional(),
   })
   .nullable()
   .optional()
@@ -24,7 +25,7 @@ export const positionScoresSchema = z
 // Query parameters for GET /registrations
 export const registrationsQuerySchema = z
   .object({
-    eventId: z.uuid('Invalid event ID format').optional(),
+    eventId: uuidSchema.optional(),
     groupId: z
       .string()
       .optional()
@@ -87,21 +88,21 @@ export const registrationsQuerySchema = z
 
 // Route parameters for GET /registrations/:id
 export const registrationsParamsSchema = z.object({
-  id: z.uuid('Invalid registration ID format'),
+  id: uuidSchema,
 })
 
 // Player with position scores and order for team events
 export const playerWithPositionSchema = z.object({
-  playerId: z.uuid('Invalid player ID format'),
+  playerId: uuidSchema,
   positionScores: positionScoresSchema,
   order: z.number().int().min(1).optional(),
 })
 
 // Create registration schema for POST /registrations
 export const registrationsCreateSchema = z.object({
-  eventId: z.uuid('Invalid event ID format'),
+  eventId: uuidSchema,
   playerIds: z
-    .array(z.uuid('Invalid player ID format'))
+    .array(uuidSchema)
     .min(1, 'At least one player is required'),
   // Optional: players with position scores and order for team events
   players: z.array(playerWithPositionSchema).optional(),
@@ -110,10 +111,10 @@ export const registrationsCreateSchema = z.object({
 // Update registration schema for PATCH /registrations/:id
 export const registrationsUpdateSchema = z
   .object({
-    groupId: z.uuid('Invalid group ID format').nullable().optional(),
+    groupId: uuidSchema.nullable().optional(),
     qualified: z.boolean().optional(),
     playerIds: z
-      .array(z.uuid('Invalid player ID format'))
+      .array(uuidSchema)
       .min(1, 'At least one player is required')
       .optional(),
     // Optional: players with position scores and order for team events
@@ -130,10 +131,10 @@ export const registrationsUpdateSchema = z
 export const playerPositionScoresUpdateSchema = z.object({
   positionScores: z
     .object({
-      R: z.number().int().min(0).nullable().optional(),
-      L: z.number().int().min(0).nullable().optional(),
-      F: z.number().int().min(0).nullable().optional(),
-      B: z.number().int().min(0).nullable().optional(),
+      R: nonNegativeIntSchema('Position R').nullable().optional(),
+      L: nonNegativeIntSchema('Position L').nullable().optional(),
+      F: nonNegativeIntSchema('Position F').nullable().optional(),
+      B: nonNegativeIntSchema('Position B').nullable().optional(),
     })
     .refine(
       (data) => Object.keys(data).length > 0,

@@ -18,12 +18,16 @@ import {
   coachesQuerySchema,
 } from '@/types/api/coaches.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
-import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  getOrganizationContext,
+  resolveOrganizationId,
+} from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
 import {
   checkCoachCreateAuthorization,
   checkCoachReadAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   // Authorization check (all authenticated users can view coaches)
@@ -218,8 +222,12 @@ export async function GET(request: NextRequest) {
 
     return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching coaches:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/coaches',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -258,26 +266,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Determine final organizationId:
-    // - System admins can specify any organizationId or leave it null (for global coaches)
-    // - Org members (admin/owner) are forced to use their active organization
-    let finalOrganizationId = providedOrgId
-    if (!isSystemAdmin) {
-      finalOrganizationId = organization?.id || null
-    } else if (providedOrgId !== undefined && providedOrgId !== null) {
-      // System admin: validate referenced organization exists if being set
-      const orgCheck = await db
-        .select()
-        .from(schema.organization)
-        .where(eq(schema.organization.id, providedOrgId))
-        .limit(1)
-      if (orgCheck.length === 0) {
-        return Response.json(
-          { message: 'Organization not found' },
-          { status: 404 }
-        )
-      }
-    }
+    // Resolve organization ID using helper
+    const { organizationId: finalOrganizationId, error: orgError } =
+      await resolveOrganizationId(context, providedOrgId)
+    if (orgError) return orgError
 
     const result = await db
       .insert(schema.coaches)
@@ -292,7 +284,11 @@ export async function POST(request: NextRequest) {
 
     return Response.json(result[0], { status: 201 })
   } catch (error) {
-    console.error('Error creating coach:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/coaches',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

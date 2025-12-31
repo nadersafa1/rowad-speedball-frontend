@@ -20,12 +20,16 @@ import {
   trainingSessionsQuerySchema,
 } from '@/types/api/training-sessions.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
-import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  getOrganizationContext,
+  resolveOrganizationId,
+} from '@/lib/organization-helpers'
 import { queryPlayersForAttendance } from '@/lib/training-session-attendance-helpers'
 import {
   checkTrainingSessionCreateAuthorization,
   requireAuthentication,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   // Require authentication - training sessions are always private
@@ -269,8 +273,12 @@ export async function GET(request: NextRequest) {
 
     return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching training sessions:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -303,26 +311,10 @@ export async function POST(request: NextRequest) {
       autoCreateAttendance,
     } = parseResult.data
 
-    // Determine final organizationId:
-    // - System admins can specify any organizationId or leave it null (for global training sessions)
-    // - Org members (admin/owner/coach) are forced to use their active organization
-    let finalOrganizationId = providedOrgId
-    if (!isSystemAdmin) {
-      finalOrganizationId = organization?.id
-    } else if (providedOrgId !== undefined && providedOrgId !== null) {
-      // System admin: validate referenced organization exists if being set
-      const orgCheck = await db
-        .select()
-        .from(schema.organization)
-        .where(eq(schema.organization.id, providedOrgId))
-        .limit(1)
-      if (orgCheck.length === 0) {
-        return Response.json(
-          { message: 'Organization not found' },
-          { status: 404 }
-        )
-      }
-    }
+    // Resolve organization ID using helper
+    const { organizationId: finalOrganizationId, error: orgError } =
+      await resolveOrganizationId(context, providedOrgId)
+    if (orgError) return orgError
 
     // Auto-generate name from date if not provided
     const sessionName = name || formatDateForSessionName(new Date(date))
@@ -408,7 +400,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error creating training session:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

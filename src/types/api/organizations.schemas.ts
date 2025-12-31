@@ -1,8 +1,9 @@
 import { z } from 'zod'
+import { nameSchema, uuidSchema } from '@/lib/forms/patterns'
 
 export const organizationsCreateSchema = z
   .object({
-    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
+    name: nameSchema,
     slug: z
       .string()
       .min(1, 'Slug is required')
@@ -11,7 +12,7 @@ export const organizationsCreateSchema = z
     members: z
       .array(
         z.object({
-          userId: z.uuid('Invalid user ID format'),
+          userId: uuidSchema,
           role: z.enum(['owner', 'admin', 'coach', 'member', 'player']),
         })
       )

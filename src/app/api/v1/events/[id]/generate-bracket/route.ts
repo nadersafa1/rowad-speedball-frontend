@@ -11,6 +11,7 @@ import {
   checkBracketExists,
   validateSeeds,
 } from '@/lib/services/bracket-service'
+import { handleApiError } from '@/lib/api-error-handler'
 
 // Request body schema
 const generateBracketSchema = z.object({
@@ -144,7 +145,11 @@ export async function POST(
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error generating bracket:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/events/[id]/generate-bracket',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

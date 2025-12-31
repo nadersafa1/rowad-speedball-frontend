@@ -28,7 +28,7 @@ import {
 import { useChampionshipsStore } from '@/store/championships-store'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { apiClient } from '@/lib/api-client'
-import type { Championship } from '@/db/schema'
+import type { Championship } from '@/types'
 import {
   DialogContent,
   DialogDescription,

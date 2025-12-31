@@ -7,6 +7,7 @@ import {
   deleteAllHeats,
   validateEventForHeatGeneration,
 } from '@/lib/services/heat-service'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(
   _request: Request,
@@ -55,7 +56,11 @@ export async function POST(
       { status: 200 }
     )
   } catch (error) {
-    console.error('Error resetting heats:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/events/[id]/reset-heats',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

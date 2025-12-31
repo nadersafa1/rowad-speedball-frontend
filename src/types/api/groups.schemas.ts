@@ -1,23 +1,24 @@
 import { z } from 'zod'
+import { uuidSchema } from '@/lib/forms/patterns'
 
 // Query parameters for GET /groups
 export const groupsQuerySchema = z
   .object({
-    eventId: z.uuid('Invalid event ID format').optional(),
+    eventId: uuidSchema.optional(),
   })
   .strict()
 
 // Route parameters for GET /groups/:id
 export const groupsParamsSchema = z.object({
-  id: z.uuid('Invalid group ID format'),
+  id: uuidSchema,
 })
 
 // Create group schema for POST /groups
 export const groupsCreateSchema = z
   .object({
-    eventId: z.uuid('Invalid event ID format'),
+    eventId: uuidSchema,
     registrationIds: z
-      .array(z.uuid('Invalid registration ID format'))
+      .array(uuidSchema)
       .min(2, 'At least 2 registrations are required for a group'),
   })
   .strict()

@@ -17,8 +17,12 @@ import * as schema from '@/db/schema'
 import { testsCreateSchema, testsQuerySchema } from '@/types/api/tests.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { testsService } from '@/lib/services/tests.service'
-import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  getOrganizationContext,
+  resolveOrganizationId,
+} from '@/lib/organization-helpers'
 import { checkTestCreateAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -228,8 +232,13 @@ export async function GET(request: NextRequest) {
 
     return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching tests:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/tests',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -259,26 +268,10 @@ export async function POST(request: NextRequest) {
       organizationId: providedOrgId,
     } = parseResult.data
 
-    // Determine final organizationId:
-    // - System admins can specify any organizationId or leave it null (for global tests)
-    // - Org members (admin/owner/coach) are forced to use their active organization
-    let finalOrganizationId = providedOrgId
-    if (!isSystemAdmin) {
-      finalOrganizationId = organization?.id
-    } else if (providedOrgId !== undefined && providedOrgId !== null) {
-      // System admin: validate referenced organization exists if being set
-      const orgCheck = await db
-        .select()
-        .from(schema.organization)
-        .where(eq(schema.organization.id, providedOrgId))
-        .limit(1)
-      if (orgCheck.length === 0) {
-        return Response.json(
-          { message: 'Organization not found' },
-          { status: 404 }
-        )
-      }
-    }
+    // Resolve organization ID using helper
+    const { organizationId: finalOrganizationId, error: orgError } =
+      await resolveOrganizationId(context, providedOrgId)
+    if (orgError) return orgError
 
     const result = await db
       .insert(schema.tests)
@@ -302,7 +295,11 @@ export async function POST(request: NextRequest) {
 
     return Response.json(newTest, { status: 201 })
   } catch (error) {
-    console.error('Error creating test:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/tests',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useFederationsStore } from '@/store/federations-store'
-import type { Federation } from '@/db/schema'
+import type { Federation } from '@/types'
 import {
   DialogContent,
   DialogDescription,

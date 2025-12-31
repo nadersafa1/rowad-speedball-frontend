@@ -1,40 +1,33 @@
 import { z } from 'zod'
+import { uuidSchema, positiveIntSchema, nonNegativeIntSchema } from '@/lib/forms/patterns'
 
 // Query parameters for GET /sets
 export const setsQuerySchema = z
   .object({
-    matchId: z.uuid('Invalid match ID format').optional(),
+    matchId: uuidSchema.optional(),
   })
   .strict()
 
 // Route parameters for GET /sets/:id
 export const setsParamsSchema = z.object({
-  id: z.uuid('Invalid set ID format'),
+  id: uuidSchema,
 })
 
 // Create set schema for POST /sets
 export const setsCreateSchema = z
   .object({
-    matchId: z.uuid('Invalid match ID format'),
-    setNumber: z.number().int().positive('Set number must be positive'),
-    registration1Score: z.number().int().min(0, 'Score must be non-negative'),
-    registration2Score: z.number().int().min(0, 'Score must be non-negative'),
+    matchId: uuidSchema,
+    setNumber: positiveIntSchema('Set number'),
+    registration1Score: nonNegativeIntSchema('Score'),
+    registration2Score: nonNegativeIntSchema('Score'),
   })
   .strict()
 
 // Update set schema for PATCH /sets/:id
 export const setsUpdateSchema = z
   .object({
-    registration1Score: z
-      .number()
-      .int()
-      .min(0, 'Score must be non-negative')
-      .optional(),
-    registration2Score: z
-      .number()
-      .int()
-      .min(0, 'Score must be non-negative')
-      .optional(),
+    registration1Score: nonNegativeIntSchema('Score').optional(),
+    registration2Score: nonNegativeIntSchema('Score').optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,

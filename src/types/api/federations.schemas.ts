@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { nameSchema, uuidSchema, descriptionSchema } from '@/lib/forms/patterns'
 
 // Query parameters for GET /federations
 export const federationsQuerySchema = z
@@ -30,34 +31,22 @@ export const federationsQuerySchema = z
 
 // Route parameters for GET /federations/:id
 export const federationsParamsSchema = z.object({
-  id: z.uuid('Invalid federation ID format'),
+  id: uuidSchema,
 })
 
 // Create federation schema for POST /federations
 export const federationsCreateSchema = z
   .object({
-    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
-    description: z
-      .string()
-      .max(1000, 'Description is too long')
-      .optional()
-      .nullable(),
+    name: nameSchema,
+    description: descriptionSchema,
   })
   .strict()
 
 // Update federation schema for PATCH /federations/:id
 export const federationsUpdateSchema = z
   .object({
-    name: z
-      .string()
-      .min(1, 'Name is required')
-      .max(255, 'Name is too long')
-      .optional(),
-    description: z
-      .string()
-      .max(1000, 'Description is too long')
-      .optional()
-      .nullable(),
+    name: nameSchema.optional(),
+    description: descriptionSchema,
   })
   .refine(
     (data) => Object.keys(data).length > 0,

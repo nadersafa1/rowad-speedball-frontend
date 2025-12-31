@@ -6,6 +6,7 @@ import * as schema from '@/db/schema'
 import { groupsParamsSchema } from '@/types/api/groups.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventDeleteAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function DELETE(
   request: NextRequest,
@@ -82,7 +83,11 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting group:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/groups/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
