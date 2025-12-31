@@ -23,7 +23,7 @@ export const useChampionshipPermissions = (
 
   return useMemo(() => {
     // Create permission: System admins or federation admins or federation editors
-    const canCreate = isSystemAdmin || isFederationAdmin || isFederationEditor
+    const canCreate = isSystemAdmin || isFederationAdmin
 
     if (!championship) {
       return {

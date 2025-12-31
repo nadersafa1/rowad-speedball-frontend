@@ -22,6 +22,14 @@ export async function GET(request: NextRequest) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
+
+  const {
+    isFederationAdmin,
+    isFederationEditor,
+    federationId: userFederationId,
+  } = context
+
   try {
     const {
       q,
@@ -41,8 +49,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Federation filter
-    if (federationId) {
-      conditions.push(eq(schema.championships.federationId, federationId))
+    if (federationId || isFederationAdmin || isFederationEditor) {
+      if (userFederationId) {
+        conditions.push(eq(schema.championships.federationId, userFederationId))
+      } else if (federationId) {
+        conditions.push(eq(schema.championships.federationId, federationId))
+      }
     }
 
     const combinedCondition =
@@ -181,4 +193,3 @@ export async function POST(request: NextRequest) {
     })
   }
 }
-

@@ -59,6 +59,12 @@ export async function GET(
       federationName: row[0].federationName ?? null,
     }
 
+    const { federationId } = context
+
+    if (federationId && championship.federationId !== federationId) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
     return Response.json(championship)
   } catch (error) {
     return handleApiError(error, {
@@ -110,7 +116,10 @@ export async function PATCH(
 
     // Authorization check
     const context = await getOrganizationContext()
-    const authError = checkChampionshipUpdateAuthorization(context, championship)
+    const authError = checkChampionshipUpdateAuthorization(
+      context,
+      championship
+    )
     if (authError) return authError
 
     const result = await db
@@ -166,7 +175,10 @@ export async function DELETE(
 
     // Authorization check
     const context = await getOrganizationContext()
-    const authError = checkChampionshipDeleteAuthorization(context, championship)
+    const authError = checkChampionshipDeleteAuthorization(
+      context,
+      championship
+    )
     if (authError) return authError
 
     await db.delete(schema.championships).where(eq(schema.championships.id, id))
@@ -182,4 +194,3 @@ export async function DELETE(
     })
   }
 }
-
