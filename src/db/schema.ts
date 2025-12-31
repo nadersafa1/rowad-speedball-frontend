@@ -227,22 +227,30 @@ export const playerNotes = pgTable(
 export type PlayerNote = typeof playerNotes.$inferSelect
 
 // Tests Table
-export const tests = pgTable('tests', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
-  playingTime: integer('playing_time').notNull(),
-  recoveryTime: integer('recovery_time').notNull(),
-  dateConducted: date('date_conducted').notNull(),
-  description: text('description'),
-  visibility: text('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('public'),
-  organizationId: uuid('organization_id').references(() => organization.id, {
-    onDelete: 'cascade',
-  }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const tests = pgTable(
+  'tests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    playingTime: integer('playing_time').notNull(),
+    recoveryTime: integer('recovery_time').notNull(),
+    dateConducted: date('date_conducted').notNull(),
+    description: text('description'),
+    visibility: text('visibility', { enum: ['public', 'private'] })
+      .notNull()
+      .default('public'),
+    organizationId: uuid('organization_id').references(() => organization.id, {
+      onDelete: 'cascade',
+    }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_tests_organization_id').on(table.organizationId),
+    index('idx_tests_visibility').on(table.visibility),
+    index('idx_tests_date_conducted').on(table.dateConducted),
+  ]
+)
 
 // Test Results Table
 export const testResults = pgTable('test_results', {
@@ -346,41 +354,58 @@ export const events = pgTable(
       'chk_max_gte_min_players',
       sql`${table.maxPlayers} >= ${table.minPlayers}`
     ),
+    // Indexes for frequently queried columns
+    index('idx_events_organization_id').on(table.organizationId),
+    index('idx_events_event_type').on(table.eventType),
+    index('idx_events_visibility').on(table.visibility),
+    index('idx_events_completed').on(table.completed),
+    index('idx_events_championship_id').on(table.championshipId),
   ]
 )
 
 // Groups Table
-export const groups = pgTable('groups', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  eventId: uuid('event_id')
-    .notNull()
-    .references(() => events.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 10 }).notNull(), // Auto-generated: A, B, C...
-  completed: boolean('completed').notNull().default(false),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const groups = pgTable(
+  'groups',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 10 }).notNull(), // Auto-generated: A, B, C...
+    completed: boolean('completed').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('idx_groups_event_id').on(table.eventId)]
+)
 
 // Registrations Table
-export const registrations = pgTable('registrations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  eventId: uuid('event_id')
-    .notNull()
-    .references(() => events.id, { onDelete: 'cascade' }),
-  groupId: uuid('group_id').references(() => groups.id, {
-    onDelete: 'set null',
-  }),
-  seed: integer('seed'), // Seeding rank for SE events (1 = top seed)
-  matchesWon: integer('matches_won').notNull().default(0),
-  matchesLost: integer('matches_lost').notNull().default(0),
-  setsWon: integer('sets_won').notNull().default(0),
-  setsLost: integer('sets_lost').notNull().default(0),
-  points: integer('points').notNull().default(0),
-  qualified: boolean('qualified').notNull().default(false),
-  teamName: varchar('team_name', { length: 255 }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const registrations = pgTable(
+  'registrations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    groupId: uuid('group_id').references(() => groups.id, {
+      onDelete: 'set null',
+    }),
+    seed: integer('seed'), // Seeding rank for SE events (1 = top seed)
+    matchesWon: integer('matches_won').notNull().default(0),
+    matchesLost: integer('matches_lost').notNull().default(0),
+    setsWon: integer('sets_won').notNull().default(0),
+    setsLost: integer('sets_lost').notNull().default(0),
+    points: integer('points').notNull().default(0),
+    qualified: boolean('qualified').notNull().default(false),
+    teamName: varchar('team_name', { length: 255 }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_registrations_event_id').on(table.eventId),
+    index('idx_registrations_group_id').on(table.groupId),
+  ]
+)
 
 // Registration Players Junction Table (many-to-many)
 export const registrationPlayers = pgTable(
@@ -416,38 +441,46 @@ export const registrationPlayers = pgTable(
 )
 
 // Matches Table
-export const matches = pgTable('matches', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  eventId: uuid('event_id')
-    .notNull()
-    .references(() => events.id, { onDelete: 'cascade' }),
-  groupId: uuid('group_id').references(() => groups.id, {
-    onDelete: 'cascade',
-  }),
-  round: integer('round').notNull(),
-  matchNumber: integer('match_number').notNull(),
-  // Nullable for BYE matches in single elimination
-  registration1Id: uuid('registration1_id').references(() => registrations.id, {
-    onDelete: 'cascade',
-  }),
-  registration2Id: uuid('registration2_id').references(() => registrations.id, {
-    onDelete: 'cascade',
-  }),
-  matchDate: date('match_date'),
-  played: boolean('played').notNull().default(false),
-  winnerId: uuid('winner_id').references(() => registrations.id, {
-    onDelete: 'set null',
-  }),
-  // Bracket columns
-  bracketPosition: integer('bracket_position'), // Unique position in bracket for rendering
-  winnerTo: uuid('winner_to'), // Self-reference to next match (winner advances here)
-  winnerToSlot: integer('winner_to_slot'), // Which slot (1 or 2) winner occupies in next match
-  loserTo: uuid('loser_to'), // Self-reference for loser routing (double elimination)
-  loserToSlot: integer('loser_to_slot'),
-  bracketType: text('bracket_type', { enum: ['winners', 'losers'] }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const matches = pgTable(
+  'matches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    groupId: uuid('group_id').references(() => groups.id, {
+      onDelete: 'cascade',
+    }),
+    round: integer('round').notNull(),
+    matchNumber: integer('match_number').notNull(),
+    // Nullable for BYE matches in single elimination
+    registration1Id: uuid('registration1_id').references(() => registrations.id, {
+      onDelete: 'cascade',
+    }),
+    registration2Id: uuid('registration2_id').references(() => registrations.id, {
+      onDelete: 'cascade',
+    }),
+    matchDate: date('match_date'),
+    played: boolean('played').notNull().default(false),
+    winnerId: uuid('winner_id').references(() => registrations.id, {
+      onDelete: 'set null',
+    }),
+    // Bracket columns
+    bracketPosition: integer('bracket_position'), // Unique position in bracket for rendering
+    winnerTo: uuid('winner_to'), // Self-reference to next match (winner advances here)
+    winnerToSlot: integer('winner_to_slot'), // Which slot (1 or 2) winner occupies in next match
+    loserTo: uuid('loser_to'), // Self-reference for loser routing (double elimination)
+    loserToSlot: integer('loser_to_slot'),
+    bracketType: text('bracket_type', { enum: ['winners', 'losers'] }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_matches_event_id').on(table.eventId),
+    index('idx_matches_group_id').on(table.groupId),
+    index('idx_matches_played').on(table.played),
+  ]
+)
 
 // Sets Table
 export const sets = pgTable('sets', {
@@ -464,20 +497,27 @@ export const sets = pgTable('sets', {
 })
 
 // Coaches Table
-export const coaches = pgTable('coaches', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
-  nameRtl: varchar('name_rtl', { length: 255 }),
-  gender: text('gender', { enum: ['male', 'female'] }).notNull(),
-  userId: uuid('user_id')
-    .references(() => user.id, { onDelete: 'set null' })
-    .unique(),
-  organizationId: uuid('organization_id').references(() => organization.id, {
-    onDelete: 'set null',
-  }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const coaches = pgTable(
+  'coaches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }).notNull(),
+    nameRtl: varchar('name_rtl', { length: 255 }),
+    gender: text('gender', { enum: ['male', 'female'] }).notNull(),
+    userId: uuid('user_id')
+      .references(() => user.id, { onDelete: 'set null' })
+      .unique(),
+    organizationId: uuid('organization_id').references(() => organization.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_coaches_organization_id').on(table.organizationId),
+    index('idx_coaches_gender').on(table.gender),
+  ]
+)
 
 // Training Sessions Table
 export const trainingSessions = pgTable(
@@ -508,16 +548,22 @@ export const trainingSessions = pgTable(
 )
 
 // Training Session Coaches Junction Table
-export const trainingSessionCoaches = pgTable('training_session_coaches', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  trainingSessionId: uuid('training_session_id')
-    .notNull()
-    .references(() => trainingSessions.id, { onDelete: 'cascade' }),
-  coachId: uuid('coach_id')
-    .notNull()
-    .references(() => coaches.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const trainingSessionCoaches = pgTable(
+  'training_session_coaches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    trainingSessionId: uuid('training_session_id')
+      .notNull()
+      .references(() => trainingSessions.id, { onDelete: 'cascade' }),
+    coachId: uuid('coach_id')
+      .notNull()
+      .references(() => coaches.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('unique_session_coach').on(table.trainingSessionId, table.coachId),
+  ]
+)
 
 // Attendance Status Enum
 export const attendanceStatusEnum = pgEnum('attendance_status', [
@@ -575,18 +621,22 @@ export const federationClubs = pgTable('federation_clubs', {
 })
 
 // Championships Table
-export const championships = pgTable('championships', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  federationId: uuid('federation_id')
-    .notNull()
-    .references(() => federations.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
-  startDate: date('start_date'),
-  endDate: date('end_date'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const championships = pgTable(
+  'championships',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    federationId: uuid('federation_id')
+      .notNull()
+      .references(() => federations.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    startDate: date('start_date'),
+    endDate: date('end_date'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('idx_championships_federation_id').on(table.federationId)]
+)
 
 // Federation Players Junction Table (player registration in federation)
 export const federationPlayers = pgTable(
