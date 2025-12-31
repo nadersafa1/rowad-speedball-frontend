@@ -1,5 +1,20 @@
 import { z } from 'zod'
 import { nameSchema, uuidSchema } from '@/lib/forms/patterns'
+import {
+  standardPaginationSchema,
+  standardSortSchema,
+  standardTextSearchSchema,
+} from '@/lib/api-helpers/query-builders'
+
+// Query parameters for GET /organizations
+export const organizationsQuerySchema = z
+  .object({
+    ...standardTextSearchSchema.shape,
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
+    sortBy: z.enum(['name', 'slug', 'createdAt']).optional(),
+  })
+  .strict()
 
 export const organizationsCreateSchema = z
   .object({
@@ -21,6 +36,7 @@ export const organizationsCreateSchema = z
   })
   .strict()
 
+export type OrganizationsQuery = z.infer<typeof organizationsQuerySchema>
 export type OrganizationsCreate = z.infer<typeof organizationsCreateSchema>
 
 

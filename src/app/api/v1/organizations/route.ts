@@ -1,30 +1,106 @@
 import { NextRequest } from 'next/server'
-import { eq, inArray } from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
-import { organizationsCreateSchema } from '@/types/api/organizations.schemas'
+import {
+  organizationsCreateSchema,
+  organizationsQuerySchema,
+} from '@/types/api/organizations.schemas'
 import {
   getOrganizationContext,
   getAllAppAdmins,
 } from '@/lib/organization-helpers'
 import { checkOrganizationCreateAuthorization } from '@/lib/authorization'
 import { handleApiError } from '@/lib/api-error-handler'
+import { createPaginatedResponse } from '@/types/api/pagination'
 
 export async function GET(request: NextRequest) {
   // Organizations list is public - anyone can see available clubs for filtering
+  const { searchParams } = new URL(request.url)
+  const queryParams = Object.fromEntries(searchParams.entries())
+  const parseResult = organizationsQuerySchema.safeParse(queryParams)
+
+  if (!parseResult.success) {
+    return Response.json(z.treeifyError(parseResult.error), { status: 400 })
+  }
+
   try {
-    // Get all organizations
-    const organizations = await db
+    const { q, sortBy, sortOrder, page, limit } = parseResult.data
+
+    const offset = (page - 1) * limit
+    const conditions: any[] = []
+
+    // Text search filter
+    if (q) {
+      conditions.push(
+        or(
+          ilike(schema.organization.name, `%${q}%`),
+          ilike(schema.organization.slug, `%${q}%`)
+        )
+      )
+    }
+
+    const combinedCondition =
+      conditions.length > 0
+        ? conditions.reduce((acc, condition) =>
+            acc ? and(acc, condition) : condition
+          )
+        : undefined
+
+    // Count query
+    let countQuery = db.select({ count: count() }).from(schema.organization)
+    if (combinedCondition) {
+      countQuery = countQuery.where(combinedCondition) as any
+    }
+
+    // Data query
+    let dataQuery = db
       .select({
         id: schema.organization.id,
         name: schema.organization.name,
         slug: schema.organization.slug,
+        createdAt: schema.organization.createdAt,
       })
       .from(schema.organization)
-      .orderBy(schema.organization.name)
 
-    return Response.json(organizations)
+    if (combinedCondition) {
+      dataQuery = dataQuery.where(combinedCondition) as any
+    }
+
+    // Dynamic sorting
+    if (sortBy) {
+      const sortFieldMap: Record<string, any> = {
+        name: schema.organization.name,
+        slug: schema.organization.slug,
+        createdAt: schema.organization.createdAt,
+      }
+
+      const sortField = sortFieldMap[sortBy]
+      if (sortField) {
+        const order = sortOrder === 'asc' ? asc(sortField) : desc(sortField)
+        dataQuery = dataQuery.orderBy(order) as any
+      }
+    } else {
+      // Default sort by name ascending
+      dataQuery = dataQuery.orderBy(asc(schema.organization.name)) as any
+    }
+
+    const [countResult, organizations] = await Promise.all([
+      countQuery,
+      dataQuery.limit(limit).offset(offset),
+    ])
+
+    const totalItems = countResult[0].count
+
+    const paginatedResponse = createPaginatedResponse(
+      organizations,
+      page,
+      limit,
+      totalItems
+    )
+
+    return Response.json(paginatedResponse)
   } catch (error) {
     const context = await getOrganizationContext()
     return handleApiError(error, {

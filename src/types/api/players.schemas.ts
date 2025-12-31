@@ -155,7 +155,7 @@ export const playerMatchesQuerySchema = z
     limit: z
       .string()
       .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 5))
+      .transform((val) => (val ? parseInt(val, 10) : 10))
       .refine(
         (val) => val >= 1 && val <= 100,
         'Limit must be between 1 and 100'
