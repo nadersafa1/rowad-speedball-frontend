@@ -7,6 +7,7 @@ import { matchesQuerySchema } from '@/types/api/matches.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventReadAuthorization } from '@/lib/authorization'
 import { enrichMatch } from '@/lib/services/match-enrichment.service'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -119,7 +120,11 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ matches: matchesWithData })
   } catch (error) {
-    console.error('Error fetching matches:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/matches',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

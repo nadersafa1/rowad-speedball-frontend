@@ -9,6 +9,7 @@ import {
   getAllAppAdmins,
 } from '@/lib/organization-helpers'
 import { checkOrganizationCreateAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   // Organizations list is public - anyone can see available clubs for filtering
@@ -25,8 +26,13 @@ export async function GET(request: NextRequest) {
 
     return Response.json(organizations)
   } catch (error) {
-    console.error('Error fetching organizations:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/organizations',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -166,7 +172,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error creating organization:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/organizations',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

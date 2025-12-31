@@ -12,13 +12,14 @@ import {
 } from '@/db/schema'
 import { eq, and, gte, lte, sql, ilike, inArray } from 'drizzle-orm'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const context = await getOrganizationContext()
   try {
     // Get authenticated user context
-    const context = await getOrganizationContext()
     if (!context.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -191,10 +192,11 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching Club Attendance:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch attendance records' },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/v1/attendance/club',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

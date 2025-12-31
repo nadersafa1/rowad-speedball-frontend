@@ -17,10 +17,9 @@ import {
 import {
   handleMatchCompletion,
   handleMatchReset,
-  updateGroupCompletionStatus,
 } from '@/lib/services/match-service'
 import { enrichMatch } from '@/lib/services/match-enrichment.service'
-import { updateEventCompletedStatus } from '@/lib/event-helpers'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -67,8 +66,12 @@ export async function GET(
     // Return enriched match data using shared service
     return Response.json(await enrichMatch(match[0], event[0]))
   } catch (error) {
-    console.error('Error fetching match:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/matches/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -266,7 +269,11 @@ export async function PATCH(
 
     return Response.json(await enrichMatch(match, eventData))
   } catch (error) {
-    console.error('Error updating match:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/matches/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

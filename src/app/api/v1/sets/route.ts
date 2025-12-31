@@ -11,6 +11,7 @@ import {
   checkEventReadAuthorization,
   canPlayerUpdateMatch,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -63,8 +64,12 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ sets })
   } catch (error) {
-    console.error('Error fetching sets:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/sets',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -168,7 +173,11 @@ export async function POST(request: NextRequest) {
 
     return Response.json(result[0], { status: 201 })
   } catch (error) {
-    console.error('Error creating set:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/sets',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

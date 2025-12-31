@@ -14,6 +14,7 @@ import {
   checkTrainingSessionUpdateAuthorization,
   checkTrainingSessionDeleteAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -25,6 +26,7 @@ export async function GET(
   if (!parseResult.success) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
+  const context = await getOrganizationContext()
 
   try {
     const { id } = parseResult.data
@@ -54,7 +56,6 @@ export async function GET(
     const organizationName = row[0].organizationName ?? null
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkTrainingSessionReadAuthorization(
       context,
       trainingSession
@@ -81,8 +82,12 @@ export async function GET(
 
     return Response.json(sessionWithCoaches)
   } catch (error) {
-    console.error('Error fetching training session:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -90,6 +95,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await getOrganizationContext()
+
   try {
     // Parse params and body first (quick validation, no DB calls)
     const resolvedParams = await params
@@ -125,7 +132,6 @@ export async function PATCH(
     const trainingSessionData = existing[0]
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkTrainingSessionUpdateAuthorization(
       context,
       trainingSessionData
@@ -190,8 +196,12 @@ export async function PATCH(
 
     return Response.json(updatedSession)
   } catch (error) {
-    console.error('Error updating training session:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -199,6 +209,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await getOrganizationContext()
+
   try {
     // Parse params first (quick validation, no DB calls)
     const resolvedParams = await params
@@ -227,7 +239,6 @@ export async function DELETE(
     const trainingSessionData = existing[0]
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkTrainingSessionDeleteAuthorization(
       context,
       trainingSessionData
@@ -243,7 +254,11 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting training session:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

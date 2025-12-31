@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkUserReadAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 const userParamsSchema = z.object({
   id: z.uuid(),
@@ -21,11 +22,11 @@ export async function GET(
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
   try {
     const { id } = resolvedParams
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkUserReadAuthorization(context, id)
     if (authError) return authError
 
@@ -40,7 +41,11 @@ export async function GET(
     // Return user data including image
     return Response.json(user)
   } catch (error) {
-    console.error('Error fetching user:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/users/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

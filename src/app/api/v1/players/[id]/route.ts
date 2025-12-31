@@ -16,6 +16,7 @@ import {
   checkPlayerUpdateAuthorization,
   checkPlayerDeleteAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -27,6 +28,8 @@ export async function GET(
   if (!parseResult.success) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
+
+  const context = await getOrganizationContext()
 
   try {
     const { id } = resolvedParams
@@ -77,8 +80,12 @@ export async function GET(
 
     return Response.json(playerWithAge)
   } catch (error) {
-    console.error('Error fetching player:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -93,6 +100,7 @@ export async function PATCH(
     return Response.json(z.treeifyError(paramsResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
   try {
     const body = await request.json()
     const bodyResult = playersUpdateSchema.safeParse(body)
@@ -117,7 +125,6 @@ export async function PATCH(
     const playerData = existingPlayer[0]
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkPlayerUpdateAuthorization(context, playerData)
     if (authError) return authError
 
@@ -313,8 +320,12 @@ export async function PATCH(
 
     return Response.json(updatedPlayer)
   } catch (error) {
-    console.error('Error updating player:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -329,6 +340,7 @@ export async function DELETE(
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
   try {
     const { id } = resolvedParams
 
@@ -345,7 +357,6 @@ export async function DELETE(
     const playerData = existingPlayer[0]
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkPlayerDeleteAuthorization(context, playerData)
     if (authError) return authError
 
@@ -415,7 +426,11 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting player:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

@@ -24,6 +24,7 @@ import { resultsService } from '@/lib/services/results.service'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { calculateAge, getAgeGroup } from '@/db/schema'
 import { checkResultCreateAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
   try {
     const {
       playerId,
@@ -56,7 +58,7 @@ export async function GET(request: NextRequest) {
     const conditions: any[] = []
 
     // Get organization context for authorization
-    const { isSystemAdmin, organization } = await getOrganizationContext()
+    const { isSystemAdmin, organization } = context
 
     if (playerId) {
       conditions.push(eq(schema.testResults.playerId, playerId))
@@ -282,12 +284,18 @@ export async function GET(request: NextRequest) {
 
     return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching results:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/results',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
 export async function POST(request: NextRequest) {
+  const context = await getOrganizationContext()
+
   try {
     const body = await request.json()
     const parseResult = resultsCreateSchema.safeParse(body)
@@ -329,7 +337,6 @@ export async function POST(request: NextRequest) {
     const test = testExists[0]
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkResultCreateAuthorization(context, test)
     if (authError) return authError
 
@@ -360,7 +367,11 @@ export async function POST(request: NextRequest) {
 
     return Response.json(newResult, { status: 201 })
   } catch (error) {
-    console.error('Error creating result:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/results',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
