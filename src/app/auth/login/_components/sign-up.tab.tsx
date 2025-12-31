@@ -18,11 +18,12 @@ import { Input } from "@/components/ui/input";
 import { LoadingSwap } from "@/components/ui/loading-swap";
 import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
+import { nameSchema, emailSchema, passwordSchema } from "@/lib/forms/patterns";
 
 const signUpSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email().min(1),
-  password: z.string().min(8),
+  name: nameSchema,
+  email: emailSchema,
+  password: passwordSchema,
 });
 
 type SignUpSchema = z.infer<typeof signUpSchema>;

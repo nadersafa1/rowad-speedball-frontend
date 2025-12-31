@@ -17,10 +17,11 @@ import {
 import { LoadingSwap } from '@/components/ui/loading-swap'
 import { PasswordInput } from '@/components/ui/password-input'
 import { authClient } from '@/lib/auth-client'
+import { passwordSignInSchema, passwordSchema } from '@/lib/forms/patterns'
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  currentPassword: passwordSignInSchema,
+  newPassword: passwordSchema,
   revokeOtherSessions: z.boolean().optional(),
 })
 

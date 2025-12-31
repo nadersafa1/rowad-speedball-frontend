@@ -19,7 +19,7 @@ const generateHeatsSchema = z.object({
   seeds: z
     .array(
       z.object({
-        registrationId: z.string().uuid(),
+        registrationId: z.uuid(),
         seed: z.number().int().min(1),
       })
     )
