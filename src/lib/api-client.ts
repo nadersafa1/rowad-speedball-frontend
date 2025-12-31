@@ -999,9 +999,9 @@ export class ApiClient {
     page?: number
     limit?: number
   }): Promise<Array<{ id: string; name: string; slug: string; createdAt?: Date }>> {
-    // For backward compatibility, if no params provided, fetch all with high limit
+    // For backward compatibility, if no params provided, fetch up to max limit
     if (!params) {
-      params = { limit: 1000 }
+      params = { limit: 100 }
     }
 
     const searchParams = new URLSearchParams()

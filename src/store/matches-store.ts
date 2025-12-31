@@ -46,7 +46,7 @@ export const useMatchesStore = create<MatchesState>((set, get) => ({
         eventId,
         groupId,
         round,
-        limit: 1000, // Fetch all matches for now - pagination can be added later if needed
+        limit: 100, // Fetch up to 100 matches (API max limit)
       })
       set({
         matches: response.data,
