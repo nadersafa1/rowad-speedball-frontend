@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { uuidSchema, genderSchema, nonNegativeIntSchema } from '@/lib/forms/patterns'
 
 // Query parameters for GET /results
 export const resultsQuerySchema = z
   .object({
-    playerId: z.uuid("Invalid player ID format").optional(),
-    testId: z.uuid("Invalid test ID format").optional(),
+    playerId: uuidSchema.optional(),
+    testId: uuidSchema.optional(),
     q: z
       .string()
       .trim()
@@ -103,33 +104,21 @@ export const resultsQuerySchema = z
 
 // Route parameters for GET /results/:id
 export const resultsParamsSchema = z.object({
-  id: z.uuid("Invalid result ID format"),
+  id: uuidSchema,
 });
 
 // Create result schema for POST /results
 export const resultsCreateSchema = z
   .object({
-    playerId: z.uuid("Invalid player ID format"),
-    testId: z.uuid("Invalid test ID format"),
-    leftHandScore: z
-      .number()
-      .int("Left hand score must be an integer")
-      .min(0, "Left hand score cannot be negative")
+    playerId: uuidSchema,
+    testId: uuidSchema,
+    leftHandScore: nonNegativeIntSchema("Left hand score")
       .max(999, "Left hand score cannot exceed 999"),
-    rightHandScore: z
-      .number()
-      .int("Right hand score must be an integer")
-      .min(0, "Right hand score cannot be negative")
+    rightHandScore: nonNegativeIntSchema("Right hand score")
       .max(999, "Right hand score cannot exceed 999"),
-    forehandScore: z
-      .number()
-      .int("Forehand score must be an integer")
-      .min(0, "Forehand score cannot be negative")
+    forehandScore: nonNegativeIntSchema("Forehand score")
       .max(999, "Forehand score cannot exceed 999"),
-    backhandScore: z
-      .number()
-      .int("Backhand score must be an integer")
-      .min(0, "Backhand score cannot be negative")
+    backhandScore: nonNegativeIntSchema("Backhand score")
       .max(999, "Backhand score cannot exceed 999"),
   })
   .strict();
@@ -137,28 +126,16 @@ export const resultsCreateSchema = z
 // Update result schema for PATCH /results/:id
 export const resultsUpdateSchema = z
   .object({
-    leftHandScore: z
-      .number()
-      .int("Left hand score must be an integer")
-      .min(0, "Left hand score cannot be negative")
+    leftHandScore: nonNegativeIntSchema("Left hand score")
       .max(999, "Left hand score cannot exceed 999")
       .optional(),
-    rightHandScore: z
-      .number()
-      .int("Right hand score must be an integer")
-      .min(0, "Right hand score cannot be negative")
+    rightHandScore: nonNegativeIntSchema("Right hand score")
       .max(999, "Right hand score cannot exceed 999")
       .optional(),
-    forehandScore: z
-      .number()
-      .int("Forehand score must be an integer")
-      .min(0, "Forehand score cannot be negative")
+    forehandScore: nonNegativeIntSchema("Forehand score")
       .max(999, "Forehand score cannot exceed 999")
       .optional(),
-    backhandScore: z
-      .number()
-      .int("Backhand score must be an integer")
-      .min(0, "Backhand score cannot be negative")
+    backhandScore: nonNegativeIntSchema("Backhand score")
       .max(999, "Backhand score cannot exceed 999")
       .optional(),
   })

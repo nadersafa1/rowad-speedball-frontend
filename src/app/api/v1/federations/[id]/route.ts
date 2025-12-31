@@ -13,6 +13,7 @@ import {
   checkFederationUpdateAuthorization,
   checkFederationDeleteAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -45,8 +46,12 @@ export async function GET(
 
     return Response.json(federation[0])
   } catch (error) {
-    console.error('Error fetching federation:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/federations/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -103,8 +108,13 @@ export async function PATCH(
 
     return Response.json(result[0])
   } catch (error) {
-    console.error('Error updating federation:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/federations/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -146,8 +156,13 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting federation:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/federations/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 

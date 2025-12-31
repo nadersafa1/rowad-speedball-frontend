@@ -27,19 +27,10 @@ import {
 import { LoadingSwap } from '@/components/ui/loading-swap'
 import { PasswordInput } from '@/components/ui/password-input'
 import { authClient } from '@/lib/auth-client'
+import { passwordSchema } from '@/lib/forms/patterns'
 
 const resetPasswordSchema = z.object({
-  password: z
-    .string()
-    .min(8)
-    .max(50)
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      {
-        message:
-          'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character',
-      }
-    ),
+  password: passwordSchema,
 })
 
 type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>

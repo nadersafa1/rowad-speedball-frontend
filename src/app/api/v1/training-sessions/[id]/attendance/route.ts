@@ -13,6 +13,7 @@ import {
   canModifyAttendance,
   validatePlayerSessionOrgMatch,
 } from '@/lib/training-session-attendance-helpers'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -69,8 +70,13 @@ export async function GET(
 
     return Response.json(formattedRecords)
   } catch (error) {
-    console.error('Error fetching attendance:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]/attendance',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -161,7 +167,12 @@ export async function POST(
 
     return Response.json(attendanceRecord, { status: 201 })
   } catch (error) {
-    console.error('Error creating/updating attendance:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]/attendance',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

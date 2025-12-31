@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { uuidSchema } from '@/lib/forms/patterns'
 
 // Note type enum for validation
 const noteTypeEnum = z.enum(['performance', 'medical', 'behavioral', 'general'])
@@ -30,8 +31,8 @@ export const playerNotesQuerySchema = z
 
 // Route parameters for player notes endpoints
 export const playerNoteParamsSchema = z.object({
-  playerId: z.string().uuid('Invalid player ID format'),
-  noteId: z.string().uuid('Invalid note ID format').optional(),
+  playerId: uuidSchema,
+  noteId: uuidSchema.optional(),
 })
 
 // Create player note schema for POST /players/:playerId/notes

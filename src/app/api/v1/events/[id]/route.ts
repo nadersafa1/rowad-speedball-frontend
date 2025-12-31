@@ -15,6 +15,7 @@ import {
   checkEventUpdateAuthorization,
   checkEventDeleteAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -74,8 +75,13 @@ export async function GET(
       organizationName: organizationName,
     })
   } catch (error) {
-    console.error('Error fetching event:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/events/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -334,8 +340,13 @@ export async function PATCH(
 
     return Response.json(result[0])
   } catch (error) {
-    console.error('Error updating event:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/events/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -384,7 +395,12 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting event:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/events/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

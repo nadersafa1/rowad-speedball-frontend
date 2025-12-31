@@ -14,6 +14,7 @@ import {
   canModifyAttendance,
   validatePlayerSessionOrgMatch,
 } from '@/lib/training-session-attendance-helpers'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function PATCH(
   request: NextRequest,
@@ -147,8 +148,13 @@ export async function PATCH(
 
     return Response.json(formattedRecords)
   } catch (error) {
-    console.error('Error bulk updating attendance:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]/attendance/bulk',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -228,8 +234,13 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error bulk deleting attendance:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]/attendance/bulk',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 

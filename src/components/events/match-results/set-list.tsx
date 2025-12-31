@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, X, Loader2, Trash2 } from 'lucide-react'
+import { CheckCircle2, Trash2 } from 'lucide-react'
 import type { Set } from '@/types'
 import SetEditor from './set-editor'
+import { LoadingButton } from '@/components/forms'
 
 interface SetListProps {
   sets: Set[]
@@ -100,15 +101,16 @@ const SetList = ({
 
             {!set.played && !isMatchPlayed && editingSetId !== set.id && (
               <div className='flex justify-between gap-2 mt-4'>
-                <Button
+                <LoadingButton
                   variant='destructive'
                   size='sm'
                   onClick={() => onDeleteSet(set.id)}
-                  disabled={isLoading}
+                  isLoading={isLoading}
+                  icon={<Trash2 className='h-4 w-4' />}
                   className='flex-shrink-0'
                 >
-                  <Trash2 className='h-4 w-4' />
-                </Button>
+                  <span className='sr-only'>Delete</span>
+                </LoadingButton>
                 <div className='flex gap-2'>
                   <Button
                     variant='outline'
@@ -119,10 +121,12 @@ const SetList = ({
                   >
                     Edit
                   </Button>
-                  <Button
+                  <LoadingButton
                     variant='default'
                     size='sm'
                     onClick={() => onMarkSetPlayed(set.id)}
+                    isLoading={isLoading}
+                    loadingText='Marking...'
                     disabled={
                       isLoading ||
                       !canMarkSetAsPlayed(set, index) ||
@@ -130,15 +134,8 @@ const SetList = ({
                     }
                     className='flex-shrink-0'
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                        Loading...
-                      </>
-                    ) : (
-                      'Mark as Played'
-                    )}
-                  </Button>
+                    Mark as Played
+                  </LoadingButton>
                 </div>
               </div>
             )}

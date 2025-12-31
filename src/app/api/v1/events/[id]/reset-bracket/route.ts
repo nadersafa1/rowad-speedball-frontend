@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventUpdateAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(
   _request: Request,
@@ -72,7 +73,11 @@ export async function POST(
 
     return Response.json({ message: 'Bracket reset successfully' })
   } catch (error) {
-    console.error('Error resetting bracket:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/events/[id]/reset-bracket',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

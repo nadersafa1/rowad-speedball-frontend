@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import { TEAM_LEVELS } from '@/types/team-level'
+import {
+  nameSchema,
+  uuidSchema,
+  optionalUuidSchema,
+} from '@/lib/forms/patterns'
 
 // Team level enum for validation
 const teamLevelEnum = z.enum(TEAM_LEVELS)
@@ -82,13 +87,13 @@ export const trainingSessionsQuerySchema = z
 
 // Route parameters for GET /training-sessions/:id
 export const trainingSessionsParamsSchema = z.object({
-  id: z.uuid('Invalid training session ID format'),
+  id: uuidSchema,
 })
 
 // Create training session schema for POST /training-sessions
 export const trainingSessionsCreateSchema = z
   .object({
-    name: z.string().max(255, 'Name is too long').optional(),
+    name: nameSchema.optional(),
     intensity: z
       .enum(['high', 'normal', 'low'], {
         message: 'Intensity must be high, normal, or low',
@@ -103,12 +108,9 @@ export const trainingSessionsCreateSchema = z
       .array(ageGroupEnum)
       .min(1, 'At least one age group is required'),
     coachIds: z
-      .array(z.uuid('Invalid coach ID format'))
+      .array(uuidSchema)
       .min(1, 'At least one coach is required'),
-    organizationId: z
-      .uuid('Invalid organization ID format')
-      .optional()
-      .nullable(),
+    organizationId: optionalUuidSchema,
     teamLevels: z
       .array(teamLevelEnum)
       .optional()
@@ -122,7 +124,7 @@ export const trainingSessionsCreateSchema = z
 // Update training session schema for PATCH /training-sessions/:id
 export const trainingSessionsUpdateSchema = z
   .object({
-    name: z.string().max(255, 'Name is too long').optional(),
+    name: nameSchema.optional(),
     intensity: z
       .enum(['high', 'normal', 'low'], {
         message: 'Intensity must be high, normal, or low',
@@ -136,7 +138,7 @@ export const trainingSessionsUpdateSchema = z
     description: z.string().optional().nullable(),
     ageGroups: z.array(ageGroupEnum).optional(),
     coachIds: z
-      .array(z.uuid('Invalid coach ID format'))
+      .array(uuidSchema)
       .min(1, 'At least one coach is required')
       .optional(),
   })
@@ -158,20 +160,20 @@ export const attendanceStatusEnum = z.enum([
 
 // Attendance route parameters schema (for routes where playerId is optional)
 export const attendanceParamsSchema = z.object({
-  id: z.uuid('Invalid training session ID format'),
-  playerId: z.uuid('Invalid player ID format').optional(),
+  id: uuidSchema,
+  playerId: uuidSchema.optional(),
 })
 
 // Attendance route parameters schema (for routes where playerId is required)
 export const attendanceParamsWithPlayerSchema = z.object({
-  id: z.uuid('Invalid training session ID format'),
-  playerId: z.uuid('Invalid player ID format'),
+  id: uuidSchema,
+  playerId: uuidSchema,
 })
 
 // Create attendance schema for POST /training-sessions/:id/attendance
 export const attendanceCreateSchema = z
   .object({
-    playerId: z.uuid('Invalid player ID format'),
+    playerId: uuidSchema,
     status: attendanceStatusEnum.optional().default('pending'),
   })
   .strict()
@@ -189,7 +191,7 @@ export const attendanceBulkUpdateSchema = z
     updates: z
       .array(
         z.object({
-          playerId: z.uuid('Invalid player ID format'),
+          playerId: uuidSchema,
           status: attendanceStatusEnum,
         })
       )
@@ -201,7 +203,7 @@ export const attendanceBulkUpdateSchema = z
 export const attendanceBulkDeleteSchema = z
   .object({
     playerIds: z
-      .array(z.uuid('Invalid player ID format'))
+      .array(uuidSchema)
       .min(1, 'At least one player ID is required'),
   })
   .strict()

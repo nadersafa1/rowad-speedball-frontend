@@ -17,6 +17,7 @@ import {
   validateRegistrations,
   validateEventForGroupCreation,
 } from '@/lib/services/groups-service'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -59,8 +60,12 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ groups })
   } catch (error) {
-    console.error('Error fetching groups:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/groups',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -128,7 +133,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error creating group:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/groups',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

@@ -12,6 +12,7 @@ import {
   validateAttendanceAccess,
   canModifyAttendance,
 } from '@/lib/training-session-attendance-helpers'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -76,8 +77,13 @@ export async function GET(
 
     return Response.json(formattedRecord)
   } catch (error) {
-    console.error('Error fetching attendance record:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]/attendance/[playerId]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -176,8 +182,13 @@ export async function PATCH(
 
     return Response.json(attendanceRecord)
   } catch (error) {
-    console.error('Error updating attendance:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]/attendance/[playerId]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -252,8 +263,13 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting attendance:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/training-sessions/[id]/attendance/[playerId]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 

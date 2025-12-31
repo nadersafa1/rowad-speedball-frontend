@@ -1,5 +1,14 @@
 import { z } from 'zod'
 import { TEAM_LEVELS, TEAM_LEVEL_FILTER_OPTIONS } from '@/types/team-level'
+import {
+  nameSchema,
+  rtlNameSchema,
+  genderSchema,
+  preferredHandSchema,
+  uuidSchema,
+  optionalUuidSchema,
+  dateStringSchema,
+} from '@/lib/forms/patterns'
 
 // Team level enum for validation
 const teamLevelEnum = z.enum(TEAM_LEVELS)
@@ -86,27 +95,14 @@ export const playersParamsSchema = z.object({
 // Create player schema for POST /players
 export const playersCreateSchema = z
   .object({
-    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
-    nameRtl: z.string().max(255, 'RTL Name is too long').optional().nullable(),
-    dateOfBirth: z
-      .string()
-      .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
-      .refine(
-        (date) => new Date(date) <= new Date(),
-        'Date of birth cannot be in the future'
-      ),
-    gender: z.enum(['male', 'female'], {
-      message: 'Gender must be male or female',
-    }),
-    preferredHand: z.enum(['left', 'right', 'both'], {
-      message: 'Preferred hand must be left, right, or both',
-    }),
+    name: nameSchema,
+    nameRtl: rtlNameSchema,
+    dateOfBirth: dateStringSchema,
+    gender: genderSchema,
+    preferredHand: preferredHandSchema,
     teamLevel: teamLevelEnum.optional(),
-    userId: z.uuid('Invalid user ID format').optional().nullable(),
-    organizationId: z
-      .uuid('Invalid organization ID format')
-      .optional()
-      .nullable(),
+    userId: optionalUuidSchema,
+    organizationId: optionalUuidSchema,
   })
   .strict()
 

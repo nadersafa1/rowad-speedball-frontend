@@ -6,6 +6,15 @@ import {
   isFixedPlayerCount,
   getEventTypePlayerLimits,
 } from '../event-types'
+import {
+  nameSchema,
+  eventGenderSchema,
+  uuidSchema,
+  optionalUuidSchema,
+  visibilitySchema,
+  positiveIntSchema,
+  nonNegativeIntSchema,
+} from '@/lib/forms/patterns'
 
 // Event format types
 export const EVENT_FORMATS = [
@@ -26,9 +35,9 @@ export const eventsQuerySchema = z
       .max(50, 'q must be less than 50 characters')
       .optional(),
     eventType: z.enum(EVENT_TYPES).optional(),
-    gender: z.enum(['male', 'female', 'mixed']).optional(),
+    gender: eventGenderSchema.optional(),
     format: z.enum(EVENT_FORMATS).optional(),
-    visibility: z.enum(['public', 'private']).optional(),
+    visibility: visibilitySchema.optional(),
     organizationId: z
       .string()
       .optional()
@@ -80,20 +89,18 @@ export const eventsQuerySchema = z
 
 // Route parameters for GET /events/:id
 export const eventsParamsSchema = z.object({
-  id: z.uuid('Invalid event ID format'),
+  id: uuidSchema,
 })
 
 // Create event schema for POST /events
 export const eventsCreateSchema = z
   .object({
-    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
+    name: nameSchema,
     eventType: z.enum(EVENT_TYPES, {
       message:
         'Event type must be solo, singles, doubles, singles-teams, solo-teams, or relay',
     }),
-    gender: z.enum(['male', 'female', 'mixed'], {
-      message: 'Gender must be male, female, or mixed',
-    }),
+    gender: eventGenderSchema,
     format: z
       .enum(EVENT_FORMATS, {
         message:
@@ -102,19 +109,9 @@ export const eventsCreateSchema = z
       .optional()
       .default('groups'),
     hasThirdPlaceMatch: z.boolean().optional().default(false),
-    visibility: z.enum(['public', 'private']).optional().default('public'),
-    minPlayers: z
-      .number()
-      .int('minPlayers must be an integer')
-      .min(1, 'minPlayers must be at least 1')
-      .optional()
-      .default(1),
-    maxPlayers: z
-      .number()
-      .int('maxPlayers must be an integer')
-      .min(1, 'maxPlayers must be at least 1')
-      .optional()
-      .default(2),
+    visibility: visibilitySchema.optional().default('public'),
+    minPlayers: positiveIntSchema('minPlayers').optional().default(1),
+    maxPlayers: positiveIntSchema('maxPlayers').optional().default(2),
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -124,35 +121,21 @@ export const eventsCreateSchema = z
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
       .optional(),
     eventDates: z.array(z.string()).optional(),
-    bestOf: z
-      .number()
-      .int('bestOf must be an integer')
-      .positive('bestOf must be positive')
-      .refine(
-        (val) => val % 2 === 1,
-        'bestOf must be an odd number (1, 3, 5, 7, etc.)'
-      ),
-    pointsPerWin: z.number().int().min(0).optional(),
-    pointsPerLoss: z.number().int().min(0).optional(),
+    bestOf: positiveIntSchema('bestOf').refine(
+      (val) => val % 2 === 1,
+      'bestOf must be an odd number (1, 3, 5, 7, etc.)'
+    ),
+    pointsPerWin: nonNegativeIntSchema('pointsPerWin').optional(),
+    pointsPerLoss: nonNegativeIntSchema('pointsPerLoss').optional(),
     // For double-elimination: how many rounds before finals the losers bracket starts
     // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
-    losersStartRoundsBeforeFinal: z
-      .number()
-      .int('losersStartRoundsBeforeFinal must be an integer')
-      .positive('losersStartRoundsBeforeFinal must be positive')
+    losersStartRoundsBeforeFinal: positiveIntSchema('losersStartRoundsBeforeFinal')
       .nullable()
       .optional(),
-    organizationId: z
-      .uuid('Invalid organization ID format')
-      .nullable()
-      .optional(),
-    trainingSessionId: z.uuid('Invalid training session ID format').optional(),
+    organizationId: optionalUuidSchema,
+    trainingSessionId: uuidSchema.optional(),
     // For test events: number of players per heat (default 8)
-    playersPerHeat: z
-      .number()
-      .int('playersPerHeat must be an integer')
-      .min(1, 'playersPerHeat must be at least 1')
-      .optional(),
+    playersPerHeat: positiveIntSchema('playersPerHeat').optional(),
   })
   .strict()
   .refine((data) => data.minPlayers <= data.maxPlayers, {
@@ -231,22 +214,14 @@ export const eventsCreateSchema = z
 // since we need the existing event's eventType to validate.
 export const eventsUpdateSchema = z
   .object({
-    name: z
-      .string()
-      .min(1, 'Name is required')
-      .max(255, 'Name is too long')
-      .optional(),
+    name: nameSchema.optional(),
     eventType: z
       .enum(EVENT_TYPES, {
         message:
           'Event type must be solo, singles, doubles, singles-teams, solo-teams, or relay',
       })
       .optional(),
-    gender: z
-      .enum(['male', 'female', 'mixed'], {
-        message: 'Gender must be male, female, or mixed',
-      })
-      .optional(),
+    gender: eventGenderSchema.optional(),
     format: z
       .enum(EVENT_FORMATS, {
         message:
@@ -254,17 +229,9 @@ export const eventsUpdateSchema = z
       })
       .optional(),
     hasThirdPlaceMatch: z.boolean().optional(),
-    visibility: z.enum(['public', 'private']).optional(),
-    minPlayers: z
-      .number()
-      .int('minPlayers must be an integer')
-      .min(1, 'minPlayers must be at least 1')
-      .optional(),
-    maxPlayers: z
-      .number()
-      .int('maxPlayers must be an integer')
-      .min(1, 'maxPlayers must be at least 1')
-      .optional(),
+    visibility: visibilitySchema.optional(),
+    minPlayers: positiveIntSchema('minPlayers').optional(),
+    maxPlayers: positiveIntSchema('maxPlayers').optional(),
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -274,34 +241,20 @@ export const eventsUpdateSchema = z
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
       .optional(),
     eventDates: z.array(z.string()).optional(),
-    bestOf: z
-      .number()
-      .int('bestOf must be an integer')
-      .positive('bestOf must be positive')
+    bestOf: positiveIntSchema('bestOf')
       .refine(
         (val) => val % 2 === 1,
         'bestOf must be an odd number (1, 3, 5, 7, etc.)'
       )
       .optional(),
-    pointsPerWin: z.number().int().min(0).optional(),
-    pointsPerLoss: z.number().int().min(0).optional(),
-    losersStartRoundsBeforeFinal: z
-      .number()
-      .int('losersStartRoundsBeforeFinal must be an integer')
-      .positive('losersStartRoundsBeforeFinal must be positive')
+    pointsPerWin: nonNegativeIntSchema('pointsPerWin').optional(),
+    pointsPerLoss: nonNegativeIntSchema('pointsPerLoss').optional(),
+    losersStartRoundsBeforeFinal: positiveIntSchema('losersStartRoundsBeforeFinal')
       .nullable()
       .optional(),
-    organizationId: z
-      .uuid('Invalid organization ID format')
-      .nullable()
-      .optional(),
+    organizationId: optionalUuidSchema,
     // For test events: number of players per heat (default 8)
-    playersPerHeat: z
-      .number()
-      .int('playersPerHeat must be an integer')
-      .min(1, 'playersPerHeat must be at least 1')
-      .nullable()
-      .optional(),
+    playersPerHeat: positiveIntSchema('playersPerHeat').nullable().optional(),
   })
   .strict()
   .refine(

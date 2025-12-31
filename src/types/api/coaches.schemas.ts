@@ -1,4 +1,11 @@
 import { z } from 'zod'
+import {
+  nameSchema,
+  rtlNameSchema,
+  genderSchema,
+  uuidSchema,
+  optionalUuidSchema,
+} from '@/lib/forms/patterns'
 
 // Query parameters for GET /coaches
 export const coachesQuerySchema = z
@@ -47,42 +54,28 @@ export const coachesQuerySchema = z
 
 // Route parameters for GET /coaches/:id
 export const coachesParamsSchema = z.object({
-  id: z.uuid('Invalid coach ID format'),
+  id: uuidSchema,
 })
 
 // Create coach schema for POST /coaches
 export const coachesCreateSchema = z
   .object({
-    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
-    nameRtl: z.string().max(255, 'RTL Name is too long').optional().nullable(),
-    gender: z.enum(['male', 'female'], {
-      message: 'Gender must be male or female',
-    }),
-    userId: z.uuid('Invalid user ID format').optional().nullable(),
-    organizationId: z
-      .uuid('Invalid organization ID format')
-      .optional()
-      .nullable(),
+    name: nameSchema,
+    nameRtl: rtlNameSchema,
+    gender: genderSchema,
+    userId: optionalUuidSchema,
+    organizationId: optionalUuidSchema,
   })
   .strict()
 
 // Update coach schema for PATCH /coaches/:id
 export const coachesUpdateSchema = z
   .object({
-    name: z
-      .string()
-      .min(1, 'Name is required')
-      .max(255, 'Name is too long')
-      .optional(),
-    nameRtl: z.string().max(255, 'RTL Name is too long').optional().nullable(),
-    gender: z
-      .enum(['male', 'female'], { message: 'Gender must be male or female' })
-      .optional(),
-    userId: z.uuid('Invalid user ID format').optional().nullable(),
-    organizationId: z
-      .uuid('Invalid organization ID format')
-      .optional()
-      .nullable(),
+    name: nameSchema.optional(),
+    nameRtl: rtlNameSchema,
+    gender: genderSchema.optional(),
+    userId: optionalUuidSchema,
+    organizationId: optionalUuidSchema,
   })
   .refine(
     (data) => Object.keys(data).length > 0,

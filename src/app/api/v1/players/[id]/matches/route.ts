@@ -9,6 +9,7 @@ import {
 } from '@/types/api/players.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { enrichMatch } from '@/lib/services/match-enrichment.service'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -151,7 +152,9 @@ export async function GET(
 
     return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching player matches:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]/matches',
+      method: 'GET',
+    })
   }
 }

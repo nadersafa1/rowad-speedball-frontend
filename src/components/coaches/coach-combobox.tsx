@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { apiClient } from '@/lib/api-client'
-import type { Coach } from '@/db/schema'
+import type { Coach } from '@/types'
 import type { PaginatedResponse } from '@/types/api/pagination'
 
 interface CoachComboboxProps {

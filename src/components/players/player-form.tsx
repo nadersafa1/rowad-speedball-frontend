@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Trophy, Save } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Form,
@@ -39,35 +38,30 @@ import {
   TEAM_LEVEL_LABELS,
   DEFAULT_TEAM_LEVEL,
 } from '@/types/team-level'
+import {
+  nameSchema,
+  rtlNameSchema,
+  dateOfBirthSchema,
+  genderSchema,
+  optionalUuidSchema,
+  dateToISOString,
+} from '@/lib/forms/patterns'
+import { LoadingButton, FormError } from '@/components/forms'
 
-// Validation schema
+// Validation schema using shared patterns
+// Aligned with API schema but uses Date objects internally
 const playerSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name must be less than 100 characters'),
-  nameRtl: z
-    .string()
-    .max(255, 'RTL Name must be less than 255 characters')
-    .optional()
-    .nullable(),
-  dateOfBirth: z
-    .date()
-    .refine(
-      (date) => date <= new Date(new Date().getFullYear() - 2, 0, 1),
-      'Player must be at least 2 years old'
-    ),
-  gender: z.enum(['male', 'female'], {
-    message: 'Gender is required',
-  }),
-  preferredHand: z.enum(['left', 'right'], {
-    message: 'Preferred hand is required',
+  name: nameSchema,
+  nameRtl: rtlNameSchema,
+  dateOfBirth: dateOfBirthSchema,
+  gender: genderSchema,
+  preferredHand: z.enum(['left', 'right', 'both'], {
+    message: 'Please select preferred hand',
   }),
   teamLevel: z.enum(TEAM_LEVELS, {
-    message: 'Team level is required',
+    message: 'Please select team level',
   }),
-  organizationId: z.uuid().nullable().optional(),
+  organizationId: optionalUuidSchema,
 })
 
 type PlayerFormData = z.infer<typeof playerSchema>
@@ -104,10 +98,16 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
   const onSubmit = async (data: PlayerFormData) => {
     clearError()
     try {
+      // Transform Date object to ISO string for API
+      const payload = {
+        ...data,
+        dateOfBirth: dateToISOString(data.dateOfBirth),
+      }
+
       if (isEditing) {
-        await updatePlayer(player.id, data)
+        await updatePlayer(player.id, payload)
       } else {
-        await createPlayer(data)
+        await createPlayer(payload)
       }
       form.reset()
       onSuccess?.()
@@ -321,15 +321,11 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
           )}
 
           {/* Error Display */}
-          {error && (
-            <div className='bg-destructive/10 border border-destructive/20 rounded-md p-3'>
-              <p className='text-destructive text-sm'>{error}</p>
-            </div>
-          )}
+          <FormError error={error} />
 
           <DialogFooter className='flex-col sm:flex-row gap-2 sm:gap-3 mt-4'>
             {onCancel && (
-              <Button
+              <LoadingButton
                 type='button'
                 variant='outline'
                 onClick={onCancel}
@@ -337,26 +333,18 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
                 className='w-full sm:w-auto min-w-[44px] min-h-[44px]'
               >
                 Cancel
-              </Button>
+              </LoadingButton>
             )}
 
-            <Button
+            <LoadingButton
               type='submit'
-              disabled={isSubmitting}
+              isLoading={isSubmitting}
+              loadingText={isEditing ? 'Updating...' : 'Creating...'}
+              icon={<Save className='h-4 w-4' />}
               className='w-full sm:w-auto min-w-[44px] min-h-[44px] bg-rowad-600 hover:bg-rowad-700'
             >
-              {isSubmitting ? (
-                <div className='flex items-center gap-2'>
-                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
-                  {isEditing ? 'Updating...' : 'Creating...'}
-                </div>
-              ) : (
-                <div className='flex items-center gap-2'>
-                  <Save className='h-4 w-4' />
-                  {isEditing ? 'Update Player' : 'Create Player'}
-                </div>
-              )}
-            </Button>
+              {isEditing ? 'Update Player' : 'Create Player'}
+            </LoadingButton>
           </DialogFooter>
         </form>
       </Form>

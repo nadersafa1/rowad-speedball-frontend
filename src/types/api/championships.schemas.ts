@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { nameSchema, uuidSchema, descriptionSchema } from '@/lib/forms/patterns'
 
 // Query parameters for GET /championships
 export const championshipsQuerySchema = z
@@ -8,7 +9,7 @@ export const championshipsQuerySchema = z
       .trim()
       .max(100, 'q must be less than 100 characters')
       .optional(),
-    federationId: z.uuid('Invalid federation ID format').optional(),
+    federationId: uuidSchema.optional(),
     // Sorting parameters
     sortBy: z
       .enum(['name', 'startDate', 'endDate', 'createdAt', 'updatedAt'])
@@ -33,19 +34,15 @@ export const championshipsQuerySchema = z
 
 // Route parameters for GET /championships/:id
 export const championshipsParamsSchema = z.object({
-  id: z.uuid('Invalid championship ID format'),
+  id: uuidSchema,
 })
 
 // Create championship schema for POST /championships
 export const championshipsCreateSchema = z
   .object({
-    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
-    federationId: z.uuid('Invalid federation ID format'),
-    description: z
-      .string()
-      .max(1000, 'Description is too long')
-      .optional()
-      .nullable(),
+    name: nameSchema,
+    federationId: uuidSchema,
+    description: descriptionSchema,
     startDate: z
       .string()
       .refine((date) => !date || !isNaN(Date.parse(date)), 'Invalid date format')
@@ -62,16 +59,8 @@ export const championshipsCreateSchema = z
 // Update championship schema for PATCH /championships/:id
 export const championshipsUpdateSchema = z
   .object({
-    name: z
-      .string()
-      .min(1, 'Name is required')
-      .max(255, 'Name is too long')
-      .optional(),
-    description: z
-      .string()
-      .max(1000, 'Description is too long')
-      .optional()
-      .nullable(),
+    name: nameSchema.optional(),
+    description: descriptionSchema,
     startDate: z
       .string()
       .refine((date) => !date || !isNaN(Date.parse(date)), 'Invalid date format')

@@ -10,6 +10,7 @@ import {
 import { createPaginatedResponse } from '@/types/api/pagination'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkFederationCreateAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   // Anyone can view federations - no auth required
@@ -84,8 +85,10 @@ export async function GET(request: NextRequest) {
 
     return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching federations:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/federations',
+      method: 'GET',
+    })
   }
 }
 
@@ -115,7 +118,11 @@ export async function POST(request: NextRequest) {
 
     return Response.json(result[0], { status: 201 })
   } catch (error) {
-    console.error('Error creating federation:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/federations',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
