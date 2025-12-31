@@ -1,10 +1,7 @@
 // Users Store - Single responsibility: Users state management
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
-import type { PaginatedResponse } from '@/types'
-import type { user as userSchema } from '@/db/schema'
-
-export type User = typeof userSchema.$inferSelect
+import type { PaginatedResponse, User } from '@/types'
 
 interface UsersFilters {
   q?: string

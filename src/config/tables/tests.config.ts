@@ -4,9 +4,7 @@
  */
 
 import { TableConfig } from '@/lib/table-core'
-import type { tests } from '@/db/schema'
-
-export type Test = typeof tests.$inferSelect
+import type { Test } from '@/types'
 
 export interface TestsTableFilters extends Record<string, unknown> {
   q?: string

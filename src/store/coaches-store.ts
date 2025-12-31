@@ -1,7 +1,7 @@
 // Coaches Store - Single responsibility: Coaches state management
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
-import type { Coach } from '@/db/schema'
+import type { Coach } from '@/types'
 import type { PaginatedResponse, CoachesStats } from '@/types/api/pagination'
 import { CoachesFilters } from '@/app/coaches/types'
 import { isCoachesStats } from '@/lib/utils/stats-type-guards'

@@ -356,3 +356,20 @@ export interface MatchUpdatedData {
   matchDate?: string
   winnerId?: string | null
 }
+
+// Re-export database schema types for consistent imports
+// This ensures all components import from @/types instead of @/db/schema
+export type {
+  Coach,
+  TrainingSession,
+  TrainingSessionCoach,
+  TrainingSessionAttendance,
+  User,
+  Federation,
+  Championship,
+  FederationClub,
+  FederationPlayer,
+  Organization,
+  Member,
+  Invitation,
+} from '@/db/schema'

@@ -1,7 +1,7 @@
 // Training Sessions Store - Single responsibility: Training Sessions state management
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
-import type { TrainingSession, Coach } from '@/db/schema'
+import type { TrainingSession, Coach } from '@/types'
 import type {
   PaginatedResponse,
   TrainingSessionsStats,

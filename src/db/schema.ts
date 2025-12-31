@@ -157,34 +157,104 @@ export const players = pgTable(
   ]
 )
 
+/**
+ * Calculate a player's age using season-based logic
+ *
+ * **Season-Based Age Calculation**:
+ * The sports season runs from July 1 to June 30 of the following year.
+ * A player's age is determined by the year they turn that age during the current season.
+ *
+ * **Logic**:
+ * - **July 1 - December 31** (months 7-12): New season starts
+ *   → Age = currentYear - birthYear
+ *   → Example: Born 2010, current date July 2024 → Age = 2024 - 2010 = 14
+ *
+ * - **January 1 - June 30** (months 1-6): Still in previous season
+ *   → Age = currentYear - birthYear - 1
+ *   → Example: Born 2010, current date March 2024 → Age = 2024 - 2010 - 1 = 13
+ *
+ * **Why This Matters**:
+ * - Ensures fair competition by grouping players who turn the same age in the same season
+ * - Prevents age advantage from birth month within a calendar year
+ * - Aligns with how most youth sports leagues organize age groups
+ *
+ * **Examples**:
+ * - Player born May 15, 2010:
+ *   - On July 1, 2024: Age = 14 (new season, they will turn 14 this season)
+ *   - On April 1, 2024: Age = 13 (previous season, they haven't turned 14 yet this season)
+ *
+ * - Player born October 20, 2010:
+ *   - On July 1, 2024: Age = 14 (new season)
+ *   - On November 1, 2024: Age = 14 (same season, already 14)
+ *
+ * @param dateOfBirth - Date of birth in 'yyyy-MM-dd' format
+ * @returns Calculated age as integer
+ */
 export const calculateAge = (dateOfBirth: string): number => {
   const today = new Date()
   const currentYear = getYear(today)
-  const currentMonth = getMonth(today) + 1 // getMonth is 0-indexed
+  const currentMonth = getMonth(today) + 1 // getMonth is 0-indexed (0 = Jan)
 
   // Parse date safely as local (avoids UTC timezone issues)
+  // Using 'yyyy-MM-dd' format ensures consistent parsing across timezones
   const birthDate = parse(dateOfBirth, 'yyyy-MM-dd', new Date())
   const birthYear = getYear(birthDate)
 
-  // Season-based calculation:
-  // Jul-Dec: currentYear - birthYear (new season)
-  // Jan-Jun: currentYear - birthYear - 1 (still in previous season)
-  const isFirstHalf = currentMonth <= 6
-  return isFirstHalf ? currentYear - birthYear - 1 : currentYear - birthYear
+  // Season boundary check: July (month 7) starts the new season
+  const isFirstHalf = currentMonth <= 6 // Jan-Jun (previous season)
+  const isSecondHalf = !isFirstHalf // Jul-Dec (new season)
+
+  // Calculate age based on season
+  if (isSecondHalf) {
+    // New season (Jul-Dec): Player's age is what they turn this year
+    return currentYear - birthYear
+  } else {
+    // Previous season (Jan-Jun): Player's age is what they turned last year
+    return currentYear - birthYear - 1
+  }
 }
 
+/**
+ * Determine a player's age group based on their calculated age
+ *
+ * **Age Group Categories**:
+ * - **mini**: Ages 2-7 (introductory level)
+ * - **U-09**: Ages 8-9 (Under 9)
+ * - **U-11**: Ages 10-11 (Under 11)
+ * - **U-13**: Ages 12-13 (Under 13)
+ * - **U-15**: Ages 14-15 (Under 15)
+ * - **U-17**: Ages 16-17 (Under 17)
+ * - **U-19**: Ages 18-19 (Under 19)
+ * - **U-21**: Ages 20-21 (Under 21)
+ * - **Seniors**: Ages 22+ (adult level)
+ *
+ * **Important Notes**:
+ * - Age groups use the season-based age from calculateAge()
+ * - "U-XX" means "Under XX" (player will be XX or younger during the season)
+ * - Age group boundaries are inclusive (U-09 includes both 8 and 9 year olds)
+ *
+ * **Examples**:
+ * - Age 7 → "mini"
+ * - Age 9 → "U-09"
+ * - Age 13 → "U-13"
+ * - Age 22 → "Seniors"
+ *
+ * @param dateOfBirth - Date of birth in 'yyyy-MM-dd' format
+ * @returns Age group string (e.g., "U-13", "Seniors")
+ */
 export const getAgeGroup = (dateOfBirth: string): string => {
   const age = calculateAge(dateOfBirth)
 
-  if (age <= 7) return 'mini'
-  if (age <= 9) return 'U-09'
-  if (age <= 11) return 'U-11'
-  if (age <= 13) return 'U-13'
-  if (age <= 15) return 'U-15'
-  if (age <= 17) return 'U-17'
-  if (age <= 19) return 'U-19'
-  if (age <= 21) return 'U-21'
-  return 'Seniors'
+  // Age group boundaries (inclusive upper bounds)
+  if (age <= 7) return 'mini' // Ages 2-7
+  if (age <= 9) return 'U-09' // Ages 8-9
+  if (age <= 11) return 'U-11' // Ages 10-11
+  if (age <= 13) return 'U-13' // Ages 12-13
+  if (age <= 15) return 'U-15' // Ages 14-15
+  if (age <= 17) return 'U-17' // Ages 16-17
+  if (age <= 19) return 'U-19' // Ages 18-19
+  if (age <= 21) return 'U-21' // Ages 20-21
+  return 'Seniors' // Ages 22+
 }
 
 // Note Type Enum
@@ -692,3 +762,4 @@ export type FederationPlayer = typeof federationPlayers.$inferSelect
 export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect
 export type Invitation = typeof invitation.$inferSelect
+export type User = typeof user.$inferSelect

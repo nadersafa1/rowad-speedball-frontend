@@ -4,9 +4,7 @@
  */
 
 import { TableConfig } from '@/lib/table-core'
-import type { coaches } from '@/db/schema'
-
-export type Coach = typeof coaches.$inferSelect
+import type { Coach } from '@/types'
 
 export interface CoachesTableFilters extends Record<string, unknown> {
   q?: string
