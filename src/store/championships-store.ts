@@ -64,9 +64,7 @@ export const useChampionshipsStore = create<ChampionshipsState>((set, get) => ({
         limit: filters.limit,
       }
 
-      const response = (await apiClient.getChampionships(
-        params
-      )) as PaginatedResponse<ChampionshipWithFederation>
+      const response = await apiClient.getChampionships(params)
 
       set({
         championships: response.data,

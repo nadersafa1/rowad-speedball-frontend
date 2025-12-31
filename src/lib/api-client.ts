@@ -80,7 +80,7 @@ export class ApiClient {
     page?: number
     limit?: number
     unassigned?: string | boolean
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.gender) searchParams.set('gender', params.gender)
@@ -114,7 +114,7 @@ export class ApiClient {
     }
 
     const query = searchParams.toString()
-    return this.request(`/players${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/players${query ? `?${query}` : ''}`)
   }
 
   async getPlayer(id: string) {
@@ -164,7 +164,7 @@ export class ApiClient {
       page?: number
       limit?: number
     }
-  ) {
+  ): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.noteType) searchParams.set('noteType', params.noteType)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
@@ -172,7 +172,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(
+    return this.request<PaginatedResponse<any>>(
       `/players/${playerId}/notes${query ? `?${query}` : ''}`
     )
   }
@@ -217,7 +217,7 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
@@ -226,7 +226,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/federations${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/federations${query ? `?${query}` : ''}`)
   }
 
   async getFederation(id: string) {
@@ -261,7 +261,7 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.federationId)
@@ -272,7 +272,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/championships${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/championships${query ? `?${query}` : ''}`)
   }
 
   async getChampionship(id: string) {
@@ -311,7 +311,7 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.playingTime)
@@ -333,7 +333,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/tests${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/tests${query ? `?${query}` : ''}`)
   }
 
   async getTest(id: string, includeResults?: boolean) {
@@ -372,7 +372,7 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.testId) searchParams.set('testId', params.testId)
     if (params?.q) searchParams.set('q', params.q)
@@ -385,7 +385,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/results${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/results${query ? `?${query}` : ''}`)
   }
 
   async getPlayerResults(playerId: string) {
@@ -438,7 +438,7 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.eventType) searchParams.set('eventType', params.eventType)
@@ -461,7 +461,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/events${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/events${query ? `?${query}` : ''}`)
   }
 
   async getEvent(id: string) {
@@ -708,7 +708,7 @@ export class ApiClient {
     limit?: number
     unassigned?: string | boolean
     organizationId?: string | null
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.gender) searchParams.set('gender', params.gender)
@@ -732,7 +732,7 @@ export class ApiClient {
     }
 
     const query = searchParams.toString()
-    return this.request(`/coaches${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/coaches${query ? `?${query}` : ''}`)
   }
 
   async getCoach(id: string) {
@@ -772,7 +772,7 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }) {
+  }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.intensity) searchParams.set('intensity', params.intensity)
@@ -792,7 +792,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/training-sessions${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/training-sessions${query ? `?${query}` : ''}`)
   }
 
   async getTrainingSession(id: string) {

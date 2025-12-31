@@ -58,7 +58,7 @@ export const useUsersStore = create<UsersState>((set, get) => ({
         unassigned: filters.unassigned,
       }
 
-      const response = (await apiClient.getUsers(params)) as PaginatedResponse<User>
+      const response = await apiClient.getUsers(params)
 
       set({
         users: response.data,

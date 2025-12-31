@@ -93,9 +93,7 @@ export const useResultsStore = create<ResultsState>((set) => ({
         limit: filters.limit || 25,
       };
 
-      const response = (await apiClient.getResults(
-        params
-      )) as PaginatedResponse<ResultWithPlayer>;
+      const response = await apiClient.getResults(params);
 
       set({
         results: response.data,

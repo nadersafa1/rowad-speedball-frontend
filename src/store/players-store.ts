@@ -58,9 +58,7 @@ export const usePlayersStore = create<PlayersState>((set, get) => ({
         sortOrder: filters.sortOrder,
       }
 
-      const response = (await apiClient.getPlayers(
-        params
-      )) as PaginatedResponse<Player>
+      const response = await apiClient.getPlayers(params) as PaginatedResponse<Player> & { stats?: PlayersStats }
 
       set({
         players: response.data,

@@ -82,9 +82,7 @@ export const useTrainingSessionsStore = create<TrainingSessionsState>(
           sortOrder: filters.sortOrder,
         }
 
-        const response = (await apiClient.getTrainingSessions(
-          params
-        )) as PaginatedResponse<TrainingSessionWithCoaches>
+        const response = await apiClient.getTrainingSessions(params)
 
         set({
           trainingSessions: response.data,
