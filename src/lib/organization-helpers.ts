@@ -222,3 +222,48 @@ export async function addUserToAllOrganizations(userId: string) {
     throw error
   }
 }
+
+/**
+ * Resolve the final organization ID for a resource being created
+ *
+ * Authorization rules:
+ * - System admins can specify any organizationId or leave it null (for global resources)
+ * - System admins: validate that the provided organizationId exists if being set
+ * - Org members (admin/owner/coach) are forced to use their active organization
+ *
+ * @param context - The organization context from getOrganizationContext()
+ * @param providedOrgId - The organizationId provided in the request body (optional)
+ * @returns Object with organizationId or error response
+ */
+export async function resolveOrganizationId(
+  context: OrganizationContext,
+  providedOrgId: string | null | undefined
+): Promise<{ organizationId: string | null; error?: Response }> {
+  const { isSystemAdmin, organization } = context
+
+  // System admins can specify any organizationId or leave it null
+  if (isSystemAdmin) {
+    // If system admin provides an organizationId, validate it exists
+    if (providedOrgId !== undefined && providedOrgId !== null) {
+      const orgCheck = await db
+        .select()
+        .from(schema.organization)
+        .where(eq(schema.organization.id, providedOrgId))
+        .limit(1)
+
+      if (orgCheck.length === 0) {
+        return {
+          organizationId: null,
+          error: Response.json(
+            { message: 'Organization not found' },
+            { status: 404 }
+          ),
+        }
+      }
+    }
+    return { organizationId: providedOrgId ?? null }
+  }
+
+  // Non-system admins must use their active organization
+  return { organizationId: organization?.id ?? null }
+}

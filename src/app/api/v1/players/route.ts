@@ -21,7 +21,10 @@ import {
   playersQuerySchema,
 } from '@/types/api/players.schemas'
 import { createPaginatedResponse } from '@/types/api/pagination'
-import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  getOrganizationContext,
+  resolveOrganizationId,
+} from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
 import { checkPlayerCreateAuthorization } from '@/lib/authorization'
 
@@ -374,26 +377,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Determine final organizationId:
-    // - System admins can specify any organizationId or leave it null (for global players)
-    // - Org members (admin/owner/coach) are forced to use their active organization
-    let finalOrganizationId = providedOrgId
-    if (!isSystemAdmin) {
-      finalOrganizationId = organization?.id || null
-    } else if (providedOrgId !== undefined && providedOrgId !== null) {
-      // System admin: validate referenced organization exists if being set
-      const orgCheck = await db
-        .select()
-        .from(schema.organization)
-        .where(eq(schema.organization.id, providedOrgId))
-        .limit(1)
-      if (orgCheck.length === 0) {
-        return Response.json(
-          { message: 'Organization not found' },
-          { status: 404 }
-        )
-      }
-    }
+    // Resolve organization ID using helper
+    const { organizationId: finalOrganizationId, error: orgError } =
+      await resolveOrganizationId(context, providedOrgId)
+    if (orgError) return orgError
 
     const result = await db
       .insert(schema.players)
