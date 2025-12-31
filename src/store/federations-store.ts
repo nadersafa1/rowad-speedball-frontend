@@ -58,9 +58,7 @@ export const useFederationsStore = create<FederationsState>((set, get) => ({
         limit: filters.limit,
       }
 
-      const response = (await apiClient.getFederations(
-        params
-      )) as PaginatedResponse<Federation>
+      const response = await apiClient.getFederations(params)
 
       set({
         federations: response.data,

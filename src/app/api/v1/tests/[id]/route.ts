@@ -11,6 +11,7 @@ import {
   checkTestUpdateAuthorization,
   checkTestDeleteAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -82,8 +83,13 @@ export async function GET(
 
     return Response.json(testWithCalculatedFields)
   } catch (error) {
-    console.error('Error fetching test:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    const context = await getOrganizationContext()
+    return handleApiError(error, {
+      endpoint: '/api/v1/tests/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -91,6 +97,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await getOrganizationContext()
+
   try {
     // Parse params and body first (quick validation, no DB calls)
     const resolvedParams = await params
@@ -123,7 +131,6 @@ export async function PATCH(
     const testData = existing[0]
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkTestUpdateAuthorization(context, testData)
     if (authError) return authError
 
@@ -176,8 +183,12 @@ export async function PATCH(
 
     return Response.json(updatedTest)
   } catch (error) {
-    console.error('Error updating test:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/tests/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -185,6 +196,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await getOrganizationContext()
+
   try {
     // Parse params first (quick validation, no DB calls)
     const resolvedParams = await params
@@ -210,7 +223,6 @@ export async function DELETE(
     const testData = existing[0]
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkTestDeleteAuthorization(context, testData)
     if (authError) return authError
 
@@ -221,7 +233,11 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting test:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/tests/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

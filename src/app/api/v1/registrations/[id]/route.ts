@@ -21,6 +21,7 @@ import {
   validateRegistrationPlayerCount,
   validateGenderRulesForPlayers,
 } from '@/lib/validations/registration-validation'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function PATCH(
   request: NextRequest,
@@ -211,8 +212,12 @@ export async function PATCH(
 
     return Response.json(enrichedRegistration)
   } catch (error) {
-    console.error('Error updating registration:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/registrations/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -273,7 +278,11 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting registration:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/registrations/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

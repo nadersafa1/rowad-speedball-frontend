@@ -14,6 +14,7 @@ import {
   canPlayerUpdateMatch,
 } from '@/lib/authorization'
 import { handleMatchCompletion } from '@/lib/services/match-service'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function PATCH(
   request: NextRequest,
@@ -192,7 +193,11 @@ export async function PATCH(
       winnerId: completionResult.winnerId,
     })
   } catch (error) {
-    console.error('Error marking set as played:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/sets/[id]/played',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

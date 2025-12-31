@@ -15,6 +15,7 @@ import {
   checkPlayerNotesReadAuthorization,
   checkPlayerNotesCreateAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 /**
  * GET /api/v1/players/[id]/notes
@@ -41,6 +42,8 @@ export async function GET(
     return Response.json(z.treeifyError(queryResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
+
   try {
     const { playerId } = paramsResult.data
     const { page, limit, noteType, sortOrder } = queryResult.data
@@ -57,7 +60,6 @@ export async function GET(
     }
 
     // Get organization context and check authorization
-    const context = await getOrganizationContext()
     const authError = checkPlayerNotesReadAuthorization(context, player[0])
     if (authError) return authError
 
@@ -144,11 +146,12 @@ export async function GET(
 
     return Response.json(paginatedResponse, { status: 200 })
   } catch (error) {
-    console.error('Error fetching player notes:', error)
-    return Response.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]/notes',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -182,6 +185,7 @@ export async function POST(
     return Response.json(z.treeifyError(bodyResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
   try {
     const { playerId } = paramsResult.data
     const { content, noteType } = bodyResult.data
@@ -208,7 +212,6 @@ export async function POST(
     }
 
     // Get organization context and check authorization
-    const context = await getOrganizationContext()
     const authError = checkPlayerNotesCreateAuthorization(context, player[0])
     if (authError) return authError
 
@@ -262,10 +265,11 @@ export async function POST(
 
     return Response.json(formattedNote, { status: 201 })
   } catch (error) {
-    console.error('Error creating player note:', error)
-    return Response.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]/notes',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

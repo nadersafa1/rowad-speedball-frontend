@@ -5,16 +5,21 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { trainingSessionAttendance, trainingSessions, players } from '@/db/schema'
+import {
+  trainingSessionAttendance,
+  trainingSessions,
+  players,
+} from '@/db/schema'
 import { eq, and, gte, lte, sql } from 'drizzle-orm'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const context = await getOrganizationContext()
   try {
     // Get authenticated user context
-    const context = await getOrganizationContext()
     if (!context.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -70,9 +75,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (sessionType && sessionType !== 'all') {
-      conditions.push(
-        sql`${sessionType} = ANY(${trainingSessions.type})`
-      )
+      conditions.push(sql`${sessionType} = ANY(${trainingSessions.type})`)
     }
 
     // Fetch attendance records with session details
@@ -124,10 +127,11 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching player attendance:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch attendance records' },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/me/attendance',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

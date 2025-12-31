@@ -9,6 +9,7 @@ import {
   extractPublicId,
   deleteCloudinaryImage,
 } from '@/lib/cloudinary-utils'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function POST(request: NextRequest) {
   // Authorization check
@@ -63,11 +64,12 @@ export async function POST(request: NextRequest) {
       user: updatedUser,
     })
   } catch (error) {
-    console.error('Error updating user image:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/v1/users/me/image',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 

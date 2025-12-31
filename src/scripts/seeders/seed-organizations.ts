@@ -1,6 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { organization, member } from '@/db/schema'
-import type { SeededUser, SeededOrganization, SeededMember } from './types'
+import type {
+  SeededUser,
+  SeededOrganization,
+  SeededMember,
+  SeededFederation,
+} from './types'
 
 // Arabic/Egyptian style organization names
 const organizationData = [
@@ -13,16 +18,20 @@ type OrgRole = 'owner' | 'admin' | 'coach' | 'player' | 'member' | 'super_admin'
 
 export const seedOrganizations = async (
   db: NodePgDatabase,
-  users: SeededUser[]
+  users: SeededUser[],
+  federations: SeededFederation[]
 ): Promise<{ organizations: SeededOrganization[]; members: SeededMember[] }> => {
   console.log('🌱 Seeding organizations...')
 
   const seededOrganizations: SeededOrganization[] = []
   const seededMembers: SeededMember[] = []
 
-  // Separate admin and regular users
+  // Separate admin and regular users (exclude federation users)
   const adminUsers = users.filter((u) => u.role === 'admin')
   const regularUsers = users.filter((u) => u.role === 'user')
+
+  // Primary federation for all organizations (Egyptian Federation)
+  const primaryFederation = federations[0]
 
   // Create organizations
   for (const orgData of organizationData) {
@@ -31,6 +40,7 @@ export const seedOrganizations = async (
       .values({
         name: orgData.name,
         slug: orgData.slug,
+        federationId: primaryFederation?.id || null,
       })
       .returning()
 
@@ -38,6 +48,7 @@ export const seedOrganizations = async (
       id: createdOrg.id,
       name: createdOrg.name,
       slug: createdOrg.slug,
+      federationId: createdOrg.federationId,
     })
   }
 

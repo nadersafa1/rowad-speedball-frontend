@@ -29,7 +29,22 @@ const main = async () => {
 
     // Print summary
     console.log('\n📊 Seeding Summary:')
+    console.log(`   Federations: ${context.federations.length}`)
+    console.log(`   Championships: ${context.championships.length}`)
+    console.log(`   Federation-Club Links: ${context.federationClubs.length}`)
     console.log(`   Users: ${context.users.length}`)
+    console.log(
+      `     - Regular admins: ${context.users.filter((u) => u.role === 'admin').length}`
+    )
+    console.log(
+      `     - Federation admins: ${context.users.filter((u) => u.role === 'federation-admin').length}`
+    )
+    console.log(
+      `     - Federation editors: ${context.users.filter((u) => u.role === 'federation-editor').length}`
+    )
+    console.log(
+      `     - Regular users: ${context.users.filter((u) => u.role === 'user').length}`
+    )
     console.log(`   Organizations: ${context.organizations.length}`)
     console.log(`   Members: ${context.members.length}`)
     console.log(`   Players: ${context.players.length}`)
@@ -41,8 +56,16 @@ const main = async () => {
     console.log(`   Registrations: ${context.registrations.length}`)
 
     console.log('\n🎉 All done! Use the following credentials to login:')
-    console.log('   Email: admin1@rowad.com')
-    console.log('   Password: Test@1234')
+    console.log('\n📋 Sample Credentials:')
+    console.log('   Regular Admin:')
+    console.log('     Email: admin1@rowad.com')
+    console.log('     Password: Test@1234')
+    console.log('\n   Federation Admin:')
+    console.log('     Email: fed-admin1@rowad.com')
+    console.log('     Password: Test@1234')
+    console.log('\n   Federation Editor:')
+    console.log('     Email: fed-editor1@rowad.com')
+    console.log('     Password: Test@1234')
   } catch (error) {
     console.error('❌ Seeding failed:', error)
     process.exit(1)

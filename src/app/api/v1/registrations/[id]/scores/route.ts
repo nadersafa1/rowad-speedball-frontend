@@ -20,6 +20,7 @@ import {
   hasAllPositionScores,
 } from '@/lib/validations/registration-validation'
 import { isSoloTestEventType } from '@/types/event-types'
+import { handleApiError } from '@/lib/api-error-handler'
 
 // Schema for a single player's position scores update
 const singlePlayerScoreSchema = z.object({
@@ -145,7 +146,11 @@ export async function PATCH(
 
     return Response.json(enrichedRegistration)
   } catch (error) {
-    console.error('Error updating registration scores:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/registrations/[id]/scores',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

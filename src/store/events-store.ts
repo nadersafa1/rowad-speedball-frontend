@@ -81,9 +81,7 @@ export const useEventsStore = create<EventsState>((set) => ({
         limit: filters.limit || 25,
       }
 
-      const response = (await apiClient.getEvents(
-        params
-      )) as PaginatedResponse<Event>
+      const response = await apiClient.getEvents(params)
       set({
         events: response.data,
         pagination: {

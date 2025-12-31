@@ -13,6 +13,7 @@ import {
   checkPlayerNoteUpdateAuthorization,
   checkPlayerNoteDeleteAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 /**
  * PATCH /api/v1/players/[id]/notes/[noteId]
@@ -45,6 +46,7 @@ export async function PATCH(
     return Response.json(z.treeifyError(bodyResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
   try {
     const { noteId } = paramsResult.data
 
@@ -60,7 +62,6 @@ export async function PATCH(
     }
 
     // Get organization context and check authorization
-    const context = await getOrganizationContext()
     const authError = checkPlayerNoteUpdateAuthorization(context, note[0])
     if (authError) return authError
 
@@ -127,11 +128,12 @@ export async function PATCH(
 
     return Response.json(formattedNote, { status: 200 })
   } catch (error) {
-    console.error('Error updating player note:', error)
-    return Response.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]/notes/[noteId]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -153,6 +155,7 @@ export async function DELETE(
     return Response.json(z.treeifyError(paramsResult.error), { status: 400 })
   }
 
+  const context = await getOrganizationContext()
   try {
     const { noteId } = paramsResult.data
 
@@ -168,19 +171,21 @@ export async function DELETE(
     }
 
     // Get organization context and check authorization
-    const context = await getOrganizationContext()
     const authError = checkPlayerNoteDeleteAuthorization(context, note[0])
     if (authError) return authError
 
     // Delete the note
-    await db.delete(schema.playerNotes).where(eq(schema.playerNotes.id, noteId!))
+    await db
+      .delete(schema.playerNotes)
+      .where(eq(schema.playerNotes.id, noteId!))
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting player note:', error)
-    return Response.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error, {
+      endpoint: '/api/v1/players/[id]/notes/[noteId]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

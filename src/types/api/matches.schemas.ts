@@ -1,5 +1,9 @@
 import { z } from 'zod'
 import { uuidSchema } from '@/lib/forms/patterns'
+import {
+  standardPaginationSchema,
+  standardSortSchema,
+} from '@/lib/api-helpers/query-builders'
 
 // Query parameters for GET /matches
 export const matchesQuerySchema = z
@@ -11,6 +15,11 @@ export const matchesQuerySchema = z
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : undefined))
       .refine((val) => !val || val >= 1, 'Round must be greater than 0'),
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
+    sortBy: z
+      .enum(['round', 'matchNumber', 'matchDate', 'played', 'createdAt', 'updatedAt'])
+      .optional(),
   })
   .strict()
 

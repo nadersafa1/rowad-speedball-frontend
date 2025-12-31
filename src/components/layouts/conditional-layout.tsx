@@ -24,7 +24,14 @@ import { authClient } from '@/lib/auth-client'
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const { data: session, isPending: isSessionPending } = authClient.useSession()
   const { context, isLoading: isContextLoading } = useOrganizationContext()
-  const { isSystemAdmin, isAdmin, isOwner, isCoach } = context
+  const {
+    isSystemAdmin,
+    isAdmin,
+    isOwner,
+    isCoach,
+    isFederationAdmin,
+    isFederationEditor,
+  } = context
   const pathname = usePathname()
 
   // Wait for both session and context to load
@@ -32,7 +39,13 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
 
   // Show sidebar for admin users
   const showSidebar =
-    session?.user && (isSystemAdmin || isAdmin || isOwner || isCoach)
+    session?.user &&
+    (isSystemAdmin ||
+      isAdmin ||
+      isOwner ||
+      isCoach ||
+      isFederationAdmin ||
+      isFederationEditor)
 
   // Show loading state while authentication is being determined
   if (isLoading) {

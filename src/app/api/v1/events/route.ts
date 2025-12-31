@@ -10,6 +10,7 @@ import {
   or,
   isNull,
   inArray,
+  sql,
 } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
@@ -164,11 +165,28 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.where(combinedCondition) as any
     }
 
-    // Dynamic sorting - handle computed fields separately
-    const isComputedField =
-      sortBy === 'registrationsCount' || sortBy === 'lastMatchPlayedDate'
-
-    if (sortBy && !isComputedField) {
+    // Dynamic sorting - use SQL for computed fields
+    if (sortBy === 'registrationsCount') {
+      // Use subquery for registration count sorting
+      const registrationsCountExpr = sql<number>`(
+        SELECT COUNT(*)
+        FROM ${schema.registrations}
+        WHERE ${schema.registrations.eventId} = ${schema.events.id}
+      )`
+      const order = sortOrder === 'asc' ? asc(registrationsCountExpr) : desc(registrationsCountExpr)
+      dataQuery = dataQuery.orderBy(order) as any
+    } else if (sortBy === 'lastMatchPlayedDate') {
+      // Use subquery for last match date sorting
+      const lastMatchDateExpr = sql<string>`COALESCE(
+        (SELECT MAX(COALESCE(${schema.matches.matchDate}, ${schema.matches.updatedAt}::date::text))
+         FROM ${schema.matches}
+         WHERE ${schema.matches.eventId} = ${schema.events.id}
+           AND ${schema.matches.played} = true),
+        ''
+      )`
+      const order = sortOrder === 'asc' ? asc(lastMatchDateExpr) : desc(lastMatchDateExpr)
+      dataQuery = dataQuery.orderBy(order) as any
+    } else if (sortBy) {
       // Map sortBy to actual schema fields
       const sortFieldMap: Record<string, any> = {
         name: schema.events.name,
@@ -185,7 +203,7 @@ export async function GET(request: NextRequest) {
         const order = sortOrder === 'asc' ? asc(sortField) : desc(sortField)
         dataQuery = dataQuery.orderBy(order) as any
       }
-    } else if (!sortBy) {
+    } else {
       dataQuery = dataQuery.orderBy(desc(schema.events.createdAt)) as any
     }
 
@@ -217,7 +235,7 @@ export async function GET(request: NextRequest) {
           : eq(schema.events.completed, true)
       )
 
-    // Fetch all events (we'll calculate computed fields and sort in memory if needed)
+    // Fetch events with pagination applied at database level
     const [
       countResult,
       dataResult,
@@ -226,7 +244,7 @@ export async function GET(request: NextRequest) {
       completedCountResult,
     ] = await Promise.all([
       countQuery,
-      isComputedField ? dataQuery : dataQuery.limit(limit).offset(offset),
+      dataQuery.limit(limit).offset(offset),
       publicCountQuery,
       privateCountQuery,
       completedCountQuery,
@@ -299,34 +317,9 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    // Sort by computed fields if needed
-    let sortedEvents = eventsWithComputedFields
-    if (isComputedField && sortBy) {
-      sortedEvents = [...eventsWithComputedFields].sort((a, b) => {
-        let aValue: any
-        let bValue: any
-
-        if (sortBy === 'registrationsCount') {
-          aValue = a.registrationsCount ?? 0
-          bValue = b.registrationsCount ?? 0
-        } else if (sortBy === 'lastMatchPlayedDate') {
-          aValue = a.lastMatchPlayedDate || ''
-          bValue = b.lastMatchPlayedDate || ''
-        }
-
-        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
-        return 0
-      })
-    }
-
-    // Apply pagination for computed fields
-    const paginatedEvents = isComputedField
-      ? sortedEvents.slice(offset, offset + limit)
-      : sortedEvents
-
+    // No need for in-memory sorting and pagination - it's all done at database level now
     const paginatedResponse = createPaginatedResponse(
-      paginatedEvents,
+      eventsWithComputedFields,
       page,
       limit,
       totalItems

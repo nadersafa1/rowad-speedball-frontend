@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { and, eq, SQL } from 'drizzle-orm'
+import { and, asc, count, desc, eq, SQL } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
@@ -7,6 +7,8 @@ import { matchesQuerySchema } from '@/types/api/matches.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkEventReadAuthorization } from '@/lib/authorization'
 import { enrichMatch } from '@/lib/services/match-enrichment.service'
+import { handleApiError } from '@/lib/api-error-handler'
+import { createPaginatedResponse } from '@/types/api/pagination'
 
 export async function GET(request: NextRequest) {
   const context = await getOrganizationContext()
@@ -19,7 +21,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { eventId, groupId, round } = parseResult.data
+    const { eventId, groupId, round, page, limit, sortBy, sortOrder } =
+      parseResult.data
+
+    const offset = (page - 1) * limit
 
     // Track event data for bestOf (used in response)
     let eventData: typeof schema.events.$inferSelect | null = null
@@ -81,11 +86,47 @@ export async function GET(request: NextRequest) {
           )
         : undefined
 
+    // Count query
+    let countQuery = db.select({ count: count() }).from(schema.matches)
+    if (combinedCondition) {
+      countQuery = countQuery.where(combinedCondition) as any
+    }
+
+    // Data query
     let query = db.select().from(schema.matches)
     if (combinedCondition)
       query = query.where(combinedCondition) as typeof query
 
-    const matches = await query
+    // Dynamic sorting
+    if (sortBy) {
+      const sortFieldMap: Record<string, any> = {
+        round: schema.matches.round,
+        matchNumber: schema.matches.matchNumber,
+        matchDate: schema.matches.matchDate,
+        played: schema.matches.played,
+        createdAt: schema.matches.createdAt,
+        updatedAt: schema.matches.updatedAt,
+      }
+
+      const sortField = sortFieldMap[sortBy]
+      if (sortField) {
+        const order = sortOrder === 'asc' ? asc(sortField) : desc(sortField)
+        query = query.orderBy(order) as typeof query
+      }
+    } else {
+      // Default sort by round and matchNumber
+      query = query.orderBy(
+        asc(schema.matches.round),
+        asc(schema.matches.matchNumber)
+      ) as typeof query
+    }
+
+    const [countResult, matches] = await Promise.all([
+      countQuery,
+      query.limit(limit).offset(offset),
+    ])
+
+    const totalItems = countResult[0].count
 
     // Enrich matches with sets, registration data, and bestOf using shared service
     const matchesWithData = await Promise.all(
@@ -117,9 +158,20 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    return Response.json({ matches: matchesWithData })
+    const paginatedResponse = createPaginatedResponse(
+      matchesWithData,
+      page,
+      limit,
+      totalItems
+    )
+
+    return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching matches:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/matches',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

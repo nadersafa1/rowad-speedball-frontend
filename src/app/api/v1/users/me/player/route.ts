@@ -6,6 +6,7 @@ import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkUserReadAuthorization } from '@/lib/authorization'
 import { TEAM_LEVELS } from '@/types/team-level'
+import { handleApiError } from '@/lib/api-error-handler'
 
 // Restricted schema for users updating their own player data
 const myPlayerUpdateSchema = z
@@ -71,7 +72,11 @@ export async function PATCH(request: NextRequest) {
 
     return Response.json(updatedPlayer[0])
   } catch (error) {
-    console.error('Error updating player profile:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/users/me/player',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

@@ -6,33 +6,28 @@ import {
   uuidSchema,
   optionalUuidSchema,
 } from '@/lib/forms/patterns'
-
+import {
+  standardPaginationSchema,
+  standardSortSchema,
+  standardTextSearchSchema,
+} from '@/lib/api-helpers/query-builders'
 // Query parameters for GET /coaches
 export const coachesQuerySchema = z
   .object({
-    q: z
-      .string()
-      .trim()
-      .max(20, 'q must be less than 20 characters')
-      .optional(),
+    ...standardTextSearchSchema.shape,
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
     gender: z.enum(['male', 'female', 'all']).optional(),
-    // Sorting parameters
-    sortBy: z.enum(['name', 'nameRtl', 'gender', 'createdAt', 'updatedAt', 'organizationId']).optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
-    // Pagination parameters
-    page: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 1))
-      .refine((val) => val >= 1, 'Page must be greater than 0'),
-    limit: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 10))
-      .refine(
-        (val) => val >= 1 && val <= 100,
-        'Limit must be between 1 and 100'
-      ),
+    sortBy: z
+      .enum([
+        'name',
+        'nameRtl',
+        'gender',
+        'createdAt',
+        'updatedAt',
+        'organizationId',
+      ])
+      .optional(),
     unassigned: z
       .string()
       .optional()

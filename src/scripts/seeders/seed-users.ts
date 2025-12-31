@@ -74,6 +74,7 @@ export const seedUsers = async (
       email: createdUser.email,
       role: 'admin',
       password: PASSWORD,
+      federationId: null,
     })
   }
 
@@ -103,6 +104,7 @@ export const seedUsers = async (
       email: createdUser.email,
       role: 'user',
       password: PASSWORD,
+      federationId: null,
     })
   }
 

@@ -1,31 +1,17 @@
 import { z } from 'zod'
 import { nameSchema, uuidSchema, descriptionSchema } from '@/lib/forms/patterns'
-
+import {
+  standardPaginationSchema,
+  standardSortSchema,
+  standardTextSearchSchema,
+} from '@/lib/api-helpers/query-builders'
 // Query parameters for GET /federations
 export const federationsQuerySchema = z
   .object({
-    q: z
-      .string()
-      .trim()
-      .max(100, 'q must be less than 100 characters')
-      .optional(),
-    // Sorting parameters
+    ...standardTextSearchSchema.shape,
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
     sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
-    // Pagination parameters
-    page: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 1))
-      .refine((val) => val >= 1, 'Page must be greater than 0'),
-    limit: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 10))
-      .refine(
-        (val) => val >= 1 && val <= 100,
-        'Limit must be between 1 and 100'
-      ),
   })
   .strict()
 

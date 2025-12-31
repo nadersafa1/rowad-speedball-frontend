@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { checkOrganizationMemberManagementAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 const addMemberSchema = z.object({
   userId: z.uuid('Invalid user ID format'),
@@ -90,7 +91,11 @@ export async function POST(
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error adding member:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/organizations/[id]/members',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

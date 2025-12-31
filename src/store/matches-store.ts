@@ -42,13 +42,14 @@ export const useMatchesStore = create<MatchesState>((set, get) => ({
   fetchMatches: async (eventId?: string, groupId?: string, round?: number) => {
     set({ isLoading: true, error: null })
     try {
-      const response = (await apiClient.getMatches(
+      const response = await apiClient.getMatches({
         eventId,
         groupId,
-        round
-      )) as { matches: Match[] }
+        round,
+        limit: 100, // Fetch up to 100 matches (API max limit)
+      })
       set({
-        matches: response.matches,
+        matches: response.data,
         isLoading: false,
       })
     } catch (error) {

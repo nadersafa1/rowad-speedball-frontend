@@ -15,6 +15,11 @@ import {
   positiveIntSchema,
   nonNegativeIntSchema,
 } from '@/lib/forms/patterns'
+import {
+  standardPaginationSchema,
+  standardSortSchema,
+  standardTextSearchSchema,
+} from '@/lib/api-helpers/query-builders'
 
 // Event format types
 export const EVENT_FORMATS = [
@@ -29,11 +34,9 @@ export type EventFormat = (typeof EVENT_FORMATS)[number]
 // Query parameters for GET /events
 export const eventsQuerySchema = z
   .object({
-    q: z
-      .string()
-      .trim()
-      .max(50, 'q must be less than 50 characters')
-      .optional(),
+    ...standardTextSearchSchema.shape,
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
     eventType: z.enum(EVENT_TYPES).optional(),
     gender: eventGenderSchema.optional(),
     format: z.enum(EVENT_FORMATS).optional(),
@@ -70,20 +73,6 @@ export const eventsQuerySchema = z
         'lastMatchPlayedDate',
       ])
       .optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
-    page: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 1))
-      .refine((val) => val >= 1, 'Page must be greater than 0'),
-    limit: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 10))
-      .refine(
-        (val) => val >= 1 && val <= 100,
-        'Limit must be between 1 and 100'
-      ),
   })
   .strict()
 
@@ -129,7 +118,9 @@ export const eventsCreateSchema = z
     pointsPerLoss: nonNegativeIntSchema('pointsPerLoss').optional(),
     // For double-elimination: how many rounds before finals the losers bracket starts
     // null = full double elimination, 2 = starts at QF (for 16 players), 1 = starts at SF
-    losersStartRoundsBeforeFinal: positiveIntSchema('losersStartRoundsBeforeFinal')
+    losersStartRoundsBeforeFinal: positiveIntSchema(
+      'losersStartRoundsBeforeFinal'
+    )
       .nullable()
       .optional(),
     organizationId: optionalUuidSchema,
@@ -249,7 +240,9 @@ export const eventsUpdateSchema = z
       .optional(),
     pointsPerWin: nonNegativeIntSchema('pointsPerWin').optional(),
     pointsPerLoss: nonNegativeIntSchema('pointsPerLoss').optional(),
-    losersStartRoundsBeforeFinal: positiveIntSchema('losersStartRoundsBeforeFinal')
+    losersStartRoundsBeforeFinal: positiveIntSchema(
+      'losersStartRoundsBeforeFinal'
+    )
       .nullable()
       .optional(),
     organizationId: optionalUuidSchema,
@@ -283,7 +276,10 @@ export const validatePlayerLimitsUpdate = (
   updateData: { minPlayers?: number; maxPlayers?: number }
 ): { valid: boolean; error?: string } => {
   if (isFixedPlayerCount(existingEventType)) {
-    if (updateData.minPlayers !== undefined || updateData.maxPlayers !== undefined) {
+    if (
+      updateData.minPlayers !== undefined ||
+      updateData.maxPlayers !== undefined
+    ) {
       return {
         valid: false,
         error: `Cannot change min/max players for ${existingEventType} events. Player limits are fixed.`,

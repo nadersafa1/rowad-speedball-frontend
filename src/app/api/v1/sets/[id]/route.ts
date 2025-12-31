@@ -10,6 +10,7 @@ import {
   checkEventDeleteAuthorization,
   canPlayerUpdateMatch,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function PATCH(
   request: NextRequest,
@@ -111,8 +112,12 @@ export async function PATCH(
 
     return Response.json(result[0])
   } catch (error) {
-    console.error('Error updating set:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/sets/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -202,7 +207,11 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting set:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/sets/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

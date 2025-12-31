@@ -14,6 +14,7 @@ import {
   checkResultUpdateAuthorization,
   checkResultDeleteAuthorization,
 } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(
   request: NextRequest,
@@ -25,6 +26,7 @@ export async function GET(
   if (!parseResult.success) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
+  const context = await getOrganizationContext()
 
   try {
     const { id } = resolvedParams
@@ -52,7 +54,6 @@ export async function GET(
     const test = row.test
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkResultReadAuthorization(context, test)
     if (authError) return authError
 
@@ -73,8 +74,12 @@ export async function GET(
 
     return Response.json(resultWithCalculatedFields)
   } catch (error) {
-    console.error('Error fetching result:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/results/[id]',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -88,6 +93,8 @@ export async function PATCH(
   if (!paramsResult.success) {
     return Response.json(z.treeifyError(paramsResult.error), { status: 400 })
   }
+
+  const context = await getOrganizationContext()
 
   try {
     const body = await request.json()
@@ -123,7 +130,6 @@ export async function PATCH(
     }
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkResultUpdateAuthorization(context, resultData, test)
     if (authError) return authError
 
@@ -151,8 +157,12 @@ export async function PATCH(
 
     return Response.json(updatedResult)
   } catch (error) {
-    console.error('Error updating result:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/results/[id]',
+      method: 'PATCH',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -166,6 +176,7 @@ export async function DELETE(
   if (!parseResult.success) {
     return Response.json(z.treeifyError(parseResult.error), { status: 400 })
   }
+  const context = await getOrganizationContext()
 
   try {
     const { id } = resolvedParams
@@ -193,7 +204,6 @@ export async function DELETE(
     }
 
     // Authorization check
-    const context = await getOrganizationContext()
     const authError = checkResultDeleteAuthorization(context, resultData, test)
     if (authError) return authError
 
@@ -201,7 +211,11 @@ export async function DELETE(
 
     return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting result:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/results/[id]',
+      method: 'DELETE',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

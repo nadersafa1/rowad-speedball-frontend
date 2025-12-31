@@ -64,9 +64,7 @@ export const useCoachesStore = create<CoachesState>((set, get) => ({
         params.organizationId = filters.organizationId
       }
 
-      const response = (await apiClient.getCoaches(
-        params
-      )) as PaginatedResponse<Coach>
+      const response = await apiClient.getCoaches(params)
 
       set({
         coaches: response.data,

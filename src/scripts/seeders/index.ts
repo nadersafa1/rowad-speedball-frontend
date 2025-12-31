@@ -1,5 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { seedUsers } from './seed-users'
+import { seedFederations } from './seed-federations'
+import { seedFederationUsers } from './seed-federation-users'
+import { seedChampionships } from './seed-championships'
 import { seedOrganizations } from './seed-organizations'
 import { seedPlayers } from './seed-players'
 import { seedCoaches } from './seed-coaches'
@@ -17,19 +20,39 @@ export const runAllSeeders = async (
 ): Promise<SeederContext> => {
   console.log('\n🚀 Starting database seeding...\n')
 
-  // 1. Seed users first (independent)
-  const users = await seedUsers(db)
+  // 1. Seed regular users first (independent)
+  const regularUsers = await seedUsers(db)
 
-  // 2. Seed organizations and members (depends on users)
-  const { organizations, members } = await seedOrganizations(db, users)
+  // 2. Seed federations (independent, but needed before orgs)
+  const { federations, federationClubs: initialFederationClubs } =
+    await seedFederations(db, [])
 
-  // 3. Seed players (depends on users, organizations, members)
+  // 3. Seed federation users (depends on federations)
+  const federationUsers = await seedFederationUsers(db, federations)
+
+  // 4. Seed championships (depends on federations)
+  const championships = await seedChampionships(db, federations)
+
+  // 5. Combine all users
+  const users = [...regularUsers, ...federationUsers]
+
+  // 6. Seed organizations and members (depends on users and federations)
+  const { organizations, members } = await seedOrganizations(
+    db,
+    users,
+    federations
+  )
+
+  // 7. Update federation clubs links now that we have organizations
+  const { federationClubs } = await seedFederations(db, organizations)
+
+  // 8. Seed players (depends on users, organizations, members)
   const players = await seedPlayers(db, users, organizations, members)
 
-  // 4. Seed coaches (depends on users, organizations, members)
+  // 9. Seed coaches (depends on users, organizations, members)
   const coaches = await seedCoaches(db, users, organizations, members)
 
-  // 5. Seed training sessions (depends on organizations, players, coaches)
+  // 10. Seed training sessions (depends on organizations, players, coaches)
   const trainingSessions = await seedTrainingSessions(
     db,
     organizations,
@@ -37,16 +60,19 @@ export const runAllSeeders = async (
     coaches
   )
 
-  // 6. Seed tests and results (depends on organizations, players)
+  // 11. Seed tests and results (depends on organizations, players)
   const { tests, testResults } = await seedTests(db, organizations, players)
 
-  // 7. Seed events and registrations (groups, matches, sets are created manually)
+  // 12. Seed events and registrations (groups, matches, sets are created manually)
   const { events, registrations } = await seedEvents(db, organizations, players)
 
   console.log('\n✅ Database seeding completed!\n')
 
   return {
     users,
+    federations,
+    federationClubs,
+    championships,
     organizations,
     members,
     players,
@@ -62,7 +88,34 @@ export const runAllSeeders = async (
 export const generateSeedDataOutput = (
   context: SeederContext
 ): SeedDataOutput => {
-  const { users, organizations, members, players, coaches } = context
+  const {
+    users,
+    federations,
+    championships,
+    organizations,
+    members,
+    players,
+    coaches,
+  } = context
+
+  // Build federation summaries with their championships
+  const federationSummaries = federations.map((fed) => {
+    const fedChampionships = championships
+      .filter((c) => c.federationId === fed.id)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        startDate: c.startDate,
+        endDate: c.endDate,
+      }))
+
+    return {
+      id: fed.id,
+      name: fed.name,
+      description: fed.description,
+      championships: fedChampionships,
+    }
+  })
 
   // Build organization summaries (without events as requested)
   const organizationSummaries: OrganizationSummary[] = organizations.map(
@@ -131,7 +184,9 @@ export const generateSeedDataOutput = (
       email: u.email,
       name: u.name,
       role: u.role,
+      federationId: u.federationId,
     })),
+    federations: federationSummaries,
     organizations: organizationSummaries,
   }
 }

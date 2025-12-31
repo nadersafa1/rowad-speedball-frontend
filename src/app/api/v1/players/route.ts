@@ -27,11 +27,12 @@ import {
 } from '@/lib/organization-helpers'
 import { validateUserNotLinked } from '@/lib/user-linking-helpers'
 import { checkPlayerCreateAuthorization } from '@/lib/authorization'
+import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   // Get organization context (no auth required - players are public)
   // Note: We still get context for potential future filtering, but all users see all players
-  const { isSystemAdmin: isSystemAdminResult } = await getOrganizationContext()
+  const context = await getOrganizationContext()
 
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
@@ -334,8 +335,12 @@ export async function GET(request: NextRequest) {
 
     return Response.json(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching players:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/players',
+      method: 'GET',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }
 
@@ -404,7 +409,11 @@ export async function POST(request: NextRequest) {
 
     return Response.json(newPlayer, { status: 201 })
   } catch (error) {
-    console.error('Error creating player:', error)
-    return Response.json({ message: 'Internal server error' }, { status: 500 })
+    return handleApiError(error, {
+      endpoint: '/api/v1/players',
+      method: 'POST',
+      userId: context.userId,
+      organizationId: context.organization?.id,
+    })
   }
 }

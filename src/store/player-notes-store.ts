@@ -65,10 +65,7 @@ export const usePlayerNotesStore = create<PlayerNotesState>((set, get) => ({
         limit: filters.limit || 20,
       }
 
-      const response = (await apiClient.getPlayerNotes(
-        playerId,
-        params
-      )) as PaginatedResponse<PlayerNoteWithUser>
+      const response = await apiClient.getPlayerNotes(playerId, params)
 
       set({
         notes: response.data,

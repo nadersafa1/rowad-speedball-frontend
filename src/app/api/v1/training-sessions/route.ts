@@ -10,6 +10,7 @@ import {
   lte,
   sql,
   isNull,
+  inArray,
 } from 'drizzle-orm'
 import z from 'zod'
 import { db } from '@/lib/db'
@@ -229,32 +230,46 @@ export async function GET(request: NextRequest) {
     const normalIntensityCount = normalIntensityCountResult[0].count
     const lowIntensityCount = lowIntensityCountResult[0].count
 
-    // Get coaches for each training session
-    const sessionsWithCoaches = await Promise.all(
-      dataResult.map(async (row) => {
-        const coaches = await db
-          .select({
-            coach: schema.coaches,
-          })
-          .from(schema.trainingSessionCoaches)
-          .innerJoin(
-            schema.coaches,
-            eq(schema.trainingSessionCoaches.coachId, schema.coaches.id)
-          )
-          .where(
-            eq(
-              schema.trainingSessionCoaches.trainingSessionId,
-              row.trainingSession.id
+    // Batch load coaches for all training sessions to avoid N+1 queries
+    const sessionIds = dataResult.map((row) => row.trainingSession.id)
+    const allCoaches =
+      sessionIds.length > 0
+        ? await db
+            .select({
+              sessionId: schema.trainingSessionCoaches.trainingSessionId,
+              coach: schema.coaches,
+            })
+            .from(schema.trainingSessionCoaches)
+            .innerJoin(
+              schema.coaches,
+              eq(schema.trainingSessionCoaches.coachId, schema.coaches.id)
             )
-          )
+            .where(
+              inArray(
+                schema.trainingSessionCoaches.trainingSessionId,
+                sessionIds
+              )
+            )
+        : []
 
-        return {
-          ...row.trainingSession,
-          organizationName: row.organizationName ?? null,
-          coaches: coaches.map((c) => c.coach),
-        }
-      })
-    )
+    // Group coaches by session ID
+    const coachesBySession = new Map<
+      string,
+      (typeof schema.coaches.$inferSelect)[]
+    >()
+    for (const { sessionId, coach } of allCoaches) {
+      if (!coachesBySession.has(sessionId)) {
+        coachesBySession.set(sessionId, [])
+      }
+      coachesBySession.get(sessionId)!.push(coach)
+    }
+
+    // Map sessions with their coaches
+    const sessionsWithCoaches = dataResult.map((row) => ({
+      ...row.trainingSession,
+      organizationName: row.organizationName ?? null,
+      coaches: coachesBySession.get(row.trainingSession.id) || [],
+    }))
 
     const paginatedResponse = createPaginatedResponse(
       sessionsWithCoaches,

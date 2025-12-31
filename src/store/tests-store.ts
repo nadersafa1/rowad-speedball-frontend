@@ -76,9 +76,7 @@ export const useTestsStore = create<TestsState>((set, get) => ({
         limit: filters.limit || 25,
       }
 
-      const response = (await apiClient.getTests(
-        params
-      )) as PaginatedResponse<Test>
+      const response = await apiClient.getTests(params)
       set({
         tests: response.data,
         pagination: {
