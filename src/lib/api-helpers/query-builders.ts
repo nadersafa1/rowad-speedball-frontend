@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { inArray, SQL } from 'drizzle-orm'
+import { and, inArray, SQL } from 'drizzle-orm'
 
 /**
  * Standardized pagination schema
@@ -103,7 +103,9 @@ export async function batchLoadRelationships<T, K extends string | number, R>(
   keyField: any,
   selector: any
 ): Promise<Map<K, R[]>> {
-  const keys = items.map(getKey).filter((key) => key !== null && key !== undefined)
+  const keys = items
+    .map(getKey)
+    .filter((key) => key !== null && key !== undefined)
 
   if (keys.length === 0) {
     return new Map()
@@ -134,15 +136,18 @@ export async function batchLoadRelationships<T, K extends string | number, R>(
 export function combineConditions(
   conditions: (SQL<unknown> | undefined)[]
 ): SQL<unknown> | undefined {
-  const validConditions = conditions.filter((c) => c !== undefined) as SQL<unknown>[]
+  const validConditions = conditions.filter(
+    (c) => c !== undefined
+  ) as SQL<unknown>[]
 
   if (validConditions.length === 0) {
     return undefined
   }
 
-  return validConditions.reduce((acc, condition) => {
-    return acc ? acc.and(condition) : condition
-  })
+  return validConditions.reduce<SQL<unknown> | undefined>(
+    (acc, condition) => (acc ? and(acc, condition) : condition),
+    undefined
+  )
 }
 
 /**

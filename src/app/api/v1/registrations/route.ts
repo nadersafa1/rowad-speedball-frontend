@@ -111,11 +111,7 @@ export async function GET(request: NextRequest) {
     // We join to registration_players and players to enable filtering
     const baseQuery = db
       .selectDistinctOn([schema.registrations.id], {
-        id: schema.registrations.id,
-        eventId: schema.registrations.eventId,
-        groupId: schema.registrations.groupId,
-        createdAt: schema.registrations.createdAt,
-        updatedAt: schema.registrations.updatedAt,
+        registration: schema.registrations,
       })
       .from(schema.registrations)
       .leftJoin(
@@ -148,7 +144,10 @@ export async function GET(request: NextRequest) {
 
     const combinedCondition =
       conditions.length > 0
-        ? conditions.reduce((acc, cond) => (acc ? and(acc, cond) : cond))
+        ? conditions.reduce<SQL<unknown> | undefined>(
+            (acc, cond) => (acc ? and(acc, cond) : cond),
+            undefined
+          )
         : undefined
 
     // For position score or totalScore sorting, we need SQL expressions
@@ -202,7 +201,7 @@ export async function GET(request: NextRequest) {
       // Enrich with player data
       const registrationsWithPlayers = await Promise.all(
         results.map(async (row) => {
-          const enriched = await enrichRegistrationWithPlayers(row)
+          const enriched = await enrichRegistrationWithPlayers(row.registration)
           return {
             ...enriched,
             totalScore: enriched.totalScore ?? getRegistrationTotalScore(enriched),
@@ -271,7 +270,7 @@ export async function GET(request: NextRequest) {
       // Enrich with player data
       const registrationsWithPlayers = await Promise.all(
         results.map(async (row) => {
-          const enriched = await enrichRegistrationWithPlayers(row)
+          const enriched = await enrichRegistrationWithPlayers(row.registration)
           return {
             ...enriched,
             totalScore: enriched.totalScore ?? getRegistrationTotalScore(enriched),
@@ -331,7 +330,7 @@ export async function GET(request: NextRequest) {
     // Enrich with player data
     const registrationsWithPlayers = await Promise.all(
       results.map(async (row) => {
-        const enriched = await enrichRegistrationWithPlayers(row)
+        const enriched = await enrichRegistrationWithPlayers(row.registration)
         return {
           ...enriched,
           totalScore: enriched.totalScore ?? getRegistrationTotalScore(enriched),

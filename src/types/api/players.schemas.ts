@@ -9,6 +9,11 @@ import {
   optionalUuidSchema,
   dateStringSchema,
 } from '@/lib/forms/patterns'
+import {
+  standardPaginationSchema,
+  standardSortSchema,
+  standardTextSearchSchema,
+} from '@/lib/api-helpers/query-builders'
 
 // Team level enum for validation
 const teamLevelEnum = z.enum(TEAM_LEVELS)
@@ -17,11 +22,9 @@ const teamLevelFilterEnum = z.enum(TEAM_LEVEL_FILTER_OPTIONS)
 // Query parameters for GET /players
 export const playersQuerySchema = z
   .object({
-    q: z
-      .string()
-      .trim()
-      .max(20, 'q must be less than 20 characters')
-      .optional(),
+    ...standardTextSearchSchema.shape,
+    ...standardPaginationSchema.shape,
+    ...standardSortSchema.shape,
     gender: z.enum(['male', 'female', 'all']).optional(),
     ageGroup: z
       .enum([
@@ -51,7 +54,6 @@ export const playersQuerySchema = z
           val === undefined || val === null || z.uuid().safeParse(val).success,
         'Invalid organization ID format'
       ),
-    // Sorting parameters
     sortBy: z
       .enum([
         'name',
@@ -65,21 +67,6 @@ export const playersQuerySchema = z
         'organizationId',
       ])
       .optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
-    // Pagination parameters
-    page: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 1))
-      .refine((val) => val >= 1, 'Page must be greater than 0'),
-    limit: z
-      .string()
-      .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 10))
-      .refine(
-        (val) => val >= 1 && val <= 100,
-        'Limit must be between 1 and 100'
-      ),
     unassigned: z
       .string()
       .optional()
