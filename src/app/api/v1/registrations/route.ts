@@ -109,8 +109,8 @@ export async function GET(request: NextRequest) {
 
     // Build query with joins for filtering by player name and organization
     // We join to registration_players and players to enable filtering
-    const baseQuery = db
-      .selectDistinctOn([schema.registrations.id], {
+    let baseQuery = db
+      .select({
         registration: schema.registrations,
       })
       .from(schema.registrations)
@@ -159,9 +159,9 @@ export async function GET(request: NextRequest) {
 
       // Build SQL expression for position score extraction
       const positionScoreExpr = sql<number>`COALESCE((
-        SELECT COALESCE((rp.position_scores->>${sql.raw(`'${positionKey}'`)})::int, 0)
-        FROM ${schema.registrationPlayers} rp
-        WHERE rp.registration_id = ${schema.registrations.id}
+        SELECT COALESCE((position_scores->>'${sql.raw(positionKey)}')::int, 0)
+        FROM registration_players
+        WHERE registration_id = ${schema.registrations.id}
         LIMIT 1
       ), 0)`
 
@@ -169,6 +169,23 @@ export async function GET(request: NextRequest) {
       if (combinedCondition) {
         query = query.where(combinedCondition)
       }
+
+      // Group by registration ID to avoid duplicates from joins
+      query = query.groupBy(
+        schema.registrations.id,
+        schema.registrations.eventId,
+        schema.registrations.groupId,
+        schema.registrations.seed,
+        schema.registrations.matchesWon,
+        schema.registrations.matchesLost,
+        schema.registrations.setsWon,
+        schema.registrations.setsLost,
+        schema.registrations.points,
+        schema.registrations.qualified,
+        schema.registrations.teamName,
+        schema.registrations.createdAt,
+        schema.registrations.updatedAt
+      )
 
       // Apply sorting
       const orderDirection = sortOrder === 'asc' ? asc : desc
@@ -224,13 +241,13 @@ export async function GET(request: NextRequest) {
       const totalScoreExpr = sql<number>`
         COALESCE((
           SELECT SUM(
-            COALESCE((rp.position_scores->>'R')::int, 0) +
-            COALESCE((rp.position_scores->>'L')::int, 0) +
-            COALESCE((rp.position_scores->>'F')::int, 0) +
-            COALESCE((rp.position_scores->>'B')::int, 0)
+            COALESCE((position_scores->>'R')::int, 0) +
+            COALESCE((position_scores->>'L')::int, 0) +
+            COALESCE((position_scores->>'F')::int, 0) +
+            COALESCE((position_scores->>'B')::int, 0)
           )
-          FROM registration_players rp
-          WHERE rp.registration_id = ${schema.registrations.id}
+          FROM registration_players
+          WHERE registration_id = ${schema.registrations.id}
         ), 0)
       `
 
@@ -238,6 +255,23 @@ export async function GET(request: NextRequest) {
       if (combinedCondition) {
         query = query.where(combinedCondition)
       }
+
+      // Group by registration ID to avoid duplicates from joins
+      query = query.groupBy(
+        schema.registrations.id,
+        schema.registrations.eventId,
+        schema.registrations.groupId,
+        schema.registrations.seed,
+        schema.registrations.matchesWon,
+        schema.registrations.matchesLost,
+        schema.registrations.setsWon,
+        schema.registrations.setsLost,
+        schema.registrations.points,
+        schema.registrations.qualified,
+        schema.registrations.teamName,
+        schema.registrations.createdAt,
+        schema.registrations.updatedAt
+      )
 
       // Apply sorting
       const orderDirection = sortOrder === 'asc' ? asc : desc
@@ -293,6 +327,23 @@ export async function GET(request: NextRequest) {
     if (combinedCondition) {
       query = query.where(combinedCondition)
     }
+
+    // Group by registration ID to avoid duplicates from joins
+    query = query.groupBy(
+      schema.registrations.id,
+      schema.registrations.eventId,
+      schema.registrations.groupId,
+      schema.registrations.seed,
+      schema.registrations.matchesWon,
+      schema.registrations.matchesLost,
+      schema.registrations.setsWon,
+      schema.registrations.setsLost,
+      schema.registrations.points,
+      schema.registrations.qualified,
+      schema.registrations.teamName,
+      schema.registrations.createdAt,
+      schema.registrations.updatedAt
+    )
 
     // Apply default sorting
     if (sortBy === 'createdAt') {

@@ -46,11 +46,11 @@ export const useRegistrationsStore = create<RegistrationsState>((set, get) => ({
   fetchRegistrations: async (eventId?: string, groupId?: string) => {
     set({ isLoading: true, error: null })
     try {
-      const response = (await apiClient.getRegistrations(
+      const response = await apiClient.getRegistrations(
         eventId,
         groupId,
         eventId || groupId ? { page: 1, limit: DEFAULT_LIMIT } : undefined
-      )) as PaginatedResponse<Registration>
+      )
       set({
         registrations: response.data || [],
         pagination: {
@@ -79,13 +79,13 @@ export const useRegistrationsStore = create<RegistrationsState>((set, get) => ({
     set({ isLoadingMore: true, error: null })
     try {
       const nextPage = pagination.page + 1
-      const response = (await apiClient.getRegistrations(
+      const response = await apiClient.getRegistrations(
         eventId,
         groupId,
         eventId || groupId
           ? { page: nextPage, limit: DEFAULT_LIMIT }
           : undefined
-      )) as PaginatedResponse<Registration>
+      )
 
       set((state) => ({
         registrations: [...state.registrations, ...(response.data || [])],

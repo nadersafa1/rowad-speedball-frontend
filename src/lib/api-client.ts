@@ -556,7 +556,7 @@ export class ApiClient {
       page?: number
       limit?: number
     }
-  ) {
+  ): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (eventId) searchParams.set('eventId', eventId)
     if (groupId) searchParams.set('groupId', groupId)
@@ -574,7 +574,7 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request(`/registrations${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/registrations${query ? `?${query}` : ''}`)
   }
 
   async createRegistration(data: {
