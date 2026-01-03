@@ -13,8 +13,9 @@ export const championshipsQuerySchema = z
     ...standardPaginationSchema.shape,
     ...standardSortSchema.shape,
     federationId: uuidSchema.optional(),
+    competitionScope: z.enum(['clubs', 'open']).optional(),
     sortBy: z
-      .enum(['name', 'startDate', 'endDate', 'createdAt', 'updatedAt'])
+      .enum(['name', 'competitionScope', 'createdAt', 'updatedAt'])
       .optional(),
   })
   .strict()
@@ -30,22 +31,7 @@ export const championshipsCreateSchema = z
     name: nameSchema,
     federationId: uuidSchema,
     description: descriptionSchema,
-    startDate: z
-      .string()
-      .refine(
-        (date) => !date || !isNaN(Date.parse(date)),
-        'Invalid date format'
-      )
-      .optional()
-      .nullable(),
-    endDate: z
-      .string()
-      .refine(
-        (date) => !date || !isNaN(Date.parse(date)),
-        'Invalid date format'
-      )
-      .optional()
-      .nullable(),
+    competitionScope: z.enum(['clubs', 'open']).default('clubs'),
   })
   .strict()
 
@@ -54,22 +40,7 @@ export const championshipsUpdateSchema = z
   .object({
     name: nameSchema.optional(),
     description: descriptionSchema,
-    startDate: z
-      .string()
-      .refine(
-        (date) => !date || !isNaN(Date.parse(date)),
-        'Invalid date format'
-      )
-      .optional()
-      .nullable(),
-    endDate: z
-      .string()
-      .refine(
-        (date) => !date || !isNaN(Date.parse(date)),
-        'Invalid date format'
-      )
-      .optional()
-      .nullable(),
+    competitionScope: z.enum(['clubs', 'open']).optional(),
   })
   .refine(
     (data) => Object.keys(data).length > 0,

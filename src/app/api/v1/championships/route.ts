@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
     const {
       q,
       federationId,
+      competitionScope,
       sortBy,
       sortOrder = 'desc',
       page,
@@ -55,6 +56,11 @@ export async function GET(request: NextRequest) {
       } else if (federationId) {
         conditions.push(eq(schema.championships.federationId, federationId))
       }
+    }
+
+    // Competition scope filter
+    if (competitionScope) {
+      conditions.push(eq(schema.championships.competitionScope, competitionScope))
     }
 
     const combinedCondition =
@@ -88,8 +94,7 @@ export async function GET(request: NextRequest) {
     if (sortBy) {
       const sortFieldMap: Record<string, any> = {
         name: schema.championships.name,
-        startDate: schema.championships.startDate,
-        endDate: schema.championships.endDate,
+        competitionScope: schema.championships.competitionScope,
         createdAt: schema.championships.createdAt,
         updatedAt: schema.championships.updatedAt,
       }
@@ -150,7 +155,7 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { name, federationId, description, startDate, endDate } =
+    const { name, federationId, description, competitionScope } =
       parseResult.data
 
     // Federation admins/editors can only create for their own federation
@@ -178,8 +183,7 @@ export async function POST(request: NextRequest) {
         name,
         federationId,
         description: description || null,
-        startDate: startDate || null,
-        endDate: endDate || null,
+        competitionScope,
       })
       .returning()
 

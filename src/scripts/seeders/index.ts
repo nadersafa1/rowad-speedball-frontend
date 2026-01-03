@@ -3,6 +3,7 @@ import { seedUsers } from './seed-users'
 import { seedFederations } from './seed-federations'
 import { seedFederationUsers } from './seed-federation-users'
 import { seedChampionships } from './seed-championships'
+import { seedChampionshipEditions } from './seed-championship-editions'
 import { seedOrganizations } from './seed-organizations'
 import { seedPlayers } from './seed-players'
 import { seedCoaches } from './seed-coaches'
@@ -33,26 +34,32 @@ export const runAllSeeders = async (
   // 4. Seed championships (depends on federations)
   const championships = await seedChampionships(db, federations)
 
-  // 5. Combine all users
+  // 5. Seed championship editions (depends on championships)
+  const championshipEditions = await seedChampionshipEditions(
+    db,
+    championships
+  )
+
+  // 6. Combine all users
   const users = [...regularUsers, ...federationUsers]
 
-  // 6. Seed organizations and members (depends on users and federations)
+  // 7. Seed organizations and members (depends on users and federations)
   const { organizations, members } = await seedOrganizations(
     db,
     users,
     federations
   )
 
-  // 7. Update federation clubs links now that we have organizations
+  // 8. Update federation clubs links now that we have organizations
   const { federationClubs } = await seedFederations(db, organizations)
 
-  // 8. Seed players (depends on users, organizations, members)
+  // 9. Seed players (depends on users, organizations, members)
   const players = await seedPlayers(db, users, organizations, members)
 
-  // 9. Seed coaches (depends on users, organizations, members)
+  // 10. Seed coaches (depends on users, organizations, members)
   const coaches = await seedCoaches(db, users, organizations, members)
 
-  // 10. Seed training sessions (depends on organizations, players, coaches)
+  // 11. Seed training sessions (depends on organizations, players, coaches)
   const trainingSessions = await seedTrainingSessions(
     db,
     organizations,
@@ -60,10 +67,10 @@ export const runAllSeeders = async (
     coaches
   )
 
-  // 11. Seed tests and results (depends on organizations, players)
+  // 12. Seed tests and results (depends on organizations, players)
   const { tests, testResults } = await seedTests(db, organizations, players)
 
-  // 12. Seed events and registrations (groups, matches, sets are created manually)
+  // 13. Seed events and registrations (groups, matches, sets are created manually)
   const { events, registrations } = await seedEvents(db, organizations, players)
 
   console.log('\n✅ Database seeding completed!\n')
@@ -73,6 +80,7 @@ export const runAllSeeders = async (
     federations,
     federationClubs,
     championships,
+    championshipEditions,
     organizations,
     members,
     players,
@@ -105,8 +113,7 @@ export const generateSeedDataOutput = (
       .map((c) => ({
         id: c.id,
         name: c.name,
-        startDate: c.startDate,
-        endDate: c.endDate,
+        competitionScope: c.competitionScope,
       }))
 
     return {

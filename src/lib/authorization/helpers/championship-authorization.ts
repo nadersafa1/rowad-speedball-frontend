@@ -118,3 +118,120 @@ export function checkChampionshipDeleteAuthorization(
     'Only system admins and federation admins can delete championships in their federation'
   )
 }
+
+/**
+ * Check if user has authorization to create championship editions
+ * Returns Response if unauthorized, null if authorized
+ *
+ * Authorization rules:
+ * - Must be authenticated
+ * - Must be system admin OR (federation admin/editor AND edition belongs to championship in user's federation)
+ * - Championship editions inherit federation from parent championship
+ */
+export function checkChampionshipEditionCreateAuthorization(
+  context: OrganizationContext,
+  championship: ChampionshipResource
+): AuthorizationResult {
+  // Require authentication
+  const authCheck = requireAuthentication(context)
+  if (authCheck) return authCheck
+
+  // System admins can create any championship edition
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // Federation admins/editors can create editions for championships in their federation
+  const { isFederationAdmin, isFederationEditor, federationId } = context
+  if (
+    (isFederationAdmin || isFederationEditor) &&
+    federationId === championship.federationId
+  ) {
+    return null
+  }
+
+  return forbiddenResponse(
+    'Only system admins and federation admins/editors can create championship editions in their federation'
+  )
+}
+
+/**
+ * Check if user has authorization to read/view championship editions
+ * Returns Response if unauthorized, null if authorized
+ *
+ * Authorization rules:
+ * - Must be authenticated
+ */
+export function checkChampionshipEditionReadAuthorization(
+  context: OrganizationContext
+): AuthorizationResult {
+  // Require authentication
+  return requireAuthentication(context)
+}
+
+/**
+ * Check if user has authorization to update a championship edition
+ * Returns Response if unauthorized, null if authorized
+ *
+ * Authorization rules:
+ * - Must be authenticated
+ * - Must be system admin OR (federation admin/editor AND edition belongs to championship in user's federation)
+ */
+export function checkChampionshipEditionUpdateAuthorization(
+  context: OrganizationContext,
+  championship: ChampionshipResource
+): AuthorizationResult {
+  // Require authentication
+  const authCheck = requireAuthentication(context)
+  if (authCheck) return authCheck
+
+  // System admins can update any championship edition
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // Federation admins/editors can update editions for championships in their federation
+  const { isFederationAdmin, isFederationEditor, federationId } = context
+  if (
+    (isFederationAdmin || isFederationEditor) &&
+    federationId === championship.federationId
+  ) {
+    return null
+  }
+
+  return forbiddenResponse(
+    'Only system admins and federation admins/editors can update championship editions in their federation'
+  )
+}
+
+/**
+ * Check if user has authorization to delete a championship edition
+ * Returns Response if unauthorized, null if authorized
+ *
+ * Authorization rules:
+ * - Must be authenticated
+ * - Must be system admin OR (federation admin AND edition belongs to championship in user's federation)
+ */
+export function checkChampionshipEditionDeleteAuthorization(
+  context: OrganizationContext,
+  championship: ChampionshipResource
+): AuthorizationResult {
+  // Require authentication
+  const authCheck = requireAuthentication(context)
+  if (authCheck) return authCheck
+
+  // System admins can delete any championship edition
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // Federation admins can delete editions for championships in their federation
+  const { isFederationAdmin, federationId } = context
+  if (isFederationAdmin && federationId === championship.federationId) {
+    return null
+  }
+
+  return forbiddenResponse(
+    'Only system admins and federation admins can delete championship editions in their federation'
+  )
+}

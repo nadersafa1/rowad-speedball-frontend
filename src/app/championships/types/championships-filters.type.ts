@@ -1,9 +1,10 @@
 interface ChampionshipsFilters {
   q?: string
   federationId?: string
+  competitionScope?: 'clubs' | 'open'
   page?: number
   limit?: number
-  sortBy?: 'name' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'
+  sortBy?: 'name' | 'competitionScope' | 'createdAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
 }
 

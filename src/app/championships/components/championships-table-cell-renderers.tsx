@@ -1,8 +1,13 @@
-import { formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 
-export const NameCell = ({ name }: { name: string }) => (
-  <div className='font-medium'>{name}</div>
+export const NameCell = ({ name, id }: { name: string; id: string }) => (
+  <Link
+    href={`/championships/${id}`}
+    className='font-medium hover:underline text-blue-600 dark:text-blue-400'
+  >
+    {name}
+  </Link>
 )
 
 export const DescriptionCell = ({
@@ -25,8 +30,12 @@ export const FederationCell = ({
   </Badge>
 )
 
-export const DateCell = ({ date }: { date: string | Date | null }) => (
-  <div>
-    {date ? formatDate(date) : <span className='text-muted-foreground'>—</span>}
-  </div>
+export const CompetitionScopeCell = ({
+  competitionScope,
+}: {
+  competitionScope: 'clubs' | 'open'
+}) => (
+  <Badge variant={competitionScope === 'clubs' ? 'default' : 'secondary'}>
+    {competitionScope === 'clubs' ? 'Clubs' : 'Open'}
+  </Badge>
 )

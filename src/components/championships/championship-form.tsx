@@ -4,12 +4,10 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { format } from 'date-fns'
 import { Trophy, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
-import { DatePicker } from '@/components/ui/date-picker'
 import {
   Form,
   FormControl,
@@ -37,19 +35,6 @@ import {
   DialogTitle,
 } from '../ui'
 
-// Helper to parse date string to Date object
-const parseDate = (dateStr: string | null | undefined): Date | undefined => {
-  if (!dateStr) return undefined
-  const date = new Date(dateStr)
-  return isNaN(date.getTime()) ? undefined : date
-}
-
-// Helper to format Date to API string (YYYY-MM-DD)
-const formatDateForAPI = (date: Date | undefined): string | null => {
-  if (!date) return null
-  return format(date, 'yyyy-MM-dd')
-}
-
 // Validation schema
 const championshipSchema = z.object({
   name: z
@@ -63,8 +48,7 @@ const championshipSchema = z.object({
     .max(1000, 'Description must be less than 1000 characters')
     .optional()
     .nullable(),
-  startDate: z.date().optional().nullable(),
-  endDate: z.date().optional().nullable(),
+  competitionScope: z.enum(['clubs', 'open']),
 })
 
 type ChampionshipFormData = z.infer<typeof championshipSchema>
@@ -114,8 +98,7 @@ const ChampionshipForm = ({
       name: championship?.name || '',
       federationId: championship?.federationId || userFederationId || '',
       description: championship?.description || '',
-      startDate: parseDate(championship?.startDate),
-      endDate: parseDate(championship?.endDate),
+      competitionScope: championship?.competitionScope || 'clubs',
     },
   })
 
@@ -127,8 +110,7 @@ const ChampionshipForm = ({
       const payload = {
         name: data.name,
         description: data.description,
-        startDate: formatDateForAPI(data.startDate ?? undefined),
-        endDate: formatDateForAPI(data.endDate ?? undefined),
+        competitionScope: data.competitionScope,
       }
 
       if (isEditing) {
@@ -241,46 +223,32 @@ const ChampionshipForm = ({
             )}
           />
 
-          {/* Dates */}
-          <div className='grid grid-cols-2 gap-4'>
-            <FormField
-              control={form.control}
-              name='startDate'
-              render={({ field }) => (
-                <FormItem className='flex flex-col'>
-                  <FormLabel>Start Date (Optional)</FormLabel>
+          {/* Competition Scope Field */}
+          <FormField
+            control={form.control}
+            name='competitionScope'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Competition Scope</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={isSubmitting}
+                >
                   <FormControl>
-                    <DatePicker
-                      date={field.value ?? undefined}
-                      onDateChange={field.onChange}
-                      placeholder='Pick start date'
-                      disabled={isSubmitting}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder='Select competition scope' />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='endDate'
-              render={({ field }) => (
-                <FormItem className='flex flex-col'>
-                  <FormLabel>End Date (Optional)</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      date={field.value ?? undefined}
-                      onDateChange={field.onChange}
-                      placeholder='Pick end date'
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+                  <SelectContent>
+                    <SelectItem value='clubs'>Clubs</SelectItem>
+                    <SelectItem value='open'>Open</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           {error && (
             <div className='rounded-md bg-destructive/15 p-3 text-sm text-destructive'>

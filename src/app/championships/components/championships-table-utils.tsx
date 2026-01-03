@@ -1,14 +1,12 @@
 type SortableField =
   | 'name'
-  | 'startDate'
-  | 'endDate'
+  | 'competitionScope'
   | 'createdAt'
   | 'updatedAt'
 
 export const columnToApiFieldMap: Record<string, SortableField> = {
   name: 'name',
-  startDate: 'startDate',
-  endDate: 'endDate',
+  competitionScope: 'competitionScope',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
 }

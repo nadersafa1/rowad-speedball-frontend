@@ -7,7 +7,8 @@ import type { PaginatedResponse } from '@/types/api/pagination'
 interface ChampionshipsFilters {
   q?: string
   federationId?: string
-  sortBy?: 'name' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'
+  competitionScope?: 'clubs' | 'open'
+  sortBy?: 'name' | 'competitionScope' | 'createdAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
   page?: number
   limit?: number
@@ -58,6 +59,7 @@ export const useChampionshipsStore = create<ChampionshipsState>((set, get) => ({
       const params = {
         q: filters.q,
         federationId: filters.federationId,
+        competitionScope: filters.competitionScope,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
         page: filters.page,

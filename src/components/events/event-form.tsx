@@ -117,6 +117,9 @@ const eventSchema = z
     // For test events: number of players per heat
     playersPerHeat: z.number().int().min(1).optional(),
     organizationId: z.uuid().nullable().optional(),
+    // Championship-related fields
+    championshipEditionId: z.uuid().optional(),
+    pointsSchemaId: z.string().uuid().optional(),
   })
   .refine(
     (data) => {
@@ -145,6 +148,20 @@ const eventSchema = z
     {
       message: 'Points per win and loss are required for groups format',
       path: ['pointsPerWin'],
+    }
+  )
+  .refine(
+    (data) => {
+      // If championshipEditionId is provided, pointsSchemaId must also be provided
+      if (data.championshipEditionId && !data.pointsSchemaId) {
+        return false
+      }
+      return true
+    },
+    {
+      message:
+        'Points schema is required when championship edition is selected',
+      path: ['pointsSchemaId'],
     }
   )
 
@@ -246,6 +263,8 @@ const EventForm = ({
       playersPerHeat: event?.playersPerHeat ?? 8,
       organizationId:
         event?.organizationId || trainingSession?.organizationId || null,
+      championshipEditionId: event?.championshipEditionId || undefined,
+      pointsSchemaId: event?.pointsSchemaId || undefined,
     },
   })
 
@@ -282,6 +301,7 @@ const EventForm = ({
   const selectedEventType = form.watch('eventType')
   const isTestEvent = isTestEventType(selectedEventType)
   const isSoloEvent = isSoloEventType(selectedEventType)
+  const isSoloTestEvent = isSoloTestEventType(selectedEventType)
 
   // Handle event type changes - auto-set format and player counts for test events
   useEffect(() => {
@@ -369,6 +389,11 @@ const EventForm = ({
         visibility: trainingSessionId ? 'private' : data.visibility,
         // Include trainingSessionId if provided (only for creation)
         ...(trainingSessionId && !isEditing && { trainingSessionId }),
+        // Championship-related fields (only if provided)
+        ...(data.championshipEditionId && {
+          championshipEditionId: data.championshipEditionId,
+        }),
+        ...(data.pointsSchemaId && { pointsSchemaId: data.pointsSchemaId }),
       }
 
       if (isEditing) {
@@ -846,8 +871,8 @@ const EventForm = ({
             />
           </div>
 
-          {/* Match configuration fields - Hidden for test events and solo events */}
-          {!isTestEvent && !isSoloEvent && (
+          {/* Match configuration fields - Hidden for solo test events only */}
+          {!isSoloTestEvent && (
             <div
               className={`grid gap-4 ${
                 selectedFormat === 'groups' ||

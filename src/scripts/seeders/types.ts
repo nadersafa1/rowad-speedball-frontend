@@ -96,8 +96,16 @@ export interface SeededChampionship {
   federationId: string
   name: string
   description: string | null
-  startDate: string | null
-  endDate: string | null
+  competitionScope: 'clubs' | 'open'
+}
+
+export interface SeededChampionshipEdition {
+  id: string
+  championshipId: string
+  year: number
+  status: 'draft' | 'published' | 'archived'
+  registrationStartDate: string | null
+  registrationEndDate: string | null
 }
 
 // JSON output structure
@@ -129,8 +137,7 @@ export interface SeedDataOutput {
     championships: Array<{
       id: string
       name: string
-      startDate: string | null
-      endDate: string | null
+      competitionScope: 'clubs' | 'open'
     }>
   }>
   organizations: OrganizationSummary[]
@@ -142,6 +149,7 @@ export interface SeederContext {
   federations: SeededFederation[]
   federationClubs: SeededFederationClub[]
   championships: SeededChampionship[]
+  championshipEditions: SeededChampionshipEdition[]
   organizations: SeededOrganization[]
   members: SeededMember[]
   players: SeededPlayer[]

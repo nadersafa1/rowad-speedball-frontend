@@ -1,0 +1,167 @@
+// Championship Editions Store - Single responsibility: Championship editions state management
+import { create } from 'zustand'
+import { apiClient } from '@/lib/api-client'
+import type { ChampionshipEdition } from '@/db/schema'
+import type { PaginatedResponse } from '@/types/api/pagination'
+
+interface ChampionshipEditionsFilters {
+  q?: string
+  championshipId?: string
+  status?: 'draft' | 'published' | 'archived'
+  year?: number
+  sortBy?: 'year' | 'status' | 'createdAt' | 'updatedAt'
+  sortOrder?: 'asc' | 'desc'
+  page?: number
+  limit?: number
+}
+
+interface ChampionshipEditionWithRelations extends ChampionshipEdition {
+  championshipName: string | null
+  championshipCompetitionScope: 'clubs' | 'open' | null
+  federationName: string | null
+}
+
+interface ChampionshipEditionsState {
+  editions: ChampionshipEditionWithRelations[]
+  selectedEdition: ChampionshipEditionWithRelations | null
+  isLoading: boolean
+  error: string | null
+  pagination: {
+    page: number
+    limit: number
+    totalItems: number
+    totalPages: number
+  }
+
+  // Actions
+  fetchEditions: (filters?: ChampionshipEditionsFilters) => Promise<void>
+  fetchEdition: (id: string) => Promise<void>
+  createEdition: (data: any) => Promise<void>
+  updateEdition: (id: string, data: any) => Promise<void>
+  deleteEdition: (id: string) => Promise<void>
+  clearError: () => void
+  clearSelectedEdition: () => void
+}
+
+export const useChampionshipEditionsStore = create<ChampionshipEditionsState>(
+  (set, get) => ({
+    editions: [],
+    selectedEdition: null,
+    isLoading: false,
+    error: null,
+    pagination: {
+      page: 1,
+      limit: 10,
+      totalItems: 0,
+      totalPages: 0,
+    },
+
+    fetchEditions: async (filters = {}) => {
+      set({ isLoading: true, error: null })
+
+      try {
+        const params = {
+          q: filters.q,
+          championshipId: filters.championshipId,
+          status: filters.status,
+          year: filters.year,
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder,
+          page: filters.page,
+          limit: filters.limit,
+        }
+
+        const response = await apiClient.getChampionshipEditions(params)
+
+        set({
+          editions: response.data,
+          pagination: {
+            page: response.page,
+            limit: response.limit,
+            totalItems: response.totalItems,
+            totalPages: response.totalPages,
+          },
+          isLoading: false,
+        })
+      } catch (error: any) {
+        set({
+          error: error.message || 'Failed to fetch championship editions',
+          isLoading: false,
+        })
+        throw error
+      }
+    },
+
+    fetchEdition: async (id: string) => {
+      set({ isLoading: true, error: null })
+
+      try {
+        const edition = await apiClient.getChampionshipEdition(id)
+        set({
+          selectedEdition: edition as ChampionshipEditionWithRelations,
+          isLoading: false,
+        })
+      } catch (error: any) {
+        set({
+          error: error.message || 'Failed to fetch championship edition',
+          isLoading: false,
+        })
+        throw error
+      }
+    },
+
+    createEdition: async (data: any) => {
+      set({ isLoading: true, error: null })
+
+      try {
+        await apiClient.createChampionshipEdition(data)
+        set({ isLoading: false })
+      } catch (error: any) {
+        set({
+          error: error.message || 'Failed to create championship edition',
+          isLoading: false,
+        })
+        throw error
+      }
+    },
+
+    updateEdition: async (id: string, data: any) => {
+      set({ isLoading: true, error: null })
+
+      try {
+        await apiClient.updateChampionshipEdition(id, data)
+        set({ isLoading: false })
+      } catch (error: any) {
+        set({
+          error: error.message || 'Failed to update championship edition',
+          isLoading: false,
+        })
+        throw error
+      }
+    },
+
+    deleteEdition: async (id: string) => {
+      set({ isLoading: true, error: null })
+
+      try {
+        await apiClient.deleteChampionshipEdition(id)
+        set({ isLoading: false })
+
+        // Remove from list if present
+        const currentEditions = get().editions
+        set({
+          editions: currentEditions.filter((edition) => edition.id !== id),
+        })
+      } catch (error: any) {
+        set({
+          error: error.message || 'Failed to delete championship edition',
+          isLoading: false,
+        })
+        throw error
+      }
+    },
+
+    clearError: () => set({ error: null }),
+    clearSelectedEdition: () => set({ selectedEdition: null }),
+  })
+)

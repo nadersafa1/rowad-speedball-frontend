@@ -127,6 +127,9 @@ export const eventsCreateSchema = z
     trainingSessionId: uuidSchema.optional(),
     // For test events: number of players per heat (default 8)
     playersPerHeat: positiveIntSchema('playersPerHeat').optional(),
+    // Championship-related fields
+    championshipEditionId: uuidSchema.optional(),
+    pointsSchemaId: uuidSchema.optional(),
   })
   .strict()
   .refine((data) => data.minPlayers <= data.maxPlayers, {
@@ -180,6 +183,19 @@ export const eventsCreateSchema = z
     {
       message: 'playersPerHeat is only valid for test events',
       path: ['playersPerHeat'],
+    }
+  )
+  .refine(
+    (data) => {
+      // If championshipEditionId is provided, pointsSchemaId must also be provided
+      if (data.championshipEditionId && !data.pointsSchemaId) {
+        return false
+      }
+      return true
+    },
+    {
+      message: 'pointsSchemaId is required when championshipEditionId is provided',
+      path: ['pointsSchemaId'],
     }
   )
   .transform((data) => {
@@ -248,6 +264,9 @@ export const eventsUpdateSchema = z
     organizationId: optionalUuidSchema,
     // For test events: number of players per heat (default 8)
     playersPerHeat: positiveIntSchema('playersPerHeat').nullable().optional(),
+    // Championship-related fields
+    championshipEditionId: uuidSchema.optional(),
+    pointsSchemaId: uuidSchema.optional(),
   })
   .strict()
   .refine(

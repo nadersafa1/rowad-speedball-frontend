@@ -4,7 +4,7 @@ import {
   NameCell,
   DescriptionCell,
   FederationCell,
-  DateCell,
+  CompetitionScopeCell,
 } from './championships-table-cell-renderers'
 import { ChampionshipWithFederation } from './championships-table-types'
 
@@ -26,7 +26,9 @@ export const createBaseColumns = (
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => <NameCell name={row.getValue('name')} />,
+    cell: ({ row }) => (
+      <NameCell name={row.getValue('name')} id={row.original.id} />
+    ),
   },
   {
     accessorKey: 'federationName',
@@ -46,31 +48,19 @@ export const createBaseColumns = (
     ),
   },
   {
-    accessorKey: 'startDate',
-    id: 'startDate',
+    accessorKey: 'competitionScope',
+    id: 'competitionScope',
     header: () => (
       <SortableHeader
-        label='Start Date'
+        label='Competition Scope'
         sortBy={sortBy}
         sortOrder={sortOrder}
-        field='startDate'
+        field='competitionScope'
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => <DateCell date={row.getValue('startDate')} />,
-  },
-  {
-    accessorKey: 'endDate',
-    id: 'endDate',
-    header: () => (
-      <SortableHeader
-        label='End Date'
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        field='endDate'
-        onSort={onSort}
-      />
+    cell: ({ row }) => (
+      <CompetitionScopeCell competitionScope={row.getValue('competitionScope')} />
     ),
-    cell: ({ row }) => <DateCell date={row.getValue('endDate')} />,
   },
 ]
