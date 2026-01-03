@@ -258,10 +258,7 @@ export async function DELETE(
       .delete(schema.championshipEditions)
       .where(eq(schema.championshipEditions.id, id))
 
-    return Response.json(
-      { message: 'Championship edition deleted successfully' },
-      { status: 200 }
-    )
+    return new Response(null, { status: 204 })
   } catch (error) {
     return handleApiError(error, {
       endpoint: `/api/v1/championship-editions/${resolvedParams.id}`,
