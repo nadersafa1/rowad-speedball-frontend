@@ -154,11 +154,26 @@ export async function GET(request: NextRequest) {
       .select({
         event: schema.events,
         organizationName: schema.organization.name,
+        championshipEditionYear: schema.championshipEditions.year,
+        championshipName: schema.championships.name,
+        pointsSchemaName: schema.pointsSchemas.name,
       })
       .from(schema.events)
       .leftJoin(
         schema.organization,
         eq(schema.events.organizationId, schema.organization.id)
+      )
+      .leftJoin(
+        schema.championshipEditions,
+        eq(schema.events.championshipEditionId, schema.championshipEditions.id)
+      )
+      .leftJoin(
+        schema.championships,
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
+      )
+      .leftJoin(
+        schema.pointsSchemas,
+        eq(schema.events.pointsSchemaId, schema.pointsSchemas.id)
       )
 
     if (combinedCondition) {
@@ -262,6 +277,9 @@ export async function GET(request: NextRequest) {
     let eventsWithComputedFields = dataResult.map((row) => ({
       ...row.event,
       organizationName: row.organizationName ?? null,
+      championshipEditionYear: row.championshipEditionYear ?? null,
+      championshipName: row.championshipName ?? null,
+      pointsSchemaName: row.pointsSchemaName ?? null,
       registrationsCount: 0,
       lastMatchPlayedDate: null as string | null,
     }))
@@ -380,6 +398,8 @@ export async function POST(request: NextRequest) {
       playersPerHeat,
       organizationId: providedOrgId,
       trainingSessionId,
+      championshipEditionId,
+      pointsSchemaId,
     } = parseResult.data
 
     // Validate training session access if trainingSessionId is provided
@@ -412,35 +432,46 @@ export async function POST(request: NextRequest) {
       ? 'private'
       : visibility || 'public'
 
+    // Build event data object
+    const eventData: any = {
+      name,
+      eventType,
+      gender,
+      format: finalFormat,
+      hasThirdPlaceMatch: hasThirdPlaceMatch || false,
+      visibility: finalVisibility,
+      minPlayers: minPlayers || 1,
+      maxPlayers: maxPlayers || 2,
+      registrationStartDate: registrationStartDate || null,
+      registrationEndDate: registrationEndDate || null,
+      eventDates: eventDates || [],
+      bestOf,
+      // Points are only meaningful for groups format
+      // For single-elimination, set to 0 since they're not used
+      pointsPerWin: isGroupsFormat ? pointsPerWin || 3 : 0,
+      pointsPerLoss: isGroupsFormat ? pointsPerLoss || 0 : 0,
+      // losersStartRoundsBeforeFinal is only for double-elimination
+      losersStartRoundsBeforeFinal:
+        finalFormat === 'double-elimination'
+          ? losersStartRoundsBeforeFinal ?? null
+          : null,
+      // playersPerHeat is only for test events
+      playersPerHeat: isTestsFormat ? playersPerHeat ?? 8 : null,
+      organizationId: finalOrganizationId,
+      trainingSessionId: trainingSessionId || null,
+    }
+
+    // Add championship fields only if provided
+    if (championshipEditionId) {
+      eventData.championshipEditionId = championshipEditionId
+    }
+    if (pointsSchemaId) {
+      eventData.pointsSchemaId = pointsSchemaId
+    }
+
     const result = await db
       .insert(schema.events)
-      .values({
-        name,
-        eventType,
-        gender,
-        format: finalFormat,
-        hasThirdPlaceMatch: hasThirdPlaceMatch || false,
-        visibility: finalVisibility,
-        minPlayers: minPlayers || 1,
-        maxPlayers: maxPlayers || 2,
-        registrationStartDate: registrationStartDate || null,
-        registrationEndDate: registrationEndDate || null,
-        eventDates: eventDates || [],
-        bestOf,
-        // Points are only meaningful for groups format
-        // For single-elimination, set to 0 since they're not used
-        pointsPerWin: isGroupsFormat ? pointsPerWin || 3 : 0,
-        pointsPerLoss: isGroupsFormat ? pointsPerLoss || 0 : 0,
-        // losersStartRoundsBeforeFinal is only for double-elimination
-        losersStartRoundsBeforeFinal:
-          finalFormat === 'double-elimination'
-            ? losersStartRoundsBeforeFinal ?? null
-            : null,
-        // playersPerHeat is only for test events
-        playersPerHeat: isTestsFormat ? playersPerHeat ?? 8 : null,
-        organizationId: finalOrganizationId,
-        trainingSessionId: trainingSessionId || null,
-      })
+      .values(eventData)
       .returning()
 
     const createdEvent = result[0]

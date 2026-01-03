@@ -56,6 +56,12 @@ const EventHeader = ({
 
       <div className='mb-6'>
         <h1 className='text-2xl sm:text-3xl font-bold'>{event.name}</h1>
+        {(event as any).championshipName && (
+          <p className='text-sm text-muted-foreground mt-1'>
+            {(event as any).championshipName}
+            {(event as any).championshipEditionYear && ` (${(event as any).championshipEditionYear})`}
+          </p>
+        )}
         <div className='flex flex-wrap gap-2 mt-2'>
           <Badge variant='outline'>{event.eventType}</Badge>
           <Badge variant='outline'>{event.gender}</Badge>

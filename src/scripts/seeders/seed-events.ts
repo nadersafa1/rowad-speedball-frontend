@@ -1,5 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { events, registrations, registrationPlayers } from '@/db/schema'
+import {
+  events,
+  registrations,
+  registrationPlayers,
+  pointsSchemas,
+} from '@/db/schema'
+import { eq } from 'drizzle-orm'
 import type { SeededOrganization, SeededPlayer } from './types'
 import { EventType } from '@/types/event-types'
 
@@ -153,6 +159,23 @@ export const seedEvents = async (
 }> => {
   console.log('🌱 Seeding events...')
 
+  // Get or create default points schema
+  let [defaultSchema] = await db
+    .select()
+    .from(pointsSchemas)
+    .where(eq(pointsSchemas.name, 'Default Points Schema'))
+    .limit(1)
+
+  if (!defaultSchema) {
+    ;[defaultSchema] = await db
+      .insert(pointsSchemas)
+      .values({
+        name: 'Default Points Schema',
+        description: 'Default schema for seeded events',
+      })
+      .returning()
+  }
+
   const seededEvents: SeededEvent[] = []
   const seededRegistrations: SeededRegistration[] = []
 
@@ -186,6 +209,7 @@ export const seedEvents = async (
           organizationId: org.id,
           minPlayers: template.minPlayers,
           maxPlayers: template.maxPlayers,
+          pointsSchemaId: defaultSchema.id,
         })
         .returning()
 

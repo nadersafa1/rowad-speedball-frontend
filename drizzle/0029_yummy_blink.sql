@@ -55,7 +55,35 @@ ALTER TABLE "events" DROP CONSTRAINT "events_championship_id_championships_id_fk
 DROP INDEX "idx_events_championship_id";--> statement-breakpoint
 ALTER TABLE "championships" ADD COLUMN "competition_scope" text DEFAULT 'clubs' NOT NULL;--> statement-breakpoint
 ALTER TABLE "events" ADD COLUMN "championship_edition_id" uuid;--> statement-breakpoint
-ALTER TABLE "events" ADD COLUMN "points_schema_id" uuid NOT NULL;--> statement-breakpoint
+-- Add points_schema_id as nullable first, then populate and make NOT NULL
+ALTER TABLE "events" ADD COLUMN "points_schema_id" uuid;--> statement-breakpoint
+-- Create default points schema and update existing events
+DO $$
+DECLARE
+    default_schema_id uuid;
+    events_count integer;
+BEGIN
+    -- Check if there are existing events without points_schema_id
+    SELECT COUNT(*) INTO events_count FROM "events" WHERE "points_schema_id" IS NULL;
+    
+    IF events_count > 0 THEN
+        -- Check if default schema already exists
+        SELECT "id" INTO default_schema_id FROM "points_schemas" WHERE "name" = 'Default Points Schema' LIMIT 1;
+        
+        -- Create default points schema if it doesn't exist
+        IF default_schema_id IS NULL THEN
+            INSERT INTO "points_schemas" ("name", "description", "created_at", "updated_at")
+            VALUES ('Default Points Schema', 'Default schema for existing events', now(), now())
+            RETURNING "id" INTO default_schema_id;
+        END IF;
+        
+        -- Update all events without a schema to use the default
+        UPDATE "events" SET "points_schema_id" = default_schema_id WHERE "points_schema_id" IS NULL;
+    END IF;
+END $$;
+--> statement-breakpoint
+-- Now make points_schema_id NOT NULL (safe after populating existing events)
+ALTER TABLE "events" ALTER COLUMN "points_schema_id" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "championship_editions" ADD CONSTRAINT "championship_editions_championship_id_championships_id_fk" FOREIGN KEY ("championship_id") REFERENCES "public"."championships"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "event_results" ADD CONSTRAINT "event_results_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "event_results" ADD CONSTRAINT "event_results_registration_id_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."registrations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
