@@ -403,9 +403,23 @@ export const events = pgTable(
     losersStartRoundsBeforeFinal: integer('losers_start_rounds_before_final'),
     // For test events: number of players per heat (default 8)
     playersPerHeat: integer('players_per_heat'),
-    championshipId: uuid('championship_id').references(() => championships.id, {
-      onDelete: 'cascade',
-    }),
+    championshipEditionId: uuid('championship_edition_id').references(
+      () => championshipEditions.id,
+      {
+        onDelete: 'cascade',
+      }
+    ),
+    // Championship-specific metadata (only set when event is part of a championship)
+    // format field already determines placement calculation:
+    // - 'groups' → round_robin resolver
+    // - 'single-elimination' → single_elim resolver
+    // - 'double-elimination' → double_elim resolver
+    // - 'groups-knockout' → mixed resolver (groups then knockout)
+    pointsSchemaId: uuid('points_schema_id')
+      .notNull()
+      .references(() => pointsSchemas.id, {
+        onDelete: 'restrict',
+      }), // Points schema for championship events
     organizationId: uuid('organization_id').references(() => organization.id, {
       onDelete: 'cascade',
     }),
@@ -429,7 +443,8 @@ export const events = pgTable(
     index('idx_events_event_type').on(table.eventType),
     index('idx_events_visibility').on(table.visibility),
     index('idx_events_completed').on(table.completed),
-    index('idx_events_championship_id').on(table.championshipId),
+    index('idx_events_championship_edition_id').on(table.championshipEditionId),
+    index('idx_events_points_schema_id').on(table.pointsSchemaId),
   ]
 )
 
@@ -709,12 +724,120 @@ export const championships = pgTable(
       .references(() => federations.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
-    startDate: date('start_date'),
-    endDate: date('end_date'),
+    competitionScope: text('competition_scope', { enum: ['clubs', 'open'] })
+      .notNull()
+      .default('clubs'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [index('idx_championships_federation_id').on(table.federationId)]
+)
+
+// Championship Editions Table
+export const championshipEditions = pgTable(
+  'championship_editions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    championshipId: uuid('championship_id')
+      .notNull()
+      .references(() => championships.id, { onDelete: 'cascade' }),
+    year: integer('year').notNull(),
+    status: text('status', { enum: ['draft', 'published', 'archived'] })
+      .notNull()
+      .default('draft'),
+    registrationStartDate: date('registration_start_date'),
+    registrationEndDate: date('registration_end_date'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_editions_championship_year').on(
+      table.championshipId,
+      table.year
+    ),
+    index('idx_editions_status').on(table.status),
+  ]
+)
+
+// Placement Tiers Table
+// Event-agnostic tiers that work for all event types (single_elim, double_elim, round_robin, etc.)
+export const placementTiers = pgTable('placement_tiers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 50 }).notNull().unique(), // WINNER, FINALIST, SF, QF, R16, etc.
+  displayName: varchar('display_name', { length: 100 }), // "Winner", "Finalist", "Semi-Final", etc.
+  description: text('description'),
+  rank: integer('rank').notNull(), // 1: Champion, 2: Runner-up, 3: Third Place, 4: Fourth Place, etc.
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// Points Schemas Table
+export const pointsSchemas = pgTable('points_schemas', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// Points Schema Entries Table
+// Points schema stays dumb and stable - it only maps placement tiers to points
+// It does NOT care about: how many matches, which bracket, group or knockout
+export const pointsSchemaEntry = pgTable(
+  'points_schema_entries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    pointsSchemaId: uuid('points_schema_id')
+      .notNull()
+      .references(() => pointsSchemas.id, { onDelete: 'cascade' }),
+    placementTierId: uuid('placement_tier_id')
+      .notNull()
+      .references(() => placementTiers.id, { onDelete: 'cascade' }),
+    points: integer('points').notNull().default(0), // Points awarded for this tier
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('unique_schema_tier').on(
+      table.pointsSchemaId,
+      table.placementTierId
+    ),
+    index('idx_points_schema_entries_schema_id').on(table.pointsSchemaId),
+  ]
+)
+
+// Event Results Table
+// Stores final placement, not match history
+// Regardless of event type, all events end with each participant assigned ONE final tier
+export const eventResults = pgTable(
+  'event_results',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    finalPosition: integer('final_position'), // 1, 2, 3... (optional but useful for tie-break transparency, UI tables, audits)
+    placementTierId: uuid('placement_tier_id')
+      .notNull()
+      .references(() => placementTiers.id, { onDelete: 'restrict' }),
+    pointsAwarded: integer('points_awarded').notNull().default(0),
+
+    tiebreakRank: integer('tiebreak_rank'), // For players in same tier (SF losers)
+    tiebreakMetadata: jsonb('tiebreak_metadata'), // { setsWon, pointsDiff, etc. }
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('unique_event_registration').on(table.eventId, table.registrationId),
+    index('idx_event_results_event_id').on(table.eventId),
+    index('idx_event_results_registration_id').on(table.registrationId),
+    index('idx_event_results_placement_tier_id').on(table.placementTierId),
+    index('idx_event_results_final_position').on(table.finalPosition),
+  ]
 )
 
 // Federation Players Junction Table (player registration in federation)
@@ -772,3 +895,7 @@ export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect
 export type Invitation = typeof invitation.$inferSelect
 export type User = typeof user.$inferSelect
+export type PlacementTier = typeof placementTiers.$inferSelect
+export type PointsSchema = typeof pointsSchemas.$inferSelect
+export type PointsSchemaEntry = typeof pointsSchemaEntry.$inferSelect
+export type EventResult = typeof eventResults.$inferSelect
