@@ -96,8 +96,7 @@ export interface SeededChampionship {
   federationId: string
   name: string
   description: string | null
-  startDate: string | null
-  endDate: string | null
+  competitionScope: 'clubs' | 'open'
 }
 
 // JSON output structure
@@ -129,8 +128,7 @@ export interface SeedDataOutput {
     championships: Array<{
       id: string
       name: string
-      startDate: string | null
-      endDate: string | null
+      competitionScope: 'clubs' | 'open'
     }>
   }>
   organizations: OrganizationSummary[]

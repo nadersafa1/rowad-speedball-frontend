@@ -1,4 +1,3 @@
-import { formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
 export const NameCell = ({ name }: { name: string }) => (
@@ -25,8 +24,12 @@ export const FederationCell = ({
   </Badge>
 )
 
-export const DateCell = ({ date }: { date: string | Date | null }) => (
-  <div>
-    {date ? formatDate(date) : <span className='text-muted-foreground'>—</span>}
-  </div>
+export const CompetitionScopeCell = ({
+  competitionScope,
+}: {
+  competitionScope: 'clubs' | 'open'
+}) => (
+  <Badge variant={competitionScope === 'clubs' ? 'default' : 'secondary'}>
+    {competitionScope === 'clubs' ? 'Clubs' : 'Open'}
+  </Badge>
 )

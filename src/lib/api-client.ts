@@ -257,7 +257,8 @@ export class ApiClient {
   async getChampionships(params?: {
     q?: string
     federationId?: string
-    sortBy?: 'name' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'
+    competitionScope?: 'clubs' | 'open'
+    sortBy?: 'name' | 'competitionScope' | 'createdAt' | 'updatedAt'
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
@@ -266,6 +267,8 @@ export class ApiClient {
     if (params?.q) searchParams.set('q', params.q)
     if (params?.federationId)
       searchParams.set('federationId', params.federationId)
+    if (params?.competitionScope)
+      searchParams.set('competitionScope', params.competitionScope)
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())

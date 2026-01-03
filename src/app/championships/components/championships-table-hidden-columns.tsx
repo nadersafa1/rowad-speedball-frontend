@@ -1,7 +1,7 @@
 import { ColumnDef } from '@tanstack/react-table'
 import { SortableHeader } from './championships-table-sortable-header'
-import { DateCell } from './championships-table-cell-renderers'
 import { ChampionshipWithFederation } from './championships-table-types'
+import { formatDate } from '@/lib/utils'
 
 export const createHiddenColumns = (
   sortBy?: string,
@@ -20,7 +20,11 @@ export const createHiddenColumns = (
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => <DateCell date={row.getValue('createdAt')} />,
+    cell: ({ row }) => (
+      <div>
+        {formatDate(row.getValue('createdAt'))}
+      </div>
+    ),
     enableHiding: true,
   },
   {
@@ -35,7 +39,11 @@ export const createHiddenColumns = (
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => <DateCell date={row.getValue('updatedAt')} />,
+    cell: ({ row }) => (
+      <div>
+        {formatDate(row.getValue('updatedAt'))}
+      </div>
+    ),
     enableHiding: true,
   },
 ]

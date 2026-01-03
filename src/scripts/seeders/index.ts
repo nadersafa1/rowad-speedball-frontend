@@ -105,8 +105,7 @@ export const generateSeedDataOutput = (
       .map((c) => ({
         id: c.id,
         name: c.name,
-        startDate: c.startDate,
-        endDate: c.endDate,
+        competitionScope: c.competitionScope,
       }))
 
     return {
