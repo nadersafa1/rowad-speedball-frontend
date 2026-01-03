@@ -1088,6 +1088,64 @@ export class ApiClient {
       body: JSON.stringify(data),
     })
   }
+
+  // Placement Tier methods
+  async getPlacementTiers(params?: {
+    q?: string
+    sortBy?: 'name' | 'rank' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const query = new URLSearchParams(
+      Object.entries(params || {})
+        .filter(([_, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => [k, String(v)])
+    ).toString()
+
+    const endpoint = query
+      ? `/placement-tiers?${query}`
+      : '/placement-tiers'
+
+    return this.request<PaginatedResponse<any>>(endpoint)
+  }
+
+  async getPlacementTier(id: string): Promise<any> {
+    return this.request<any>(`/placement-tiers/${id}`)
+  }
+
+  async createPlacementTier(data: {
+    name: string
+    displayName?: string | null
+    description?: string | null
+    rank: number
+  }): Promise<any> {
+    return this.request<any>('/placement-tiers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePlacementTier(
+    id: string,
+    data: {
+      name?: string
+      displayName?: string | null
+      description?: string | null
+      rank?: number
+    }
+  ): Promise<any> {
+    return this.request<any>(`/placement-tiers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deletePlacementTier(id: string): Promise<void> {
+    return this.request<void>(`/placement-tiers/${id}`, {
+      method: 'DELETE',
+    })
+  }
 }
 
 // Singleton instance - use relative path
