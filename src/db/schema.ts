@@ -811,8 +811,47 @@ export const championshipEditions = pgTable(
   ]
 )
 
-// Placement Tiers Table
-// Event-agnostic tiers that work for all event types (single_elim, double_elim, round_robin, etc.)
+/**
+ * Placement Tiers Table
+ *
+ * **Purpose**: Standardized placement categories that work across all event types.
+ * Placement tiers group participants by their achievement level, regardless of
+ * the event format (elimination, time-based, round-robin, etc.).
+ *
+ * **Tier Categories by Event Type**:
+ *
+ * **Elimination Events** (single-elimination, double-elimination):
+ * - **WINNER** (rank: 1) - Champion of the event
+ * - **FINALIST** (rank: 2) - Runner-up, lost in the final
+ * - **THIRD_PLACE** (rank: 3) - Winner of 3rd place match (only if hasThirdPlaceMatch = true)
+ * - **FOURTH_PLACE** (rank: 4) - Loser of 3rd place match (only if hasThirdPlaceMatch = true)
+ * - **SF** (rank: 3-4) - Semi-final losers (when no 3rd place match exists)
+ * - **QF** (rank: 5-8) - Quarter-final losers (4 players share this tier)
+ * - **R16** (rank: 9-16) - Round of 16 losers (8 players share this tier)
+ * - **R32** (rank: 17-32) - Round of 32 losers (16 players share this tier)
+ *
+ * **Time-Based Events** (format='tests' - super-solo, speed-solo, etc.):
+ * - **POS_1** (rank: 1) - 1st place finisher
+ * - **POS_2** (rank: 2) - 2nd place finisher
+ * - **POS_3** (rank: 3) - 3rd place finisher
+ * - **POS_N** (rank: N) - Nth place finisher (position-specific tiers)
+ * Each position gets its own tier, allowing different points per position.
+ *
+ * **Important Notes**:
+ * - Tiers are event-agnostic: same tier names work for all event formats
+ * - Multiple players can share the same tier (e.g., 4 QF losers all get QF tier)
+ * - The `rank` field indicates the general ranking order (1 = best, higher = lower rank)
+ * - Tiers are used to look up points from Points Schema Entries
+ * - Actual final position is stored in `eventResults.finalPosition` (can have duplicates)
+ *
+ * **Examples**:
+ * - Elimination event: Winner gets WINNER tier, Runner-up gets FINALIST tier
+ * - Time-based event: 1st place gets POS_1 tier, 2nd place gets POS_2 tier
+ * - QF losers: All 4 players get QF tier, but may have different finalPosition values
+ *
+ * @see eventResults - Where tiers are assigned to participants
+ * @see pointsSchemaEntry - Maps tiers to points values
+ */
 export const placementTiers = pgTable('placement_tiers', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 50 }).notNull().unique(), // WINNER, FINALIST, SF, QF, R16, etc.
@@ -823,7 +862,39 @@ export const placementTiers = pgTable('placement_tiers', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-// Points Schemas Table
+/**
+ * Points Schemas Table
+ *
+ * **Purpose**: Named point systems that define how points are awarded for different
+ * placement tiers. A points schema is a collection of point rules that can be
+ * reused across multiple events (e.g., "National Championship 2024 Points System").
+ *
+ * **How It Works**:
+ * - A points schema is a container/grouping mechanism
+ * - It contains multiple Points Schema Entries that map placement tiers to point values
+ * - Events reference a points schema via `events.pointsSchemaId`
+ * - Different schemas can award different points for the same tier
+ *
+ * **Use Cases**:
+ * - **Championship Events**: Use a championship-specific schema with higher point values
+ * - **Regular Events**: Use a standard schema with lower point values
+ * - **Time-Based Events**: Use a schema with position-specific tiers (POS_1, POS_2, etc.)
+ * - **Elimination Events**: Use a schema with match-based tiers (WINNER, FINALIST, QF, etc.)
+ *
+ * **Examples**:
+ * - "National Championship 2024" - High-value points for championship events
+ * - "Regional League 2024" - Standard points for regular competitions
+ * - "Time-Based Standard" - Points for time-based events (POS_1 = 100, POS_2 = 80, etc.)
+ *
+ * **Important Notes**:
+ * - Schemas are metadata only (name, description)
+ * - Actual point values are defined in Points Schema Entries
+ * - One schema can be used by multiple events
+ * - Changing a schema affects all events using it (points are looked up dynamically)
+ *
+ * @see pointsSchemaEntry - Contains the actual tier-to-points mappings
+ * @see events.pointsSchemaId - Links events to their point system
+ */
 export const pointsSchemas = pgTable('points_schemas', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -832,9 +903,61 @@ export const pointsSchemas = pgTable('points_schemas', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-// Points Schema Entries Table
-// Points schema stays dumb and stable - it only maps placement tiers to points
-// It does NOT care about: how many matches, which bracket, group or knockout
+/**
+ * Points Schema Entries Table
+ *
+ * **Purpose**: Maps placement tiers to point values within a specific points schema.
+ * This is the junction table that connects Points Schemas to Placement Tiers and
+ * defines how many points each tier awards.
+ *
+ * **How It Works**:
+ * - Each entry links one placement tier to one points schema
+ * - Defines the points awarded for that tier in that schema
+ * - Multiple schemas can have different point values for the same tier
+ * - When an event completes, points are looked up from the event's schema entries
+ *
+ * **Point Calculation Flow**:
+ * 1. Event completes → Each participant gets assigned a `placementTierId`
+ * 2. Look up event's `pointsSchemaId` from `events.pointsSchemaId`
+ * 3. Find matching `pointsSchemaEntry` for (schemaId, tierId)
+ * 4. Use the `points` value from that entry
+ * 5. Store in `eventResults.pointsAwarded`
+ *
+ * **Examples**:
+ *
+ * **Elimination Event Schema**:
+ * - WINNER → 100 points
+ * - FINALIST → 75 points
+ * - THIRD_PLACE → 50 points
+ * - FOURTH_PLACE → 40 points
+ * - SF → 30 points
+ * - QF → 20 points
+ *
+ * **Time-Based Event Schema**:
+ * - POS_1 → 100 points
+ * - POS_2 → 80 points
+ * - POS_3 → 60 points
+ * - POS_4 → 50 points
+ * - POS_5 → 40 points
+ * - ... (position-specific points)
+ *
+ * **Important Notes**:
+ * - Schema entries are "dumb and stable" - they don't care about event format
+ * - Same tier can have different points in different schemas
+ * - Points are looked up dynamically when events complete
+ * - One tier can only appear once per schema (unique constraint)
+ * - If a tier is missing from a schema, it defaults to 0 points
+ *
+ * **Why Separate from Placement Tiers**:
+ * - Allows different point systems for the same tier
+ * - Championship events can award more points than regular events
+ * - Points can be updated without changing tier definitions
+ * - Supports multiple concurrent point systems
+ *
+ * @see placementTiers - The tiers being mapped
+ * @see pointsSchemas - The schema containing this entry
+ * @see eventResults - Where calculated points are stored
+ */
 export const pointsSchemaEntry = pgTable(
   'points_schema_entries',
   {
@@ -858,9 +981,98 @@ export const pointsSchemaEntry = pgTable(
   ]
 )
 
-// Event Results Table
-// Stores final placement, not match history
-// Regardless of event type, all events end with each participant assigned ONE final tier
+/**
+ * Event Results Table
+ *
+ * **Purpose**: Stores the final ranking and points for each participant in an event.
+ * This table represents the outcome of an event, not the match-by-match history.
+ * Every participant gets exactly one result record when the event completes.
+ *
+ * **Ranking System Overview**:
+ *
+ * The ranking system uses two complementary fields:
+ * - **`finalPosition`**: Exact numerical rank (1, 2, 3, 4, 5...)
+ * - **`placementTierId`**: Grouping tier for points calculation (WINNER, FINALIST, QF, etc.)
+ *
+ * **Key Design Principles**:
+ * 1. **`finalPosition` is NOT unique** - Multiple players can share the same position
+ *    (e.g., 4 QF losers all at position 5)
+ * 2. **`placementTierId` groups players** - All players in same tier get same points
+ * 3. **Tiers vary by event type** - Elimination uses match-based tiers, time-based uses position tiers
+ *
+ * **Handling Different Event Types**:
+ *
+ * **Elimination Events** (single-elimination, double-elimination):
+ * - Winner: `finalPosition = 1`, `placementTierId = WINNER`
+ * - Runner-up: `finalPosition = 2`, `placementTierId = FINALIST`
+ * - 3rd place match winner: `finalPosition = 3`, `placementTierId = THIRD_PLACE`
+ * - 3rd place match loser: `finalPosition = 4`, `placementTierId = FOURTH_PLACE`
+ * - QF losers (no 3rd place match): `finalPosition = 5`, `placementTierId = QF` (all 4 players)
+ * - SF losers (no 3rd place match): `finalPosition = 3 or 4`, `placementTierId = SF`
+ *
+ * **Time-Based Events** (format='tests' - super-solo, speed-solo, etc.):
+ * - 1st place: `finalPosition = 1`, `placementTierId = POS_1`
+ * - 2nd place: `finalPosition = 2`, `placementTierId = POS_2`
+ * - 3rd place: `finalPosition = 3`, `placementTierId = POS_3`
+ * - Each position gets its own tier (position-specific points)
+ * - Every participant has a unique finalPosition (no duplicates in time-based events)
+ *
+ * **Multiple Players at Same Position**:
+ *
+ * When multiple players share the same `finalPosition` (common in elimination events):
+ * - All players get the same `placementTierId` (e.g., all QF losers get QF tier)
+ * - All players get the same `pointsAwarded` (from the tier's points schema entry)
+ * - Display order can be determined by other criteria (name, registration order, etc.)
+ *
+ * **Example: 4 QF Losers**:
+ * ```
+ * Player A: finalPosition = 5, placementTierId = QF, pointsAwarded = 20
+ * Player B: finalPosition = 5, placementTierId = QF, pointsAwarded = 20
+ * Player C: finalPosition = 5, placementTierId = QF, pointsAwarded = 20
+ * Player D: finalPosition = 5, placementTierId = QF, pointsAwarded = 20
+ * ```
+ * All four players share position 5, tier QF, and receive the same points.
+ *
+ * **Points Calculation**:
+ *
+ * When an event completes:
+ * 1. Each participant is assigned a `placementTierId` based on their result
+ * 2. System looks up the event's `pointsSchemaId` from `events.pointsSchemaId`
+ * 3. Finds the `pointsSchemaEntry` matching (schemaId, tierId)
+ * 4. Sets `pointsAwarded` to the entry's `points` value
+ * 5. Points are stored here (denormalized for performance and historical accuracy)
+ *
+ * **Important Notes**:
+ * - One result per registration per event (unique constraint)
+ * - `finalPosition` can be NULL (rare, but possible for incomplete events)
+ * - `placementTierId` is required (everyone must have a tier)
+ * - `pointsAwarded` is stored here (denormalized) for performance and historical accuracy
+ * - Points are calculated once when event completes, then stored
+ * - Changing points schema doesn't retroactively update stored points
+ *
+ * **Querying Rankings**:
+ *
+ * To get event rankings:
+ * ```sql
+ * SELECT * FROM event_results
+ * WHERE event_id = ?
+ * ORDER BY final_position ASC NULLS LAST
+ * ```
+ * Note: When multiple players share the same finalPosition, you can add additional
+ * sorting criteria (e.g., player name, registration order) for consistent display.
+ *
+ * To get player's total points across all events:
+ * ```sql
+ * SELECT SUM(points_awarded) FROM event_results
+ * WHERE registration_id IN (SELECT id FROM registrations WHERE player_id = ?)
+ * ```
+ *
+ * @see placementTiers - The tiers assigned to participants
+ * @see pointsSchemas - The point system used by the event
+ * @see pointsSchemaEntry - Maps tiers to point values
+ * @see events - The event this result belongs to
+ * @see registrations - The participant registration
+ */
 export const eventResults = pgTable(
   'event_results',
   {
@@ -871,14 +1083,39 @@ export const eventResults = pgTable(
     registrationId: uuid('registration_id')
       .notNull()
       .references(() => registrations.id, { onDelete: 'cascade' }),
-    finalPosition: integer('final_position'), // 1, 2, 3... (optional but useful for tie-break transparency, UI tables, audits)
+    /**
+     * Final numerical position in the event (1, 2, 3, 4, 5...)
+     *
+     * **Important**: This field is NOT unique - multiple players can share the same position.
+     * For example, 4 quarter-final losers all have finalPosition = 5.
+     *
+     * **Usage**:
+     * - Time-based events: Every participant has a unique position (1, 2, 3, 4...)
+     * - Elimination events: Multiple players can share positions (e.g., 4 QF losers at position 5)
+     * - Used for display, sorting, and tiebreak transparency
+     * - Can be NULL for incomplete events or special cases
+     */
+    finalPosition: integer('final_position'),
+    /**
+     * The placement tier assigned to this participant (WINNER, FINALIST, QF, POS_1, etc.)
+     *
+     * **Required**: Every participant must have a tier
+     * **Purpose**: Used to look up points from the points schema
+     * **Grouping**: Multiple players can share the same tier (e.g., all QF losers get QF tier)
+     *
+     * @see placementTiers - The tier definition
+     */
     placementTierId: uuid('placement_tier_id')
       .notNull()
       .references(() => placementTiers.id, { onDelete: 'restrict' }),
+    /**
+     * Points awarded to this participant for this event
+     *
+     * **Calculation**: Looked up from pointsSchemaEntry when event completes
+     * **Storage**: Denormalized here for performance and historical accuracy
+     * **Note**: Changing points schema doesn't retroactively update this value
+     */
     pointsAwarded: integer('points_awarded').notNull().default(0),
-
-    tiebreakRank: integer('tiebreak_rank'), // For players in same tier (SF losers)
-    tiebreakMetadata: jsonb('tiebreak_metadata'), // { setsWon, pointsDiff, etc. }
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
