@@ -323,21 +323,40 @@ export const tests = pgTable(
 )
 
 // Test Results Table
-export const testResults = pgTable('test_results', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  playerId: uuid('player_id')
-    .references(() => players.id, { onDelete: 'cascade' })
-    .notNull(),
-  testId: uuid('test_id')
-    .references(() => tests.id, { onDelete: 'cascade' })
-    .notNull(),
-  leftHandScore: integer('left_hand_score').notNull(),
-  rightHandScore: integer('right_hand_score').notNull(),
-  forehandScore: integer('forehand_score').notNull(),
-  backhandScore: integer('backhand_score').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const testResults = pgTable(
+  'test_results',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    playerId: uuid('player_id')
+      .references(() => players.id, { onDelete: 'cascade' })
+      .notNull(),
+    testId: uuid('test_id')
+      .references(() => tests.id, { onDelete: 'cascade' })
+      .notNull(),
+    leftHandScore: integer('left_hand_score').notNull(),
+    rightHandScore: integer('right_hand_score').notNull(),
+    forehandScore: integer('forehand_score').notNull(),
+    backhandScore: integer('backhand_score').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    // Unique constraint: one result per player per test
+    unique('unique_player_test').on(table.playerId, table.testId),
+    // Constraints: scores must be non-negative
+    check('chk_left_hand_score_non_negative', sql`${table.leftHandScore} >= 0`),
+    check(
+      'chk_right_hand_score_non_negative',
+      sql`${table.rightHandScore} >= 0`
+    ),
+    check('chk_forehand_score_non_negative', sql`${table.forehandScore} >= 0`),
+    check('chk_backhand_score_non_negative', sql`${table.backhandScore} >= 0`),
+    // Indexes for performance
+    index('idx_test_results_player_id').on(table.playerId),
+    index('idx_test_results_test_id').on(table.testId),
+    index('idx_test_results_player_test').on(table.playerId, table.testId),
+  ]
+)
 
 export const calculateTotalScore = (
   result: Pick<
@@ -567,25 +586,58 @@ export const matches = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
+    // Constraints for data integrity
+    // Round and matchNumber must be positive
+    check('chk_round_positive', sql`${table.round} > 0`),
+    check('chk_match_number_positive', sql`${table.matchNumber} > 0`),
+    // Registrations should be different when both are present
+    check(
+      'chk_different_registrations',
+      sql`${table.registration1Id} IS NULL OR ${table.registration2Id} IS NULL OR ${table.registration1Id} != ${table.registration2Id}`
+    ),
+    // Winner must be one of the registrations when match is played
+    check(
+      'chk_winner_valid',
+      sql`${table.played} = false OR ${table.winnerId} IS NULL OR ${table.winnerId} = ${table.registration1Id} OR ${table.winnerId} = ${table.registration2Id}`
+    ),
+    // Indexes for performance
     index('idx_matches_event_id').on(table.eventId),
     index('idx_matches_group_id').on(table.groupId),
     index('idx_matches_played').on(table.played),
+    index('idx_matches_winner_id').on(table.winnerId),
+    index('idx_matches_registration1_id').on(table.registration1Id),
+    index('idx_matches_registration2_id').on(table.registration2Id),
+    index('idx_matches_event_round').on(table.eventId, table.round),
   ]
 )
 
 // Sets Table
-export const sets = pgTable('sets', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  matchId: uuid('match_id')
-    .notNull()
-    .references(() => matches.id, { onDelete: 'cascade' }),
-  setNumber: integer('set_number').notNull(),
-  registration1Score: integer('registration1_score').notNull(),
-  registration2Score: integer('registration2_score').notNull(),
-  played: boolean('played').notNull().default(false), // Sequential validation required
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const sets = pgTable(
+  'sets',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    matchId: uuid('match_id')
+      .notNull()
+      .references(() => matches.id, { onDelete: 'cascade' }),
+    setNumber: integer('set_number').notNull(),
+    registration1Score: integer('registration1_score').notNull(),
+    registration2Score: integer('registration2_score').notNull(),
+    played: boolean('played').notNull().default(false), // Sequential validation required
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    // Unique constraint: one set number per match
+    unique('unique_match_set_number').on(table.matchId, table.setNumber),
+    // Constraints: scores must be non-negative, set number must be positive
+    check('chk_set_number_positive', sql`${table.setNumber} > 0`),
+    check('chk_reg1_score_non_negative', sql`${table.registration1Score} >= 0`),
+    check('chk_reg2_score_non_negative', sql`${table.registration2Score} >= 0`),
+    // Indexes for performance
+    index('idx_sets_match_id').on(table.matchId),
+    index('idx_sets_match_set_number').on(table.matchId, table.setNumber),
+  ]
+)
 
 // Coaches Table
 export const coaches = pgTable(
