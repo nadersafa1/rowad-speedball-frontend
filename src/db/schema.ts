@@ -1,3 +1,30 @@
+/**
+ * Database Schema for Rowad Speedball Management Platform
+ *
+ * This file defines the PostgreSQL database schema using Drizzle ORM.
+ * It includes all tables, relationships, constraints, and helper functions
+ * for managing Speedball tournaments, players, events, and championships.
+ *
+ * **Key Features**:
+ * - Multi-tenant organization support
+ * - Federation and championship management
+ * - Tournament bracket generation (single/double elimination)
+ * - Player skill testing and assessment
+ * - Training session attendance tracking
+ * - Points-based ranking system
+ *
+ * **Naming Conventions**:
+ * - Tables: plural snake_case (players, events, training_sessions)
+ * - Columns: camelCase (dateOfBirth, organizationId)
+ * - Enums: camelCase with 'Enum' suffix (noteTypeEnum, attendanceStatusEnum)
+ * - Indexes: idx_tablename_column
+ * - Unique constraints: unique_descriptor
+ * - Check constraints: chk_descriptor
+ *
+ * @see /docs/table-core-guide.md for table system documentation
+ * @see /CLAUDE.md for project overview
+ */
+
 import {
   pgTable,
   varchar,
@@ -17,37 +44,125 @@ import { sql } from 'drizzle-orm'
 import type { PositionScores } from '@/types/position-scores'
 import { parse, getYear, getMonth } from 'date-fns'
 
-// Auth Tables
+// ============================================================================
+// AUTHENTICATION & AUTHORIZATION
+// ============================================================================
+// Tables managed by better-auth for user authentication, sessions, and OAuth
+
+/**
+ * User Table
+ *
+ * Central table for all authenticated users in the system.
+ * Managed by better-auth with custom federation support.
+ *
+ * **Roles**:
+ * - `super_admin`: System administrator (unrestricted access)
+ * - `federation-admin`: Federation administrator (manages federation)
+ * - `federation-editor`: Federation content editor (limited permissions)
+ * - `owner`: Organization owner (full organization control)
+ * - `admin`: Organization administrator (manages organization)
+ * - `coach`: Coach (limited permissions)
+ * - `player`: Player (read-only access)
+ * - `member`: Basic member access
+ *
+ * **User Lifecycle**:
+ * 1. User signs up via OAuth (Google) or email
+ * 2. User is assigned to organizations via `member` table
+ * 3. User can be linked to `players` or `coaches` via userId
+ * 4. User's federation role is stored in `role` field
+ * 5. Active organization stored in session
+ *
+ * **Important Notes**:
+ * - Users can belong to multiple organizations (via `member` table)
+ * - Users can have ONE federation role (federation-admin, federation-editor, or null)
+ * - Organization roles are stored in `member.role` (owner, admin, coach, member)
+ * - User deletion DOES NOT cascade delete players/coaches (set null instead)
+ * - Banned users can't log in but data is preserved
+ *
+ * @see member - Organization memberships
+ * @see players - Player profiles linked to users
+ * @see coaches - Coach profiles linked to users
+ */
 export const user = pgTable('user', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
-  image: text('image'),
-  role: text('role'), // Supports: user, admin, federation-admin, federation-editor
-  banned: boolean('banned'),
-  banReason: text('ban_reason'),
-  banExpires: timestamp('ban_expires'),
+  image: text('image'), // Profile image URL (from OAuth or upload)
+  role: text('role'), // Federation-level role: null | federation-admin | federation-editor
+  banned: boolean('banned'), // If true, user cannot log in
+  banReason: text('ban_reason'), // Reason for ban (shown to user)
+  banExpires: timestamp('ban_expires'), // Optional expiration for temporary bans
   federationId: uuid('federation_id').references(() => federations.id, {
-    onDelete: 'set null',
+    onDelete: 'set null', // Removing federation doesn't delete users
   }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-// Organization Plugin Tables (managed by better-auth but defined here for TypeScript references)
+/**
+ * Organization Table
+ *
+ * Represents clubs, teams, or academies that manage players and events.
+ * Managed by better-auth organization plugin with custom federation support.
+ *
+ * **Multi-tenancy Design**:
+ * - Each organization is isolated (players, events, training sessions scoped to org)
+ * - Users can be members of multiple organizations
+ * - Active organization determined by session.activeOrganizationId
+ * - Organizations can belong to a federation for inter-club competitions
+ *
+ * **Organization Lifecycle**:
+ * 1. Organization created by user (becomes owner)
+ * 2. Owner invites members via email (invitation table)
+ * 3. Members accept invitation and join organization
+ * 4. Organization can be linked to federation for championships
+ *
+ * **Important Notes**:
+ * - Slug must be unique and URL-safe (used in routes)
+ * - Deleting organization cascades to most related data (players, events, etc.)
+ * - Federation link is optional (set null if federation removed)
+ *
+ * @see member - User-organization relationships
+ * @see invitation - Pending organization invitations
+ * @see federationClubs - Federation membership
+ */
 export const organization = pgTable('organization', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
-  slug: text('slug').notNull().unique(),
-  logo: text('logo'),
+  slug: text('slug').notNull().unique(), // URL-safe identifier (e.g., 'rowad-club')
+  logo: text('logo'), // Logo image URL
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  metadata: text('metadata'),
+  metadata: text('metadata'), // JSON metadata for future extensibility
   federationId: uuid('federation_id').references(() => federations.id, {
-    onDelete: 'set null',
+    onDelete: 'set null', // Removing federation doesn't delete organization
   }),
 })
 
+/**
+ * Member Table
+ *
+ * Junction table linking users to organizations with role-based access control.
+ * Enables multi-tenancy where users can belong to multiple organizations.
+ *
+ * **Organization Roles**:
+ * - `owner`: Full organization control (creator of organization)
+ * - `admin`: Organization administrator (can manage members and settings)
+ * - `coach`: Coach (limited permissions for training and players)
+ * - `member`: Basic member access (read-only for most features)
+ *
+ * **Important Notes**:
+ * - Users can have different roles in different organizations
+ * - A user's role in the ACTIVE organization determines their permissions
+ * - Active organization is tracked in `session.activeOrganizationId`
+ * - Deleting organization cascades to remove all memberships
+ * - Deleting user cascades to remove all their memberships
+ * - Organization role is SEPARATE from federation role (stored in `user.role`)
+ *
+ * @see organization - The organization being joined
+ * @see user - The user joining the organization
+ * @see session.activeOrganizationId - Tracks which org user is currently acting in
+ */
 export const member = pgTable('member', {
   id: uuid('id').primaryKey().defaultRandom(),
   organizationId: uuid('organization_id')
@@ -56,70 +171,245 @@ export const member = pgTable('member', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  role: text('role').default('member').notNull(),
+  role: text('role').default('member').notNull(), // Organization role: owner | admin | coach | member
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+/**
+ * Invitation Table
+ *
+ * Manages email invitations for users to join organizations.
+ * Supports time-limited invitations with role assignment.
+ *
+ * **Invitation Flow**:
+ * 1. Admin/owner invites user by email with assigned role
+ * 2. Invitation created with `pending` status and expiration time
+ * 3. Invitee receives email with invitation link
+ * 4. User accepts → status becomes `accepted`, member record created
+ * 5. User declines → status becomes `rejected`
+ * 6. Invitation expires → status remains `pending` but unusable
+ *
+ * **Status Values**:
+ * - `pending`: Invitation sent, awaiting response
+ * - `accepted`: User accepted and joined organization
+ * - `rejected`: User declined the invitation
+ *
+ * **Important Notes**:
+ * - Invitations are time-limited (expires_at)
+ * - Deleting organization cascades to remove all invitations
+ * - Deleting inviter cascades to remove their sent invitations
+ * - Email must match user's registered email to accept
+ * - Role is assigned when invitation is created
+ *
+ * @see organization - The organization being joined
+ * @see user.inviterId - The user who sent the invitation
+ * @see member - Created when invitation is accepted
+ */
 export const invitation = pgTable('invitation', {
   id: uuid('id').primaryKey().defaultRandom(),
   organizationId: uuid('organization_id')
     .notNull()
     .references(() => organization.id, { onDelete: 'cascade' }),
-  email: text('email').notNull(),
-  role: text('role'),
-  status: text('status').default('pending').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
+  email: text('email').notNull(), // Email address of invitee
+  role: text('role'), // Role to assign when accepted: owner | admin | coach | member
+  status: text('status').default('pending').notNull(), // pending | accepted | rejected
+  expiresAt: timestamp('expires_at').notNull(), // Invitation expiration time
   inviterId: uuid('inviter_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
 })
 
+/**
+ * Session Table
+ *
+ * Manages user authentication sessions with organization context.
+ * Managed by better-auth with custom multi-tenancy support.
+ *
+ * **Session Lifecycle**:
+ * 1. User logs in → session created with unique token
+ * 2. Session token stored in HTTP-only cookie
+ * 3. User selects organization → `activeOrganizationId` updated
+ * 4. Each request includes session token for authentication
+ * 5. Session expires → user must re-authenticate
+ *
+ * **Active Organization Context**:
+ * - `activeOrganizationId` determines which organization user is working in
+ * - Permissions are calculated based on active organization role
+ * - Users can switch between organizations they belong to
+ * - Organization context cached in better-auth cookie cache (1 minute)
+ *
+ * **Security Features**:
+ * - IP address tracking for security monitoring
+ * - User agent tracking for device identification
+ * - Impersonation support for admin debugging
+ * - Automatic expiration for security
+ *
+ * **Important Notes**:
+ * - Token must be unique and cryptographically secure
+ * - Deleting user cascades to remove all their sessions (auto-logout)
+ * - Deleting organization sets activeOrganizationId to null (not cascade)
+ * - Session expiration is enforced on every request
+ *
+ * @see user - The authenticated user
+ * @see organization - The active organization context
+ * @see member - User's organization memberships
+ */
 export const session = pgTable('session', {
   id: uuid('id').primaryKey().defaultRandom(),
-  expiresAt: timestamp('expires_at').notNull(),
-  token: text('token').notNull().unique(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
+  expiresAt: timestamp('expires_at').notNull(), // Session expiration timestamp
+  token: text('token').notNull().unique(), // Unique session token (stored in cookie)
+  ipAddress: text('ip_address'), // IP address for security tracking
+  userAgent: text('user_agent'), // Browser/device identifier
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  impersonatedBy: text('impersonated_by'),
+  impersonatedBy: text('impersonated_by'), // Admin user ID if impersonating
   activeOrganizationId: uuid('active_organization_id').references(
     () => organization.id,
-    { onDelete: 'set null' }
+    { onDelete: 'set null' } // Nullify if organization deleted
   ),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+/**
+ * Account Table
+ *
+ * Stores OAuth provider accounts and credentials for users.
+ * Managed by better-auth for social login (Google OAuth) and email/password authentication.
+ *
+ * **Supported Providers**:
+ * - `google`: Google OAuth (primary authentication method)
+ * - `credentials`: Email/password authentication
+ *
+ * **Account Types**:
+ *
+ * **OAuth Accounts (Google)**:
+ * - `accountId`: Provider's user ID (e.g., Google user ID)
+ * - `providerId`: "google"
+ * - `accessToken`: OAuth access token (for API calls)
+ * - `refreshToken`: OAuth refresh token (to renew access)
+ * - `idToken`: JWT token from provider
+ * - `scope`: OAuth permissions granted
+ *
+ * **Email/Password Accounts**:
+ * - `accountId`: User's email
+ * - `providerId`: "credentials"
+ * - `password`: Hashed password (bcrypt)
+ * - No tokens stored
+ *
+ * **Important Notes**:
+ * - One user can have multiple accounts (Google + email/password)
+ * - Deleting user cascades to remove all their accounts
+ * - Tokens are automatically refreshed by better-auth
+ * - Access tokens expire (tracked in accessTokenExpiresAt)
+ * - Passwords are hashed before storage (never plain text)
+ *
+ * @see user - The user owning this account
+ * @see session - Active user sessions
+ */
 export const account = pgTable('account', {
   id: uuid('id').primaryKey().defaultRandom(),
-  accountId: text('account_id').notNull(),
-  providerId: text('provider_id').notNull(),
+  accountId: text('account_id').notNull(), // Provider's user ID or email
+  providerId: text('provider_id').notNull(), // google | credentials
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  idToken: text('id_token'),
-  accessTokenExpiresAt: timestamp('access_token_expires_at'),
-  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
-  scope: text('scope'),
-  password: text('password'),
+  accessToken: text('access_token'), // OAuth access token (Google)
+  refreshToken: text('refresh_token'), // OAuth refresh token (Google)
+  idToken: text('id_token'), // JWT token from provider (Google)
+  accessTokenExpiresAt: timestamp('access_token_expires_at'), // Token expiration
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'), // Refresh expiration
+  scope: text('scope'), // OAuth permissions (Google)
+  password: text('password'), // Hashed password (credentials provider only)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+/**
+ * Verification Table
+ *
+ * Stores verification tokens for email verification and password resets.
+ * Managed by better-auth for secure token-based verification flows.
+ *
+ * **Verification Types**:
+ *
+ * **Email Verification**:
+ * - `identifier`: User's email address
+ * - `value`: Random verification token (sent via email)
+ * - User clicks link with token to verify email
+ * - Token consumed after verification (deleted)
+ *
+ * **Password Reset**:
+ * - `identifier`: User's email address
+ * - `value`: Random reset token (sent via email)
+ * - User clicks link with token to reset password
+ * - Token consumed after password change (deleted)
+ *
+ * **Security Features**:
+ * - Tokens are time-limited (expiresAt)
+ * - Tokens are cryptographically random
+ * - Tokens are single-use (deleted after consumption)
+ * - Expired tokens are automatically invalid
+ *
+ * **Important Notes**:
+ * - One identifier can have multiple pending tokens (latest is used)
+ * - Expired tokens should be cleaned up periodically
+ * - Tokens are NOT linked to user table (pre-verification state)
+ * - Never log or expose token values
+ *
+ * @see user.emailVerified - Set to true after verification
+ * @see account.password - Updated during password reset
+ */
 export const verification = pgTable('verification', {
   id: uuid('id').primaryKey().defaultRandom(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
+  identifier: text('identifier').notNull(), // Email address
+  value: text('value').notNull(), // Verification/reset token
+  expiresAt: timestamp('expires_at').notNull(), // Token expiration
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-// Players Table
+/**
+ * Players Table
+ *
+ * Central table for player profiles and information.
+ * Players are the primary participants in events, training sessions, and tests.
+ *
+ * **Player Attributes**:
+ * - Name in both LTR and RTL (Arabic) formats
+ * - Date of birth (used for age group calculation)
+ * - Gender (male/female - affects event eligibility)
+ * - Preferred hand (left/right/both - tracked for skill development)
+ * - Team level (team_a/team_b/team_c - skill grouping within organization)
+ *
+ * **User Linking**:
+ * - Players can be linked to user accounts via `userId` (optional)
+ * - Linked players can access their profile and results
+ * - One user can only be linked to ONE player (unique constraint)
+ * - Player deletion sets userId to null (preserves user account)
+ *
+ * **Age Groups**:
+ * - Calculated dynamically using `getAgeGroup(dateOfBirth)`
+ * - Season-based (July-June): Age groups change mid-year
+ * - Groups: mini, U-09, U-11, U-13, U-15, U-17, U-19, U-21, Seniors
+ *
+ * **Multi-tenancy**:
+ * - Players belong to ONE organization
+ * - Organization deletion sets organizationId to null (orphaned players)
+ * - Players can be registered in federation via `federationPlayers` table
+ *
+ * **Important Notes**:
+ * - Age is calculated dynamically (not stored)
+ * - Team level is organization-specific (team_a in one org ≠ team_a in another)
+ * - Players can participate in events matching their gender and age group
+ * - Preferred hand used for position assignment in doubles/relay events
+ *
+ * @see federationPlayers - Federation registration
+ * @see registrationPlayers - Event registrations
+ * @see testResults - Test scores
+ * @see trainingSessionAttendance - Training attendance
+ */
 export const players = pgTable(
   'players',
   {
@@ -452,10 +742,18 @@ export const events = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
-    // Constraint: max_players must be >= min_players
+    // Data integrity constraints
     check(
       'chk_max_gte_min_players',
       sql`${table.maxPlayers} >= ${table.minPlayers}`
+    ),
+    // Ensure bestOf is odd (1, 3, 5, 7, etc.) for proper match scoring
+    check('chk_best_of_odd', sql`${table.bestOf} % 2 = 1`),
+    check('chk_best_of_positive', sql`${table.bestOf} > 0`),
+    // Ensure playersPerHeat is at least 2 when specified
+    check(
+      'chk_players_per_heat_min',
+      sql`${table.playersPerHeat} IS NULL OR ${table.playersPerHeat} >= 2`
     ),
     // Indexes for frequently queried columns
     index('idx_events_organization_id').on(table.organizationId),
@@ -745,28 +1043,123 @@ export const trainingSessionAttendance = pgTable(
   ]
 )
 
-// Federations Table
+/**
+ * Federations Table
+ *
+ * Top-level organizations that manage multiple clubs and run championships.
+ * Federations are the highest level in the organizational hierarchy.
+ *
+ * **Organizational Hierarchy**:
+ * - Federation (top level) → Championships → Organizations (clubs)
+ * - Federations organize inter-club competitions and championships
+ * - Organizations (clubs) belong to federations for competitive play
+ *
+ * **Federation Roles**:
+ * - Users can have federation-level roles (`user.role`):
+ *   - `federation-admin`: Full federation management access
+ *   - `federation-editor`: Content editing permissions (events, editions)
+ *
+ * **Important Notes**:
+ * - Federations are created by system admins only
+ * - Deleting federation cascades to championships, but NOT to organizations (set null)
+ * - Federation membership tracked in `federationClubs` junction table
+ * - Federation player registration tracked in `federationPlayers` table
+ *
+ * @see federationClubs - Club memberships in federation
+ * @see championships - Competitions organized by federation
+ * @see user.role - Federation-level user roles
+ * @see organization.federationId - Organizations linked to federation
+ */
 export const federations = pgTable('federations', {
   id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
+  name: varchar('name', { length: 255 }).notNull(), // Federation name (e.g., "Egyptian Speedball Federation")
+  description: text('description'), // Optional description of federation's purpose
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-// Federation Clubs Junction Table (many-to-many)
-export const federationClubs = pgTable('federation_clubs', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  federationId: uuid('federation_id')
-    .notNull()
-    .references(() => federations.id, { onDelete: 'cascade' }),
-  organizationId: uuid('organization_id')
-    .notNull()
-    .references(() => organization.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+/**
+ * Federation Clubs Junction Table
+ *
+ * Many-to-many relationship between federations and organizations (clubs).
+ * Tracks which clubs are members of which federations for competitive play.
+ *
+ * **Membership Model**:
+ * - Organizations (clubs) can belong to ONE federation
+ * - Federations can have MANY member organizations
+ * - Membership enables clubs to participate in federation championships
+ *
+ * **Important Notes**:
+ * - One organization can only be linked to one federation (unique constraint)
+ * - Deleting federation cascades to remove all club memberships
+ * - Deleting organization cascades to remove its federation membership
+ * - Federation membership is required for "clubs" scope championships
+ *
+ * @see federations - The parent federation
+ * @see organization - The member club
+ * @see championships.competitionScope - Clubs vs Open competition types
+ */
+export const federationClubs = pgTable(
+  'federation_clubs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    federationId: uuid('federation_id')
+      .notNull()
+      .references(() => federations.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    // Unique constraint to prevent duplicate federation-organization links
+    unique('unique_federation_organization').on(
+      table.federationId,
+      table.organizationId
+    ),
+    // Indexes for efficient lookups
+    index('idx_federation_clubs_federation_id').on(table.federationId),
+    index('idx_federation_clubs_organization_id').on(table.organizationId),
+  ]
+)
 
-// Championships Table
+/**
+ * Championships Table
+ *
+ * Defines championship competitions organized by federations.
+ * Championships are multi-year/recurring competitions (e.g., "National Championship").
+ * Each championship has multiple editions (yearly instances).
+ *
+ * **Championship Structure**:
+ * - Championship (this table): The recurring competition definition
+ * - Championship Edition: Yearly instance with specific dates and events
+ * - Events: Individual competitions within an edition (U-13 Singles, U-15 Doubles, etc.)
+ *
+ * **Competition Scopes**:
+ * - **`clubs`**: Only federation member clubs can participate
+ *   - Players must be registered with a club in the federation
+ *   - Enforced via `federationClubs` membership
+ * - **`open`**: Anyone can participate
+ *   - No club membership required
+ *   - Open to all eligible players
+ *
+ * **Authorization**:
+ * - Create: System admins or federation admins
+ * - Update: System admins, federation admins/editors (for their federation)
+ * - Delete: System admins or federation admins (for their federation)
+ * - Read: Any authenticated user
+ *
+ * **Important Notes**:
+ * - Championships belong to ONE federation (required)
+ * - Deleting federation cascades to delete all its championships
+ * - Deleting championship cascades to delete all its editions and events
+ * - Competition scope cannot be changed after creation (affects registration rules)
+ *
+ * @see federations - The federation organizing this championship
+ * @see championshipEditions - Yearly instances of this championship
+ * @see events.championshipEditionId - Events linked to edition
+ * @see federationClubs - Club memberships for "clubs" scope
+ */
 export const championships = pgTable(
   'championships',
   {
@@ -774,18 +1167,62 @@ export const championships = pgTable(
     federationId: uuid('federation_id')
       .notNull()
       .references(() => federations.id, { onDelete: 'cascade' }),
-    name: varchar('name', { length: 255 }).notNull(),
-    description: text('description'),
+    name: varchar('name', { length: 255 }).notNull(), // Championship name (e.g., "National Speedball Championship")
+    description: text('description'), // Optional description of championship purpose and history
     competitionScope: text('competition_scope', { enum: ['clubs', 'open'] })
       .notNull()
-      .default('clubs'),
+      .default('clubs'), // Clubs: federation members only, Open: anyone
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [index('idx_championships_federation_id').on(table.federationId)]
 )
 
-// Championship Editions Table
+/**
+ * Championship Editions Table
+ *
+ * Yearly instances of championships with specific dates and events.
+ * Each edition represents a single year's iteration of a recurring championship.
+ *
+ * **Edition Lifecycle**:
+ * 1. **Draft**: Edition created, events being planned, not visible to public
+ * 2. **Published**: Edition is live, registration open, events visible
+ * 3. **Archived**: Edition completed, results finalized, read-only
+ *
+ * **Edition Structure**:
+ * - One championship can have multiple editions (2024, 2025, 2026, etc.)
+ * - Each edition has its own events (U-13 Singles, U-15 Doubles, etc.)
+ * - Each edition has its own registration period
+ * - Events within an edition share the same points schema
+ *
+ * **Status Transitions**:
+ * - Draft → Published: When ready to accept registrations
+ * - Published → Archived: When all events completed
+ * - Cannot transition back to draft once published
+ *
+ * **Registration Dates**:
+ * - `registrationStartDate`: When players can start registering
+ * - `registrationEndDate`: Last day for registration
+ * - Both optional (can use edition-level or event-level dates)
+ * - Event-specific dates override edition dates
+ *
+ * **Authorization**:
+ * - Create: System admins, federation admins/editors (for their federation)
+ * - Update: System admins, federation admins/editors (for their federation)
+ * - Delete: System admins, federation admins (for their federation, editors cannot delete)
+ * - Read: Any authenticated user
+ *
+ * **Important Notes**:
+ * - One edition per year per championship (unique constraint on championshipId + year)
+ * - Deleting championship cascades to delete all its editions
+ * - Deleting edition cascades to delete all its events
+ * - Cannot delete edition if it has events (enforced in API)
+ * - Year must be between 2000-2100 (database constraint)
+ *
+ * @see championships - The parent championship
+ * @see events.championshipEditionId - Events in this edition
+ * @see eventResults - Results from edition events
+ */
 export const championshipEditions = pgTable(
   'championship_editions',
   {
@@ -793,16 +1230,18 @@ export const championshipEditions = pgTable(
     championshipId: uuid('championship_id')
       .notNull()
       .references(() => championships.id, { onDelete: 'cascade' }),
-    year: integer('year').notNull(),
+    year: integer('year').notNull(), // Edition year (e.g., 2024)
     status: text('status', { enum: ['draft', 'published', 'archived'] })
       .notNull()
-      .default('draft'),
-    registrationStartDate: date('registration_start_date'),
-    registrationEndDate: date('registration_end_date'),
+      .default('draft'), // Draft: planning, Published: active, Archived: completed
+    registrationStartDate: date('registration_start_date'), // Optional: when registration opens
+    registrationEndDate: date('registration_end_date'), // Optional: when registration closes
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
+    // Ensure year is within reasonable bounds
+    check('chk_year_valid', sql`${table.year} >= 2000 AND ${table.year} <= 2100`),
     index('idx_editions_championship_year').on(
       table.championshipId,
       table.year
