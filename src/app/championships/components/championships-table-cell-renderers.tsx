@@ -1,7 +1,13 @@
 import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 
-export const NameCell = ({ name }: { name: string }) => (
-  <div className='font-medium'>{name}</div>
+export const NameCell = ({ name, id }: { name: string; id: string }) => (
+  <Link
+    href={`/championships/${id}`}
+    className='font-medium hover:underline text-blue-600 dark:text-blue-400'
+  >
+    {name}
+  </Link>
 )
 
 export const DescriptionCell = ({

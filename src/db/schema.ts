@@ -1178,6 +1178,7 @@ export type TrainingSessionAttendance =
   typeof trainingSessionAttendance.$inferSelect
 export type Federation = typeof federations.$inferSelect
 export type Championship = typeof championships.$inferSelect
+export type ChampionshipEdition = typeof championshipEditions.$inferSelect
 export type FederationClub = typeof federationClubs.$inferSelect
 export type FederationPlayer = typeof federationPlayers.$inferSelect
 export type Organization = typeof organization.$inferSelect

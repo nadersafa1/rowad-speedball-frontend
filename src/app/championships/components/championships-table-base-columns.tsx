@@ -26,7 +26,9 @@ export const createBaseColumns = (
         onSort={onSort}
       />
     ),
-    cell: ({ row }) => <NameCell name={row.getValue('name')} />,
+    cell: ({ row }) => (
+      <NameCell name={row.getValue('name')} id={row.original.id} />
+    ),
   },
   {
     accessorKey: 'federationName',

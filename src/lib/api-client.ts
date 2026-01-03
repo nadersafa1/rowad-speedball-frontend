@@ -302,6 +302,58 @@ export class ApiClient {
     })
   }
 
+  // Championship Editions methods
+  async getChampionshipEditions(params?: {
+    q?: string
+    championshipId?: string
+    status?: 'draft' | 'published' | 'archived'
+    year?: number
+    sortBy?: 'year' | 'status' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.q) searchParams.set('q', params.q)
+    if (params?.championshipId)
+      searchParams.set('championshipId', params.championshipId)
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.year) searchParams.set('year', params.year.toString())
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(
+      `/championship-editions${query ? `?${query}` : ''}`
+    )
+  }
+
+  async getChampionshipEdition(id: string) {
+    return this.request(`/championship-editions/${id}`)
+  }
+
+  async createChampionshipEdition(data: any) {
+    return this.request('/championship-editions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateChampionshipEdition(id: string, data: any) {
+    return this.request(`/championship-editions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteChampionshipEdition(id: string) {
+    return this.request(`/championship-editions/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
   // Test methods
   async getTests(params?: {
     q?: string
