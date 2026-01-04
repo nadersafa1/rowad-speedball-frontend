@@ -31,6 +31,7 @@ export * from './helpers/organization-authorization'
 export * from './helpers/user-authorization'
 export * from './helpers/player-notes-authorization'
 export * from './helpers/placement-tier-authorization'
+export * from './helpers/points-schema-authorization'
 
 // Re-export special event authorization helpers that require database queries
 export { canPlayerUpdateMatch } from '@/lib/event-authorization-helpers'
