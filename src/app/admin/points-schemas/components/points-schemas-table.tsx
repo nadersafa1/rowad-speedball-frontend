@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Table,
   TableBody,
@@ -33,7 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { MoreHorizontal, Pencil, Trash2, Search, SortAsc, SortDesc } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Search, SortAsc, SortDesc, ExternalLink } from 'lucide-react'
 import { usePointsSchemasStore } from '@/store/points-schemas-store'
 import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
 import type { PointsSchema } from '@/db/schema'
@@ -45,6 +46,7 @@ interface PointsSchemasTableProps {
 }
 
 export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProps) {
+  const router = useRouter()
   const { schemas, isLoading, deleteSchema, pagination } = usePointsSchemasStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -189,7 +191,13 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
               filteredSchemas.map((schema) => (
                 <TableRow key={schema.id}>
                   <TableCell className='font-semibold'>
-                    {schema.name}
+                    <button
+                      onClick={() => router.push(`/admin/points-schemas/${schema.id}`)}
+                      className='flex items-center gap-2 hover:text-rowad-600 transition-colors'
+                    >
+                      {schema.name}
+                      <ExternalLink className='h-3 w-3' />
+                    </button>
                   </TableCell>
                   <TableCell className='hidden md:table-cell max-w-xs truncate'>
                     {schema.description || '-'}
@@ -208,9 +216,15 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
                       <DropdownMenuContent align='end'>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => router.push(`/admin/points-schemas/${schema.id}`)}
+                        >
+                          <ExternalLink className='mr-2 h-4 w-4' />
+                          View Entries
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEdit(schema)}>
                           <Pencil className='mr-2 h-4 w-4' />
-                          Edit
+                          Edit Schema
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDeleteClick(schema)}
