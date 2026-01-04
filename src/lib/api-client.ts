@@ -1146,6 +1146,60 @@ export class ApiClient {
       method: 'DELETE',
     })
   }
+
+  // Points Schema methods
+  async getPointsSchemas(params?: {
+    q?: string
+    sortBy?: 'name' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const query = new URLSearchParams(
+      Object.entries(params || {})
+        .filter(([_, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => [k, String(v)])
+    ).toString()
+
+    const endpoint = query
+      ? `/points-schemas?${query}`
+      : '/points-schemas'
+
+    return this.request<PaginatedResponse<any>>(endpoint)
+  }
+
+  async getPointsSchema(id: string): Promise<any> {
+    return this.request<any>(`/points-schemas/${id}`)
+  }
+
+  async createPointsSchema(data: {
+    name: string
+    description?: string | null
+  }): Promise<any> {
+    return this.request<any>('/points-schemas', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePointsSchema(
+    id: string,
+    data: {
+      name?: string
+      description?: string | null
+    }
+  ): Promise<any> {
+    return this.request<any>(`/points-schemas/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deletePointsSchema(id: string): Promise<void> {
+    return this.request<void>(`/points-schemas/${id}`, {
+      method: 'DELETE',
+    })
+  }
 }
 
 // Singleton instance - use relative path
