@@ -173,6 +173,21 @@ export async function DELETE(
       )
     }
 
+    // Check if the parent schema is being used by any events
+    const schemaUsedInEvents = await db.query.events.findFirst({
+      where: eq(schema.events.pointsSchemaId, existingEntry.pointsSchemaId),
+    })
+
+    if (schemaUsedInEvents) {
+      return Response.json(
+        {
+          message:
+            'Cannot delete points schema entry because its schema is being used by events. Remove the schema from all events first.',
+        },
+        { status: 409 }
+      )
+    }
+
     await db
       .delete(schema.pointsSchemaEntry)
       .where(eq(schema.pointsSchemaEntry.id, id))

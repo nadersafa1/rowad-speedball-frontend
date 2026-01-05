@@ -127,10 +127,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           isActive: false,
           items: [
             {
-              title: 'Admin Panel',
-              url: '/admin',
-            },
-            {
               title: 'Federations',
               url: '/admin/federations',
             },
@@ -141,6 +137,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {
               title: 'Placement Tiers',
               url: '/admin/placement-tiers',
+            },
+            {
+              title: 'Points Schemas',
+              url: '/admin/points-schemas',
             },
           ],
         },
