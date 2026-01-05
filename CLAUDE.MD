@@ -27,7 +27,7 @@ src/
 │   ├── admin/              # System admin interface
 │   └── [features]/         # Feature pages (players, coaches, events, etc.)
 ├── components/             # React components (organized by feature)
-│   ├── ui/                 # 47 Radix UI + custom components
+│   ├── ui/                 # 45+ Radix UI + custom components
 │   ├── forms/              # Reusable form components
 │   │   ├── loading-button.tsx
 │   │   ├── form-error.tsx
@@ -45,7 +45,7 @@ src/
 │   ├── auth.ts             # better-auth config
 │   ├── db.ts               # Database connection
 │   └── api-client.ts       # HTTP client
-├── store/                  # Zustand state management (14 stores)
+├── store/                  # Zustand state management (19 stores)
 ├── hooks/                  # React hooks (authorization, features)
 ├── db/                     # Database schema & seeder
 ├── types/                  # TypeScript types & Zod schemas
@@ -91,6 +91,13 @@ src/
 - Federation-level management
 - User invitations with email
 
+### 7. Ranking & Points System
+- Points schemas for different event types
+- Placement tiers (WINNER, FINALIST, SF, QF, etc.)
+- Points schema entries mapping tiers to point values
+- Dynamic point calculation based on event results
+- Support for championship vs. regular event point systems
+
 ## Authentication & Authorization
 
 ### Roles (RBAC)
@@ -133,7 +140,16 @@ Available permission hooks:
 - `useMatchPermissions`
 - `useTestPermissions`
 - `useTrainingSessionPermissions`
-- And more...
+- `useChampionshipPermissions`
+- `useFederationPermissions`
+- `useGroupPermissions`
+- `useOrganizationPermissions`
+- `usePlayerNotePermissions`
+- `usePointsSchemaPermissions`
+- `useRegistrationPermissions`
+- `useResultPermissions`
+- `useSetPermissions`
+- `useUserPermissions`
 
 ## Table-Core System (NEW)
 
@@ -193,6 +209,11 @@ export const playersTableConfig: TableConfig<Player> = {
 
 ### Championships
 - `championships` - Championship organizations
+
+### Ranking System
+- `placement_tiers` - Placement tiers (WINNER, FINALIST, SF, QF, etc.)
+- `points_schemas` - Named point systems for events
+- `points_schema_entries` - Maps placement tiers to point values within schemas
 
 ## Common Patterns & Conventions
 
@@ -271,6 +292,13 @@ Must be odd numbers: 1, 3, 5, 7
 ### 9. Test Events
 Support for heats (default 8 players per heat)
 
+### 10. Points Schema System
+- Points schemas are reusable across multiple events
+- Placement tiers define tournament positions (WINNER, FINALIST, etc.)
+- Points schema entries map tiers to point values
+- Different schemas for different event types (championships vs. regular)
+- Points are calculated dynamically based on event's assigned schema
+
 ## Tournament Algorithms
 
 Located in: `src/lib/utils/`
@@ -348,14 +376,21 @@ Available guides in `/docs/`:
 
 ## Recent Development Focus
 
-1. **Forms standardization** - All 26 forms now use React Hook Form + Zod
+1. **Ranking & Points System** - NEW
+   - Points schemas for flexible point allocation across event types
+   - Placement tiers system (WINNER, FINALIST, SF, QF, R16, etc.)
+   - Points schema entries for tier-to-points mapping
+   - Support for championship vs. regular event point systems
+   - Admin UI for managing points schemas and tiers
+2. **Forms standardization** - All 26 forms now use React Hook Form + Zod
    - Created shared validation schemas (`src/lib/forms/patterns.ts`)
    - Created reusable form components (LoadingButton, FormError, CharacterCounter)
    - Comprehensive documentation for form development
-2. **Backend authorization helpers** - Centralized authorization checks
-3. **Frontend permission hooks** - usePlayerPermissions, useEventPermissions, etc.
-4. **Component migration** - Using permission hooks throughout
-5. **Table-Core system** - Reusable data table abstraction (v1.3.29)
+3. **Backend authorization helpers** - Centralized authorization checks
+4. **Frontend permission hooks** - Expanded to 16 permission hooks
+5. **Component migration** - Using permission hooks throughout
+6. **Table-Core system** - Reusable data table abstraction (v1.3.29)
+7. **Combobox refactoring** - Refactored to use BaseCombobox for improved functionality
 
 ## When Implementing New Features
 

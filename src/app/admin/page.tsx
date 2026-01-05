@@ -1,4 +1,4 @@
-import { Building2, Users, ArrowRight, Globe, Award } from 'lucide-react'
+import { Building2, Users, ArrowRight, Globe, Award, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import {
   Card,
@@ -96,6 +96,27 @@ const AdminPage = () => {
                     <CardTitle>Placement Tiers</CardTitle>
                     <CardDescription>
                       Manage global placement tier categories
+                    </CardDescription>
+                  </div>
+                </div>
+                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
+
+        <Link href='/admin/points-schemas' className='group h-full block'>
+          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
+            <CardHeader className='p-4 flex-1 flex items-center'>
+              <div className='flex items-center justify-between w-full'>
+                <div className='flex items-center gap-3'>
+                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
+                    <Trophy className='h-6 w-6 text-primary' />
+                  </div>
+                  <div>
+                    <CardTitle>Points Schemas</CardTitle>
+                    <CardDescription>
+                      Manage event points allocation systems
                     </CardDescription>
                   </div>
                 </div>
