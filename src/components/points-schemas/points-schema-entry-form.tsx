@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,16 +14,9 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { usePointsSchemaEntriesStore } from '@/store/points-schema-entries-store'
-import { usePlacementTiersStore } from '@/store/placement-tiers-store'
+import PlacementTierCombobox from '@/components/placement-tiers/placement-tier-combobox'
 import {
   DialogContent,
   DialogDescription,
@@ -63,13 +55,7 @@ const PointsSchemaEntryForm = ({
 }: PointsSchemaEntryFormProps) => {
   const { createEntry, updateEntry, error, clearError } =
     usePointsSchemaEntriesStore()
-  const { tiers, fetchTiers, isLoading: tiersLoading } = usePlacementTiersStore()
   const isEditing = !!entry
-
-  // Fetch placement tiers on mount
-  useEffect(() => {
-    fetchTiers({ sortBy: 'rank', sortOrder: 'asc', limit: 100 })
-  }, [fetchTiers])
 
   const form = useForm<PointsSchemaEntryFormData>({
     resolver: zodResolver(pointsSchemaEntrySchema),
@@ -102,12 +88,6 @@ const PointsSchemaEntryForm = ({
     }
   }
 
-  // Filter out tiers that are already used (except for editing)
-  const availableTiers = tiers.filter(
-    (tier) =>
-      !existingTierIds.includes(tier.id) || tier.id === entry?.placementTierId
-  )
-
   return (
     <DialogContent className='sm:max-w-[500px]'>
       <DialogHeader>
@@ -130,48 +110,15 @@ const PointsSchemaEntryForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Placement Tier</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={isSubmitting || tiersLoading || isEditing}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder='Select a placement tier' />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className='max-h-[300px]'>
-                    {tiersLoading ? (
-                      <div className='p-2 text-sm text-muted-foreground'>
-                        Loading tiers...
-                      </div>
-                    ) : availableTiers.length === 0 ? (
-                      <div className='p-2 text-sm text-muted-foreground'>
-                        {isEditing
-                          ? 'No tiers available'
-                          : 'All tiers are already assigned to this schema'}
-                      </div>
-                    ) : (
-                      availableTiers.map((tier) => (
-                        <SelectItem key={tier.id} value={tier.id}>
-                          <div className='flex items-center gap-2'>
-                            <span className='font-mono font-semibold'>
-                              {tier.name}
-                            </span>
-                            {tier.displayName && (
-                              <span className='text-muted-foreground'>
-                                - {tier.displayName}
-                              </span>
-                            )}
-                            <span className='text-xs text-muted-foreground'>
-                              (Rank: {tier.rank})
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <PlacementTierCombobox
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={isSubmitting || isEditing}
+                    excludedTierIds={existingTierIds}
+                    placeholder='Select a placement tier'
+                  />
+                </FormControl>
                 <FormDescription>
                   {isEditing
                     ? 'Placement tier cannot be changed. Delete and recreate to change the tier.'

@@ -80,7 +80,7 @@ export class ApiClient {
     page?: number
     limit?: number
     unassigned?: string | boolean
-  }): Promise<PaginatedResponse<any>> {
+  }, signal?: AbortSignal): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.gender) searchParams.set('gender', params.gender)
@@ -114,7 +114,7 @@ export class ApiClient {
     }
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/players${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/players${query ? `?${query}` : ''}`, { signal })
   }
 
   async getPlayer(id: string) {
@@ -1096,7 +1096,7 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }): Promise<PaginatedResponse<any>> {
+  }, signal?: AbortSignal): Promise<PaginatedResponse<any>> {
     const query = new URLSearchParams(
       Object.entries(params || {})
         .filter(([_, v]) => v !== undefined && v !== null)
@@ -1107,11 +1107,11 @@ export class ApiClient {
       ? `/placement-tiers?${query}`
       : '/placement-tiers'
 
-    return this.request<PaginatedResponse<any>>(endpoint)
+    return this.request<PaginatedResponse<any>>(endpoint, { signal })
   }
 
-  async getPlacementTier(id: string): Promise<any> {
-    return this.request<any>(`/placement-tiers/${id}`)
+  async getPlacementTier(id: string, signal?: AbortSignal): Promise<any> {
+    return this.request<any>(`/placement-tiers/${id}`, { signal })
   }
 
   async createPlacementTier(data: {
