@@ -86,10 +86,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     isFederationAdmin || isFederationEditor
       ? [
           {
-            title: 'Championships',
-            url: '/championships',
+            title: 'Federation Management',
+            url: '#',
             icon: Trophy,
             isActive: false,
+            items: [
+              {
+                title: 'Championships',
+                url: '/championships',
+              },
+            ],
           },
         ]
       : []
@@ -126,6 +132,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           icon: ShieldCheck,
           isActive: false,
           items: [
+            {
+              title: 'Users',
+              url: '/admin/users',
+            },
             {
               title: 'Federations',
               url: '/admin/federations',

@@ -114,38 +114,39 @@ export const ChampionshipsTableControls = ({
       </div>
 
       {/* Row 2: Federation filter */}
-      <div className='flex flex-col md:flex-row gap-4'>
-        <div className='flex-1 w-full md:w-auto md:max-w-xs'>
-          <Label htmlFor='federationId' className='block mb-2'>
-            Federation
-          </Label>
-          <Select
-            name='federationId'
-            value={federationId || 'all'}
-            onValueChange={(value: string) => {
-              onFederationChange?.(value === 'all' ? undefined : value)
-            }}
-            disabled={isLoadingFederations}
-          >
-            <SelectTrigger className='w-full'>
-              <SelectValue
-                placeholder={
-                  isLoadingFederations ? 'Loading...' : 'Select a Federation'
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='all'>All Federations</SelectItem>
-              {federations.map((fed) => (
-                <SelectItem key={fed.id} value={fed.id}>
-                  {fed.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {federationId && (
+        <div className='flex flex-col md:flex-row gap-4'>
+          <div className='flex-1 w-full md:w-auto md:max-w-xs'>
+            <Label htmlFor='federationId' className='block mb-2'>
+              Federation
+            </Label>
+            <Select
+              name='federationId'
+              value={federationId || 'all'}
+              onValueChange={(value: string) => {
+                onFederationChange?.(value === 'all' ? undefined : value)
+              }}
+              disabled={isLoadingFederations}
+            >
+              <SelectTrigger className='w-full'>
+                <SelectValue
+                  placeholder={
+                    isLoadingFederations ? 'Loading...' : 'Select a Federation'
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Federations</SelectItem>
+                {federations.map((fed) => (
+                  <SelectItem key={fed.id} value={fed.id}>
+                    {fed.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
-

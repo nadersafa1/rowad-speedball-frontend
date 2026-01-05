@@ -70,6 +70,19 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
 
     let currentPath = ''
     paths.forEach((path, index) => {
+      // Check if segment is an ID (UUID or numeric)
+      const isUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          path
+        )
+      const isNumeric = /^\d+$/.test(path)
+      const isID = isUUID || isNumeric
+
+      // Skip ID segments - they're not meaningful in breadcrumbs
+      if (isID) {
+        return
+      }
+
       currentPath += `/${path}`
       const label = path
         .split('-')
