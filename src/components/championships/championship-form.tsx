@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Trophy, Save } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import {
   Select,
@@ -34,20 +35,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui'
+import { nameSchema, uuidSchema, descriptionSchema } from '@/lib/forms/patterns'
+import { LoadingButton, FormError } from '@/components/forms'
 
-// Validation schema
+// Validation schema using shared patterns
 const championshipSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(255, 'Name must be less than 255 characters'),
-  federationId: z.uuid('Please select a federation'),
-  description: z
-    .string()
-    .max(1000, 'Description must be less than 1000 characters')
-    .optional()
-    .nullable(),
+  name: nameSchema,
+  federationId: uuidSchema,
+  description: descriptionSchema,
   competitionScope: z.enum(['clubs', 'open']),
 })
 
@@ -157,6 +152,9 @@ const ChampionshipForm = ({
                     disabled={isSubmitting}
                   />
                 </FormControl>
+                <FormDescription>
+                  The official name of the championship
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -196,6 +194,9 @@ const ChampionshipForm = ({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormDescription>
+                    The federation that owns this championship
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -218,6 +219,9 @@ const ChampionshipForm = ({
                     rows={3}
                   />
                 </FormControl>
+                <FormDescription>
+                  Additional details about the championship
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -245,16 +249,15 @@ const ChampionshipForm = ({
                     <SelectItem value='open'>Open</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormDescription>
+                  Clubs: Only federation member clubs can participate. Open: Anyone can participate
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {error && (
-            <div className='rounded-md bg-destructive/15 p-3 text-sm text-destructive'>
-              {error}
-            </div>
-          )}
+          <FormError error={error} />
 
           <DialogFooter>
             {onCancel && (
@@ -267,16 +270,9 @@ const ChampionshipForm = ({
                 Cancel
               </Button>
             )}
-            <Button type='submit' disabled={isSubmitting} className='gap-2'>
-              <Save className='h-4 w-4' />
-              {isSubmitting
-                ? isEditing
-                  ? 'Updating...'
-                  : 'Creating...'
-                : isEditing
-                ? 'Update Championship'
-                : 'Create Championship'}
-            </Button>
+            <LoadingButton type='submit' isLoading={isSubmitting}>
+              {isEditing ? 'Update Championship' : 'Create Championship'}
+            </LoadingButton>
           </DialogFooter>
         </form>
       </Form>

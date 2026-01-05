@@ -138,6 +138,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               title: 'Clubs',
               url: '/admin/clubs',
             },
+            {
+              title: 'Placement Tiers',
+              url: '/admin/placement-tiers',
+            },
           ],
         },
       ]

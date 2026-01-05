@@ -80,7 +80,7 @@ export class ApiClient {
     page?: number
     limit?: number
     unassigned?: string | boolean
-  }): Promise<PaginatedResponse<any>> {
+  }, signal?: AbortSignal): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.gender) searchParams.set('gender', params.gender)
@@ -114,7 +114,7 @@ export class ApiClient {
     }
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/players${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(`/players${query ? `?${query}` : ''}`, { signal })
   }
 
   async getPlayer(id: string) {
@@ -1086,6 +1086,173 @@ export class ApiClient {
     return this.request<any>('/organizations', {
       method: 'POST',
       body: JSON.stringify(data),
+    })
+  }
+
+  // Placement Tier methods
+  async getPlacementTiers(params?: {
+    q?: string
+    sortBy?: 'name' | 'rank' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }, signal?: AbortSignal): Promise<PaginatedResponse<any>> {
+    const query = new URLSearchParams(
+      Object.entries(params || {})
+        .filter(([_, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => [k, String(v)])
+    ).toString()
+
+    const endpoint = query
+      ? `/placement-tiers?${query}`
+      : '/placement-tiers'
+
+    return this.request<PaginatedResponse<any>>(endpoint, { signal })
+  }
+
+  async getPlacementTier(id: string, signal?: AbortSignal): Promise<any> {
+    return this.request<any>(`/placement-tiers/${id}`, { signal })
+  }
+
+  async createPlacementTier(data: {
+    name: string
+    displayName?: string | null
+    description?: string | null
+    rank: number
+  }): Promise<any> {
+    return this.request<any>('/placement-tiers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePlacementTier(
+    id: string,
+    data: {
+      name?: string
+      displayName?: string | null
+      description?: string | null
+      rank?: number
+    }
+  ): Promise<any> {
+    return this.request<any>(`/placement-tiers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deletePlacementTier(id: string): Promise<void> {
+    return this.request<void>(`/placement-tiers/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Points Schema methods
+  async getPointsSchemas(params?: {
+    q?: string
+    sortBy?: 'name' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const query = new URLSearchParams(
+      Object.entries(params || {})
+        .filter(([_, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => [k, String(v)])
+    ).toString()
+
+    const endpoint = query
+      ? `/points-schemas?${query}`
+      : '/points-schemas'
+
+    return this.request<PaginatedResponse<any>>(endpoint)
+  }
+
+  async getPointsSchema(id: string): Promise<any> {
+    return this.request<any>(`/points-schemas/${id}`)
+  }
+
+  async createPointsSchema(data: {
+    name: string
+    description?: string | null
+  }): Promise<any> {
+    return this.request<any>('/points-schemas', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePointsSchema(
+    id: string,
+    data: {
+      name?: string
+      description?: string | null
+    }
+  ): Promise<any> {
+    return this.request<any>(`/points-schemas/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deletePointsSchema(id: string): Promise<void> {
+    return this.request<void>(`/points-schemas/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Points Schema Entry methods
+  async getPointsSchemaEntries(params?: {
+    pointsSchemaId?: string
+    placementTierId?: string
+    sortBy?: 'points' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const query = new URLSearchParams(
+      Object.entries(params || {})
+        .filter(([_, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => [k, String(v)])
+    ).toString()
+
+    const endpoint = query
+      ? `/points-schema-entries?${query}`
+      : '/points-schema-entries'
+
+    return this.request<PaginatedResponse<any>>(endpoint)
+  }
+
+  async getPointsSchemaEntry(id: string): Promise<any> {
+    return this.request<any>(`/points-schema-entries/${id}`)
+  }
+
+  async createPointsSchemaEntry(data: {
+    pointsSchemaId: string
+    placementTierId: string
+    points: number
+  }): Promise<any> {
+    return this.request<any>('/points-schema-entries', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePointsSchemaEntry(
+    id: string,
+    data: {
+      points?: number
+    }
+  ): Promise<any> {
+    return this.request<any>(`/points-schema-entries/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deletePointsSchemaEntry(id: string): Promise<void> {
+    return this.request<void>(`/points-schema-entries/${id}`, {
+      method: 'DELETE',
     })
   }
 }

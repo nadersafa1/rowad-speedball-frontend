@@ -1,22 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Check, ChevronsUpDown, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { BaseCombobox } from '@/components/ui/combobox/base-combobox'
 import { apiClient } from '@/lib/api-client'
 import type { PaginatedResponse } from '@/types/api/pagination'
 import { Badge } from '@/components/ui/badge'
@@ -43,6 +28,8 @@ interface UserComboboxProps {
   organizationId?: string
   unassignedOnly?: boolean
   excludeUserId?: string
+  allowClear?: boolean
+  showRecentItems?: boolean
 }
 
 export const UserCombobox = ({
@@ -54,187 +41,134 @@ export const UserCombobox = ({
   organizationId,
   unassignedOnly = false,
   excludeUserId,
+  allowClear = true,
+  showRecentItems = true,
 }: UserComboboxProps) => {
-  const [open, setOpen] = React.useState(false)
-  const [searchQuery, setSearchQuery] = React.useState('')
-  const [users, setUsers] = React.useState<User[]>([])
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [selectedUser, setSelectedUser] = React.useState<User | null>(null)
+  const fetchUsers = React.useCallback(
+    async (
+      query: string,
+      page: number,
+      limit: number,
+      signal?: AbortSignal
+    ): Promise<{ items: User[]; hasMore: boolean }> => {
+      try {
+        const response = (await apiClient.getUsers({
+          q: query,
+          limit,
+          page,
+          unassigned: unassignedOnly,
+        })) as PaginatedResponse<User>
 
-  // Debounced search effect
-  React.useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.trim() || open) {
-        fetchUsers(searchQuery.trim())
+        return {
+          items: response.data,
+          hasMore: response.page < response.totalPages,
+        }
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          throw error
+        }
+        throw new Error(error.message || 'Failed to fetch users')
       }
-    }, 300)
+    },
+    [unassignedOnly]
+  )
 
-    return () => clearTimeout(timeoutId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, open])
-
-  // Fetch selected user when value changes
-  React.useEffect(() => {
-    if (value && !selectedUser) {
-      fetchSelectedUser(value)
-    } else if (!value) {
-      setSelectedUser(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value])
-
-  const fetchUsers = async (query: string = '') => {
-    setIsLoading(true)
-    try {
-      const response = (await apiClient.getUsers({
-        q: query,
-        limit: 50,
-        unassigned: unassignedOnly,
-      })) as PaginatedResponse<User>
-
-      let filteredUsers = response.data
-
-      // Exclude specific user if provided
-      if (excludeUserId) {
-        filteredUsers = filteredUsers.filter((u) => u.id !== excludeUserId)
+  const fetchUser = React.useCallback(
+    async (userId: string): Promise<User> => {
+      try {
+        // Fetch all users and find the one we need
+        const response = (await apiClient.getUsers({
+          limit: 100,
+        })) as PaginatedResponse<User>
+        const found = response.data.find((u) => u.id === userId)
+        if (!found) {
+          throw new Error('User not found')
+        }
+        return found
+      } catch (error: any) {
+        throw new Error(error.message || 'Failed to fetch user')
       }
+    },
+    []
+  )
 
-      setUsers(filteredUsers)
+  const handleValueChange = React.useCallback(
+    (userId: string | null | string[]) => {
+      if (typeof userId === 'string' || userId === null) {
+        onValueChange?.(userId || '')
+      }
+    },
+    [onValueChange]
+  )
 
-      // If we have a value, find and set the selected user
-      if (value && !selectedUser) {
-        const found = filteredUsers.find((u) => u.id === value)
-        if (found) {
-          setSelectedUser(found)
+  const formatLabel = React.useCallback(
+    (user: User) => {
+      return (
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span>{user.name} ({user.email})</span>
+            {user.organization && (
+              <Badge variant="outline" className="text-xs">
+                {user.organization.name} ({user.organization.role})
+              </Badge>
+            )}
+            {user.isInMyOrganization && (
+              <Badge variant="secondary" className="text-xs">
+                In your org
+              </Badge>
+            )}
+          </div>
+        </div>
+      )
+    },
+    []
+  )
+
+  const formatSelectedLabel = React.useCallback((user: User) => {
+    return `${user.name} (${user.email})`
+  }, [])
+
+  // Filter function to exclude users already in organization or specific user
+  const filterUser = React.useCallback(
+    (user: User) => {
+      // Filter out users already in this organization
+      if (organizationId && user.organization) {
+        if (user.organization.id === organizationId) {
+          return false
         }
       }
-    } catch (error) {
-      console.error('Failed to fetch users:', error)
-      setUsers([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchSelectedUser = async (userId: string) => {
-    try {
-      const response = (await apiClient.getUsers({
-        limit: 100,
-      })) as PaginatedResponse<User>
-      const found = response.data.find((u) => u.id === userId)
-      if (found) {
-        setSelectedUser(found)
+      // Exclude specific user if provided
+      if (excludeUserId && user.id === excludeUserId) {
+        return false
       }
-    } catch (error) {
-      console.error('Failed to fetch selected user:', error)
-    }
-  }
-
-  const formatUserLabel = (user: User) => {
-    return `${user.name} (${user.email})`
-  }
+      return true
+    },
+    [organizationId, excludeUserId]
+  )
 
   return (
-    <div className={cn('w-full', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant='outline'
-            role='combobox'
-            aria-expanded={open}
-            disabled={disabled}
-            className='w-full justify-between'
-          >
-            {selectedUser ? formatUserLabel(selectedUser) : placeholder}
-            <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className='w-[var(--radix-popover-trigger-width)] p-0'
-          align='start'
-        >
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder='Search users...'
-              value={searchQuery}
-              onValueChange={setSearchQuery}
-            />
-            <CommandList>
-              {isLoading ? (
-                <div className='flex items-center justify-center py-6'>
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                  <span className='ml-2 text-sm text-muted-foreground'>
-                    Searching...
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <CommandEmpty>
-                    {searchQuery
-                      ? 'No users found.'
-                      : 'Start typing to search...'}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    {users
-                      .filter((user) => {
-                        // Filter out users already in this organization
-                        if (organizationId && user.organization) {
-                          return user.organization.id !== organizationId
-                        }
-                        // Exclude specific user if provided
-                        if (excludeUserId && user.id === excludeUserId) {
-                          return false
-                        }
-                        return true
-                      })
-                      .map((user) => (
-                        <CommandItem
-                          key={user.id}
-                          value={user.id}
-                          onSelect={(currentValue) => {
-                            const newValue =
-                              currentValue === value ? '' : currentValue
-                            const foundUser = users.find(
-                              (u) => u.id === newValue
-                            )
-                            if (foundUser) {
-                              setSelectedUser(foundUser)
-                              onValueChange?.(newValue)
-                            }
-                            setOpen(false)
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              value === user.id ? 'opacity-100' : 'opacity-0'
-                            )}
-                          />
-                          <div className='flex-1'>
-                            <div className='flex items-center gap-2'>
-                              <span>{formatUserLabel(user)}</span>
-                              {user.organization && (
-                                <Badge variant='outline' className='text-xs'>
-                                  {user.organization.name} (
-                                  {user.organization.role})
-                                </Badge>
-                              )}
-                              {user.isInMyOrganization && (
-                                <Badge variant='secondary' className='text-xs'>
-                                  In your org
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                  </CommandGroup>
-                </>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
+    <BaseCombobox<User>
+      value={value}
+      onValueChange={handleValueChange}
+      fetchItems={fetchUsers}
+      fetchItem={fetchUser}
+      disabled={disabled}
+      placeholder={placeholder}
+      searchPlaceholder="Search users..."
+      emptyMessage={(query) =>
+        query ? 'No users found.' : 'Start typing to search users...'
+      }
+      className={className}
+      formatLabel={formatLabel}
+      formatSelectedLabel={formatSelectedLabel}
+      filterItem={filterUser}
+      allowClear={allowClear}
+      showRecentItems={showRecentItems}
+      recentItemsStorageKey="combobox-recent-users"
+      aria-label="Select user"
+      useMobileDialog={true}
+      dialogTitle="Select a User"
+      dialogDescription="Search and select a user from the list"
+    />
   )
 }

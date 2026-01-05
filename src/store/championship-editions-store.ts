@@ -114,8 +114,13 @@ export const useChampionshipEditionsStore = create<ChampionshipEditionsState>(
       set({ isLoading: true, error: null })
 
       try {
-        await apiClient.createChampionshipEdition(data)
-        set({ isLoading: false })
+        const newEdition = (await apiClient.createChampionshipEdition(
+          data
+        )) as ChampionshipEditionWithRelations
+        set((state) => ({
+          editions: [...state.editions, newEdition],
+          isLoading: false,
+        }))
       } catch (error: any) {
         set({
           error: error.message || 'Failed to create championship edition',
@@ -129,8 +134,20 @@ export const useChampionshipEditionsStore = create<ChampionshipEditionsState>(
       set({ isLoading: true, error: null })
 
       try {
-        await apiClient.updateChampionshipEdition(id, data)
-        set({ isLoading: false })
+        const updatedEdition = (await apiClient.updateChampionshipEdition(
+          id,
+          data
+        )) as ChampionshipEditionWithRelations
+        set((state) => ({
+          editions: state.editions.map((e) =>
+            e.id === id ? updatedEdition : e
+          ),
+          selectedEdition:
+            state.selectedEdition?.id === id
+              ? updatedEdition
+              : state.selectedEdition,
+          isLoading: false,
+        }))
       } catch (error: any) {
         set({
           error: error.message || 'Failed to update championship edition',
@@ -145,13 +162,12 @@ export const useChampionshipEditionsStore = create<ChampionshipEditionsState>(
 
       try {
         await apiClient.deleteChampionshipEdition(id)
-        set({ isLoading: false })
-
-        // Remove from list if present
-        const currentEditions = get().editions
-        set({
-          editions: currentEditions.filter((edition) => edition.id !== id),
-        })
+        set((state) => ({
+          editions: state.editions.filter((edition) => edition.id !== id),
+          selectedEdition:
+            state.selectedEdition?.id === id ? null : state.selectedEdition,
+          isLoading: false,
+        }))
       } catch (error: any) {
         set({
           error: error.message || 'Failed to delete championship edition',

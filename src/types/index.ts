@@ -372,4 +372,7 @@ export type {
   Organization,
   Member,
   Invitation,
+  PlacementTier,
+  PointsSchema,
+  PointsSchemaEntry,
 } from '@/db/schema'
