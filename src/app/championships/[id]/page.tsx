@@ -212,6 +212,7 @@ const ChampionshipDetailPage = () => {
             onSortingChange={handleSortingChange}
             isLoading={editionsLoading}
             onRefetch={fetchData}
+            championshipId={championshipId}
           />
         </CardContent>
       </Card>

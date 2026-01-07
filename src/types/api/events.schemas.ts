@@ -60,6 +60,13 @@ export const eventsQuerySchema = z
         (val) => val === undefined || z.uuid().safeParse(val).success,
         'Invalid training session ID format'
       ),
+    championshipEditionId: z
+      .string()
+      .optional()
+      .refine(
+        (val) => val === undefined || z.uuid().safeParse(val).success,
+        'Invalid championship edition ID format'
+      ),
     sortBy: z
       .enum([
         'name',

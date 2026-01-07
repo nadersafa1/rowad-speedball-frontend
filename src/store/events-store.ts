@@ -27,6 +27,7 @@ interface EventsState {
     format?: EventFormat
     visibility?: 'public' | 'private'
     organizationId?: string | null
+    championshipEditionId?: string
     sortBy?:
       | 'name'
       | 'eventType'
@@ -75,6 +76,7 @@ export const useEventsStore = create<EventsState>((set) => ({
           filters.organizationId !== undefined
             ? filters.organizationId
             : undefined,
+        championshipEditionId: filters.championshipEditionId || undefined,
         sortBy: filters.sortBy || undefined,
         sortOrder: filters.sortOrder || undefined,
         page: filters.page || 1,

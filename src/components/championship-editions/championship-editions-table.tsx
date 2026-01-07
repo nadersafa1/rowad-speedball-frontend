@@ -27,6 +27,7 @@ const ChampionshipEditionsTable = ({
   onSortingChange,
   isLoading = false,
   onRefetch,
+  championshipId,
 }: ChampionshipEditionsTableProps) => {
   const { context } = useOrganizationContext()
   const { isSystemAdmin, isFederationAdmin, isFederationEditor } = context
@@ -61,7 +62,8 @@ const ChampionshipEditionsTable = ({
         sortBy,
         sortOrder,
         handleSort,
-        onRefetch
+        onRefetch,
+        championshipId
       ),
     [
       canEdit,
@@ -72,6 +74,7 @@ const ChampionshipEditionsTable = ({
       sortOrder,
       handleSort,
       onRefetch,
+      championshipId,
     ]
   )
 

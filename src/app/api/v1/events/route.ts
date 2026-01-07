@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
       visibility,
       organizationId,
       trainingSessionId,
+      championshipEditionId,
       sortBy,
       sortOrder,
       page,
@@ -83,6 +84,11 @@ export async function GET(request: NextRequest) {
     // Training session filter
     if (trainingSessionId) {
       conditions.push(eq(schema.events.trainingSessionId, trainingSessionId))
+    }
+
+    // Championship edition filter
+    if (championshipEditionId) {
+      conditions.push(eq(schema.events.championshipEditionId, championshipEditionId))
     }
 
     // Organization filter (only for system admins)
