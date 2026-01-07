@@ -157,7 +157,7 @@ function handleDatabaseError(error: Error, errorId: string): NextResponse {
  *     endpoint: '/api/v1/players',
  *     method: 'GET',
  *     userId: context.userId,
- *     organizationId: context.organization?.id,
+ *     organizationId: context.organizationId,
  *   })
  * }
  * ```

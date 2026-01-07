@@ -218,6 +218,13 @@
       "when": 1767473427255,
       "tag": "0030_stiff_spacker_dave",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1767654828852,
+      "tag": "0031_zippy_nick_fury",
+      "breakpoints": true
     }
   ]
 }

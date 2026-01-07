@@ -28,7 +28,7 @@ import { LoadingButton, FormError } from '@/components/forms'
 
 // Validation schema
 const pointsSchemaEntrySchema = z.object({
-  placementTierId: z.string().uuid('Please select a placement tier'),
+  placementTierId: z.uuid('Please select a placement tier'),
   points: z
     .number()
     .int('Points must be an integer')

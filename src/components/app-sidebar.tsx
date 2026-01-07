@@ -95,6 +95,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 title: 'Championships',
                 url: '/championships',
               },
+              ...(isFederationAdmin
+                ? [
+                    {
+                      title: 'Member Clubs',
+                      url: '/admin/federation-clubs',
+                    },
+                  ]
+                : []),
             ],
           },
         ]
@@ -118,6 +126,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 title: 'Training Sessions',
                 url: '/sessions',
               },
+              ...(isOwner || isAdmin
+                ? [
+                    {
+                      title: 'Organization',
+                      url: '/organization',
+                    },
+                  ]
+                : []),
             ],
           },
         ]

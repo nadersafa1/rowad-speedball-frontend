@@ -109,7 +109,7 @@ const championshipEventSchema = z
       .nullable()
       .optional(),
     playersPerHeat: z.number().int().min(1).optional(),
-    pointsSchemaId: z.string().uuid('Points schema is required'),
+    pointsSchemaId: z.uuid('Points schema is required'),
   })
   .refine(
     (data) => {
@@ -862,7 +862,8 @@ const ChampionshipEventForm = ({
                 />
               </FormControl>
               <FormDescription>
-                Select the points system to use for ranking calculations in this event
+                Select the points system to use for ranking calculations in this
+                event
               </FormDescription>
               <FormMessage />
             </FormItem>

@@ -119,7 +119,7 @@ const eventSchema = z
     organizationId: z.uuid().nullable().optional(),
     // Championship-related fields
     championshipEditionId: z.uuid().optional(),
-    pointsSchemaId: z.string().uuid().optional(),
+    pointsSchemaId: z.uuid().optional(),
   })
   .refine(
     (data) => {

@@ -1124,6 +1124,78 @@ export const federationClubs = pgTable(
 )
 
 /**
+ * Federation Club Requests Table
+ *
+ * Tracks club requests to join federations with approval workflow.
+ * Enables clubs to apply for federation membership and federation admins to review.
+ *
+ * **Request Workflow**:
+ * 1. Club admin initiates request to join federation
+ * 2. Request created with status 'pending'
+ * 3. Federation admin reviews and approves/rejects
+ * 4. On approval: Record created in `federationClubs` table
+ * 5. On rejection: Status updated to 'rejected'
+ *
+ * **Status Flow**:
+ * - `pending`: Awaiting federation admin review
+ * - `approved`: Accepted and club added to federation
+ * - `rejected`: Declined by federation admin
+ *
+ * **Authorization**:
+ * - Create: Club admins/owners (for their organization)
+ * - Update (Approve/Reject): Federation admins/editors
+ * - Read: Federation admins (all requests), Club admins (their own requests)
+ * - Delete: System admins only (cleanup)
+ *
+ * **Important Notes**:
+ * - One pending request per organization (constraint enforced)
+ * - Approved requests create entry in `federationClubs`
+ * - Deleting federation cascades to delete all pending requests
+ * - Deleting organization cascades to delete its pending requests
+ * - After approval, request status updated but record kept for audit trail
+ *
+ * @see federations - The target federation
+ * @see organization - The requesting club
+ * @see federationClubs - Created after approval
+ * @see user - Federation admin who responded to request
+ */
+export const federationClubRequests = pgTable(
+  'federation_club_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    federationId: uuid('federation_id')
+      .notNull()
+      .references(() => federations.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: ['pending', 'approved', 'rejected'] })
+      .notNull()
+      .default('pending'),
+    requestedAt: timestamp('requested_at').notNull().defaultNow(),
+    respondedAt: timestamp('responded_at'), // When admin approved/rejected
+    respondedBy: uuid('responded_by').references(() => user.id, {
+      onDelete: 'set null',
+    }), // Federation admin who processed the request
+    rejectionReason: text('rejection_reason'), // Optional reason for rejection
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    // Ensure one pending request per organization-federation pair
+    unique('unique_pending_federation_request').on(
+      table.organizationId,
+      table.federationId,
+      table.status
+    ),
+    // Indexes for efficient lookups
+    index('idx_federation_requests_federation_id').on(table.federationId),
+    index('idx_federation_requests_organization_id').on(table.organizationId),
+    index('idx_federation_requests_status').on(table.status),
+  ]
+)
+
+/**
  * Championships Table
  *
  * Defines championship competitions organized by federations.
@@ -1619,6 +1691,7 @@ export type Federation = typeof federations.$inferSelect
 export type Championship = typeof championships.$inferSelect
 export type ChampionshipEdition = typeof championshipEditions.$inferSelect
 export type FederationClub = typeof federationClubs.$inferSelect
+export type FederationClubRequest = typeof federationClubRequests.$inferSelect
 export type FederationPlayer = typeof federationPlayers.$inferSelect
 export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect

@@ -253,6 +253,29 @@ export class ApiClient {
     })
   }
 
+  // Federation Clubs methods
+  async getFederationClubs(params?: {
+    federationId?: string
+    organizationId?: string
+    sortBy?: 'createdAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.federationId) searchParams.set('federationId', params.federationId)
+    if (params?.organizationId) searchParams.set('organizationId', params.organizationId)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(
+      `/federation-clubs${query ? `?${query}` : ''}`
+    )
+  }
+
   // Championship methods
   async getChampionships(params?: {
     q?: string
@@ -1252,6 +1275,59 @@ export class ApiClient {
 
   async deletePointsSchemaEntry(id: string): Promise<void> {
     return this.request<void>(`/points-schema-entries/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Federation Club Request methods
+  async getFederationClubRequests(params?: {
+    federationId?: string
+    organizationId?: string
+    status?: 'pending' | 'approved' | 'rejected' | 'all'
+    sortBy?: 'requestedAt' | 'respondedAt' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.federationId) searchParams.set('federationId', params.federationId)
+    if (params?.organizationId) searchParams.set('organizationId', params.organizationId)
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(
+      `/federation-club-requests${query ? `?${query}` : ''}`
+    )
+  }
+
+  async createFederationClubRequest(data: {
+    federationId: string
+  }): Promise<any> {
+    return this.request<any>('/federation-club-requests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateFederationClubRequestStatus(
+    id: string,
+    data: {
+      status: 'approved' | 'rejected'
+      rejectionReason?: string
+    }
+  ): Promise<any> {
+    return this.request<any>(`/federation-club-requests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteFederationClubRequest(id: string): Promise<void> {
+    return this.request<void>(`/federation-club-requests/${id}`, {
       method: 'DELETE',
     })
   }

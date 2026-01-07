@@ -31,7 +31,7 @@ import { formatDateForAPI } from '@/lib/date-utils'
 
 const formSchema = z
   .object({
-    championshipId: z.string().uuid('Invalid championship ID'),
+    championshipId: z.uuid('Invalid championship ID'),
     year: z
       .number()
       .int('Year must be an integer')
