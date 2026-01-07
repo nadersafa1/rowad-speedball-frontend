@@ -67,20 +67,23 @@ export class ApiClient {
   }
 
   // Player methods
-  async getPlayers(params?: {
-    q?: string
-    gender?: string
-    ageGroup?: string
-    preferredHand?: string
-    team?: string
-    club?: string | null
-    organizationId?: string | null
-    sortBy?: string
-    sortOrder?: 'asc' | 'desc'
-    page?: number
-    limit?: number
-    unassigned?: string | boolean
-  }, signal?: AbortSignal): Promise<PaginatedResponse<any>> {
+  async getPlayers(
+    params?: {
+      q?: string
+      gender?: string
+      ageGroup?: string
+      preferredHand?: string
+      team?: string
+      club?: string | null
+      organizationId?: string | null
+      sortBy?: string
+      sortOrder?: 'asc' | 'desc'
+      page?: number
+      limit?: number
+      unassigned?: string | boolean
+    },
+    signal?: AbortSignal
+  ): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.gender) searchParams.set('gender', params.gender)
@@ -114,7 +117,10 @@ export class ApiClient {
     }
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/players${query ? `?${query}` : ''}`, { signal })
+    return this.request<PaginatedResponse<any>>(
+      `/players${query ? `?${query}` : ''}`,
+      { signal }
+    )
   }
 
   async getPlayer(id: string) {
@@ -226,7 +232,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/federations${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/federations${query ? `?${query}` : ''}`
+    )
   }
 
   async getFederation(id: string) {
@@ -263,8 +271,10 @@ export class ApiClient {
     limit?: number
   }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
-    if (params?.federationId) searchParams.set('federationId', params.federationId)
-    if (params?.organizationId) searchParams.set('organizationId', params.organizationId)
+    if (params?.federationId)
+      searchParams.set('federationId', params.federationId)
+    if (params?.organizationId)
+      searchParams.set('organizationId', params.organizationId)
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())
@@ -298,7 +308,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/championships${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/championships${query ? `?${query}` : ''}`
+    )
   }
 
   async getChampionship(id: string) {
@@ -411,7 +423,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/tests${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/tests${query ? `?${query}` : ''}`
+    )
   }
 
   async getTest(id: string, includeResults?: boolean) {
@@ -463,7 +477,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/results${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/results${query ? `?${query}` : ''}`
+    )
   }
 
   async getPlayerResults(playerId: string) {
@@ -503,6 +519,7 @@ export class ApiClient {
     visibility?: 'public' | 'private'
     organizationId?: string | null
     trainingSessionId?: string
+    championshipEditionId?: string
     sortBy?:
       | 'name'
       | 'eventType'
@@ -526,6 +543,9 @@ export class ApiClient {
     if (params?.trainingSessionId) {
       searchParams.set('trainingSessionId', params.trainingSessionId)
     }
+    if (params?.championshipEditionId) {
+      searchParams.set('championshipEditionId', params.championshipEditionId)
+    }
     if (params?.organizationId !== undefined) {
       if (params.organizationId === null) {
         searchParams.set('organizationId', 'null')
@@ -539,7 +559,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/events${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/events${query ? `?${query}` : ''}`
+    )
   }
 
   async getEvent(id: string) {
@@ -652,7 +674,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/registrations${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/registrations${query ? `?${query}` : ''}`
+    )
   }
 
   async createRegistration(data: {
@@ -710,7 +734,13 @@ export class ApiClient {
     eventId?: string
     groupId?: string
     round?: number
-    sortBy?: 'round' | 'matchNumber' | 'matchDate' | 'played' | 'createdAt' | 'updatedAt'
+    sortBy?:
+      | 'round'
+      | 'matchNumber'
+      | 'matchDate'
+      | 'played'
+      | 'createdAt'
+      | 'updatedAt'
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
@@ -725,7 +755,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/matches${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/matches${query ? `?${query}` : ''}`
+    )
   }
 
   async getMatch(id: string) {
@@ -810,7 +842,9 @@ export class ApiClient {
     }
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/coaches${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/coaches${query ? `?${query}` : ''}`
+    )
   }
 
   async getCoach(id: string) {
@@ -870,7 +904,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/training-sessions${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<any>>(
+      `/training-sessions${query ? `?${query}` : ''}`
+    )
   }
 
   async getTrainingSession(id: string) {
@@ -1076,7 +1112,9 @@ export class ApiClient {
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }): Promise<Array<{ id: string; name: string; slug: string; createdAt?: Date }>> {
+  }): Promise<
+    Array<{ id: string; name: string; slug: string; createdAt?: Date }>
+  > {
     // For backward compatibility, if no params provided, fetch up to max limit
     if (!params) {
       params = { limit: 100 }
@@ -1092,7 +1130,14 @@ export class ApiClient {
     const query = searchParams.toString()
     const endpoint = query ? `/organizations?${query}` : '/organizations'
 
-    const response = await this.request<PaginatedResponse<{ id: string; name: string; slug: string; createdAt?: Date }>>(endpoint)
+    const response = await this.request<
+      PaginatedResponse<{
+        id: string
+        name: string
+        slug: string
+        createdAt?: Date
+      }>
+    >(endpoint)
 
     // Return just the data array for backward compatibility
     return response.data
@@ -1113,22 +1158,23 @@ export class ApiClient {
   }
 
   // Placement Tier methods
-  async getPlacementTiers(params?: {
-    q?: string
-    sortBy?: 'name' | 'rank' | 'createdAt' | 'updatedAt'
-    sortOrder?: 'asc' | 'desc'
-    page?: number
-    limit?: number
-  }, signal?: AbortSignal): Promise<PaginatedResponse<any>> {
+  async getPlacementTiers(
+    params?: {
+      q?: string
+      sortBy?: 'name' | 'rank' | 'createdAt' | 'updatedAt'
+      sortOrder?: 'asc' | 'desc'
+      page?: number
+      limit?: number
+    },
+    signal?: AbortSignal
+  ): Promise<PaginatedResponse<any>> {
     const query = new URLSearchParams(
       Object.entries(params || {})
         .filter(([_, v]) => v !== undefined && v !== null)
         .map(([k, v]) => [k, String(v)])
     ).toString()
 
-    const endpoint = query
-      ? `/placement-tiers?${query}`
-      : '/placement-tiers'
+    const endpoint = query ? `/placement-tiers?${query}` : '/placement-tiers'
 
     return this.request<PaginatedResponse<any>>(endpoint, { signal })
   }
@@ -1184,9 +1230,7 @@ export class ApiClient {
         .map(([k, v]) => [k, String(v)])
     ).toString()
 
-    const endpoint = query
-      ? `/points-schemas?${query}`
-      : '/points-schemas'
+    const endpoint = query ? `/points-schemas?${query}` : '/points-schemas'
 
     return this.request<PaginatedResponse<any>>(endpoint)
   }
@@ -1290,8 +1334,10 @@ export class ApiClient {
     limit?: number
   }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
-    if (params?.federationId) searchParams.set('federationId', params.federationId)
-    if (params?.organizationId) searchParams.set('organizationId', params.organizationId)
+    if (params?.federationId)
+      searchParams.set('federationId', params.federationId)
+    if (params?.organizationId)
+      searchParams.set('organizationId', params.organizationId)
     if (params?.status) searchParams.set('status', params.status)
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
