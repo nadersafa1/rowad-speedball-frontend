@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useChampionshipsStore } from '@/store/championships-store'
@@ -8,7 +9,7 @@ import { useEventsStore } from '@/store/events-store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, ArrowLeft, Edit, Trash2 } from 'lucide-react'
+import { Plus, ArrowLeft, Edit, Trash2, Trophy } from 'lucide-react'
 import LoadingState from '@/components/shared/loading-state'
 import {
   Dialog,
@@ -17,19 +18,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { BaseDataTable, PaginationConfig } from '@/lib/table-core'
+import { championshipEventsTableConfig } from '@/config/tables/championship-events.config'
+import { createChampionshipEventsColumns } from '@/config/tables/columns/championship-events-columns'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { EVENT_TYPE_LABELS } from '@/types/event-types'
-import { EVENT_FORMAT_LABELS } from '@/types/event-format'
 import ChampionshipEventForm from '@/components/championships/championship-event-form'
 import {
   AlertDialog,
@@ -41,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { PageHeader } from '@/components/ui'
 
 const ChampionshipEditionEventsPage = () => {
   const params = useParams()
@@ -76,6 +71,10 @@ const ChampionshipEditionEventsPage = () => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [eventToDelete, setEventToDelete] = useState<string | null>(null)
+
+  // Column visibility state
+  const [columnVisibility, setColumnVisibility] = React.useState<{}>({})
+  const [rowSelection, setRowSelection] = React.useState<{}>({})
 
   // Fetch championship and edition on mount
   useEffect(() => {
@@ -143,6 +142,18 @@ const ChampionshipEditionEventsPage = () => {
 
   const canEdit = isSystemAdmin || isFederationAdmin || isFederationEditor
 
+  // Create columns with table-core
+  const columns = React.useMemo(
+    () =>
+      createChampionshipEventsColumns({
+        canEdit,
+        canDelete: canEdit,
+        onEdit: handleEdit,
+        onDelete: handleDeleteClick,
+      }),
+    [canEdit]
+  )
+
   if (championshipLoading || editionLoading) {
     return <LoadingState message='Loading championship edition...' />
   }
@@ -156,44 +167,15 @@ const ChampionshipEditionEventsPage = () => {
   }
 
   return (
-    <div className='container mx-auto p-6 space-y-6'>
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       {/* Header */}
-      <div className='flex items-start justify-between'>
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => router.push(`/championships/${championshipId}`)}
-            >
-              <ArrowLeft className='h-4 w-4 mr-2' />
-              Back to Championship
-            </Button>
-          </div>
-          <div className='flex items-center gap-3'>
-            <h1 className='text-3xl font-bold'>
-              {selectedChampionship.name} - {selectedEdition.year}
-            </h1>
-            <Badge
-              variant={
-                selectedEdition.status === 'published'
-                  ? 'default'
-                  : selectedEdition.status === 'draft'
-                    ? 'secondary'
-                    : 'outline'
-              }
-            >
-              {selectedEdition.status}
-            </Badge>
-          </div>
-          {selectedEdition.registrationStartDate && selectedEdition.registrationEndDate && (
-            <p className='text-sm text-muted-foreground'>
-              Registration: {format(new Date(selectedEdition.registrationStartDate), 'MMM dd, yyyy')} -{' '}
-              {format(new Date(selectedEdition.registrationEndDate), 'MMM dd, yyyy')}
-            </p>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        icon={Trophy}
+        title={`${selectedChampionship.name} - ${selectedEdition.year}`}
+        description={
+          selectedChampionship.description || 'Manage championship details'
+        }
+      />
 
       {/* Events Section */}
       <Card>
@@ -209,85 +191,25 @@ const ChampionshipEditionEventsPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {eventsLoading ? (
-            <LoadingState message='Loading events...' />
-          ) : events.length === 0 ? (
-            <div className='text-center py-8 text-muted-foreground'>
-              No events found for this championship edition.
-              {canEdit && (
-                <p className='mt-2'>Click &quot;Add Event&quot; to create one.</p>
-              )}
-            </div>
-          ) : (
-            <div className='rounded-md border'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Event Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Gender</TableHead>
-                    <TableHead>Format</TableHead>
-                    <TableHead>Points Schema</TableHead>
-                    <TableHead>Registration</TableHead>
-                    <TableHead>Status</TableHead>
-                    {canEdit && <TableHead className='w-[100px]'>Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {events.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell className='font-medium'>{event.name}</TableCell>
-                      <TableCell>
-                        {EVENT_TYPE_LABELS[event.eventType as keyof typeof EVENT_TYPE_LABELS]}
-                      </TableCell>
-                      <TableCell className='capitalize'>{event.gender}</TableCell>
-                      <TableCell>
-                        {EVENT_FORMAT_LABELS[event.format as keyof typeof EVENT_FORMAT_LABELS]}
-                      </TableCell>
-                      <TableCell>
-                        {(event as any).pointsSchemaName || 'Not assigned'}
-                      </TableCell>
-                      <TableCell>
-                        {event.registrationStartDate && event.registrationEndDate ? (
-                          <>
-                            {format(new Date(event.registrationStartDate), 'MMM dd')} -{' '}
-                            {format(new Date(event.registrationEndDate), 'MMM dd, yyyy')}
-                          </>
-                        ) : (
-                          'Not set'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={event.completed ? 'default' : 'secondary'}>
-                          {event.completed ? 'Completed' : 'Ongoing'}
-                        </Badge>
-                      </TableCell>
-                      {canEdit && (
-                        <TableCell>
-                          <div className='flex items-center gap-2'>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              onClick={() => handleEdit(event)}
-                            >
-                              <Edit className='h-4 w-4' />
-                            </Button>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              onClick={() => handleDeleteClick(event.id)}
-                            >
-                              <Trash2 className='h-4 w-4 text-destructive' />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          <BaseDataTable
+            data={events}
+            columns={columns}
+            pagination={pagination}
+            isLoading={eventsLoading}
+            enableNavigation={championshipEventsTableConfig.features.navigation}
+            emptyMessage={
+              canEdit
+                ? 'No events found for this championship edition. Click "Add Event" to create one.'
+                : 'No events found for this championship edition.'
+            }
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
+            enableRowSelection={
+              championshipEventsTableConfig.features.selection
+            }
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+          />
         </CardContent>
       </Card>
 
@@ -297,7 +219,8 @@ const ChampionshipEditionEventsPage = () => {
           <DialogHeader>
             <DialogTitle>Create Championship Event</DialogTitle>
             <DialogDescription>
-              Add a new event for {selectedChampionship.name} - {selectedEdition.year}
+              Add a new event for {selectedChampionship.name} -{' '}
+              {selectedEdition.year}
             </DialogDescription>
           </DialogHeader>
           <ChampionshipEventForm
@@ -335,7 +258,8 @@ const ChampionshipEditionEventsPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Event</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this event? This action cannot be undone.
+              Are you sure you want to delete this event? This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -132,9 +132,29 @@ export async function PATCH(
       )
     }
 
-    // Authorization check
+    // If event belongs to championship edition, fetch the championship's federation ID
+    let championshipFederationId: string | null = null
+    if (eventData.championshipEditionId) {
+      const editionResult = await db
+        .select({
+          federationId: schema.championships.federationId,
+        })
+        .from(schema.championshipEditions)
+        .innerJoin(
+          schema.championships,
+          eq(schema.championshipEditions.championshipId, schema.championships.id)
+        )
+        .where(eq(schema.championshipEditions.id, eventData.championshipEditionId))
+        .limit(1)
+
+      if (editionResult.length > 0) {
+        championshipFederationId = editionResult[0].federationId
+      }
+    }
+
+    // Authorization check with championship federation ID
     const context = await getOrganizationContext()
-    const authError = checkEventUpdateAuthorization(context, eventData)
+    const authError = checkEventUpdateAuthorization(context, eventData, championshipFederationId)
     if (authError) return authError
 
     const { isSystemAdmin, organization } = context
@@ -378,9 +398,29 @@ export async function DELETE(
 
     const eventData = existing[0]
 
-    // Authorization check
+    // If event belongs to championship edition, fetch the championship's federation ID
+    let championshipFederationId: string | null = null
+    if (eventData.championshipEditionId) {
+      const editionResult = await db
+        .select({
+          federationId: schema.championships.federationId,
+        })
+        .from(schema.championshipEditions)
+        .innerJoin(
+          schema.championships,
+          eq(schema.championshipEditions.championshipId, schema.championships.id)
+        )
+        .where(eq(schema.championshipEditions.id, eventData.championshipEditionId))
+        .limit(1)
+
+      if (editionResult.length > 0) {
+        championshipFederationId = editionResult[0].federationId
+      }
+    }
+
+    // Authorization check with championship federation ID
     const context = await getOrganizationContext()
-    const authError = checkEventDeleteAuthorization(context, eventData)
+    const authError = checkEventDeleteAuthorization(context, eventData, championshipFederationId)
     if (authError) return authError
 
     // Delete event

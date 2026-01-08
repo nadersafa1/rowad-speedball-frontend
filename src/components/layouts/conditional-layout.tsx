@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/sidebar'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { authClient } from '@/lib/auth-client'
+import { apiClient } from '@/lib/api-client'
+import ThemeToggle from '../ui/theme-toggle'
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const { data: session, isPending: isSessionPending } = authClient.useSession()
@@ -34,6 +36,14 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   } = context
   const pathname = usePathname()
 
+  // State for entity names cache
+  const [entityNames, setEntityNames] = React.useState<Record<string, string>>(
+    {}
+  )
+  const [loadingEntities, setLoadingEntities] = React.useState<Set<string>>(
+    new Set()
+  )
+
   // Wait for both session and context to load
   const isLoading = isSessionPending || isContextLoading
 
@@ -47,17 +57,112 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       isFederationAdmin ||
       isFederationEditor)
 
-  // Show loading state while authentication is being determined
-  if (isLoading) {
-    return (
-      <div className='flex h-screen w-full items-center justify-center'>
-        <div className='flex flex-col items-center gap-2'>
-          <div className='h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent' />
-          <p className='text-sm text-muted-foreground'>Loading...</p>
-        </div>
-      </div>
-    )
-  }
+  // Fetch entity names for IDs in the path
+  React.useEffect(() => {
+    if (!pathname || isLoading) return
+
+    const paths = pathname.split('/').filter(Boolean)
+
+    paths.forEach((path, index) => {
+      const isUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          path
+        )
+      const isNumeric = /^\d+$/.test(path)
+      const isID = isUUID || isNumeric
+
+      if (isID && index > 0) {
+        const prevSegment = paths[index - 1]
+
+        // Skip if already have name or currently loading
+        if (entityNames[path] || loadingEntities.has(path)) {
+          return
+        }
+
+        setLoadingEntities((prev) => new Set(prev).add(path))
+
+        const fetchEntityName = async () => {
+          try {
+            let name: string | null = null
+
+            switch (prevSegment) {
+              case 'championships': {
+                const championship = (await apiClient.getChampionship(
+                  path
+                )) as { name?: string } | null
+                name = championship?.name || null
+                break
+              }
+
+              case 'edition': {
+                const edition = (await apiClient.getChampionshipEdition(
+                  path
+                )) as {
+                  championshipName?: string | null
+                  year?: number
+                } | null
+                if (edition) {
+                  name = edition.championshipName
+                    ? `${edition.championshipName} ${edition.year}`
+                    : edition.year
+                    ? String(edition.year)
+                    : null
+                }
+                break
+              }
+
+              case 'events': {
+                const event = (await apiClient.getEvent(path)) as {
+                  name?: string
+                } | null
+                name = event?.name || null
+                break
+              }
+
+              case 'players': {
+                const player = (await apiClient.getPlayer(path)) as {
+                  name?: string
+                } | null
+                name = player?.name || null
+                break
+              }
+
+              case 'coaches': {
+                const coach = (await apiClient.getCoach(path)) as {
+                  name?: string
+                } | null
+                name = coach?.name || null
+                break
+              }
+
+              default:
+                // Unknown entity type, skip
+                setLoadingEntities((prev) => {
+                  const next = new Set(prev)
+                  next.delete(path)
+                  return next
+                })
+                return
+            }
+
+            if (name) {
+              setEntityNames((prev) => ({ ...prev, [path]: name! }))
+            }
+          } catch (error) {
+            console.error(`Failed to fetch ${prevSegment} ${path}:`, error)
+          } finally {
+            setLoadingEntities((prev) => {
+              const next = new Set(prev)
+              next.delete(path)
+              return next
+            })
+          }
+        }
+
+        fetchEntityName()
+      }
+    })
+  }, [pathname, isLoading, entityNames, loadingEntities])
 
   // Generate breadcrumbs from pathname
   const generateBreadcrumbs = () => {
@@ -78,25 +183,52 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       const isNumeric = /^\d+$/.test(path)
       const isID = isUUID || isNumeric
 
-      // Skip ID segments - they're not meaningful in breadcrumbs
-      if (isID) {
-        return
-      }
-
       currentPath += `/${path}`
-      const label = path
-        .split('-')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
 
-      breadcrumbs.push({
-        label,
-        href: currentPath,
-        isLast: index === paths.length - 1,
-      })
+      if (isID) {
+        // Show entity name if available, otherwise show "Loading..." or skip
+        const entityName = entityNames[path]
+        if (entityName) {
+          breadcrumbs.push({
+            label: entityName,
+            href: currentPath,
+            isLast: index === paths.length - 1,
+          })
+        } else if (loadingEntities.has(path)) {
+          breadcrumbs.push({
+            label: 'Loading...',
+            href: currentPath,
+            isLast: index === paths.length - 1,
+          })
+        }
+        // If not loading and no name, skip (fallback to old behavior)
+      } else {
+        const label = path
+          .split('-')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+
+        breadcrumbs.push({
+          label,
+          href: currentPath,
+          isLast: index === paths.length - 1,
+        })
+      }
     })
 
     return breadcrumbs
+  }
+
+  // Show loading state while authentication is being determined
+  if (isLoading) {
+    return (
+      <div className='flex h-screen w-full items-center justify-center'>
+        <div className='flex flex-col items-center gap-2'>
+          <div className='h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent' />
+          <p className='text-sm text-muted-foreground'>Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   if (showSidebar) {
@@ -106,27 +238,30 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className='flex h-16 shrink-0 items-center gap-2 border-b px-4'>
-            <SidebarTrigger className='-ml-1' />
-            <Separator orientation='vertical' className='mr-2 h-4' />
-            <Breadcrumb>
-              <BreadcrumbList>
-                {breadcrumbs.map((crumb, index) => (
-                  <React.Fragment key={crumb.href}>
-                    {index > 0 && <BreadcrumbSeparator />}
-                    <BreadcrumbItem>
-                      {crumb.isLast ? (
-                        <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink href={crumb.href}>
-                          {crumb.label}
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
+          <header className='flex h-16 shrink-0 items-center border-b px-4 justify-between'>
+            <div className='flex items-center gap-2'>
+              <SidebarTrigger className='-ml-1' />
+              <Separator orientation='vertical' className='mr-2 h-4' />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {breadcrumbs.map((crumb, index) => (
+                    <React.Fragment key={crumb.href}>
+                      {index > 0 && <BreadcrumbSeparator />}
+                      <BreadcrumbItem>
+                        {crumb.isLast ? (
+                          <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink href={crumb.href}>
+                            {crumb.label}
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+            <ThemeToggle />
           </header>
           <main className='flex flex-1 flex-col gap-4 p-4 pt-0'>
             {children}

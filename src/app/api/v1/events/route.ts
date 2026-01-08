@@ -59,7 +59,8 @@ export async function GET(request: NextRequest) {
     const conditions: any[] = []
 
     // Get organization context for authorization
-    const { isSystemAdmin, organization } = await getOrganizationContext()
+    const context = await getOrganizationContext()
+    const { isSystemAdmin, organization, isFederationAdmin, isFederationEditor, federationId } = context
 
     // Text search filter
     if (q) {
@@ -105,10 +106,15 @@ export async function GET(request: NextRequest) {
 
     // Apply organization-based filtering based on user role:
     // 1. System admin: sees all events (unless organizationId filter is applied)
-    // 2. Org members (admin/owner/coach/player/member): see their org events + public events + events without org
-    // 3. Non-authenticated users: see public events + events without org
+    // 2. Federation admin/editor: ONLY sees their federation's championship events
+    // 3. Org members (admin/owner/coach/player/member): see their org events + public events + events without org
+    // 4. Non-authenticated users: see public events + events without org
     if (!isSystemAdmin) {
-      if (organization?.id) {
+      if (isFederationAdmin || isFederationEditor) {
+        // Federation admins/editors: ONLY see their federation's championship edition events
+        // No other events (no public events, no org events, etc.)
+        // This will be enforced by the federationChampionshipCondition below
+      } else if (organization?.id) {
         // Org members: can see events from their organization (public + private),
         // all public events, and all events without organization
         conditions.push(
@@ -151,8 +157,35 @@ export async function GET(request: NextRequest) {
           )
         : undefined
 
-    let countQuery = db.select({ count: count() }).from(schema.events)
-    if (combinedCondition) {
+    // For federation admins/editors, add filter to ONLY show championship events from their federation
+    let federationChampionshipCondition = undefined
+    if (!isSystemAdmin && (isFederationAdmin || isFederationEditor) && federationId) {
+      // ONLY show championship events from their federation (must have championshipEditionId AND match federationId)
+      federationChampionshipCondition = and(
+        sql`${schema.events.championshipEditionId} IS NOT NULL`,
+        eq(schema.championships.federationId, federationId)
+      )
+    }
+
+    let countQuery = db
+      .select({ count: count() })
+      .from(schema.events)
+      .leftJoin(
+        schema.championshipEditions,
+        eq(schema.events.championshipEditionId, schema.championshipEditions.id)
+      )
+      .leftJoin(
+        schema.championships,
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
+      )
+
+    // For federation users, ONLY apply federation filter (ignore other conditions)
+    // For all other users, apply combined conditions
+    if (federationChampionshipCondition) {
+      // Federation users: only their federation's championship events
+      countQuery = countQuery.where(federationChampionshipCondition) as any
+    } else if (combinedCondition) {
+      // Other users: apply normal filtering
       countQuery = countQuery.where(combinedCondition) as any
     }
 
@@ -182,7 +215,13 @@ export async function GET(request: NextRequest) {
         eq(schema.events.pointsSchemaId, schema.pointsSchemas.id)
       )
 
-    if (combinedCondition) {
+    // For federation users, ONLY apply federation filter (ignore other conditions)
+    // For all other users, apply combined conditions
+    if (federationChampionshipCondition) {
+      // Federation users: only their federation's championship events
+      dataQuery = dataQuery.where(federationChampionshipCondition) as any
+    } else if (combinedCondition) {
+      // Other users: apply normal filtering
       dataQuery = dataQuery.where(combinedCondition) as any
     }
 
@@ -229,32 +268,59 @@ export async function GET(request: NextRequest) {
     }
 
     // Stats queries - use same filters but without pagination
+    // Helper function to combine conditions for stats
+    const combineStatsConditions = (...extraConditions: any[]) => {
+      const allConditions = []
+      // For federation users, ONLY use federation filter
+      if (federationChampionshipCondition) {
+        allConditions.push(federationChampionshipCondition)
+      } else if (combinedCondition) {
+        allConditions.push(combinedCondition)
+      }
+      allConditions.push(...extraConditions)
+      return allConditions.length > 0
+        ? allConditions.reduce((acc, cond) => acc ? and(acc, cond) : cond)
+        : undefined
+    }
+
     const publicCountQuery = db
       .select({ count: count() })
       .from(schema.events)
-      .where(
-        combinedCondition
-          ? and(combinedCondition, eq(schema.events.visibility, 'public'))
-          : eq(schema.events.visibility, 'public')
+      .leftJoin(
+        schema.championshipEditions,
+        eq(schema.events.championshipEditionId, schema.championshipEditions.id)
       )
+      .leftJoin(
+        schema.championships,
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
+      )
+      .where(combineStatsConditions(eq(schema.events.visibility, 'public')))
 
     const privateCountQuery = db
       .select({ count: count() })
       .from(schema.events)
-      .where(
-        combinedCondition
-          ? and(combinedCondition, eq(schema.events.visibility, 'private'))
-          : eq(schema.events.visibility, 'private')
+      .leftJoin(
+        schema.championshipEditions,
+        eq(schema.events.championshipEditionId, schema.championshipEditions.id)
       )
+      .leftJoin(
+        schema.championships,
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
+      )
+      .where(combineStatsConditions(eq(schema.events.visibility, 'private')))
 
     const completedCountQuery = db
       .select({ count: count() })
       .from(schema.events)
-      .where(
-        combinedCondition
-          ? and(combinedCondition, eq(schema.events.completed, true))
-          : eq(schema.events.completed, true)
+      .leftJoin(
+        schema.championshipEditions,
+        eq(schema.events.championshipEditionId, schema.championshipEditions.id)
       )
+      .leftJoin(
+        schema.championships,
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
+      )
+      .where(combineStatsConditions(eq(schema.events.completed, true)))
 
     // Fetch events with pagination applied at database level
     const [
@@ -370,12 +436,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Authorization check
   const context = await getOrganizationContext()
-  const authError = checkEventCreateAuthorization(context)
-  if (authError) return authError
-
-  const { isSystemAdmin, organization } = context
 
   try {
     const body = await request.json()
@@ -407,6 +468,37 @@ export async function POST(request: NextRequest) {
       championshipEditionId,
       pointsSchemaId,
     } = parseResult.data
+
+    // If creating event for championship edition, fetch the championship's federation ID
+    let championshipFederationId: string | null = null
+    if (championshipEditionId) {
+      const editionResult = await db
+        .select({
+          federationId: schema.championships.federationId,
+        })
+        .from(schema.championshipEditions)
+        .innerJoin(
+          schema.championships,
+          eq(schema.championshipEditions.championshipId, schema.championships.id)
+        )
+        .where(eq(schema.championshipEditions.id, championshipEditionId))
+        .limit(1)
+
+      if (editionResult.length === 0) {
+        return Response.json(
+          { message: 'Championship edition not found' },
+          { status: 404 }
+        )
+      }
+
+      championshipFederationId = editionResult[0].federationId
+    }
+
+    // Authorization check with championship federation ID
+    const authError = checkEventCreateAuthorization(context, championshipFederationId)
+    if (authError) return authError
+
+    const { isSystemAdmin, organization } = context
 
     // Validate training session access if trainingSessionId is provided
     if (trainingSessionId) {

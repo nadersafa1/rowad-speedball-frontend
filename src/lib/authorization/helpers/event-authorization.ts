@@ -1,5 +1,8 @@
 import type { OrganizationContext } from '@/lib/organization-helpers'
-import type { AuthorizationResult, EventResource } from '@/lib/authorization/types'
+import type {
+  AuthorizationResult,
+  EventResource,
+} from '@/lib/authorization/types'
 import {
   requireAuthentication,
   forbiddenResponse,
@@ -17,15 +20,39 @@ import {
  * - Must be authenticated
  * - System admins can create events for any organization or global events
  * - Organization members (admin/owner/coach) can create events for their organization
- * - Organization members must have an active organization
+ * - Federation admins/editors can create events for championship editions in their federation
+ * - Organization members must have an active organization (unless creating for championship edition)
  */
 export function checkEventCreateAuthorization(
-  context: OrganizationContext
+  context: OrganizationContext,
+  championshipFederationId?: string | null
 ): AuthorizationResult {
   // Require authentication
   const authCheck = requireAuthentication(context)
   if (authCheck) return authCheck
 
+  // If creating event for championship edition, check federation authorization
+  if (championshipFederationId) {
+    // System admins can create events for any championship edition
+    if (isSystemAdmin(context)) {
+      return null
+    }
+
+    // Federation admins/editors can create events for championship editions in their federation
+    const { isFederationAdmin, isFederationEditor, federationId } = context
+    if (
+      (isFederationAdmin || isFederationEditor) &&
+      federationId === championshipFederationId
+    ) {
+      return null
+    }
+
+    return forbiddenResponse(
+      'Only system admins and federation admins/editors can create events for championship editions in their federation'
+    )
+  }
+
+  // For regular events (not championship events), use organization-based authorization
   // Only system admins, org admins, org owners, and org coaches can create events
   if (!hasCoachPermissions(context)) {
     return forbiddenResponse(
@@ -82,17 +109,41 @@ export function checkEventReadAuthorization(
  * - Must be authenticated
  * - System admins can update any event
  * - Organization members (admin/owner/coach) can update events from their organization
- * - Organization members must have an active organization
+ * - Federation admins/editors can update events for championship editions in their federation
+ * - Organization members must have an active organization (unless updating championship event)
  */
 export function checkEventUpdateAuthorization(
   context: OrganizationContext,
-  event: EventResource
+  event: EventResource,
+  championshipFederationId?: string | null
 ): AuthorizationResult {
   // Require authentication
   const authCheck = requireAuthentication(context)
   if (authCheck) return authCheck
 
-  // Only system admins, org admins, org owners, and org coaches can update events
+  // System admins can update any event
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // If event belongs to a championship edition, check federation authorization
+  if (championshipFederationId) {
+    // Federation admins/editors can update events for championship editions in their federation
+    const { isFederationAdmin, isFederationEditor, federationId } = context
+    if (
+      (isFederationAdmin || isFederationEditor) &&
+      federationId === championshipFederationId
+    ) {
+      return null
+    }
+
+    return forbiddenResponse(
+      'Only system admins and federation admins/editors can update events for championship editions in their federation'
+    )
+  }
+
+  // For regular events (not championship events), use organization-based authorization
+  // Only org admins, org owners, and org coaches can update events
   if (!hasCoachPermissions(context)) {
     return forbiddenResponse(
       'Only system admins, club admins, club owners, and club coaches can update events'
@@ -100,10 +151,8 @@ export function checkEventUpdateAuthorization(
   }
 
   // Non-system admins must have an active organization
-  if (!isSystemAdmin(context)) {
-    const orgCheck = requireOrganization(context)
-    if (orgCheck) return orgCheck
-  }
+  const orgCheck = requireOrganization(context)
+  if (orgCheck) return orgCheck
 
   // Organization ownership check: org members can only update events from their own organization
   const ownershipCheck = checkOrganizationAccess(
@@ -123,30 +172,48 @@ export function checkEventUpdateAuthorization(
  * Authorization rules:
  * - Must be authenticated
  * - System admins can delete any event
- * - Organization admins/owners can delete events from their organization
+ * - For championship edition events: only federation admins can delete (not federation editors)
+ * - For regular events: organization admins/owners can delete events from their organization
  * - Coaches cannot delete events (only admins/owners)
- * - Organization members must have an active organization
+ * - Organization members must have an active organization (unless deleting championship event)
  */
 export function checkEventDeleteAuthorization(
   context: OrganizationContext,
-  event: EventResource
+  event: EventResource,
+  championshipFederationId?: string | null
 ): AuthorizationResult {
   // Require authentication
   const authCheck = requireAuthentication(context)
   if (authCheck) return authCheck
 
-  // Only system admins, org admins, and org owners can delete events
-  if (!isSystemAdmin(context) && !context.isAdmin && !context.isOwner) {
+  // System admins can delete any event
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // If event belongs to a championship edition, only federation admins can delete
+  if (championshipFederationId) {
+    const { isFederationAdmin, federationId } = context
+    if (isFederationAdmin && federationId === championshipFederationId) {
+      return null
+    }
+
+    return forbiddenResponse(
+      'Only system admins and federation admins can delete events for championship editions in their federation'
+    )
+  }
+
+  // For regular events (not championship events), use organization-based authorization
+  // Only org admins and org owners can delete events (coaches cannot)
+  if (!context.isAdmin && !context.isOwner) {
     return forbiddenResponse(
       'Only system admins, club admins, and club owners can delete events'
     )
   }
 
   // Non-system admins must have an active organization
-  if (!isSystemAdmin(context)) {
-    const orgCheck = requireOrganization(context)
-    if (orgCheck) return orgCheck
-  }
+  const orgCheck = requireOrganization(context)
+  if (orgCheck) return orgCheck
 
   // Organization ownership check: org members can only delete events from their own organization
   const ownershipCheck = checkOrganizationAccess(

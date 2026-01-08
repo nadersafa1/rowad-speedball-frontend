@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader, PageBreadcrumb } from '@/components/ui'
 import { Plus, Trophy } from 'lucide-react'
 import { useState } from 'react'
-import ChampionshipsTable from './components/championships-table'
+import ChampionshipsTableRefactored from './components/championships-table-refactored'
 import { useChampionships } from './hooks/use-championships'
 import { ChampionshipsFilters } from './types'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
@@ -93,7 +93,7 @@ const ChampionshipsPage = () => {
       {/* Championships Table */}
       <Card className='mt-4 sm:mt-6'>
         <CardContent>
-          <ChampionshipsTable
+          <ChampionshipsTableRefactored
             championships={championships}
             pagination={pagination}
             onPageChange={handlePageChange}

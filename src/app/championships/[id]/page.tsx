@@ -4,13 +4,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useChampionshipsStore } from '@/store/championships-store'
 import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
-import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Plus, ArrowLeft, Edit } from 'lucide-react'
+import { Plus, Edit, Trophy } from 'lucide-react'
 import LoadingState from '@/components/shared/loading-state'
-import ChampionshipEditionsTable from '@/components/championship-editions/championship-editions-table'
+import ChampionshipEditionsTableRefactored from '@/components/championship-editions/championship-editions-table-refactored'
 import { ChampionshipEditionForm } from '@/components/championship-editions/championship-edition-form'
 import {
   Dialog,
@@ -20,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { PageHeader } from '@/components/ui'
 
 const ChampionshipDetailPage = () => {
   const params = useParams()
@@ -108,9 +107,14 @@ const ChampionshipDetailPage = () => {
     setPage(1)
   }
 
-  const handleSortingChange = (newSortBy: string, newSortOrder: 'asc' | 'desc') => {
-    setSortBy(newSortBy)
-    setSortOrder(newSortOrder)
+  const handleSortingChange = (
+    newSortBy?: string,
+    newSortOrder?: 'asc' | 'desc'
+  ) => {
+    if (newSortBy && newSortOrder) {
+      setSortBy(newSortBy)
+      setSortOrder(newSortOrder)
+    }
   }
 
   const handleCreateSuccess = () => {
@@ -133,56 +137,25 @@ const ChampionshipDetailPage = () => {
   }
 
   return (
-    <div className='container mx-auto p-6 space-y-6'>
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       {/* Header */}
-      <div className='flex items-start justify-between'>
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => router.push('/championships')}
-            >
-              <ArrowLeft className='h-4 w-4 mr-2' />
-              Back to Championships
-            </Button>
-          </div>
-          <div className='flex items-center gap-3'>
-            <h1 className='text-3xl font-bold'>{selectedChampionship.name}</h1>
-            <Badge
-              variant={
-                selectedChampionship.competitionScope === 'clubs'
-                  ? 'default'
-                  : 'secondary'
+      <PageHeader
+        icon={Trophy}
+        title={selectedChampionship.name}
+        description={
+          selectedChampionship.description || 'Manage championship details'
+        }
+        actionButton={
+          canEdit
+            ? {
+                label: 'Edit Championship',
+                icon: Edit,
+                onClick: () =>
+                  router.push(`/championships/${championshipId}/edit`),
               }
-            >
-              {selectedChampionship.competitionScope === 'clubs'
-                ? 'Clubs'
-                : 'Open'}
-            </Badge>
-          </div>
-          {selectedChampionship.description && (
-            <p className='text-muted-foreground'>
-              {selectedChampionship.description}
-            </p>
-          )}
-          {(selectedChampionship as any).federationName && (
-            <p className='text-sm text-muted-foreground'>
-              Federation: {(selectedChampionship as any).federationName}
-            </p>
-          )}
-        </div>
-        <div className='flex gap-2'>
-          {canEdit && (
-            <Button
-              onClick={() => router.push(`/championships/${championshipId}/edit`)}
-            >
-              <Edit className='h-4 w-4 mr-2' />
-              Edit Championship
-            </Button>
-          )}
-        </div>
-      </div>
+            : undefined
+        }
+      />
 
       {/* Championship Editions Section */}
       <Card>
@@ -198,7 +171,7 @@ const ChampionshipDetailPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <ChampionshipEditionsTable
+          <ChampionshipEditionsTableRefactored
             editions={editions}
             pagination={pagination}
             onPageChange={handlePageChange}

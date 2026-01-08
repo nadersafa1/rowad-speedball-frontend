@@ -83,6 +83,8 @@ const Header = () => {
     isOwner,
     isCoach,
     isAuthenticated,
+    isFederationAdmin,
+    isFederationEditor,
     role,
     organization,
   } = context
@@ -98,6 +100,8 @@ const Header = () => {
 
   const getUserRoleLabel = () => {
     if (isSystemAdmin) return 'System Admin'
+    if (isFederationAdmin) return 'Federation Admin'
+    if (isFederationEditor) return 'Federation Editor'
     if (role === OrganizationRole.OWNER) return 'Owner'
     if (role === OrganizationRole.ADMIN) return 'Admin'
     if (role === OrganizationRole.COACH) return 'Coach'
