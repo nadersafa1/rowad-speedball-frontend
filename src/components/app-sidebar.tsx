@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import {
   ClipboardCheck,
@@ -55,130 +56,139 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       }
 
   // Main navigation items (all authenticated users)
-  const navMain = [
-    {
-      title: 'Attendance',
-      url: '/attendance/club',
-      icon: ClipboardCheck,
-      isActive: false,
-    },
-    {
-      title: 'Players',
-      url: '/players',
-      icon: UserCheck,
-      isActive: false,
-    },
-    {
-      title: 'Tests',
-      url: '/tests',
-      icon: Volleyball,
-      isActive: false,
-    },
-    {
-      title: 'Events',
-      url: '/events',
-      icon: Calendar,
-      isActive: false,
-    },
-  ]
+  const navMain = useMemo(
+    () => [
+      {
+        title: 'Attendance',
+        url: '/attendance/club',
+        icon: ClipboardCheck,
+      },
+      {
+        title: 'Players',
+        url: '/players',
+        icon: UserCheck,
+      },
+      {
+        title: 'Tests',
+        url: '/tests',
+        icon: Volleyball,
+      },
+      {
+        title: 'Events',
+        url: '/events',
+        icon: Calendar,
+      },
+    ],
+    []
+  )
 
-  const federationManagement =
-    isFederationAdmin || isFederationEditor
-      ? [
-          {
-            title: 'Federation Management',
-            url: '#',
-            icon: Trophy,
-            isActive: false,
-            items: [
-              {
-                title: 'Championships',
-                url: '/championships',
-              },
-              ...(isFederationAdmin
-                ? [
-                    {
-                      title: 'Member Clubs',
-                      url: '/admin/federation-clubs',
-                    },
-                  ]
-                : []),
-            ],
-          },
-        ]
-      : []
+  const federationManagement = useMemo(() => {
+    if (!isFederationAdmin && !isFederationEditor) return []
+
+    const items = [
+      {
+        title: 'Championships',
+        url: '/championships',
+      },
+      ...(isFederationAdmin
+        ? [
+            {
+              title: 'Member Clubs',
+              url: '/admin/federation-clubs',
+            },
+          ]
+        : []),
+    ]
+
+    return [
+      {
+        title: 'Federation Management',
+        url: '#',
+        icon: Trophy,
+        items,
+      },
+    ]
+  }, [isFederationAdmin, isFederationEditor])
 
   // Team Management section (admins, owners, coaches)
-  const teamManagement =
-    isSystemAdmin || isAdmin || isOwner || isCoach
-      ? [
-          {
-            title: 'Team Management',
-            url: '#',
-            icon: Trophy,
-            isActive: false,
-            items: [
-              {
-                title: 'Coaches',
-                url: '/coaches',
-              },
-              {
-                title: 'Training Sessions',
-                url: '/sessions',
-              },
-              ...(isOwner || isAdmin
-                ? [
-                    {
-                      title: 'Organization',
-                      url: '/organization',
-                    },
-                  ]
-                : []),
-            ],
-          },
-        ]
-      : []
+  const teamManagement = useMemo(() => {
+    if (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) return []
+
+    const items = [
+      {
+        title: 'Coaches',
+        url: '/coaches',
+      },
+      {
+        title: 'Training Sessions',
+        url: '/sessions',
+      },
+      ...(isOwner || isAdmin
+        ? [
+            {
+              title: 'Organization',
+              url: '/organization',
+            },
+          ]
+        : []),
+    ]
+
+    return [
+      {
+        title: 'Team Management',
+        url: '#',
+        icon: Trophy,
+        items,
+      },
+    ]
+  }, [isSystemAdmin, isAdmin, isOwner, isCoach])
 
   // Administration section (system admins only)
-  const administration = isSystemAdmin
-    ? [
-        {
-          title: 'Administration',
-          url: '/admin',
-          icon: ShieldCheck,
-          isActive: false,
-          items: [
-            {
-              title: 'Users',
-              url: '/admin/users',
-            },
-            {
-              title: 'Federations',
-              url: '/admin/federations',
-            },
-            {
-              title: 'Clubs',
-              url: '/admin/clubs',
-            },
-            {
-              title: 'Placement Tiers',
-              url: '/admin/placement-tiers',
-            },
-            {
-              title: 'Points Schemas',
-              url: '/admin/points-schemas',
-            },
-          ],
-        },
-      ]
-    : []
+  const administration = useMemo(() => {
+    if (!isSystemAdmin) return []
 
-  const allNavItems = [
-    ...navMain,
-    ...teamManagement,
-    ...federationManagement,
-    ...administration,
-  ]
+    const items = [
+      {
+        title: 'Users',
+        url: '/admin/users',
+      },
+      {
+        title: 'Federations',
+        url: '/admin/federations',
+      },
+      {
+        title: 'Clubs',
+        url: '/admin/clubs',
+      },
+      {
+        title: 'Placement Tiers',
+        url: '/admin/placement-tiers',
+      },
+      {
+        title: 'Points Schemas',
+        url: '/admin/points-schemas',
+      },
+    ]
+
+    return [
+      {
+        title: 'Administration',
+        url: '/admin',
+        icon: ShieldCheck,
+        items,
+      },
+    ]
+  }, [isSystemAdmin])
+
+  const allNavItems = useMemo(
+    () => [
+      ...navMain,
+      ...teamManagement,
+      ...federationManagement,
+      ...administration,
+    ],
+    [navMain, teamManagement, federationManagement, administration]
+  )
 
   // Quick actions
   const quickActions = [

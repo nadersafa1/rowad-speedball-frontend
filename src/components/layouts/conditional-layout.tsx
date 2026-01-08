@@ -36,13 +36,17 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   } = context
   const pathname = usePathname()
 
-  // State for entity names cache
+  // State for entity names cache (for rendering)
   const [entityNames, setEntityNames] = React.useState<Record<string, string>>(
     {}
   )
   const [loadingEntities, setLoadingEntities] = React.useState<Set<string>>(
     new Set()
   )
+
+  // Refs to track entity names and loading entities without triggering re-renders
+  const entityNamesRef = React.useRef<Record<string, string>>({})
+  const loadingEntitiesRef = React.useRef<Set<string>>(new Set())
 
   // Wait for both session and context to load
   const isLoading = isSessionPending || isContextLoading
@@ -74,11 +78,16 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       if (isID && index > 0) {
         const prevSegment = paths[index - 1]
 
-        // Skip if already have name or currently loading
-        if (entityNames[path] || loadingEntities.has(path)) {
+        // Skip if already have name or currently loading (check refs)
+        if (
+          entityNamesRef.current[path] ||
+          loadingEntitiesRef.current.has(path)
+        ) {
           return
         }
 
+        // Update ref and state for loading
+        loadingEntitiesRef.current.add(path)
         setLoadingEntities((prev) => new Set(prev).add(path))
 
         const fetchEntityName = async () => {
@@ -135,8 +144,17 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
                 break
               }
 
+              case 'sessions': {
+                const session = (await apiClient.getTrainingSession(path)) as {
+                  name?: string
+                } | null
+                name = session?.name || null
+                break
+              }
+
               default:
                 // Unknown entity type, skip
+                loadingEntitiesRef.current.delete(path)
                 setLoadingEntities((prev) => {
                   const next = new Set(prev)
                   next.delete(path)
@@ -146,11 +164,15 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
             }
 
             if (name) {
+              // Update ref and state
+              entityNamesRef.current[path] = name
               setEntityNames((prev) => ({ ...prev, [path]: name! }))
             }
           } catch (error) {
             console.error(`Failed to fetch ${prevSegment} ${path}:`, error)
           } finally {
+            // Update ref and state
+            loadingEntitiesRef.current.delete(path)
             setLoadingEntities((prev) => {
               const next = new Set(prev)
               next.delete(path)
@@ -162,7 +184,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
         fetchEntityName()
       }
     })
-  }, [pathname, isLoading, entityNames, loadingEntities])
+  }, [pathname, isLoading])
 
   // Generate breadcrumbs from pathname
   const generateBreadcrumbs = () => {
