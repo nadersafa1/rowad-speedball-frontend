@@ -277,6 +277,7 @@ export function BaseCombobox<T extends { id: string }>({
               {error}
             </p>
             <Button
+              type='button'
               variant='outline'
               size={isMobile ? 'default' : 'sm'}
               onClick={retry}
@@ -380,6 +381,7 @@ export function BaseCombobox<T extends { id: string }>({
                 !isLoading && (
                   <div className='flex items-center justify-center py-2 border-t'>
                     <Button
+                      type='button'
                       variant='ghost'
                       size={isMobile ? 'default' : 'sm'}
                       onClick={loadMore}
@@ -401,6 +403,7 @@ export function BaseCombobox<T extends { id: string }>({
                   </p>
                   {onCreateNew && searchQuery && (
                     <Button
+                      type='button'
                       variant='outline'
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => {
@@ -423,6 +426,7 @@ export function BaseCombobox<T extends { id: string }>({
 
   const renderTriggerButton = () => (
     <Button
+      type='button'
       variant='outline'
       role='combobox'
       aria-expanded={isOpen}
