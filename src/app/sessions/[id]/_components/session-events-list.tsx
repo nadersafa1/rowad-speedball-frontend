@@ -26,8 +26,10 @@ interface Event {
 
 const SessionEventsList = ({
   trainingSessionId,
+  refreshKey,
 }: {
   trainingSessionId: string
+  refreshKey?: number
 }) => {
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -53,7 +55,7 @@ const SessionEventsList = ({
     if (trainingSessionId) {
       fetchEvents()
     }
-  }, [trainingSessionId])
+  }, [trainingSessionId, refreshKey])
 
   if (isLoading) {
     return (

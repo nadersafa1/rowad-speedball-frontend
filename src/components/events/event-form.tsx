@@ -36,6 +36,8 @@ import {
   DialogTitle,
 } from '../ui'
 import ClubCombobox from '@/components/organizations/club-combobox'
+import ChampionshipEditionCombobox from '@/components/championship-editions/championship-edition-combobox'
+import PointsSchemaCombobox from '@/components/points-schemas/points-schema-combobox'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import {
   UI_EVENT_TYPES,
@@ -119,7 +121,7 @@ const eventSchema = z
     organizationId: z.uuid().nullable().optional(),
     // Championship-related fields
     championshipEditionId: z.uuid().optional(),
-    pointsSchemaId: z.uuid().optional(),
+    pointsSchemaId: z.uuid('Points schema is required'),
   })
   .refine(
     (data) => {
@@ -148,20 +150,6 @@ const eventSchema = z
     {
       message: 'Points per win and loss are required for groups format',
       path: ['pointsPerWin'],
-    }
-  )
-  .refine(
-    (data) => {
-      // If championshipEditionId is provided, pointsSchemaId must also be provided
-      if (data.championshipEditionId && !data.pointsSchemaId) {
-        return false
-      }
-      return true
-    },
-    {
-      message:
-        'Points schema is required when championship edition is selected',
-      path: ['pointsSchemaId'],
     }
   )
 
@@ -264,7 +252,7 @@ const EventForm = ({
       organizationId:
         event?.organizationId || trainingSession?.organizationId || null,
       championshipEditionId: event?.championshipEditionId || undefined,
-      pointsSchemaId: event?.pointsSchemaId || undefined,
+      pointsSchemaId: event?.pointsSchemaId || '',
     },
   })
 
@@ -997,6 +985,48 @@ const EventForm = ({
               )}
             />
           )}
+
+          {/* Championship Edition Field - Only if not creating from training session */}
+          {!trainingSessionId && (
+            <FormField
+              control={form.control}
+              name='championshipEditionId'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Championship Edition</FormLabel>
+                  <FormControl>
+                    <ChampionshipEditionCombobox
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                      disabled={isSubmitting}
+                      placeholder='Select championship edition (optional)'
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Points Schema Field - Always required */}
+          <FormField
+            control={form.control}
+            name='pointsSchemaId'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Points Schema *</FormLabel>
+                <FormControl>
+                  <PointsSchemaCombobox
+                    value={field.value || undefined}
+                    onValueChange={field.onChange}
+                    disabled={isSubmitting}
+                    placeholder='Select points schema'
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           {error && <div className='text-sm text-destructive'>{error}</div>}
 

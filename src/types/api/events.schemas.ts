@@ -136,7 +136,7 @@ export const eventsCreateSchema = z
     playersPerHeat: positiveIntSchema('playersPerHeat').optional(),
     // Championship-related fields
     championshipEditionId: uuidSchema.optional(),
-    pointsSchemaId: uuidSchema.optional(),
+    pointsSchemaId: z.uuid('Points schema is required'),
   })
   .strict()
   .refine((data) => data.minPlayers <= data.maxPlayers, {
@@ -190,19 +190,6 @@ export const eventsCreateSchema = z
     {
       message: 'playersPerHeat is only valid for test events',
       path: ['playersPerHeat'],
-    }
-  )
-  .refine(
-    (data) => {
-      // If championshipEditionId is provided, pointsSchemaId must also be provided
-      if (data.championshipEditionId && !data.pointsSchemaId) {
-        return false
-      }
-      return true
-    },
-    {
-      message: 'pointsSchemaId is required when championshipEditionId is provided',
-      path: ['pointsSchemaId'],
     }
   )
   .transform((data) => {

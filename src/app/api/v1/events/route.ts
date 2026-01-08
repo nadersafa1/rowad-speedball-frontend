@@ -60,7 +60,13 @@ export async function GET(request: NextRequest) {
 
     // Get organization context for authorization
     const context = await getOrganizationContext()
-    const { isSystemAdmin, organization, isFederationAdmin, isFederationEditor, federationId } = context
+    const {
+      isSystemAdmin,
+      organization,
+      isFederationAdmin,
+      isFederationEditor,
+      federationId,
+    } = context
 
     // Text search filter
     if (q) {
@@ -89,7 +95,9 @@ export async function GET(request: NextRequest) {
 
     // Championship edition filter
     if (championshipEditionId) {
-      conditions.push(eq(schema.events.championshipEditionId, championshipEditionId))
+      conditions.push(
+        eq(schema.events.championshipEditionId, championshipEditionId)
+      )
     }
 
     // Organization filter (only for system admins)
@@ -159,7 +167,11 @@ export async function GET(request: NextRequest) {
 
     // For federation admins/editors, add filter to ONLY show championship events from their federation
     let federationChampionshipCondition = undefined
-    if (!isSystemAdmin && (isFederationAdmin || isFederationEditor) && federationId) {
+    if (
+      !isSystemAdmin &&
+      (isFederationAdmin || isFederationEditor) &&
+      federationId
+    ) {
       // ONLY show championship events from their federation (must have championshipEditionId AND match federationId)
       federationChampionshipCondition = and(
         sql`${schema.events.championshipEditionId} IS NOT NULL`,
@@ -233,7 +245,10 @@ export async function GET(request: NextRequest) {
         FROM ${schema.registrations}
         WHERE ${schema.registrations.eventId} = ${schema.events.id}
       )`
-      const order = sortOrder === 'asc' ? asc(registrationsCountExpr) : desc(registrationsCountExpr)
+      const order =
+        sortOrder === 'asc'
+          ? asc(registrationsCountExpr)
+          : desc(registrationsCountExpr)
       dataQuery = dataQuery.orderBy(order) as any
     } else if (sortBy === 'lastMatchPlayedDate') {
       // Use subquery for last match date sorting
@@ -244,7 +259,8 @@ export async function GET(request: NextRequest) {
            AND ${schema.matches.played} = true),
         ''
       )`
-      const order = sortOrder === 'asc' ? asc(lastMatchDateExpr) : desc(lastMatchDateExpr)
+      const order =
+        sortOrder === 'asc' ? asc(lastMatchDateExpr) : desc(lastMatchDateExpr)
       dataQuery = dataQuery.orderBy(order) as any
     } else if (sortBy) {
       // Map sortBy to actual schema fields
@@ -279,7 +295,7 @@ export async function GET(request: NextRequest) {
       }
       allConditions.push(...extraConditions)
       return allConditions.length > 0
-        ? allConditions.reduce((acc, cond) => acc ? and(acc, cond) : cond)
+        ? allConditions.reduce((acc, cond) => (acc ? and(acc, cond) : cond))
         : undefined
     }
 
@@ -479,7 +495,10 @@ export async function POST(request: NextRequest) {
         .from(schema.championshipEditions)
         .innerJoin(
           schema.championships,
-          eq(schema.championshipEditions.championshipId, schema.championships.id)
+          eq(
+            schema.championshipEditions.championshipId,
+            schema.championships.id
+          )
         )
         .where(eq(schema.championshipEditions.id, championshipEditionId))
         .limit(1)
@@ -495,7 +514,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Authorization check with championship federation ID
-    const authError = checkEventCreateAuthorization(context, championshipFederationId)
+    const authError = checkEventCreateAuthorization(
+      context,
+      championshipFederationId
+    )
     if (authError) return authError
 
     const { isSystemAdmin, organization } = context
@@ -542,7 +564,6 @@ export async function POST(request: NextRequest) {
       maxPlayers: maxPlayers || 2,
       registrationStartDate: registrationStartDate || null,
       registrationEndDate: registrationEndDate || null,
-      eventDates: eventDates || [],
       bestOf,
       // Points are only meaningful for groups format
       // For single-elimination, set to 0 since they're not used
@@ -557,20 +578,15 @@ export async function POST(request: NextRequest) {
       playersPerHeat: isTestsFormat ? playersPerHeat ?? 8 : null,
       organizationId: finalOrganizationId,
       trainingSessionId: trainingSessionId || null,
+      pointsSchemaId, // Always required by database schema
     }
 
-    // Add championship fields only if provided
+    // Add championship field only if provided
     if (championshipEditionId) {
       eventData.championshipEditionId = championshipEditionId
     }
-    if (pointsSchemaId) {
-      eventData.pointsSchemaId = pointsSchemaId
-    }
 
-    const result = await db
-      .insert(schema.events)
-      .values(eventData)
-      .returning()
+    const result = await db.insert(schema.events).values(eventData).returning()
 
     const createdEvent = result[0]
 

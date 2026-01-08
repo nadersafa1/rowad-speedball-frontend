@@ -64,6 +64,7 @@ const TrainingSessionDetailPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false)
+  const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
 
   useEffect(() => {
     if (sessionId && canRead) {
@@ -329,7 +330,10 @@ const TrainingSessionDetailPage = () => {
             </Card>
           )}
 
-        <SessionEventsList trainingSessionId={sessionId} />
+        <SessionEventsList
+          trainingSessionId={sessionId}
+          refreshKey={eventsRefreshKey}
+        />
       </div>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -354,6 +358,7 @@ const TrainingSessionDetailPage = () => {
           trainingSessionId={sessionId}
           onSuccess={() => {
             setCreateEventDialogOpen(false)
+            setEventsRefreshKey((prev) => prev + 1)
             toast.success('Event created successfully')
           }}
           onCancel={() => setCreateEventDialogOpen(false)}
