@@ -21,6 +21,7 @@ export const useFederations = (filters: FederationsFilters = {}) => {
 
   useEffect(() => {
     fetchFederations(filters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filters.q,
     filters.sortBy,

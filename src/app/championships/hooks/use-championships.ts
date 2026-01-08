@@ -14,6 +14,7 @@ export const useChampionships = (filters: ChampionshipsFilters = {}) => {
 
   useEffect(() => {
     fetchChampionships(filters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filters.q,
     filters.federationId,

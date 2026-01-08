@@ -67,6 +67,7 @@ const MatchResultsForm = ({
     if (!selectedMatch || selectedMatch.id !== initialMatch.id) {
       fetchMatch(initialMatch.id)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMatch.id, selectedMatch?.id, fetchMatch])
 
   const bestOf = match.bestOf || 3

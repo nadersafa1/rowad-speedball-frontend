@@ -426,6 +426,7 @@ export function createAvatarColumn<TData extends BaseTableEntity>(
             className={`${sizeClasses[size]} ${shapeClasses[shape]} bg-muted flex items-center justify-center overflow-hidden`}
           >
             {imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={imageUrl}
                 alt={text || 'Avatar'}

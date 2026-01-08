@@ -265,7 +265,7 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the points schema "{schemaToDelete?.name}".
+              This will permanently delete the points schema &quot;{schemaToDelete?.name}&quot;.
               This action cannot be undone.
               {schemaToDelete && (
                 <div className='mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md border border-amber-200 dark:border-amber-800'>

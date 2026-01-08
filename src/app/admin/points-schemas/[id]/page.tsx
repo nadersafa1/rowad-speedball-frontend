@@ -213,9 +213,9 @@ const PointsSchemaDetailPage = () => {
           </div>
           {entries.length === 0 && (
             <div className='text-xs text-blue-700 dark:text-blue-400 mt-2 p-2 bg-blue-100 dark:bg-blue-900/30 rounded'>
-              <strong>Note:</strong> You haven't added any points entries yet.
-              Click "Add Points Entry" to start defining point values for
-              different placement tiers.
+              <strong>Note:</strong> You haven&apos;t added any points entries
+              yet. Click &quot;Add Points Entry&quot; to start defining point
+              values for different placement tiers.
             </div>
           )}
         </CardContent>

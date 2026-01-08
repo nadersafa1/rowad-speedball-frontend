@@ -11,9 +11,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-} from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,7 +119,8 @@ export default function PointsSchemaEntriesTable({
         </Badge>
         {sortedEntries.length > 0 && (
           <div className='text-sm text-muted-foreground'>
-            Total points range: {Math.min(...entries.map((e) => e.points))} - {Math.max(...entries.map((e) => e.points))}
+            Total points range: {Math.min(...entries.map((e) => e.points))} -{' '}
+            {Math.max(...entries.map((e) => e.points))}
           </div>
         )}
       </div>
@@ -148,7 +147,9 @@ export default function PointsSchemaEntriesTable({
                 </Button>
               </TableHead>
               <TableHead>Tier Name</TableHead>
-              <TableHead className='hidden md:table-cell'>Display Name</TableHead>
+              <TableHead className='hidden md:table-cell'>
+                Display Name
+              </TableHead>
               <TableHead className='w-[120px]'>
                 <Button
                   variant='ghost'
@@ -172,7 +173,8 @@ export default function PointsSchemaEntriesTable({
             {sortedEntries.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className='h-24 text-center'>
-                  No points entries yet. Create your first one to define how points are awarded!
+                  No points entries yet. Create your first one to define how
+                  points are awarded!
                 </TableCell>
               </TableRow>
             ) : (
@@ -253,9 +255,9 @@ export default function PointsSchemaEntriesTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the points entry for "
-              {entryToDelete?.placementTier?.name}" ({entryToDelete?.points} points).
-              This action cannot be undone.
+              This will permanently delete the points entry for &quot;
+              {entryToDelete?.placementTier?.name}&quot; (
+              {entryToDelete?.points} points). This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
