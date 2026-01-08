@@ -7,26 +7,26 @@ interface PageHeaderProps {
   icon: LucideIcon
   title: string
   description: string
-  actionButton?: {
+  actionButtons?: {
     label: string
     icon: LucideIcon
     buttonClassName?: string
     onClick: () => void
-  }
-  actionDialog?: {
+  }[]
+  actionDialogs?: {
     trigger: ReactNode
     content: ReactNode
     open: boolean
     onOpenChange: (open: boolean) => void
-  }
+  }[]
 }
 
 const PageHeader = ({
   icon: Icon,
   title,
   description,
-  actionButton,
-  actionDialog,
+  actionButtons,
+  actionDialogs,
 }: PageHeaderProps) => {
   return (
     <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8'>
@@ -37,31 +37,39 @@ const PageHeader = ({
         </h1>
         <p className='text-muted-foreground mt-2'>{description}</p>
       </div>
-
-      {/* Action Button or Dialog */}
-      {actionButton && (
-        <Button
-          className={`gap-2 w-full md:w-auto ${
-            actionButton.buttonClassName || ''
-          }`}
-          onClick={actionButton.onClick}
-        >
-          <actionButton.icon className='h-4 w-4' />
-          {actionButton.label}
-        </Button>
-      )}
-
-      {actionDialog && (
-        <Dialog
-          open={actionDialog.open}
-          onOpenChange={actionDialog.onOpenChange}
-        >
-          <DialogTrigger asChild className='w-full md:w-auto'>
-            {actionDialog.trigger}
-          </DialogTrigger>
-          {actionDialog.content}
-        </Dialog>
-      )}
+      <div className='flex gap-2 lg:flex-row flex-col'>
+        {/* Action Button or Dialog */}
+        {Array.isArray(actionButtons) && actionButtons.length > 0
+          ? actionButtons.map((actionButton, idx) => (
+              <Button
+                key={`btn-${idx}`}
+                size='sm'
+                variant='outline'
+                className={`gap-2 w-full md:w-auto ${
+                  actionButton.buttonClassName || ''
+                }`}
+                onClick={actionButton.onClick}
+              >
+                <actionButton.icon className='h-4 w-4' />
+                {actionButton.label}
+              </Button>
+            ))
+          : null}
+        {Array.isArray(actionDialogs) && actionDialogs.length > 0
+          ? actionDialogs.map((actionDialog, idx) => (
+              <Dialog
+                key={`dialog-${idx}`}
+                open={actionDialog.open}
+                onOpenChange={actionDialog.onOpenChange}
+              >
+                <DialogTrigger asChild className='w-full md:w-auto'>
+                  {actionDialog.trigger || <></>}
+                </DialogTrigger>
+                {actionDialog.content || <></>}
+              </Dialog>
+            ))
+          : null}
+      </div>
     </div>
   )
 }

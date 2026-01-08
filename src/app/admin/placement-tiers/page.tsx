@@ -3,7 +3,13 @@
 import { useEffect, useState } from 'react'
 import { Plus, Award } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
 import { Dialog } from '@/components/ui/dialog'
 import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
@@ -31,9 +37,7 @@ const PlacementTiersPage = () => {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <div className='flex items-center justify-center min-h-[60vh]'>
-          <div className='text-center text-muted-foreground'>
-            Loading...
-          </div>
+          <div className='text-center text-muted-foreground'>Loading...</div>
         </div>
       </div>
     )
@@ -71,25 +75,27 @@ const PlacementTiersPage = () => {
         icon={Award}
         title='Placement Tiers'
         description='Manage global placement tier categories for the ranking system'
-        actionDialog={{
-          open: createDialogOpen,
-          onOpenChange: setCreateDialogOpen,
-          trigger: (
-            <Button className='gap-2 bg-rowad-600 hover:bg-rowad-700'>
-              <Plus className='h-4 w-4' />
-              Create Placement Tier
-            </Button>
-          ),
-          content: (
-            <PlacementTierForm
-              onSuccess={() => {
-                setCreateDialogOpen(false)
-                fetchTiers({ sortBy: 'rank', sortOrder: 'asc', limit: 100 })
-              }}
-              onCancel={() => setCreateDialogOpen(false)}
-            />
-          ),
-        }}
+        actionDialogs={[
+          {
+            open: createDialogOpen,
+            onOpenChange: setCreateDialogOpen,
+            trigger: (
+              <Button size='sm' variant='outline' className='gap-2'>
+                <Plus className='h-4 w-4' />
+                Create Placement Tier
+              </Button>
+            ),
+            content: (
+              <PlacementTierForm
+                onSuccess={() => {
+                  setCreateDialogOpen(false)
+                  fetchTiers({ sortBy: 'rank', sortOrder: 'asc', limit: 100 })
+                }}
+                onCancel={() => setCreateDialogOpen(false)}
+              />
+            ),
+          },
+        ]}
       />
 
       {/* Info Card */}
@@ -99,18 +105,22 @@ const PlacementTiersPage = () => {
             About Placement Tiers
           </CardTitle>
           <CardDescription className='text-blue-700 dark:text-blue-300'>
-            Placement tiers are standardized ranking categories used across all event types
+            Placement tiers are standardized ranking categories used across all
+            event types
           </CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-blue-900 dark:text-blue-100 space-y-2'>
           <div>
-            <span className='font-semibold'>Elimination Events:</span> WINNER, FINALIST, THIRD_PLACE, FOURTH_PLACE, SF, QF, R16, R32
+            <span className='font-semibold'>Elimination Events:</span> WINNER,
+            FINALIST, THIRD_PLACE, FOURTH_PLACE, SF, QF, R16, R32
           </div>
           <div>
-            <span className='font-semibold'>Time-Based Events:</span> POS_1, POS_2, POS_3, ... (position-specific tiers)
+            <span className='font-semibold'>Time-Based Events:</span> POS_1,
+            POS_2, POS_3, ... (position-specific tiers)
           </div>
           <div className='text-xs text-blue-700 dark:text-blue-400 mt-2'>
-            Note: Tiers are mapped to points through Points Schemas and determine how championship points are awarded.
+            Note: Tiers are mapped to points through Points Schemas and
+            determine how championship points are awarded.
           </div>
         </CardContent>
       </Card>

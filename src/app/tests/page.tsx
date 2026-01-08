@@ -1,11 +1,10 @@
 'use client'
 
 import TestForm from '@/components/tests/test-form'
-import { PageHeader, PageBreadcrumb } from '@/components/ui'
+import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import Loading from '@/components/ui/loading'
-import { Dialog } from '@/components/ui/dialog'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useTestPermissions } from '@/hooks/authorization/use-test-permissions'
 import { Plus, Table2 } from 'lucide-react'
@@ -136,13 +135,29 @@ const TestsPage = () => {
         icon={Table2}
         title='Tests'
         description='Browse and manage all conducted speedball tests'
-        actionButton={
+        actionDialogs={
           canCreate
-            ? {
-                label: 'Create Test',
-                icon: Plus,
-                onClick: () => setTestFormOpen(true),
-              }
+            ? [
+                {
+                  open: testFormOpen,
+                  onOpenChange: setTestFormOpen,
+                  trigger: (
+                    <Button size='sm' variant='outline' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      Create Test
+                    </Button>
+                  ),
+                  content: (
+                    <TestForm
+                      onSuccess={() => {
+                        setTestFormOpen(false)
+                        handleRefetch()
+                      }}
+                      onCancel={() => setTestFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
             : undefined
         }
       />
@@ -179,16 +194,6 @@ const TestsPage = () => {
       </Card>
 
       <TestsStats />
-
-      <Dialog open={testFormOpen} onOpenChange={setTestFormOpen}>
-        <TestForm
-          onSuccess={() => {
-            setTestFormOpen(false)
-            handleRefetch()
-          }}
-          onCancel={() => setTestFormOpen(false)}
-        />
-      </Dialog>
     </div>
   )
 }

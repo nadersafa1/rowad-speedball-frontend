@@ -65,27 +65,29 @@ const ChampionshipsPage = () => {
         icon={Trophy}
         title='Championships'
         description='Browse and manage federation championships'
-        actionDialog={
+        actionDialogs={
           canCreate
-            ? {
-                open: championshipFormOpen,
-                onOpenChange: setChampionshipFormOpen,
-                trigger: (
-                  <Button className='gap-2 bg-rowad-600 hover:bg-rowad-700'>
-                    <Plus className='h-4 w-4' />
-                    Create Championship
-                  </Button>
-                ),
-                content: (
-                  <ChampionshipForm
-                    onSuccess={() => {
-                      setChampionshipFormOpen(false)
-                      refetch()
-                    }}
-                    onCancel={() => setChampionshipFormOpen(false)}
-                  />
-                ),
-              }
+            ? [
+                {
+                  open: championshipFormOpen,
+                  onOpenChange: setChampionshipFormOpen,
+                  trigger: (
+                    <Button size='sm' variant='outline' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      Create Championship
+                    </Button>
+                  ),
+                  content: (
+                    <ChampionshipForm
+                      onSuccess={() => {
+                        setChampionshipFormOpen(false)
+                        refetch()
+                      }}
+                      onCancel={() => setChampionshipFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
             : undefined
         }
       />

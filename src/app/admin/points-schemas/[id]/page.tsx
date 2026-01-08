@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Plus, Award, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
 import { Dialog } from '@/components/ui/dialog'
 import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
@@ -21,10 +27,19 @@ const PointsSchemaDetailPage = () => {
   const schemaId = params.id as string
 
   const { context, isLoading: contextLoading } = useOrganizationContext()
-  const { selectedSchema, fetchSchema, isLoading: schemaLoading, error: schemaError } =
-    usePointsSchemasStore()
-  const { fetchEntries, entries, isLoading: entriesLoading, error: entriesError, clearError } =
-    usePointsSchemaEntriesStore()
+  const {
+    selectedSchema,
+    fetchSchema,
+    isLoading: schemaLoading,
+    error: schemaError,
+  } = usePointsSchemasStore()
+  const {
+    fetchEntries,
+    entries,
+    isLoading: entriesLoading,
+    error: entriesError,
+    clearError,
+  } = usePointsSchemaEntriesStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   // Check if user is system admin or federation admin/editor
@@ -133,27 +148,29 @@ const PointsSchemaDetailPage = () => {
         description={
           selectedSchema.description || 'Manage points entries for this schema'
         }
-        actionDialog={{
-          open: createDialogOpen,
-          onOpenChange: setCreateDialogOpen,
-          trigger: (
-            <Button className='gap-2 bg-rowad-600 hover:bg-rowad-700'>
-              <Plus className='h-4 w-4' />
-              Add Points Entry
-            </Button>
-          ),
-          content: (
-            <PointsSchemaEntryForm
-              pointsSchemaId={schemaId}
-              existingTierIds={entries.map((e) => e.placementTierId)}
-              onSuccess={() => {
-                setCreateDialogOpen(false)
-                handleRefetch()
-              }}
-              onCancel={() => setCreateDialogOpen(false)}
-            />
-          ),
-        }}
+        actionDialogs={[
+          {
+            open: createDialogOpen,
+            onOpenChange: setCreateDialogOpen,
+            trigger: (
+              <Button size='sm' variant='outline' className='gap-2'>
+                <Plus className='h-4 w-4' />
+                Add Points Entry
+              </Button>
+            ),
+            content: (
+              <PointsSchemaEntryForm
+                pointsSchemaId={schemaId}
+                existingTierIds={entries.map((e) => e.placementTierId)}
+                onSuccess={() => {
+                  setCreateDialogOpen(false)
+                  handleRefetch()
+                }}
+                onCancel={() => setCreateDialogOpen(false)}
+              />
+            ),
+          },
+        ]}
       />
 
       {/* Info Card */}
@@ -168,10 +185,15 @@ const PointsSchemaDetailPage = () => {
         </CardHeader>
         <CardContent className='text-sm text-blue-900 dark:text-blue-100 space-y-2'>
           <div>
-            <span className='font-semibold'>How it works:</span> Each placement tier (WINNER, FINALIST, QF, etc.) can be assigned a specific point value. When an event uses this schema, participants receive points based on their final placement.
+            <span className='font-semibold'>How it works:</span> Each placement
+            tier (WINNER, FINALIST, QF, etc.) can be assigned a specific point
+            value. When an event uses this schema, participants receive points
+            based on their final placement.
           </div>
           <div>
-            <span className='font-semibold'>Best Practice:</span> Higher ranks should receive more points. For example: WINNER = 100, FINALIST = 75, THIRD_PLACE = 50, etc.
+            <span className='font-semibold'>Best Practice:</span> Higher ranks
+            should receive more points. For example: WINNER = 100, FINALIST =
+            75, THIRD_PLACE = 50, etc.
           </div>
           <div>
             <span className='font-semibold'>Current Status:</span>
@@ -179,15 +201,21 @@ const PointsSchemaDetailPage = () => {
               <li>Total entries: {entries.length}</li>
               {entries.length > 0 && (
                 <>
-                  <li>Highest points: {Math.max(...entries.map((e) => e.points))}</li>
-                  <li>Lowest points: {Math.min(...entries.map((e) => e.points))}</li>
+                  <li>
+                    Highest points: {Math.max(...entries.map((e) => e.points))}
+                  </li>
+                  <li>
+                    Lowest points: {Math.min(...entries.map((e) => e.points))}
+                  </li>
                 </>
               )}
             </ul>
           </div>
           {entries.length === 0 && (
             <div className='text-xs text-blue-700 dark:text-blue-400 mt-2 p-2 bg-blue-100 dark:bg-blue-900/30 rounded'>
-              <strong>Note:</strong> You haven't added any points entries yet. Click "Add Points Entry" to start defining point values for different placement tiers.
+              <strong>Note:</strong> You haven't added any points entries yet.
+              Click "Add Points Entry" to start defining point values for
+              different placement tiers.
             </div>
           )}
         </CardContent>

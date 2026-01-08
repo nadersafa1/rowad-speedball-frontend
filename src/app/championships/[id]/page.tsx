@@ -145,14 +145,16 @@ const ChampionshipDetailPage = () => {
         description={
           selectedChampionship.description || 'Manage championship details'
         }
-        actionButton={
+        actionButtons={
           canEdit
-            ? {
-                label: 'Edit Championship',
-                icon: Edit,
-                onClick: () =>
-                  router.push(`/championships/${championshipId}/edit`),
-              }
+            ? [
+                {
+                  label: 'Edit Championship',
+                  icon: Edit,
+                  onClick: () =>
+                    router.push(`/championships/${championshipId}/edit`),
+                },
+              ]
             : undefined
         }
       />

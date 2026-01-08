@@ -67,27 +67,29 @@ const FederationsPage = () => {
         icon={Building2}
         title='Federations'
         description='Browse and manage all federations'
-        actionDialog={
+        actionDialogs={
           canCreate
-            ? {
-                open: federationFormOpen,
-                onOpenChange: setFederationFormOpen,
-                trigger: (
-                  <Button className='gap-2 bg-rowad-600 hover:bg-rowad-700'>
-                    <Plus className='h-4 w-4' />
-                    Create Federation
-                  </Button>
-                ),
-                content: (
-                  <FederationForm
-                    onSuccess={() => {
-                      setFederationFormOpen(false)
-                      refetch()
-                    }}
-                    onCancel={() => setFederationFormOpen(false)}
-                  />
-                ),
-              }
+            ? [
+                {
+                  open: federationFormOpen,
+                  onOpenChange: setFederationFormOpen,
+                  trigger: (
+                    <Button size='sm' variant='outline' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      Create Federation
+                    </Button>
+                  ),
+                  content: (
+                    <FederationForm
+                      onSuccess={() => {
+                        setFederationFormOpen(false)
+                        refetch()
+                      }}
+                      onCancel={() => setFederationFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
             : undefined
         }
       />

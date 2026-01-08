@@ -1,32 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Edit, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { PageBreadcrumb } from '@/components/ui'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogTrigger } from '@/components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { usePlayersStore } from '@/store/players-store'
-import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
-import { usePlayerNotesPermissions } from '@/hooks/authorization/use-player-notes-permissions'
-import { toast } from 'sonner'
 import PlayerForm from '@/components/players/player-form'
-import { apiClient } from '@/lib/api-client'
+import { PageHeader } from '@/components/ui'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import PlayerOverviewTab from './components/player-overview-tab'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { usePlayerNotesPermissions } from '@/hooks/authorization/use-player-notes-permissions'
+import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
+import { apiClient } from '@/lib/api-client'
+import { usePlayersStore } from '@/store/players-store'
+import { Edit, Trash2, Volleyball } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import PlayerNotesTab from './components/player-notes-tab'
+import PlayerOverviewTab from './components/player-overview-tab'
 
 const PlayerDetailPage = () => {
   const params = useParams()
@@ -94,72 +82,57 @@ const PlayerDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Breadcrumb Navigation with Edit/Delete Actions */}
-      <div className='mb-6 flex items-center justify-between gap-2'>
-        <PageBreadcrumb currentPageLabel={selectedPlayer?.name} />
-        {(canUpdate || canDelete) && (
-          <div className='flex gap-2'>
-            {canUpdate && (
-              <Dialog
-                open={editPlayerFormOpen}
-                onOpenChange={setEditPlayerFormOpen}
+      <PageHeader
+        icon={Volleyball}
+        title={selectedPlayer?.name}
+        description='View and manage player details'
+        actionDialogs={[
+          {
+            trigger: (
+              <Button variant='outline' size='sm' className='gap-2'>
+                <Edit className='h-4 w-4' />
+                Edit Player
+              </Button>
+            ),
+            content: (
+              <PlayerForm
+                player={selectedPlayer}
+                onSuccess={() => {
+                  setEditPlayerFormOpen(false)
+                  fetchPlayer(playerId)
+                }}
+                onCancel={() => setEditPlayerFormOpen(false)}
+              />
+            ),
+            open: editPlayerFormOpen,
+            onOpenChange: setEditPlayerFormOpen,
+          },
+          {
+            trigger: (
+              <Button
+                variant='outline'
+                size='sm'
+                className='gap-2 text-destructive hover:text-destructive'
               >
-                <DialogTrigger asChild>
-                  <Button variant='outline' size='sm' className='gap-2'>
-                    <Edit className='h-4 w-4' />
-                    <span className='hidden sm:inline'>Edit Player</span>
-                  </Button>
-                </DialogTrigger>
-                <PlayerForm
-                  player={selectedPlayer}
-                  onSuccess={() => {
-                    setEditPlayerFormOpen(false)
-                    fetchPlayer(playerId)
-                  }}
-                  onCancel={() => setEditPlayerFormOpen(false)}
-                />
-              </Dialog>
-            )}
-            {canDelete && (
-              <AlertDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-              >
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='gap-2 text-destructive hover:text-destructive'
-                  >
-                    <Trash2 className='h-4 w-4' />
-                    <span className='hidden sm:inline'>Delete Player</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Player</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete{' '}
-                      <strong>{selectedPlayer.name}</strong>? This action cannot
-                      be undone and will permanently delete all associated test
-                      results.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        )}
-      </div>
+                <Trash2 className='h-4 w-4' />
+                Delete Player
+              </Button>
+            ),
+            content: (
+              <PlayerForm
+                player={selectedPlayer}
+                onSuccess={() => {
+                  setDeleteDialogOpen(false)
+                  fetchPlayer(playerId)
+                }}
+                onCancel={() => setDeleteDialogOpen(false)}
+              />
+            ),
+            open: deleteDialogOpen,
+            onOpenChange: setDeleteDialogOpen,
+          },
+        ]}
+      />
 
       {/* Tabs for Overview and Notes */}
       <Tabs defaultValue='overview' className='w-full'>

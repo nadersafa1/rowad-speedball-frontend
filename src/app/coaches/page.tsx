@@ -76,27 +76,29 @@ const CoachesPage = () => {
         icon={Users}
         title='Coaches'
         description='Browse and manage all registered coaches'
-        actionDialog={
+        actionDialogs={
           canCreate
-            ? {
-                open: coachFormOpen,
-                onOpenChange: setCoachFormOpen,
-                trigger: (
-                  <Button className='gap-2 bg-rowad-600 hover:bg-rowad-700'>
-                    <Plus className='h-4 w-4' />
-                    Create Coach
-                  </Button>
-                ),
-                content: (
-                  <CoachForm
-                    onSuccess={() => {
-                      setCoachFormOpen(false)
-                      refetch()
-                    }}
-                    onCancel={() => setCoachFormOpen(false)}
-                  />
-                ),
-              }
+            ? [
+                {
+                  open: coachFormOpen,
+                  onOpenChange: setCoachFormOpen,
+                  trigger: (
+                    <Button size='sm' variant='outline' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      Create Coach
+                    </Button>
+                  ),
+                  content: (
+                    <CoachForm
+                      onSuccess={() => {
+                        setCoachFormOpen(false)
+                        refetch()
+                      }}
+                      onCancel={() => setCoachFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
             : undefined
         }
       />

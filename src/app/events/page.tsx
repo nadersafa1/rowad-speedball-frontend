@@ -1,7 +1,7 @@
 'use client'
 
 import EventForm from '@/components/events/event-form'
-import { Dialog, PageHeader, PageBreadcrumb } from '@/components/ui'
+import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import Loading from '@/components/ui/loading'
@@ -145,13 +145,29 @@ const EventsPage = () => {
         icon={Trophy}
         title='Events'
         description='Manage tournaments and competitions'
-        actionButton={
+        actionDialogs={
           canCreate
-            ? {
-                label: 'Create Event',
-                icon: Plus,
-                onClick: () => setEventFormOpen(true),
-              }
+            ? [
+                {
+                  open: eventFormOpen,
+                  onOpenChange: setEventFormOpen,
+                  trigger: (
+                    <Button size='sm' variant='outline' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      Create Event
+                    </Button>
+                  ),
+                  content: (
+                    <EventForm
+                      onSuccess={() => {
+                        setEventFormOpen(false)
+                        fetchEvents({ ...filters, page: pagination.page })
+                      }}
+                      onCancel={() => setEventFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
             : undefined
         }
       />
@@ -189,16 +205,6 @@ const EventsPage = () => {
       </Card>
 
       <EventsStats />
-
-      <Dialog open={eventFormOpen} onOpenChange={setEventFormOpen}>
-        <EventForm
-          onSuccess={() => {
-            setEventFormOpen(false)
-            fetchEvents({ ...filters, page: pagination.page })
-          }}
-          onCancel={() => setEventFormOpen(false)}
-        />
-      </Dialog>
     </div>
   )
 }

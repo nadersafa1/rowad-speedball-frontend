@@ -3,7 +3,7 @@
 import TrainingSessionForm from '@/components/training-sessions/training-session-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, Dialog, PageBreadcrumb } from '@/components/ui'
+import { PageHeader } from '@/components/ui'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
@@ -145,13 +145,29 @@ const TrainingSessionsPage = () => {
         icon={Calendar}
         title='Training Sessions'
         description='Browse and manage all training sessions'
-        actionButton={
+        actionDialogs={
           canCreate
-            ? {
-                label: 'Create Session',
-                icon: Plus,
-                onClick: () => setSessionFormOpen(true),
-              }
+            ? [
+                {
+                  open: sessionFormOpen,
+                  onOpenChange: setSessionFormOpen,
+                  trigger: (
+                    <Button size='sm' variant='outline' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      Create Session
+                    </Button>
+                  ),
+                  content: (
+                    <TrainingSessionForm
+                      onSuccess={() => {
+                        setSessionFormOpen(false)
+                        handleRefetch()
+                      }}
+                      onCancel={() => setSessionFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
             : undefined
         }
       />
@@ -185,16 +201,6 @@ const TrainingSessionsPage = () => {
       </Card>
 
       <TrainingSessionsStats />
-
-      <Dialog open={sessionFormOpen} onOpenChange={setSessionFormOpen}>
-        <TrainingSessionForm
-          onSuccess={() => {
-            setSessionFormOpen(false)
-            handleRefetch()
-          }}
-          onCancel={() => setSessionFormOpen(false)}
-        />
-      </Dialog>
     </div>
   )
 }

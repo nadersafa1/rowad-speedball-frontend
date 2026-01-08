@@ -67,34 +67,38 @@ const PlayersPage = () => {
         icon={Volleyball}
         title='Players'
         description='Browse and manage all registered players'
-        actionDialog={
+        actionDialogs={
           canCreate
-            ? {
-                open: playerFormOpen,
-                onOpenChange: setPlayerFormOpen,
-                trigger: (
-                  <Button className='gap-2 bg-rowad-600 hover:bg-rowad-700'>
-                    <Plus className='h-4 w-4' />
-                    Create Player
-                  </Button>
-                ),
-                content: (
-                  <PlayerForm
-                    onSuccess={() => {
-                      setPlayerFormOpen(false)
-                      refetch()
-                    }}
-                    onCancel={() => setPlayerFormOpen(false)}
-                  />
-                ),
-              }
+            ? [
+                {
+                  open: playerFormOpen,
+                  onOpenChange: setPlayerFormOpen,
+                  trigger: (
+                    <Button size='sm' variant='outline' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      Create Player
+                    </Button>
+                  ),
+                  content: (
+                    <PlayerForm
+                      onSuccess={() => {
+                        setPlayerFormOpen(false)
+                        refetch()
+                      }}
+                      onCancel={() => setPlayerFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
             : undefined
         }
       />
 
       {/* Table Implementation Toggle */}
       <div className='mt-4 sm:mt-6 flex items-center gap-3'>
-        <span className='text-sm text-muted-foreground'>Table Implementation:</span>
+        <span className='text-sm text-muted-foreground'>
+          Table Implementation:
+        </span>
         <Button
           variant={!useNewTable ? 'default' : 'outline'}
           size='sm'
