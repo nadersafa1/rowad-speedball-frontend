@@ -11,20 +11,14 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, ArrowLeft, Edit, Trash2, Trophy } from 'lucide-react'
 import LoadingState from '@/components/shared/loading-state'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import { BaseDataTable, PaginationConfig } from '@/lib/table-core'
 import { championshipEventsTableConfig } from '@/config/tables/championship-events.config'
 import { createChampionshipEventsColumns } from '@/config/tables/columns/championship-events-columns'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import ChampionshipEventForm from '@/components/championships/championship-event-form'
+import EventForm from '@/components/events/event-form'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -215,41 +209,28 @@ const ChampionshipEditionEventsPage = () => {
 
       {/* Create Event Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
-          <DialogHeader>
-            <DialogTitle>Create Championship Event</DialogTitle>
-            <DialogDescription>
-              Add a new event for {selectedChampionship.name} -{' '}
-              {selectedEdition.year}
-            </DialogDescription>
-          </DialogHeader>
-          <ChampionshipEventForm
-            championshipEditionId={editionId}
-            onSuccess={handleCreateSuccess}
-            onCancel={() => setCreateDialogOpen(false)}
-          />
-        </DialogContent>
+        <EventForm
+          championshipEditionId={editionId}
+          title='Create Championship Event'
+          description={`Add a new event for ${selectedChampionship.name} - ${selectedEdition.year}`}
+          onSuccess={handleCreateSuccess}
+          onCancel={() => setCreateDialogOpen(false)}
+        />
       </Dialog>
 
       {/* Edit Event Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
-          <DialogHeader>
-            <DialogTitle>Edit Championship Event</DialogTitle>
-            <DialogDescription>
-              Update event details for {selectedEvent?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <ChampionshipEventForm
-            event={selectedEvent}
-            championshipEditionId={editionId}
-            onSuccess={handleEditSuccess}
-            onCancel={() => {
-              setEditDialogOpen(false)
-              setSelectedEvent(null)
-            }}
-          />
-        </DialogContent>
+        <EventForm
+          event={selectedEvent}
+          championshipEditionId={editionId}
+          title='Edit Championship Event'
+          description={`Update event details for ${selectedEvent?.name}`}
+          onSuccess={handleEditSuccess}
+          onCancel={() => {
+            setEditDialogOpen(false)
+            setSelectedEvent(null)
+          }}
+        />
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
