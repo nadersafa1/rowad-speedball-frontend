@@ -168,7 +168,7 @@ const PlayerOverviewTab = ({
 
       {/* Performance Statistics */}
       {stats && (
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
           <Card>
             <CardContent className='text-center'>
               <Trophy className='h-8 w-8 text-yellow-500 mx-auto mb-2' />
