@@ -1,6 +1,6 @@
 import GridSingleItem from '@/components/gird-single-item'
+import { SinglePageHeader } from '@/components/ui'
 import { Award, Building2, Globe, Trophy, Users } from 'lucide-react'
-import { AdminBreadcrumbWrapper } from './_components/breadcrumb-wrapper'
 
 const ADMIN_ITEMS = [
   {
@@ -37,8 +37,8 @@ const ADMIN_ITEMS = [
 
 const AdminPage = () => {
   return (
-    <div className='mx-auto container my-6 px-4'>
-      <AdminBreadcrumbWrapper />
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <SinglePageHeader />
       <div className='mb-8'>
         <h1 className='text-3xl font-bold tracking-tight'>Admin Dashboard</h1>
         <p className='text-muted-foreground mt-2'>

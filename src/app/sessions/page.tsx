@@ -138,9 +138,6 @@ const TrainingSessionsPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* <div className='mb-4'>
-        <PageBreadcrumb />
-      </div> */}
       <PageHeader
         icon={Calendar}
         title='Training Sessions'

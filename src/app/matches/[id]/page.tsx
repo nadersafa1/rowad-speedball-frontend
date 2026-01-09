@@ -75,13 +75,13 @@ const MatchDetailPage = () => {
   const hasSets = (match.sets?.length || 0) > 0
 
   return (
-    <div className='container mx-auto p-4 space-y-4 lg:space-y-6'>
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8 space-y-4'>
       <SinglePageHeader backTo='/matches' />
 
       {/* Match Header */}
-      <div className='mb-8'>
+      <div className='mb-6'>
         <div>
-          <h1 className='text-3xl font-bold'>
+          <h1 className='text-2xl sm:text-3xl font-bold'>
             {match.event
               ? `${match.event.name} - Match`
               : `${player1Name} vs ${player2Name}`}
@@ -91,9 +91,9 @@ const MatchDetailPage = () => {
       </div>
 
       {/* Responsive 2-column layout: Main (scoring) + Sidebar (details) */}
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6'>
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
         {/* Main Content Column - Scoring Interface (2/3 width on desktop) */}
-        <div className='lg:col-span-2 space-y-4 lg:space-y-6'>
+        <div className='lg:col-span-2 space-y-4'>
           {match.played && winnerName && (
             <WinnerCelebration
               winnerName={winnerName}

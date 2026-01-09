@@ -38,6 +38,7 @@ import {
 } from '@/lib/utils/position-utils'
 import { POSITION_LABELS, type PositionKey } from '@/types/position-scores'
 import { scoreSchema } from '@/lib/forms/patterns'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 // Schema for solo events (all 4 positions)
 const soloPlayerSchema = z.object({
@@ -257,7 +258,7 @@ const TestEventScoreForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
+      <DialogContent className={DIALOG_CLASSES.form}>
         <DialogHeader>
           <DialogTitle>Update Scores</DialogTitle>
         </DialogHeader>

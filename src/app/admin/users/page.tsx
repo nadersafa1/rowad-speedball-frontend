@@ -1,6 +1,4 @@
-import { Users } from 'lucide-react'
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { SinglePageHeader } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -15,13 +13,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import * as schema from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import * as schema from '@/db/schema'
 import { eq, inArray } from 'drizzle-orm'
-import { UserRow } from './_components/user-row'
+import { Users } from 'lucide-react'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { SetupOrganizationButton } from './_components/setup-organization-button'
-import { AdminBreadcrumbWrapper } from '../_components/breadcrumb-wrapper'
+import { UserRow } from './_components/user-row'
 
 const UsersPage = async () => {
   const session = await auth.api.getSession({
@@ -77,8 +77,8 @@ const UsersPage = async () => {
   const hasOrganization = organizations.length > 0
 
   return (
-    <div className='mx-auto container my-6 px-4'>
-      <AdminBreadcrumbWrapper />
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <SinglePageHeader />
 
       {!hasOrganization && (
         <Card className='mb-6'>

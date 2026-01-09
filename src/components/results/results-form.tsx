@@ -25,6 +25,7 @@ import { apiClient } from "@/lib/api-client";
 import PlayerCombobox from "@/components/players/player-combobox";
 import TestCombobox from "@/components/tests/test-combobox";
 import ScoreInput from "@/components/results/score-input";
+import { DIALOG_CLASSES } from "@/lib/ui-constants";
 
 // Validation schema
 const resultSchema = z.object({
@@ -113,7 +114,7 @@ const ResultsForm = ({
     leftHandScore + rightHandScore + forehandScore + backhandScore;
 
   return (
-    <DialogContent className="max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto space-y-4">
+    <DialogContent className={`${DIALOG_CLASSES.form} space-y-4`}>
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Target className="h-5 w-5 text-green-600" />

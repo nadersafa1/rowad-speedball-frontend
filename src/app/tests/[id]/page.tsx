@@ -244,7 +244,7 @@ const TestDetailPage = () => {
       />
 
       {/* Test Header */}
-      <div className='mb-8'>
+      <div className='mb-6'>
         <Card>
           <CardContent>
             <div className='flex flex-col sm:flex-row items-start gap-4 sm:gap-6'>

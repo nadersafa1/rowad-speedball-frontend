@@ -20,6 +20,7 @@ import {
   hasMajorityFromSets,
   areAllSetsPlayed,
 } from '@/lib/utils/match'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 interface MatchResultsFormProps {
   match: Match
@@ -149,7 +150,7 @@ const MatchResultsForm = ({
   }
 
   return (
-    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+    <DialogContent className={DIALOG_CLASSES.form}>
       <DialogHeader>
         <DialogTitle className='flex items-center gap-2 text-lg sm:text-xl'>
           <Trophy className='h-5 w-5' />

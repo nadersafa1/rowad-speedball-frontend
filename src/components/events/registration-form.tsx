@@ -42,6 +42,7 @@ import {
   ONE_HANDED_POSITIONS,
   TWO_HANDED_POSITIONS,
 } from '@/lib/utils/position-utils'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 // Dynamic validation schema based on min/max players and event type
 const createRegistrationSchema = (event: Event) => {
@@ -347,7 +348,7 @@ const RegistrationForm = ({
   }
 
   return (
-    <DialogContent className='max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+    <DialogContent className={`${DIALOG_CLASSES.simpleForm} max-h-[90vh] overflow-y-auto`}>
       <DialogHeader>
         <DialogTitle>
           {isEditing ? 'Edit Registration' : 'Register for Event'}

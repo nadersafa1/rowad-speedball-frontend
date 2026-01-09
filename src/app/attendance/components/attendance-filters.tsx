@@ -77,7 +77,7 @@ export function AttendanceFilters({
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {/* Start Date */}
           <div className="space-y-2">
             <Label>Start Date</Label>

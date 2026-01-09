@@ -28,6 +28,7 @@ import { parseDateFromAPI } from '@/lib/date-utils'
 import { TestDatePicker } from './test-date-picker'
 import ClubCombobox from '@/components/organizations/club-combobox'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 // Validation schema
 const testSchema = z.object({
@@ -100,7 +101,7 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
   }
 
   return (
-    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+    <DialogContent className={DIALOG_CLASSES.form}>
       <DialogHeader>
         <DialogTitle className='flex items-center gap-2 text-lg sm:text-xl'>
           <Table2 className='h-5 w-5 text-blue-600' />
@@ -186,7 +187,7 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
           {/* Quick Presets */}
           <div className='space-y-2'>
             <FormLabel>Quick Presets</FormLabel>
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
               <Button
                 type='button'
                 variant={

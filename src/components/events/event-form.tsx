@@ -17,6 +17,7 @@ import EventFormatFields from './form-sections/event-format-fields'
 import EventDateFields from './form-sections/event-date-fields'
 import EventMatchConfigFields from './form-sections/event-match-config-fields'
 import EventOrganizationFields from './form-sections/event-organization-fields'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 const EventForm = ({
   event,
@@ -42,7 +43,7 @@ const EventForm = ({
   })
 
   return (
-    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+    <DialogContent className={DIALOG_CLASSES.form}>
       <DialogHeader>
         <DialogTitle>
           {title || (formState.isEditing ? 'Edit Event' : 'Create Event')}

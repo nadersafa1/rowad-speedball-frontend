@@ -1,17 +1,17 @@
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { SinglePageHeader } from '@/components/ui'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import * as schema from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import * as schema from '@/db/schema'
-import { eq } from 'drizzle-orm'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import { eq } from 'drizzle-orm'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { OrganizationInfo } from './_components/organization-info'
-import { UnassignedPlayersList } from './_components/unassigned-players-list'
 import { UnassignedCoachesList } from './_components/unassigned-coaches-list'
+import { UnassignedPlayersList } from './_components/unassigned-players-list'
 import { UnassignedUsersList } from './_components/unassigned-users-list'
-import { BreadcrumbWrapper } from './_components/breadcrumb-wrapper'
 
 const OrganizationDetailPage = async ({
   params,
@@ -42,8 +42,8 @@ const OrganizationDetailPage = async ({
   }
 
   return (
-    <div className='mx-auto container my-6 px-4'>
-      <BreadcrumbWrapper currentPageLabel={organization.name} />
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <SinglePageHeader backTo='/admin/clubs' />
 
       <Card>
         <CardHeader>

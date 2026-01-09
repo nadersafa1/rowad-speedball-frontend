@@ -1,6 +1,4 @@
-import { Building2 } from 'lucide-react'
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { SinglePageHeader } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -15,14 +13,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import * as schema from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import * as schema from '@/db/schema'
-import { OrganizationRow } from './_components/organization-row'
-import { CreateOrganizationDialog } from './_components/create-organization-dialog'
 import { getOrganizationContext } from '@/lib/organization-helpers'
-import { eq, count, desc, and, not } from 'drizzle-orm'
-import { AdminBreadcrumbWrapper } from '../_components/breadcrumb-wrapper'
+import { and, count, eq, not } from 'drizzle-orm'
+import { Building2 } from 'lucide-react'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { CreateOrganizationDialog } from './_components/create-organization-dialog'
+import { OrganizationRow } from './_components/organization-row'
 
 const OrganizationsPage = async () => {
   const session = await auth.api.getSession({
@@ -64,8 +64,8 @@ const OrganizationsPage = async () => {
   )
 
   return (
-    <div className='mx-auto container my-6 px-4'>
-      <AdminBreadcrumbWrapper />
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <SinglePageHeader backTo='/admin' />
 
       <Card>
         <CardHeader>

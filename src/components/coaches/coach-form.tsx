@@ -25,6 +25,7 @@ import {
 } from '../ui'
 import ClubCombobox from '@/components/organizations/club-combobox'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 const coachSchema = z.object({
   name: z
@@ -86,7 +87,7 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
   }
 
   return (
-    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+    <DialogContent className={DIALOG_CLASSES.form}>
       <DialogHeader>
         <DialogTitle className='flex items-center gap-2 text-lg sm:text-xl'>
           <UserPlus className='h-5 w-5 text-rowad-600' />
