@@ -84,13 +84,9 @@ const EventFormatFields = ({
                   <FormLabel>Losers Bracket Start</FormLabel>
                   <Select
                     onValueChange={(value) =>
-                      field.onChange(
-                        value === 'full' ? null : parseInt(value)
-                      )
+                      field.onChange(value === 'full' ? null : parseInt(value))
                     }
-                    value={
-                      field.value === null ? 'full' : String(field.value)
-                    }
+                    value={field.value === null ? 'full' : String(field.value)}
                     disabled={isEditing && hasRegistrations}
                   >
                     <FormControl>
@@ -188,4 +184,3 @@ const EventFormatFields = ({
 }
 
 export default EventFormatFields
-

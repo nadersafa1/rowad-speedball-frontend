@@ -143,4 +143,3 @@ const EventOrganizationFields = ({
 }
 
 export default EventOrganizationFields
-

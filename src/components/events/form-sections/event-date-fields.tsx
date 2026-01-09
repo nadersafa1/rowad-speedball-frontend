@@ -72,4 +72,3 @@ const EventDateFields = ({
 }
 
 export default EventDateFields
-

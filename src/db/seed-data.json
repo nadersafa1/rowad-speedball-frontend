@@ -1,319 +1,319 @@
 {
-  "generatedAt": "2026-01-03T01:32:58.689Z",
+  "generatedAt": "2026-01-09T12:25:46.558Z",
   "password": "Test@1234",
   "users": [
     {
-      "id": "48b79492-7443-4851-bb9e-97f99d0d3ce7",
+      "id": "f564bbb1-3c7c-42c4-bee5-5a25410841a9",
       "email": "admin1@rowad.com",
       "name": "Admin One",
       "role": "admin",
       "federationId": null
     },
     {
-      "id": "c90fcd2a-81b4-40dd-99e2-b87b8b6d387a",
+      "id": "3b2877b4-6a61-405d-a8f5-4e50ce590c21",
       "email": "admin2@rowad.com",
       "name": "Admin Two",
       "role": "admin",
       "federationId": null
     },
     {
-      "id": "efb0cfe1-6657-46ef-ade6-67d31278cfb4",
+      "id": "be7c6ee5-ec25-419e-be8e-f51127f7b326",
       "email": "admin3@rowad.com",
       "name": "Admin Three",
       "role": "admin",
       "federationId": null
     },
     {
-      "id": "161fde44-7421-4faf-b908-543f23827ade",
+      "id": "ba2b34bb-c616-4a93-95fe-98573ae355ae",
       "email": "user1@example.com",
       "name": "User 1",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "d07ef8e1-38ac-4f42-b397-9dd7741aa48a",
+      "id": "bddfdc5d-70c6-425c-9c3f-4542182bc494",
       "email": "user2@example.com",
       "name": "User 2",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "dfad0498-c052-45d7-9673-fd93e4578e1c",
+      "id": "e2b43159-ed58-4fbc-bbdc-f3e64016e756",
       "email": "user3@example.com",
       "name": "User 3",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "92c4ea65-413c-44f5-9729-497f0daaa84a",
+      "id": "5e5a47a5-46b2-4c3c-941f-5bb9ac6f74ec",
       "email": "user4@example.com",
       "name": "User 4",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "76b42c46-2a3d-4489-b44c-f9bdb2efc1db",
+      "id": "3b2a9306-2098-4ad6-9810-9a3e0edb9349",
       "email": "user5@example.com",
       "name": "User 5",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "f478591d-77e8-4a5e-bec5-5a98873bf8e1",
+      "id": "e6884931-2b7c-422e-833f-9c9a8c19ee71",
       "email": "user6@example.com",
       "name": "User 6",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "529a09a7-d385-4c9d-83c5-3c7ce84c8321",
+      "id": "90d686d1-9dfd-4cb0-a5b1-dda2cfb741a7",
       "email": "user7@example.com",
       "name": "User 7",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "53ac4258-ca36-498c-85b3-b4f4edc9f452",
+      "id": "0cac4f20-774b-46d8-9236-317e63f2055e",
       "email": "user8@example.com",
       "name": "User 8",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "e6c52cb4-960c-4b79-826c-7134a6ad72a7",
+      "id": "13948794-f7ac-46d6-b24d-8b342b37c42f",
       "email": "user9@example.com",
       "name": "User 9",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "93466d91-0d6e-46d0-9b59-c2506b423400",
+      "id": "c5e77ee9-4809-48aa-94af-e225b61daa50",
       "email": "user10@example.com",
       "name": "User 10",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "f61854cd-bac2-451e-bbaf-0f3b4d7a87f3",
+      "id": "df1e204c-ba86-4f95-af0d-5e98edb1fb32",
       "email": "user11@example.com",
       "name": "User 11",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "34f98f1c-a820-4b6b-aad5-43bd061f6c4e",
+      "id": "315eed03-5091-40cd-a51b-b7683f36cf96",
       "email": "user12@example.com",
       "name": "User 12",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "61d7b82e-abbe-413e-96fb-6455b1b644db",
+      "id": "c5fc31a4-ee14-463e-8a22-b03e53bb5b08",
       "email": "user13@example.com",
       "name": "User 13",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "ab2fb6cc-8cec-4b2a-a2a5-5beadd24cf60",
+      "id": "51823e29-a53f-4860-a0f9-d84b66433ff5",
       "email": "user14@example.com",
       "name": "User 14",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "f913fffb-b3c3-4d39-881f-c9a6ce6ae5c0",
+      "id": "801bfb82-9c20-4b9f-a04b-0d69e61aefdd",
       "email": "user15@example.com",
       "name": "User 15",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "24157fe2-3e5b-4d62-b3b7-dc8fb480bc31",
+      "id": "570334db-6c18-4263-a9aa-700d42d68870",
       "email": "user16@example.com",
       "name": "User 16",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "f620ff4b-36d0-4a6e-9911-9984b6efd9cd",
+      "id": "00cea4ff-621f-46b6-8c10-345e1e4869cd",
       "email": "user17@example.com",
       "name": "User 17",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "29553329-f141-4861-98ad-d3a35c6667e8",
+      "id": "250aa5da-526f-48c7-a3c8-943d5cc83935",
       "email": "user18@example.com",
       "name": "User 18",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "2b36e07f-ab48-4a2f-ab18-2146215fce31",
+      "id": "9e772844-b050-473f-b8ae-21b12c9eb2a3",
       "email": "user19@example.com",
       "name": "User 19",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "d9b285e3-fec0-433d-ba43-c51e077acfca",
+      "id": "e2516236-dc8c-47d6-b5d4-8396fb065bdd",
       "email": "user20@example.com",
       "name": "User 20",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "6090005e-b160-4410-8d2c-f4ba8eb57f2f",
+      "id": "faea4443-d19f-47ed-8751-96b6661db4c1",
       "email": "user21@example.com",
       "name": "User 21",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "69a8b727-6673-424e-917c-9fbe91cdf993",
+      "id": "d07cfa1b-b884-4922-b248-64817d2283c3",
       "email": "user22@example.com",
       "name": "User 22",
       "role": "user",
       "federationId": null
     },
     {
-      "id": "c7a028f7-e5db-4089-baa8-5cb48d41fbf7",
+      "id": "528234fa-dba4-44bf-9e1d-f0fbe428880b",
       "email": "fed-admin1@rowad.com",
       "name": "Federation Admin 1",
       "role": "federation-admin",
-      "federationId": "8adee188-9712-4878-b514-bb9bb81d706e"
+      "federationId": "f7af2e39-1245-43e1-a25f-f070ba74af64"
     },
     {
-      "id": "8ceb3097-5b1e-4024-a7a0-340aeed3d75a",
+      "id": "01a2999a-cd19-4ca8-b084-5a212800106f",
       "email": "fed-admin2@rowad.com",
       "name": "Federation Admin 2",
       "role": "federation-admin",
-      "federationId": "8adee188-9712-4878-b514-bb9bb81d706e"
+      "federationId": "f7af2e39-1245-43e1-a25f-f070ba74af64"
     },
     {
-      "id": "c0566d73-01bb-44de-a786-81831624105e",
+      "id": "838a797a-4786-4e70-938d-1ddf7245e871",
       "email": "fed-admin3@rowad.com",
       "name": "Federation Admin 3",
       "role": "federation-admin",
-      "federationId": "20ceb44d-8d7b-431c-b134-43f99b7669b4"
+      "federationId": "94116cec-9e95-41c1-aaf1-3c286c144727"
     },
     {
-      "id": "49286691-9c2a-459d-a8f9-f76c4539a809",
+      "id": "460f9e5a-fcb4-4050-a80d-539c38b746d5",
       "email": "fed-admin4@rowad.com",
       "name": "Federation Admin 4",
       "role": "federation-admin",
-      "federationId": "20ceb44d-8d7b-431c-b134-43f99b7669b4"
+      "federationId": "94116cec-9e95-41c1-aaf1-3c286c144727"
     },
     {
-      "id": "bbaae6f2-24c2-4486-b4a0-5f5fcc505404",
+      "id": "1f7e2fa8-f83a-4f45-a037-94f1155bfd71",
       "email": "fed-admin5@rowad.com",
       "name": "Federation Admin 5",
       "role": "federation-admin",
-      "federationId": "5c5163f3-3cad-4dc3-8e12-15347f69e107"
+      "federationId": "c13c3a5b-6b46-46e8-ba74-de84c32bb11c"
     },
     {
-      "id": "f6820a74-2d2c-4bcd-91b3-91b0c5d9ae64",
+      "id": "35a0c7ac-cd93-46f0-8df1-2a891b0cb244",
       "email": "fed-admin6@rowad.com",
       "name": "Federation Admin 6",
       "role": "federation-admin",
-      "federationId": "5c5163f3-3cad-4dc3-8e12-15347f69e107"
+      "federationId": "c13c3a5b-6b46-46e8-ba74-de84c32bb11c"
     },
     {
-      "id": "520068f5-8b54-475c-825d-998ac480cd65",
+      "id": "f137163c-9a1a-44ef-bc49-de71a9f2a4c9",
       "email": "fed-editor1@rowad.com",
       "name": "Federation Editor 1",
       "role": "federation-editor",
-      "federationId": "8adee188-9712-4878-b514-bb9bb81d706e"
+      "federationId": "f7af2e39-1245-43e1-a25f-f070ba74af64"
     },
     {
-      "id": "1b87a5b6-70c7-4603-8bdf-ec0fae9cd2a7",
+      "id": "f26d09a8-3592-4971-85a7-8bdfdf6a17bf",
       "email": "fed-editor2@rowad.com",
       "name": "Federation Editor 2",
       "role": "federation-editor",
-      "federationId": "8adee188-9712-4878-b514-bb9bb81d706e"
+      "federationId": "f7af2e39-1245-43e1-a25f-f070ba74af64"
     },
     {
-      "id": "38ab739c-9da5-4517-99f5-42da652750ab",
+      "id": "f01d8190-dfaa-4eb7-8e71-c3b8ad170e91",
       "email": "fed-editor3@rowad.com",
       "name": "Federation Editor 3",
       "role": "federation-editor",
-      "federationId": "20ceb44d-8d7b-431c-b134-43f99b7669b4"
+      "federationId": "94116cec-9e95-41c1-aaf1-3c286c144727"
     },
     {
-      "id": "7d863348-47dc-4834-a85f-2a085ef85db7",
+      "id": "bdf5657a-924a-4f59-917a-43256364403a",
       "email": "fed-editor4@rowad.com",
       "name": "Federation Editor 4",
       "role": "federation-editor",
-      "federationId": "20ceb44d-8d7b-431c-b134-43f99b7669b4"
+      "federationId": "94116cec-9e95-41c1-aaf1-3c286c144727"
     },
     {
-      "id": "98457cc1-85a5-4c1d-b44c-4d164b8164b9",
+      "id": "87b4150b-308f-46f6-aa71-cf0a4874cf08",
       "email": "fed-editor5@rowad.com",
       "name": "Federation Editor 5",
       "role": "federation-editor",
-      "federationId": "5c5163f3-3cad-4dc3-8e12-15347f69e107"
+      "federationId": "c13c3a5b-6b46-46e8-ba74-de84c32bb11c"
     },
     {
-      "id": "af9193fc-f349-44b7-94df-f627fd484da5",
+      "id": "bcd031e5-1ca1-48f1-b632-b783e450e517",
       "email": "fed-editor6@rowad.com",
       "name": "Federation Editor 6",
       "role": "federation-editor",
-      "federationId": "5c5163f3-3cad-4dc3-8e12-15347f69e107"
+      "federationId": "c13c3a5b-6b46-46e8-ba74-de84c32bb11c"
     }
   ],
   "federations": [
     {
-      "id": "8adee188-9712-4878-b514-bb9bb81d706e",
+      "id": "f7af2e39-1245-43e1-a25f-f070ba74af64",
       "name": "Egyptian Speedball Federation",
       "description": "The official governing body for Speedball in Egypt, organizing national championships and development programs.",
       "championships": [
         {
-          "id": "caa921c9-6281-4f63-bf41-270af34e9f7f",
+          "id": "d8f60fa4-2c1e-4ce3-b99c-eeba9cafb233",
           "name": "Egyptian National Championship 2025",
           "competitionScope": "clubs"
         },
         {
-          "id": "e7735474-be97-4e71-8a53-33cf57dac80b",
+          "id": "a4cca2c7-47c4-426c-9f70-4a55e7fc61d5",
           "name": "Egyptian Youth Championship 2025",
           "competitionScope": "clubs"
         },
         {
-          "id": "baed87cc-cd07-4a3f-83f0-17edec4563f8",
+          "id": "5dde3086-06fa-4acf-8b21-e28297171653",
           "name": "Cairo Open Championship 2025",
           "competitionScope": "open"
         }
       ]
     },
     {
-      "id": "20ceb44d-8d7b-431c-b134-43f99b7669b4",
+      "id": "94116cec-9e95-41c1-aaf1-3c286c144727",
       "name": "Arab Speedball Federation",
       "description": "Regional federation overseeing Speedball development across Arab nations.",
       "championships": [
         {
-          "id": "06f6728b-350f-4246-bc8d-81fc830cc3e4",
+          "id": "78191750-3b3b-492c-bcc9-ac512d491fd8",
           "name": "Arab Speedball Cup 2025",
           "competitionScope": "clubs"
         },
         {
-          "id": "b716b6b1-b2ba-4d4c-b042-16c072860a56",
+          "id": "cb53f462-04b4-46c9-bc77-01bc9b1e9485",
           "name": "Arab Junior Championship 2025",
           "competitionScope": "clubs"
         }
       ]
     },
     {
-      "id": "5c5163f3-3cad-4dc3-8e12-15347f69e107",
+      "id": "c13c3a5b-6b46-46e8-ba74-de84c32bb11c",
       "name": "International Speedball Federation",
       "description": "Global organization promoting Speedball worldwide and organizing international competitions.",
       "championships": [
         {
-          "id": "78e76675-6a93-4095-9e45-9b54a1b9a550",
+          "id": "d8363702-9b38-42ad-946b-d9d907f47b2b",
           "name": "World Speedball Championship 2025",
           "competitionScope": "open"
         },
         {
-          "id": "a36a3905-a8cf-4338-836e-f0f2778cac7f",
+          "id": "2c71fac4-866e-4d4f-8578-5280e32b86ae",
           "name": "International Masters Championship 2025",
           "competitionScope": "open"
         }
@@ -322,170 +322,170 @@
   ],
   "organizations": [
     {
-      "id": "c07f1fda-fd1b-4578-adc4-6e14c6d4d090",
+      "id": "a2dfdb26-2603-42bb-be2e-12d6d366c135",
       "name": "Rowad Speedball Club",
       "slug": "rowad-speedball",
       "players": [
         {
-          "id": "f2e54863-77f1-48d0-86ec-be011dde6fb1",
+          "id": "cc26f42c-21b8-46e6-b281-a9ca96f9b8d6",
           "name": "Ahmed Hassan",
           "email": "user13@example.com"
         },
         {
-          "id": "fb798247-e015-43ee-b253-3d84a0882205",
+          "id": "a4b5c0f6-9f20-4740-8211-8aaed79dcd86",
           "name": "Youssef Ibrahim",
           "email": "user19@example.com"
         },
         {
-          "id": "e458efa1-ac98-48b4-a034-3daa9b1124bf",
+          "id": "5a947066-7240-4baf-a0b8-85586ff2447b",
           "name": "Hassan Mostafa",
           "email": null
         },
         {
-          "id": "af250c98-1ff5-46a2-997b-dab5ae840248",
+          "id": "20e8f681-f1b4-49a6-987c-6c8982e6f1a9",
           "name": "Tamer Hosny",
           "email": null
         },
         {
-          "id": "f98f3fe3-3c62-4df4-8528-fef552793a70",
+          "id": "b47956a8-08ca-46d1-853b-48ae33a7fd7e",
           "name": "Sara Mohamed",
           "email": null
         },
         {
-          "id": "823c94e7-19f3-4ea4-ae25-d294abf14e72",
+          "id": "43ff070c-907d-4aaf-9b88-4fbcde925d3d",
           "name": "Mariam Khaled",
           "email": null
         },
         {
-          "id": "280c857f-4832-4f32-af51-8f7da3c63e71",
+          "id": "1a62da7f-9426-4459-b82e-b0ab7fb6e5c1",
           "name": "Rana Fathy",
           "email": null
         },
         {
-          "id": "82b554c5-07c1-4f19-8a18-98640ce3f7bf",
+          "id": "9449bed8-d980-4510-8c41-7930e1d9cfac",
           "name": "Waleed Nabil",
           "email": null
         },
         {
-          "id": "8eb4d88d-ddac-4e6c-8a52-b1b995c0dcda",
+          "id": "fa083176-96e2-4705-9e5c-bdf243cfb709",
           "name": "Hazem Emad",
           "email": null
         },
         {
-          "id": "0627b595-0403-4ead-9547-b52f5d0e728b",
+          "id": "daa64bdf-76af-4943-a10b-3250a3cd17d2",
           "name": "Bassem Yousry",
           "email": null
         },
         {
-          "id": "3f323de3-d65c-4175-82fd-4b22323f3997",
+          "id": "d548a011-7be9-4855-af50-4bcdf1a63541",
           "name": "Noha Samir",
           "email": null
         },
         {
-          "id": "a74add03-9626-49b2-85a8-d991f2a337d3",
+          "id": "1c54e0ee-0579-42ef-8566-c34c7921829b",
           "name": "Reem Hassan",
           "email": null
         },
         {
-          "id": "dd370cff-a938-43e4-89ae-7c0efe7b3db7",
+          "id": "0c7f3d63-a36a-406a-b6f0-0f58b047e9fc",
           "name": "Farida Ali",
           "email": null
         },
         {
-          "id": "626bb42d-97ae-4e99-81ae-a360201802b1",
+          "id": "d0eb7305-93c1-4566-891f-887954a85513",
           "name": "Heba Mahmoud",
           "email": null
         }
       ],
       "coaches": [
         {
-          "id": "a1a2b618-8614-427d-ac21-b2131570dbe0",
+          "id": "a070c00c-3eee-4c12-83ec-843ae6842ccd",
           "name": "Captain Ahmed Farouk",
           "email": "user7@example.com"
         },
         {
-          "id": "a3d8fab5-68c7-4156-a69c-ccaec7cc87b8",
+          "id": "8097769c-6e2c-416b-8a15-8cafdbc8a7bb",
           "name": "Coach Mohamed Saad",
           "email": "user8@example.com"
         }
       ],
       "admins": [
         {
-          "id": "92c4ea65-413c-44f5-9729-497f0daaa84a",
+          "id": "5e5a47a5-46b2-4c3c-941f-5bb9ac6f74ec",
           "name": "User 4",
           "email": "user4@example.com"
         }
       ],
       "owners": [
         {
-          "id": "161fde44-7421-4faf-b908-543f23827ade",
+          "id": "ba2b34bb-c616-4a93-95fe-98573ae355ae",
           "name": "User 1",
           "email": "user1@example.com"
         }
       ],
       "members": [
         {
-          "id": "48b79492-7443-4851-bb9e-97f99d0d3ce7",
+          "id": "f564bbb1-3c7c-42c4-bee5-5a25410841a9",
           "name": "Admin One",
           "email": "admin1@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "c90fcd2a-81b4-40dd-99e2-b87b8b6d387a",
+          "id": "3b2877b4-6a61-405d-a8f5-4e50ce590c21",
           "name": "Admin Two",
           "email": "admin2@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "efb0cfe1-6657-46ef-ade6-67d31278cfb4",
+          "id": "be7c6ee5-ec25-419e-be8e-f51127f7b326",
           "name": "Admin Three",
           "email": "admin3@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "161fde44-7421-4faf-b908-543f23827ade",
+          "id": "ba2b34bb-c616-4a93-95fe-98573ae355ae",
           "name": "User 1",
           "email": "user1@example.com",
           "role": "owner"
         },
         {
-          "id": "92c4ea65-413c-44f5-9729-497f0daaa84a",
+          "id": "5e5a47a5-46b2-4c3c-941f-5bb9ac6f74ec",
           "name": "User 4",
           "email": "user4@example.com",
           "role": "admin"
         },
         {
-          "id": "529a09a7-d385-4c9d-83c5-3c7ce84c8321",
+          "id": "90d686d1-9dfd-4cb0-a5b1-dda2cfb741a7",
           "name": "User 7",
           "email": "user7@example.com",
           "role": "coach"
         },
         {
-          "id": "53ac4258-ca36-498c-85b3-b4f4edc9f452",
+          "id": "0cac4f20-774b-46d8-9236-317e63f2055e",
           "name": "User 8",
           "email": "user8@example.com",
           "role": "coach"
         },
         {
-          "id": "61d7b82e-abbe-413e-96fb-6455b1b644db",
+          "id": "c5fc31a4-ee14-463e-8a22-b03e53bb5b08",
           "name": "User 13",
           "email": "user13@example.com",
           "role": "player"
         },
         {
-          "id": "24157fe2-3e5b-4d62-b3b7-dc8fb480bc31",
+          "id": "570334db-6c18-4263-a9aa-700d42d68870",
           "name": "User 16",
           "email": "user16@example.com",
           "role": "member"
         },
         {
-          "id": "2b36e07f-ab48-4a2f-ab18-2146215fce31",
+          "id": "9e772844-b050-473f-b8ae-21b12c9eb2a3",
           "name": "User 19",
           "email": "user19@example.com",
           "role": "player"
         },
         {
-          "id": "69a8b727-6673-424e-917c-9fbe91cdf993",
+          "id": "d07cfa1b-b884-4922-b248-64817d2283c3",
           "name": "User 22",
           "email": "user22@example.com",
           "role": "member"
@@ -493,154 +493,154 @@
       ]
     },
     {
-      "id": "db22d727-199c-43cb-9f82-c50699024f14",
+      "id": "f28a9fcf-4452-4ed5-b5eb-b1ac6bf6dee2",
       "name": "Al-Ahly Speedball",
       "slug": "al-ahly-speedball",
       "players": [
         {
-          "id": "bfaf0ed7-5aae-4230-b323-12d9853b5a70",
+          "id": "364c2edd-abc8-4516-b7cf-b0ea6e13e6a7",
           "name": "Omar Mahmoud",
           "email": "user17@example.com"
         },
         {
-          "id": "f2c1a442-23f4-4900-b39c-ceaa6bde18de",
+          "id": "1f8ad905-32fd-4bf5-b846-cb23b6425a68",
           "name": "Ali Kamal",
           "email": null
         },
         {
-          "id": "c17deed6-fa75-4023-b028-4c69f7991313",
+          "id": "9bce798d-cb45-4944-b79f-e7160f31b330",
           "name": "Fatma Ahmed",
           "email": null
         },
         {
-          "id": "d8fe204c-6ab2-4f97-88a9-1aa9674bbbaf",
+          "id": "8dbb6732-b154-49e5-9cca-a5d21604eab9",
           "name": "Layla Hassan",
           "email": null
         },
         {
-          "id": "aefe1e67-4441-404c-9c56-8e4416fec358",
+          "id": "bb816a28-e436-4ebb-b567-e184e8cc5a04",
           "name": "Yasmin Omar",
           "email": null
         },
         {
-          "id": "98f3a010-ed0e-4ba5-a87a-3080f57dac3a",
+          "id": "50505bff-682b-453c-8bf7-56af6c4d2132",
           "name": "Mona Ali",
           "email": null
         },
         {
-          "id": "2c1491e2-6b18-4502-bccc-af3a8124f7de",
+          "id": "2bc00384-b54a-49ac-b0a1-1963f036453e",
           "name": "Sherif Gamal",
           "email": null
         },
         {
-          "id": "f7b06d65-e4ec-4dc2-8358-9a0fde3bd602",
+          "id": "183ea8d9-54fa-4a48-9f06-0224cdfcd2ea",
           "name": "Ramy Ashraf",
           "email": null
         },
         {
-          "id": "ff94015b-107a-43ee-8439-af18b015d1ac",
+          "id": "5bf87c2d-2ca4-4c0b-8f21-3e564bd0d7de",
           "name": "Hesham Kamal",
           "email": null
         },
         {
-          "id": "65f2a1c1-7505-4926-a67e-ac86c39d9fc0",
+          "id": "44a4fe72-da5d-458c-9d22-6a86f78f4257",
           "name": "Aya Mostafa",
           "email": null
         },
         {
-          "id": "ff9db3ed-b84f-4d92-98a1-d1d3fc411873",
+          "id": "669cec47-6846-4761-86c9-114867d26941",
           "name": "Jana Mohamed",
           "email": null
         },
         {
-          "id": "a79ead92-f346-4d48-a615-08842945357c",
+          "id": "76cbf3f6-8c73-47e3-aa20-8ae9c5b93745",
           "name": "Nada Khaled",
           "email": null
         }
       ],
       "coaches": [
         {
-          "id": "6650c537-f38c-4de8-8234-e4dc487091a8",
+          "id": "53d817fb-c6c1-46d1-81a3-8ef26edf978a",
           "name": "Captain Khaled Anwar",
           "email": "user9@example.com"
         },
         {
-          "id": "b319cd00-7cc4-440d-b54d-d91895edec66",
+          "id": "c8cc3ca9-197d-4c40-be8c-904baf93d3d4",
           "name": "Coach Tarek Nour",
           "email": "user10@example.com"
         }
       ],
       "admins": [
         {
-          "id": "76b42c46-2a3d-4489-b44c-f9bdb2efc1db",
+          "id": "3b2a9306-2098-4ad6-9810-9a3e0edb9349",
           "name": "User 5",
           "email": "user5@example.com"
         }
       ],
       "owners": [
         {
-          "id": "d07ef8e1-38ac-4f42-b397-9dd7741aa48a",
+          "id": "bddfdc5d-70c6-425c-9c3f-4542182bc494",
           "name": "User 2",
           "email": "user2@example.com"
         }
       ],
       "members": [
         {
-          "id": "48b79492-7443-4851-bb9e-97f99d0d3ce7",
+          "id": "f564bbb1-3c7c-42c4-bee5-5a25410841a9",
           "name": "Admin One",
           "email": "admin1@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "c90fcd2a-81b4-40dd-99e2-b87b8b6d387a",
+          "id": "3b2877b4-6a61-405d-a8f5-4e50ce590c21",
           "name": "Admin Two",
           "email": "admin2@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "efb0cfe1-6657-46ef-ade6-67d31278cfb4",
+          "id": "be7c6ee5-ec25-419e-be8e-f51127f7b326",
           "name": "Admin Three",
           "email": "admin3@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "d07ef8e1-38ac-4f42-b397-9dd7741aa48a",
+          "id": "bddfdc5d-70c6-425c-9c3f-4542182bc494",
           "name": "User 2",
           "email": "user2@example.com",
           "role": "owner"
         },
         {
-          "id": "76b42c46-2a3d-4489-b44c-f9bdb2efc1db",
+          "id": "3b2a9306-2098-4ad6-9810-9a3e0edb9349",
           "name": "User 5",
           "email": "user5@example.com",
           "role": "admin"
         },
         {
-          "id": "e6c52cb4-960c-4b79-826c-7134a6ad72a7",
+          "id": "13948794-f7ac-46d6-b24d-8b342b37c42f",
           "name": "User 9",
           "email": "user9@example.com",
           "role": "coach"
         },
         {
-          "id": "93466d91-0d6e-46d0-9b59-c2506b423400",
+          "id": "c5e77ee9-4809-48aa-94af-e225b61daa50",
           "name": "User 10",
           "email": "user10@example.com",
           "role": "coach"
         },
         {
-          "id": "ab2fb6cc-8cec-4b2a-a2a5-5beadd24cf60",
+          "id": "51823e29-a53f-4860-a0f9-d84b66433ff5",
           "name": "User 14",
           "email": "user14@example.com",
           "role": "member"
         },
         {
-          "id": "f620ff4b-36d0-4a6e-9911-9984b6efd9cd",
+          "id": "00cea4ff-621f-46b6-8c10-345e1e4869cd",
           "name": "User 17",
           "email": "user17@example.com",
           "role": "player"
         },
         {
-          "id": "d9b285e3-fec0-433d-ba43-c51e077acfca",
+          "id": "e2516236-dc8c-47d6-b5d4-8396fb065bdd",
           "name": "User 20",
           "email": "user20@example.com",
           "role": "member"
@@ -648,164 +648,164 @@
       ]
     },
     {
-      "id": "37055f55-a42d-400f-9af5-da15eef03961",
+      "id": "841d6da7-abdc-48dd-a28f-da9175332a5b",
       "name": "Zamalek Speedball",
       "slug": "zamalek-speedball",
       "players": [
         {
-          "id": "1d3cd912-f1e9-4aee-9443-36281219756e",
+          "id": "c1342e30-3e00-41d1-bf1e-a1ffa0d96218",
           "name": "Mohamed Ali",
           "email": "user15@example.com"
         },
         {
-          "id": "b33dc975-9447-464a-b7f0-87278fc5dace",
+          "id": "b967109b-7da5-480a-bc97-e7c4dcc3eb75",
           "name": "Khaled Samir",
           "email": "user21@example.com"
         },
         {
-          "id": "30c924a8-04f1-4078-a869-17c8b3ed2ec9",
+          "id": "0392915a-c0a7-414f-9156-0ffbfb02ca65",
           "name": "Mahmoud Fathy",
           "email": null
         },
         {
-          "id": "d0389f7b-6788-40be-9bf7-01cbe26121aa",
+          "id": "99e9a8fd-d8eb-4175-96ba-7b1307293152",
           "name": "Amr Adel",
           "email": null
         },
         {
-          "id": "5bbaa894-b07d-4980-bed7-1fb4f10e0a67",
+          "id": "75193196-c21a-4516-9071-7411f73b6ebb",
           "name": "Nour El-Din",
           "email": null
         },
         {
-          "id": "bb2e4705-762f-4b61-87b5-079125b2a147",
+          "id": "58444602-e2f0-4419-99f1-c9ba20ce9507",
           "name": "Hana Ibrahim",
           "email": null
         },
         {
-          "id": "52d2a944-4095-47cb-9a07-9f1363e6ae3b",
+          "id": "c889e79f-5cbf-436e-b33d-8907545c247c",
           "name": "Dina Mahmoud",
           "email": null
         },
         {
-          "id": "1052d33c-719c-4145-9785-dceea7f115ef",
+          "id": "7bd39fc3-cc7e-43ab-9136-498b797a54be",
           "name": "Kareem Saeed",
           "email": null
         },
         {
-          "id": "b5d8724d-0e9a-43a8-abf1-eab04e00dd39",
+          "id": "57412e18-6fce-4a62-b063-1f748fe4ffb6",
           "name": "Tarek Essam",
           "email": null
         },
         {
-          "id": "efdd3ba3-e318-4085-8a5e-fccfe02bb0fe",
+          "id": "6998cef1-1e01-4e86-bc53-20c4a2a6f3e4",
           "name": "Wael Magdy",
           "email": null
         },
         {
-          "id": "fcd48628-57ba-4b8d-97f9-734c3eda489a",
+          "id": "b66cacff-855a-4793-a930-5cb0a1542090",
           "name": "Ayman Reda",
           "email": null
         },
         {
-          "id": "8aec7032-6f76-4a2b-8b66-43b7db7e9cbf",
+          "id": "ac7eb153-1fd1-4578-9bc9-69bc23abd649",
           "name": "Salma Adel",
           "email": null
         },
         {
-          "id": "eb1612f2-6952-4cd2-ac1d-334c060e2dfb",
+          "id": "8b51f0e6-b143-49ed-837b-b8bbdd165342",
           "name": "Lina Omar",
           "email": null
         },
         {
-          "id": "f3a91ab2-d60a-414d-b3a1-19194c405af8",
+          "id": "34ec4f26-1eef-4b03-ba92-92648e09c45d",
           "name": "Malak Ibrahim",
           "email": null
         }
       ],
       "coaches": [
         {
-          "id": "e3860d01-a318-40ba-892b-0e727f3c78b8",
+          "id": "a8bc9813-644e-431b-aa50-17b924dae838",
           "name": "Captain Hossam Hassan",
           "email": "user11@example.com"
         },
         {
-          "id": "a63ff141-d2d5-48c8-9984-d71c8b69c03e",
+          "id": "50e7b262-7ca1-4ea2-94ca-e411167971bc",
           "name": "Coach Amira Mostafa",
           "email": "user12@example.com"
         }
       ],
       "admins": [
         {
-          "id": "f478591d-77e8-4a5e-bec5-5a98873bf8e1",
+          "id": "e6884931-2b7c-422e-833f-9c9a8c19ee71",
           "name": "User 6",
           "email": "user6@example.com"
         }
       ],
       "owners": [
         {
-          "id": "dfad0498-c052-45d7-9673-fd93e4578e1c",
+          "id": "e2b43159-ed58-4fbc-bbdc-f3e64016e756",
           "name": "User 3",
           "email": "user3@example.com"
         }
       ],
       "members": [
         {
-          "id": "48b79492-7443-4851-bb9e-97f99d0d3ce7",
+          "id": "f564bbb1-3c7c-42c4-bee5-5a25410841a9",
           "name": "Admin One",
           "email": "admin1@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "c90fcd2a-81b4-40dd-99e2-b87b8b6d387a",
+          "id": "3b2877b4-6a61-405d-a8f5-4e50ce590c21",
           "name": "Admin Two",
           "email": "admin2@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "efb0cfe1-6657-46ef-ade6-67d31278cfb4",
+          "id": "be7c6ee5-ec25-419e-be8e-f51127f7b326",
           "name": "Admin Three",
           "email": "admin3@rowad.com",
           "role": "super_admin"
         },
         {
-          "id": "dfad0498-c052-45d7-9673-fd93e4578e1c",
+          "id": "e2b43159-ed58-4fbc-bbdc-f3e64016e756",
           "name": "User 3",
           "email": "user3@example.com",
           "role": "owner"
         },
         {
-          "id": "f478591d-77e8-4a5e-bec5-5a98873bf8e1",
+          "id": "e6884931-2b7c-422e-833f-9c9a8c19ee71",
           "name": "User 6",
           "email": "user6@example.com",
           "role": "admin"
         },
         {
-          "id": "f61854cd-bac2-451e-bbaf-0f3b4d7a87f3",
+          "id": "df1e204c-ba86-4f95-af0d-5e98edb1fb32",
           "name": "User 11",
           "email": "user11@example.com",
           "role": "coach"
         },
         {
-          "id": "34f98f1c-a820-4b6b-aad5-43bd061f6c4e",
+          "id": "315eed03-5091-40cd-a51b-b7683f36cf96",
           "name": "User 12",
           "email": "user12@example.com",
           "role": "coach"
         },
         {
-          "id": "f913fffb-b3c3-4d39-881f-c9a6ce6ae5c0",
+          "id": "801bfb82-9c20-4b9f-a04b-0d69e61aefdd",
           "name": "User 15",
           "email": "user15@example.com",
           "role": "player"
         },
         {
-          "id": "29553329-f141-4861-98ad-d3a35c6667e8",
+          "id": "250aa5da-526f-48c7-a3c8-943d5cc83935",
           "name": "User 18",
           "email": "user18@example.com",
           "role": "member"
         },
         {
-          "id": "6090005e-b160-4410-8d2c-f4ba8eb57f2f",
+          "id": "faea4443-d19f-47ed-8751-96b6661db4c1",
           "name": "User 21",
           "email": "user21@example.com",
           "role": "player"

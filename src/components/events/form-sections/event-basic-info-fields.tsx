@@ -116,4 +116,3 @@ const EventBasicInfoFields = ({
 }
 
 export default EventBasicInfoFields
-

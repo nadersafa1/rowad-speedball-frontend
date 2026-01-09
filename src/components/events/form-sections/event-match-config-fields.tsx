@@ -51,9 +51,7 @@ const EventMatchConfigFields = ({
                 type='number'
                 placeholder='3'
                 {...field}
-                onChange={(e) =>
-                  field.onChange(parseInt(e.target.value) || 3)
-                }
+                onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
                 onFocus={(e) => e.target.select()}
                 min={1}
                 disabled={isEditing && hasPlayedSets}
@@ -136,4 +134,3 @@ const EventMatchConfigFields = ({
 }
 
 export default EventMatchConfigFields
-

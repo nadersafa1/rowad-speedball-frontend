@@ -39,9 +39,7 @@ const EventPlayerConfigFields = ({
                 type='number'
                 placeholder='1'
                 {...field}
-                onChange={(e) =>
-                  field.onChange(parseInt(e.target.value) || 1)
-                }
+                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                 onFocus={(e) => e.target.select()}
                 min={1}
                 disabled={isEditing && hasRegistrations}
@@ -68,9 +66,7 @@ const EventPlayerConfigFields = ({
                 type='number'
                 placeholder='2'
                 {...field}
-                onChange={(e) =>
-                  field.onChange(parseInt(e.target.value) || 2)
-                }
+                onChange={(e) => field.onChange(parseInt(e.target.value) || 2)}
                 onFocus={(e) => e.target.select()}
                 min={1}
                 disabled={isEditing && hasRegistrations}
@@ -90,4 +86,3 @@ const EventPlayerConfigFields = ({
 }
 
 export default EventPlayerConfigFields
-

@@ -388,4 +388,3 @@ export const useEventForm = ({
     onSubmit,
   }
 }
-
