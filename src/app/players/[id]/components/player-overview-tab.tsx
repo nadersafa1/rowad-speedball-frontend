@@ -133,7 +133,7 @@ const PlayerOverviewTab = ({
           </div>
 
           {/* Player Details Grid */}
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t'>
+          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t'>
             <div className='flex flex-col items-center p-3 rounded-lg bg-muted/50'>
               <Cake className='h-5 w-5 text-muted-foreground mb-1' />
               <span className='text-sm text-muted-foreground'>Age</span>
@@ -266,7 +266,7 @@ const PlayerOverviewTab = ({
                     </div>
                   </div>
 
-                  <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
+                  <div className='grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm'>
                     <div className='text-center'>
                       <p className='font-medium'>{result.leftHandScore}</p>
                       <p className='text-muted-foreground'>Left Hand</p>
