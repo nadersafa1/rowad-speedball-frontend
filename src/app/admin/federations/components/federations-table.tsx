@@ -1,17 +1,16 @@
 'use client'
 
-import * as React from 'react'
 import { Table } from '@/components/ui/table'
-import type { Federation } from '@/db/schema'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import * as React from 'react'
+import { FederationsTableBody } from './federations-table-body'
 import { createColumns } from './federations-table-columns'
 import { FederationsTableControls } from './federations-table-controls'
-import { FederationsTablePagination } from './federations-table-pagination'
-import { FederationsTableHeader } from './federations-table-header'
-import { FederationsTableBody } from './federations-table-body'
 import { FederationsTableEditDialog } from './federations-table-edit-dialog'
 import { useFederationsTableHandlers } from './federations-table-handlers'
+import { FederationsTableHeader } from './federations-table-header'
 import { useFederationsTable } from './federations-table-hooks'
+import { FederationsTablePagination } from './federations-table-pagination'
 import { FederationsTableProps } from './federations-table-types'
 
 const FederationsTable = ({

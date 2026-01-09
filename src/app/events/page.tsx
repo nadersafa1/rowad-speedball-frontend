@@ -4,21 +4,16 @@ import EventForm from '@/components/events/event-form'
 import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import Loading from '@/components/ui/loading'
-import Unauthorized from '@/components/ui/unauthorized'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useEventPermissions } from '@/hooks/authorization/use-event-permissions'
 import { useEventsStore } from '@/store/events-store'
+import type { EventFormat } from '@/types/event-format'
+import type { EventType } from '@/types/event-types'
 import { Plus, Trophy } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import EventsTable from './components/events-table'
 import EventsStats from './components/events-stats'
-import type { EventType } from '@/types/event-types'
-import type { EventFormat } from '@/types/event-format'
+import EventsTable from './components/events-table'
 
 const EventsPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
   const { canCreate } = useEventPermissions(null)
 
   const [eventFormOpen, setEventFormOpen] = useState(false)
@@ -50,8 +45,6 @@ const EventsPage = () => {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  if (isOrganizationContextLoading) return <Loading />
 
   const handlePageChange = (page: number) => {
     fetchEvents({

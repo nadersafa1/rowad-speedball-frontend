@@ -1,26 +1,21 @@
 'use client'
 
 import TrainingSessionForm from '@/components/training-sessions/training-session-form'
+import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
-import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useTrainingSessionPermissions } from '@/hooks/authorization/use-training-session-permissions'
-import { Plus, Calendar } from 'lucide-react'
+import { Calendar, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { type DateRange } from 'react-day-picker'
+import TrainingSessionsStats from './components/training-sessions-stats'
 import TrainingSessionsTable from './components/training-sessions-table'
 import { useTrainingSessions } from './hooks/use-training-sessions'
 import { TrainingSessionsFilters } from './types'
-import { Intensity, AgeGroup } from './types/enums'
-import TrainingSessionsStats from './components/training-sessions-stats'
+import { AgeGroup, Intensity } from './types/enums'
 
 const TrainingSessionsPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
-  const { isAuthenticated } = context
   const { canRead, canCreate } = useTrainingSessionPermissions(null)
 
   const [sessionFormOpen, setSessionFormOpen] = useState(false)
@@ -113,8 +108,6 @@ const TrainingSessionsPage = () => {
   const handleRefetch = () => {
     refetch()
   }
-
-  if (isOrganizationContextLoading) return <Loading />
 
   // Training sessions are always private - require authentication and proper role
   if (!canRead) {

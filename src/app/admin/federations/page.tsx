@@ -4,17 +4,13 @@ import FederationForm from '@/components/federations/federation-form'
 import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import Loading from '@/components/ui/loading'
 import { useFederationPermissions } from '@/hooks/authorization/use-federation-permissions'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { Building2, Plus } from 'lucide-react'
 import { useState } from 'react'
 import FederationsTable from './components/federations-table'
 import { useFederations } from './hooks/use-federations'
 
 const FederationsPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
   const { canCreate } = useFederationPermissions(null)
 
   const [federationFormOpen, setFederationFormOpen] = useState(false)
@@ -37,10 +33,6 @@ const FederationsPage = () => {
     handlePageChange,
     refetch,
   } = useFederations(filters)
-
-  if (isOrganizationContextLoading) {
-    return <Loading />
-  }
 
   if (error) {
     return (

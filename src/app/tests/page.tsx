@@ -4,20 +4,16 @@ import TestForm from '@/components/tests/test-form'
 import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import Loading from '@/components/ui/loading'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useTestPermissions } from '@/hooks/authorization/use-test-permissions'
 import { Plus, Table2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { type DateRange } from 'react-day-picker'
+import TestsStats from './components/tests-stats'
 import TestsTable from './components/tests-table'
 import { useTests } from './hooks/use-tests'
 import { TestsFilters } from './types'
-import TestsStats from './components/tests-stats'
 
 const TestsPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
   const { canCreate } = useTestPermissions(null)
 
   const [testFormOpen, setTestFormOpen] = useState(false)
@@ -107,8 +103,6 @@ const TestsPage = () => {
   const handleRefetch = () => {
     refetch()
   }
-
-  if (isOrganizationContextLoading) return <Loading />
 
   if (error) {
     return (

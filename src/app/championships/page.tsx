@@ -4,9 +4,7 @@ import ChampionshipForm from '@/components/championships/championship-form'
 import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import Loading from '@/components/ui/loading'
 import { useChampionshipPermissions } from '@/hooks/authorization/use-championship-permissions'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { Plus, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import ChampionshipsTableRefactored from './components/championships-table-refactored'
@@ -14,8 +12,6 @@ import { useChampionships } from './hooks/use-championships'
 import { ChampionshipsFilters } from './types'
 
 const ChampionshipsPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
   const { canCreate } = useChampionshipPermissions(null)
 
   const [championshipFormOpen, setChampionshipFormOpen] = useState(false)
@@ -39,10 +35,6 @@ const ChampionshipsPage = () => {
     handlePageChange,
     refetch,
   } = useChampionships(filters)
-
-  if (isOrganizationContextLoading) {
-    return <Loading />
-  }
 
   if (error) {
     return (
