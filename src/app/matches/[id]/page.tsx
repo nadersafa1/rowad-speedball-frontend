@@ -75,7 +75,7 @@ const MatchDetailPage = () => {
   const hasSets = (match.sets?.length || 0) > 0
 
   return (
-    <div className='container mx-auto p-4 space-y-4 lg:space-y-6'>
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8 space-y-4'>
       <SinglePageHeader backTo='/matches' />
 
       {/* Match Header */}

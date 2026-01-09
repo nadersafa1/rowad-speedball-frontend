@@ -123,7 +123,7 @@ const EventsPage = () => {
 
   if (error) {
     return (
-      <div className='container mx-auto px-4 py-8'>
+      <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
           <CardContent>
             <p className='text-destructive'>Error: {error}</p>

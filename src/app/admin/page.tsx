@@ -37,7 +37,7 @@ const ADMIN_ITEMS = [
 
 const AdminPage = () => {
   return (
-    <div className='mx-auto container my-6 px-4'>
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       <AdminBreadcrumbWrapper />
       <div className='mb-8'>
         <h1 className='text-3xl font-bold tracking-tight'>Admin Dashboard</h1>
