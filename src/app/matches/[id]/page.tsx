@@ -81,7 +81,7 @@ const MatchDetailPage = () => {
       {/* Match Header */}
       <div className='mb-6'>
         <div>
-          <h1 className='text-3xl font-bold'>
+          <h1 className='text-2xl sm:text-3xl font-bold'>
             {match.event
               ? `${match.event.name} - Match`
               : `${player1Name} vs ${player2Name}`}

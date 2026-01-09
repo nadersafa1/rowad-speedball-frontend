@@ -148,7 +148,7 @@ const CoachDetailPage = () => {
       {/* Coach Header */}
       <div className='mb-6'>
         <div>
-          <h1 className='text-3xl font-bold flex items-center gap-2'>
+          <h1 className='text-2xl sm:text-3xl font-bold flex items-center gap-2'>
             {selectedCoach.name}
             {selectedCoach.userId && (
               <BadgeCheck className='h-6 w-6 text-blue-500' />

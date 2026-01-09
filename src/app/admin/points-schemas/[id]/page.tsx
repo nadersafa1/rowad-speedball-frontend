@@ -160,7 +160,7 @@ const PointsSchemaDetailPage = () => {
       {/* Points Schema Header */}
       <div className='mb-6'>
         <div>
-          <h1 className='text-3xl font-bold'>{selectedSchema.name}</h1>
+          <h1 className='text-2xl sm:text-3xl font-bold'>{selectedSchema.name}</h1>
           <p className='text-muted-foreground mt-1'>
             {selectedSchema.description ||
               'Manage points entries for this schema'}
