@@ -165,7 +165,7 @@ const ChampionshipEditionEventsPage = () => {
       <SinglePageHeader backTo={`/championships/${championshipId}`} />
 
       {/* Championship Edition Header */}
-      <div className='mb-8'>
+      <div className='mb-6'>
         <div>
           <h1 className='text-3xl font-bold'>
             {selectedChampionship.name} - {selectedEdition.year}

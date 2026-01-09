@@ -79,7 +79,7 @@ const MatchDetailPage = () => {
       <SinglePageHeader backTo='/matches' />
 
       {/* Match Header */}
-      <div className='mb-8'>
+      <div className='mb-6'>
         <div>
           <h1 className='text-3xl font-bold'>
             {match.event

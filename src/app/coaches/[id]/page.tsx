@@ -146,7 +146,7 @@ const CoachDetailPage = () => {
       />
 
       {/* Coach Header */}
-      <div className='mb-8'>
+      <div className='mb-6'>
         <div>
           <h1 className='text-3xl font-bold flex items-center gap-2'>
             {selectedCoach.name}
