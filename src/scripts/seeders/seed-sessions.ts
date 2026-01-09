@@ -12,10 +12,10 @@ import type {
 } from './types'
 
 const sessionTypes = [
-  ['technique', 'conditioning'],
-  ['tactical', 'match-play'],
-  ['strength', 'agility'],
-  ['recovery', 'flexibility'],
+  ['singles', 'mixed_doubles'],
+  ['men_doubles', 'women_doubles'],
+  ['relay', 'solo'],
+  ['relay'],
 ]
 
 const ageGroups = [
@@ -69,7 +69,9 @@ export const seedTrainingSessions = async (
 
     for (let i = 0; i < 4; i++) {
       const sessionDate = dates[dateIndex % dates.length]
-      const sessionName = `${org.name} Training - ${new Date(sessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+      const sessionName = `${org.name} Training - ${new Date(
+        sessionDate
+      ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
 
       const [createdSession] = await db
         .insert(trainingSessions)
@@ -79,7 +81,9 @@ export const seedTrainingSessions = async (
           intensity: intensityLevels[i % intensityLevels.length],
           type: sessionTypes[i % sessionTypes.length],
           ageGroups: ageGroups[i % ageGroups.length],
-          description: `Training session focusing on ${sessionTypes[i % sessionTypes.length].join(' and ')}`,
+          description: `Training session focusing on ${sessionTypes[
+            i % sessionTypes.length
+          ].join(' and ')}`,
           organizationId: org.id,
         })
         .returning()
@@ -121,4 +125,3 @@ export const seedTrainingSessions = async (
   console.log(`✅ Created ${seededSessions.length} training sessions`)
   return seededSessions
 }
-
