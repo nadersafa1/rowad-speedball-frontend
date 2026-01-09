@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { User, Edit, Trash2, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -23,7 +23,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useCoachesStore } from '@/store/coaches-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
@@ -36,26 +35,22 @@ const CoachDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const coachId = params.id as string
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
-  const { isAuthenticated } = context
+
   const { selectedCoach, fetchCoach, isLoading, deleteCoach } =
     useCoachesStore()
-  const { canUpdate, canDelete } = useCoachPermissions(selectedCoach as any)
+  const { canRead, canUpdate, canDelete } = useCoachPermissions(
+    selectedCoach as any
+  )
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   useEffect(() => {
-    if (coachId && isAuthenticated) {
+    if (coachId) {
       fetchCoach(coachId)
     }
-  }, [coachId, fetchCoach, isAuthenticated])
+  }, [coachId, fetchCoach])
 
-  if (isOrganizationContextLoading) {
-    return <Loading />
-  }
-
-  if (!isAuthenticated) {
+  if (!canRead) {
     return <Unauthorized />
   }
 

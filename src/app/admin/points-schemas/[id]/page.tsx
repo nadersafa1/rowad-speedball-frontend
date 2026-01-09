@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
 import { Skeleton } from '@/components/ui/skeleton'
 import PointsSchemaEntryForm from '@/components/points-schemas/points-schema-entry-form'
@@ -162,7 +162,8 @@ const PointsSchemaDetailPage = () => {
         <div>
           <h1 className='text-3xl font-bold'>{selectedSchema.name}</h1>
           <p className='text-muted-foreground mt-1'>
-            {selectedSchema.description || 'Manage points entries for this schema'}
+            {selectedSchema.description ||
+              'Manage points entries for this schema'}
           </p>
         </div>
       </div>

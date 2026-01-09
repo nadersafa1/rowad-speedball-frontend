@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 
 const ChampionshipDetailPage = () => {
   const params = useParams()

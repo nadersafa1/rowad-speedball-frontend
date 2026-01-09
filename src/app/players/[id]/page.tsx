@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePlayerNotesPermissions } from '@/hooks/authorization/use-player-notes-permissions'
@@ -156,14 +156,6 @@ const PlayerDetailPage = () => {
             : undefined
         }
       />
-
-      {/* Player Header */}
-      <div className='mb-8'>
-        <div>
-          <h1 className='text-3xl font-bold'>{selectedPlayer.name}</h1>
-          <p className='text-muted-foreground mt-1'>Player Details</p>
-        </div>
-      </div>
 
       {/* Tabs for Overview and Notes */}
       <Tabs defaultValue='overview' className='w-full'>

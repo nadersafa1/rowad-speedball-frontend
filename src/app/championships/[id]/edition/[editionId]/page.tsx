@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 
 const ChampionshipEditionEventsPage = () => {
   const params = useParams()

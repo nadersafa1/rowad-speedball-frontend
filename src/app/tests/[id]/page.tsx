@@ -14,7 +14,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -33,7 +33,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useTestsStore } from '@/store/tests-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useTestPermissions } from '@/hooks/authorization/use-test-permissions'
 import { toast } from 'sonner'
 import ResultsForm from '@/components/results/results-form'
@@ -46,7 +45,6 @@ const TestDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const testId = params.id as string
-  const { context } = useOrganizationContext()
   const {
     selectedTest,
     fetchTest,

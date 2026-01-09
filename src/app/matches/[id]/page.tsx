@@ -22,7 +22,7 @@ import {
   getMajorityWinnerName,
 } from './_utils/match-helpers'
 import MatchCard from '@/components/matches/match-card'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 
 const MatchDetailPage = () => {
   const params = useParams()

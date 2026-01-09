@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import Loading from '@/components/ui/loading'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 import Unauthorized from '@/components/ui/unauthorized'
 import { useTrainingSessionPermissions } from '@/hooks/authorization/use-training-session-permissions'
 import { formatDate } from '@/lib/utils'
