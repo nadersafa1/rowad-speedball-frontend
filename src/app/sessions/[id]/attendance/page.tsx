@@ -1,38 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import { PageBreadcrumb } from '@/components/ui'
-import PageHeader from '@/components/ui/page-header'
-import { Button } from '@/components/ui/button'
-import Loading from '@/components/ui/loading'
-import Unauthorized from '@/components/ui/unauthorized'
-import { useTrainingSessionsStore } from '@/store/training-sessions-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
-import { useTrainingSessionPermissions } from '@/hooks/authorization/use-training-session-permissions'
-import { useTrainingSessionAttendance } from '@/hooks/use-training-session-attendance'
-import { AttendanceSummary } from '@/components/training-sessions/attendance-summary'
-import { AttendanceTable } from './components/attendance-table'
-import { AddPlayerDialog } from './components/add-player-dialog'
-import type { AttendanceStatus } from '@/hooks/use-training-session-attendance'
-import { Users, Loader2 } from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { toast } from 'sonner'
 import { AgeGroup, Gender } from '@/app/players/types/enums'
+import { AttendanceSummary } from '@/components/training-sessions/attendance-summary'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import Loading from '@/components/ui/loading'
+import SinglePageHeader from '@/components/ui/single-page-header'
+import Unauthorized from '@/components/ui/unauthorized'
 import { getAgeGroup } from '@/db/schema'
+import { useTrainingSessionPermissions } from '@/hooks/authorization/use-training-session-permissions'
+import type { AttendanceStatus } from '@/hooks/use-training-session-attendance'
+import { useTrainingSessionAttendance } from '@/hooks/use-training-session-attendance'
+import { useTrainingSessionsStore } from '@/store/training-sessions-store'
+import { Loader2, Plus, Users } from 'lucide-react'
+import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { AddPlayerDialog } from './components/add-player-dialog'
+import { AttendanceTable } from './components/attendance-table'
 
 const AttendanceManagementPage = () => {
   const params = useParams()
   const sessionId = params.id as string
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
-  const { isAuthenticated } = context
+
+  const [addPlayerOpen, setAddPlayerOpen] = useState(false)
 
   const {
     selectedTrainingSession,
@@ -58,7 +49,7 @@ const AttendanceManagementPage = () => {
     summary,
   } = useTrainingSessionAttendance({
     sessionId,
-    enabled: !!sessionId && isAuthenticated,
+    enabled: !!sessionId,
   })
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -76,7 +67,7 @@ const AttendanceManagementPage = () => {
     }
   }, [sessionId, fetchTrainingSession, canUpdate])
 
-  if (isOrganizationContextLoading || isSessionLoading) return <Loading />
+  if (isSessionLoading) return <Loading />
 
   // Only users with update permission can manage attendance
   if (!canUpdate) {
@@ -164,33 +155,36 @@ const AttendanceManagementPage = () => {
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       {/* Header */}
-      <div className='mb-6 flex items-center justify-between gap-2'>
-        <PageBreadcrumb
-          items={[
-            { label: 'Sessions', href: '/sessions' },
-            {
-              label: selectedTrainingSession?.name || 'Session',
-              href: `/sessions/${sessionId}`,
-            },
-            { label: 'Attendance' },
-          ]}
-        />
-        {/* Add Player Button - requires update permission */}
-        {canUpdate && (
-          <AddPlayerDialog
-            onAdd={addPlayer}
-            excludedPlayerIds={attendanceRecords.map((r) => r.playerId)}
-            organizationId={selectedTrainingSession.organizationId}
-            isLoading={isAttendanceLoading}
-          />
-        )}
-      </div>
-      <PageHeader
-        icon={Users}
-        title='Attendance Management'
-        description={`Manage attendance for ${selectedTrainingSession.name}`}
+      <SinglePageHeader
+        backTo={`/sessions/${selectedTrainingSession.id}`}
+        actionDialogs={
+          canUpdate
+            ? [
+                {
+                  open: addPlayerOpen,
+                  onOpenChange: setAddPlayerOpen,
+                  trigger: (
+                    <Button size='sm' className='gap-2'>
+                      <Plus className='h-4 w-4' />
+                      <span className='hidden sm:inline'>Add Player</span>
+                    </Button>
+                  ),
+                  content: (
+                    <AddPlayerDialog
+                      onAdd={addPlayer}
+                      excludedPlayerIds={attendanceRecords.map(
+                        (r) => r.playerId
+                      )}
+                      organizationId={selectedTrainingSession.organizationId}
+                      onSuccess={() => setAddPlayerOpen(false)}
+                      onCancel={() => setAddPlayerOpen(false)}
+                    />
+                  ),
+                },
+              ]
+            : undefined
+        }
       />
-
       {/* Attendance Table */}
       <Card>
         <CardContent className='pt-6'>
