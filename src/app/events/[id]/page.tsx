@@ -13,7 +13,6 @@ import BracketSeeding from '@/components/events/bracket-seeding'
 import HeatManagement from '@/components/events/heat-management'
 import StandingsTable from '@/components/events/standings-table'
 import MatchesView from '@/components/events/matches-view'
-import EventHeader from '@/components/events/event-header'
 import EventTabs from '@/components/events/event-tabs'
 import EventOverviewTab from '@/components/events/event-overview-tab'
 import EventRegistrationsTab from '@/components/events/event-registrations-tab'
@@ -22,6 +21,11 @@ import { isTestEventType } from '@/lib/utils/test-event-utils'
 import { apiClient } from '@/lib/api-client'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import LoadingState from '@/components/shared/loading-state'
+import SinglePageHeader from '@/components/ui/single-page-header'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Edit, Trash2, CheckCircle2 } from 'lucide-react'
+import { EVENT_FORMAT_LABELS } from '@/types'
 import { useEventDialogs } from './_hooks/use-event-dialogs'
 import EventDialogs from './_components/event-dialogs'
 import TestEventStandingsView from '@/components/events/test-event-standings-view'
@@ -165,13 +169,60 @@ const EventDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      <EventHeader
-        event={selectedEvent}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
-        onEditClick={dialogs.openEventForm}
-        onDeleteClick={dialogs.openDeleteEvent}
+      <SinglePageHeader
+        backTo='/events'
+        actionButtons={[
+          ...(canUpdate
+            ? [
+                {
+                  label: 'Edit Event',
+                  icon: Edit,
+                  buttonClassName: 'gap-2',
+                  onClick: dialogs.openEventForm,
+                },
+              ]
+            : []),
+          ...(canDelete
+            ? [
+                {
+                  label: 'Delete Event',
+                  icon: Trash2,
+                  buttonClassName:
+                    'gap-2 text-destructive hover:text-destructive',
+                  onClick: dialogs.openDeleteEvent,
+                },
+              ]
+            : []),
+        ]}
       />
+
+      {/* Event Header */}
+      <div className='mb-6'>
+        <h1 className='text-2xl sm:text-3xl font-bold'>{selectedEvent.name}</h1>
+        {(selectedEvent as any).championshipName && (
+          <p className='text-sm text-muted-foreground mt-1'>
+            {(selectedEvent as any).championshipName}
+            {(selectedEvent as any).championshipEditionYear &&
+              ` (${(selectedEvent as any).championshipEditionYear})`}
+          </p>
+        )}
+        <div className='flex flex-wrap gap-2 mt-2'>
+          <Badge variant='outline'>{selectedEvent.eventType}</Badge>
+          <Badge variant='outline'>{selectedEvent.gender}</Badge>
+          <Badge variant='outline'>
+            {EVENT_FORMAT_LABELS[selectedEvent.format]}
+          </Badge>
+          {selectedEvent.visibility === 'private' && (
+            <Badge variant='secondary'>Private</Badge>
+          )}
+          {selectedEvent.completed && (
+            <Badge variant='default' className='bg-green-600'>
+              <CheckCircle2 className='h-3 w-3 mr-1' />
+              Completed
+            </Badge>
+          )}
+        </div>
+      </div>
 
       <Tabs
         value={activeTab}

@@ -14,7 +14,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { PageBreadcrumb } from '@/components/ui'
+import SinglePageHeader from '@/components/ui/single-page-header'
 import {
   Card,
   CardContent,
@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/card'
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
 import {
-  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -32,7 +31,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useTestsStore } from '@/store/tests-store'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
@@ -179,72 +177,73 @@ const TestDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Breadcrumb Navigation with Edit/Delete Actions */}
-      <div className='mb-4 sm:mb-6 flex items-center justify-between gap-2'>
-        <PageBreadcrumb currentPageLabel={selectedTest?.name} />
-        {(canUpdate || canDelete) && (
-          <div className='flex gap-2'>
-            {canUpdate && (
-              <Dialog
-                open={editTestFormOpen}
-                onOpenChange={setEditTestFormOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button variant='outline' size='sm' className='gap-2'>
-                    <Edit className='h-4 w-4' />
-                    <span className='hidden sm:inline'>Edit Test</span>
-                  </Button>
-                </DialogTrigger>
-                <TestForm
-                  test={selectedTest}
-                  onSuccess={() => {
-                    setEditTestFormOpen(false)
-                    fetchTest(testId, true)
-                  }}
-                  onCancel={() => setEditTestFormOpen(false)}
-                />
-              </Dialog>
-            )}
-            {canDelete && (
-              <AlertDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-              >
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='gap-2 text-destructive hover:text-destructive'
-                  >
-                    <Trash2 className='h-4 w-4' />
-                    <span className='hidden sm:inline'>Delete Test</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Test</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete{' '}
-                      <strong>{selectedTest.name}</strong>? This action cannot
-                      be undone and will permanently delete all associated test
-                      results.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        )}
-      </div>
+      <SinglePageHeader
+        backTo='/tests'
+        actionDialogs={
+          canUpdate
+            ? [
+                {
+                  open: editTestFormOpen,
+                  onOpenChange: setEditTestFormOpen,
+                  trigger: (
+                    <Button size='sm' className='gap-2' variant='outline'>
+                      <Edit className='h-4 w-4' />
+                      <span className='hidden sm:inline'>Edit Test</span>
+                    </Button>
+                  ),
+                  content: (
+                    <TestForm
+                      test={selectedTest}
+                      onSuccess={() => {
+                        setEditTestFormOpen(false)
+                        fetchTest(testId, true)
+                      }}
+                      onCancel={() => setEditTestFormOpen(false)}
+                    />
+                  ),
+                },
+              ]
+            : undefined
+        }
+        alertDialogs={
+          canDelete
+            ? [
+                {
+                  open: deleteDialogOpen,
+                  onOpenChange: setDeleteDialogOpen,
+                  trigger: (
+                    <Button size='sm' className='gap-2' variant='destructive'>
+                      <Trash2 className='h-4 w-4' />
+                      <span className='hidden sm:inline'>Delete Test</span>
+                    </Button>
+                  ),
+                  content: (
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Test</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete{' '}
+                          <strong>{selectedTest.name}</strong>? This action
+                          cannot be undone and will permanently delete all
+                          associated test results.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                          onClick={handleDelete}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  ),
+                },
+              ]
+            : undefined
+        }
+      />
 
       {/* Test Header */}
       <div className='mb-8'>

@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
-import { PageHeader } from '@/components/ui'
+import SinglePageHeader from '@/components/ui/single-page-header'
 
 const ChampionshipDetailPage = () => {
   const params = useParams()
@@ -138,19 +138,15 @@ const ChampionshipDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Header */}
-      <PageHeader
-        icon={Trophy}
-        title={selectedChampionship.name}
-        description={
-          selectedChampionship.description || 'Manage championship details'
-        }
+      <SinglePageHeader
+        backTo='/championships'
         actionButtons={
           canEdit
             ? [
                 {
                   label: 'Edit Championship',
                   icon: Edit,
+                  buttonClassName: 'gap-2',
                   onClick: () =>
                     router.push(`/championships/${championshipId}/edit`),
                 },
@@ -158,6 +154,16 @@ const ChampionshipDetailPage = () => {
             : undefined
         }
       />
+
+      {/* Championship Header */}
+      <div className='mb-8'>
+        <div>
+          <h1 className='text-3xl font-bold'>{selectedChampionship.name}</h1>
+          <p className='text-muted-foreground mt-1'>
+            {selectedChampionship.description || 'Manage championship details'}
+          </p>
+        </div>
+      </div>
 
       {/* Championship Editions Section */}
       <Card>
