@@ -186,7 +186,7 @@ const TestForm = ({ test, onSuccess, onCancel }: TestFormProps) => {
           {/* Quick Presets */}
           <div className='space-y-2'>
             <FormLabel>Quick Presets</FormLabel>
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
               <Button
                 type='button'
                 variant={
