@@ -1,17 +1,17 @@
 'use client'
 
 import ChampionshipForm from '@/components/championships/championship-form'
+import { PageHeader } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, PageBreadcrumb } from '@/components/ui'
+import Loading from '@/components/ui/loading'
+import { useChampionshipPermissions } from '@/hooks/authorization/use-championship-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { Plus, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import ChampionshipsTableRefactored from './components/championships-table-refactored'
 import { useChampionships } from './hooks/use-championships'
 import { ChampionshipsFilters } from './types'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
-import { useChampionshipPermissions } from '@/hooks/authorization/use-championship-permissions'
-import Loading from '@/components/ui/loading'
 
 const ChampionshipsPage = () => {
   const { context, isLoading: isOrganizationContextLoading } =
