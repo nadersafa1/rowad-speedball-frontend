@@ -1,13 +1,39 @@
-import { Building2, Users, ArrowRight, Globe, Award, Trophy } from 'lucide-react'
-import Link from 'next/link'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import GridSingleItem from '@/components/gird-single-item'
+import { Award, Building2, Globe, Trophy, Users } from 'lucide-react'
 import { AdminBreadcrumbWrapper } from './_components/breadcrumb-wrapper'
+
+const ADMIN_ITEMS = [
+  {
+    href: '/admin/clubs',
+    title: 'Clubs',
+    description: 'Manage clubs and assign admins/coaches',
+    Icon: Building2,
+  },
+  {
+    href: '/admin/users',
+    title: 'Users',
+    description: 'Manage user accounts, roles, and permissions',
+    Icon: Users,
+  },
+  {
+    href: '/admin/federations',
+    title: 'Federations',
+    description: 'Manage federations and their settings',
+    Icon: Globe,
+  },
+  {
+    href: '/admin/placement-tiers',
+    title: 'Placement Tiers',
+    description: 'Manage global placement tier categories',
+    Icon: Award,
+  },
+  {
+    href: '/admin/points-schemas',
+    title: 'Points Schemas',
+    description: 'Manage event points allocation systems',
+    Icon: Trophy,
+  },
+]
 
 const AdminPage = () => {
   return (
@@ -21,110 +47,15 @@ const AdminPage = () => {
       </div>
 
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch'>
-        <Link href='/admin/clubs' className='group h-full block'>
-          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
-            <CardHeader className='p-4 flex-1 flex items-center'>
-              <div className='flex items-center justify-between w-full'>
-                <div className='flex items-center gap-3'>
-                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
-                    <Building2 className='h-6 w-6 text-primary' />
-                  </div>
-                  <div>
-                    <CardTitle>Clubs</CardTitle>
-                    <CardDescription>
-                      Manage clubs and assign admins/coaches
-                    </CardDescription>
-                  </div>
-                </div>
-                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
-              </div>
-            </CardHeader>
-          </Card>
-        </Link>
-
-        <Link href='/admin/users' className='group h-full block'>
-          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
-            <CardHeader className='p-4 flex-1 flex items-center'>
-              <div className='flex items-center justify-between w-full'>
-                <div className='flex items-center gap-3'>
-                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
-                    <Users className='h-6 w-6 text-primary' />
-                  </div>
-                  <div>
-                    <CardTitle>Users</CardTitle>
-                    <CardDescription>
-                      Manage user accounts, roles, and permissions
-                    </CardDescription>
-                  </div>
-                </div>
-                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
-              </div>
-            </CardHeader>
-          </Card>
-        </Link>
-
-        <Link href='/admin/federations' className='group h-full block'>
-          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
-            <CardHeader className='p-4 flex-1 flex items-center'>
-              <div className='flex items-center justify-between w-full'>
-                <div className='flex items-center gap-3'>
-                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
-                    <Globe className='h-6 w-6 text-primary' />
-                  </div>
-                  <div>
-                    <CardTitle>Federations</CardTitle>
-                    <CardDescription>
-                      Manage federations and their settings
-                    </CardDescription>
-                  </div>
-                </div>
-                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
-              </div>
-            </CardHeader>
-          </Card>
-        </Link>
-
-        <Link href='/admin/placement-tiers' className='group h-full block'>
-          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
-            <CardHeader className='p-4 flex-1 flex items-center'>
-              <div className='flex items-center justify-between w-full'>
-                <div className='flex items-center gap-3'>
-                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
-                    <Award className='h-6 w-6 text-primary' />
-                  </div>
-                  <div>
-                    <CardTitle>Placement Tiers</CardTitle>
-                    <CardDescription>
-                      Manage global placement tier categories
-                    </CardDescription>
-                  </div>
-                </div>
-                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
-              </div>
-            </CardHeader>
-          </Card>
-        </Link>
-
-        <Link href='/admin/points-schemas' className='group h-full block'>
-          <Card className='h-full flex flex-col transition-all hover:shadow-lg hover:border-primary/50'>
-            <CardHeader className='p-4 flex-1 flex items-center'>
-              <div className='flex items-center justify-between w-full'>
-                <div className='flex items-center gap-3'>
-                  <div className='rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors'>
-                    <Trophy className='h-6 w-6 text-primary' />
-                  </div>
-                  <div>
-                    <CardTitle>Points Schemas</CardTitle>
-                    <CardDescription>
-                      Manage event points allocation systems
-                    </CardDescription>
-                  </div>
-                </div>
-                <ArrowRight className='h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
-              </div>
-            </CardHeader>
-          </Card>
-        </Link>
+        {ADMIN_ITEMS.map((item) => (
+          <GridSingleItem
+            key={item.href}
+            href={item.href}
+            title={item.title}
+            description={item.description}
+            Icon={item.Icon}
+          />
+        ))}
       </div>
     </div>
   )

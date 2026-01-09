@@ -59,11 +59,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navMain = useMemo(
     () => [
       {
-        title: 'Attendance',
-        url: '/attendance/club',
-        icon: ClipboardCheck,
-      },
-      {
         title: 'Players',
         url: '/players',
         icon: UserCheck,
@@ -122,6 +117,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {
         title: 'Training Sessions',
         url: '/sessions',
+      },
+      {
+        title: 'Attendance',
+        url: '/attendance/club',
       },
       ...(isOwner || isAdmin
         ? [
