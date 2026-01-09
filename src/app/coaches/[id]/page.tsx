@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { User, Edit, Trash2, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { PageBreadcrumb } from '@/components/ui'
+import { SinglePageHeader } from '@/components/ui'
 import {
   Card,
   CardContent,
@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
-  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -22,10 +21,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useCoachesStore } from '@/store/coaches-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 import { toast } from 'sonner'
 import CoachForm from '@/components/coaches/coach-form'
@@ -38,26 +35,22 @@ const CoachDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const coachId = params.id as string
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
-  const { isAuthenticated } = context
+
   const { selectedCoach, fetchCoach, isLoading, deleteCoach } =
     useCoachesStore()
-  const { canUpdate, canDelete } = useCoachPermissions(selectedCoach as any)
+  const { canRead, canUpdate, canDelete } = useCoachPermissions(
+    selectedCoach as any
+  )
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   useEffect(() => {
-    if (coachId && isAuthenticated) {
+    if (coachId) {
       fetchCoach(coachId)
     }
-  }, [coachId, fetchCoach, isAuthenticated])
+  }, [coachId, fetchCoach])
 
-  if (isOrganizationContextLoading) {
-    return <Loading />
-  }
-
-  if (!isAuthenticated) {
+  if (!canRead) {
     return <Unauthorized />
   }
 
@@ -86,60 +79,71 @@ const CoachDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Breadcrumb Navigation with Edit/Delete Actions */}
-      <div className='mb-6 flex items-center justify-between gap-2'>
-        <PageBreadcrumb currentPageLabel={selectedCoach?.name} />
-        {(canUpdate || canDelete) && (
-          <div className='flex gap-2'>
-            {canUpdate && (
-              <Button
-                variant='outline'
-                size='sm'
-                className='gap-2'
-                onClick={() => setEditDialogOpen(true)}
-              >
-                <Edit className='h-4 w-4' />
-                <span className='hidden sm:inline'>Edit Coach</span>
-              </Button>
-            )}
-            {canDelete && (
-              <AlertDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-              >
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='gap-2 text-destructive hover:text-destructive'
-                  >
-                    <Trash2 className='h-4 w-4' />
-                    <span className='hidden sm:inline'>Delete Coach</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Coach</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete {selectedCoach.name}? This
-                      action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-        )}
-      </div>
+      <SinglePageHeader
+        backTo='/coaches'
+        actionDialogs={
+          canUpdate
+            ? [
+                {
+                  open: editDialogOpen,
+                  onOpenChange: setEditDialogOpen,
+                  trigger: (
+                    <Button size='sm' className='gap-2' variant='outline'>
+                      <Edit className='h-4 w-4' />
+                      <span className='hidden sm:inline'>Edit Coach</span>
+                    </Button>
+                  ),
+                  content: (
+                    <CoachForm
+                      coach={selectedCoach}
+                      onSuccess={() => {
+                        setEditDialogOpen(false)
+                        fetchCoach(coachId)
+                      }}
+                      onCancel={() => setEditDialogOpen(false)}
+                    />
+                  ),
+                },
+              ]
+            : undefined
+        }
+        alertDialogs={
+          canDelete
+            ? [
+                {
+                  open: deleteDialogOpen,
+                  onOpenChange: setDeleteDialogOpen,
+                  trigger: (
+                    <Button size='sm' className='gap-2' variant='destructive'>
+                      <Trash2 className='h-4 w-4' />
+                      <span className='hidden sm:inline'>Delete Coach</span>
+                    </Button>
+                  ),
+                  content: (
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Coach</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {selectedCoach.name}?
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                          onClick={handleDelete}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  ),
+                },
+              ]
+            : undefined
+        }
+      />
 
       {/* Coach Header */}
       <div className='mb-8'>
@@ -212,17 +216,6 @@ const CoachDetailPage = () => {
             </Card>
           )}
       </div>
-
-      {editDialogOpen && (
-        <CoachForm
-          coach={selectedCoach}
-          onSuccess={() => {
-            setEditDialogOpen(false)
-            fetchCoach(coachId)
-          }}
-          onCancel={() => setEditDialogOpen(false)}
-        />
-      )}
     </div>
   )
 }

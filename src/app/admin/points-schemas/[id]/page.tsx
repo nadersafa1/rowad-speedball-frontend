@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, Award, ArrowLeft } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,8 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
-import { Dialog } from '@/components/ui/dialog'
+import { SinglePageHeader } from '@/components/ui'
 import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
 import { Skeleton } from '@/components/ui/skeleton'
 import PointsSchemaEntryForm from '@/components/points-schemas/points-schema-entry-form'
@@ -131,31 +130,16 @@ const PointsSchemaDetailPage = () => {
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      {/* Back Button */}
-      <Button
-        variant='ghost'
-        onClick={() => router.push('/admin/points-schemas')}
-        className='mb-4'
-      >
-        <ArrowLeft className='mr-2 h-4 w-4' />
-        Back to Points Schemas
-      </Button>
-
-      {/* Header */}
-      <PageHeader
-        icon={Award}
-        title={selectedSchema.name}
-        description={
-          selectedSchema.description || 'Manage points entries for this schema'
-        }
+      <SinglePageHeader
+        backTo='/admin/points-schemas'
         actionDialogs={[
           {
             open: createDialogOpen,
             onOpenChange: setCreateDialogOpen,
             trigger: (
-              <Button size='sm' variant='outline' className='gap-2'>
+              <Button size='sm' className='gap-2' variant='outline'>
                 <Plus className='h-4 w-4' />
-                Add Points Entry
+                <span className='hidden sm:inline'>Add Points Entry</span>
               </Button>
             ),
             content: (
@@ -172,6 +156,17 @@ const PointsSchemaDetailPage = () => {
           },
         ]}
       />
+
+      {/* Points Schema Header */}
+      <div className='mb-8'>
+        <div>
+          <h1 className='text-3xl font-bold'>{selectedSchema.name}</h1>
+          <p className='text-muted-foreground mt-1'>
+            {selectedSchema.description ||
+              'Manage points entries for this schema'}
+          </p>
+        </div>
+      </div>
 
       {/* Info Card */}
       <Card className='mt-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900'>

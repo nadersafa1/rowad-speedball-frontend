@@ -22,7 +22,7 @@ import {
   getMajorityWinnerName,
 } from './_utils/match-helpers'
 import MatchCard from '@/components/matches/match-card'
-import { PageBreadcrumb } from '@/components/ui'
+import { SinglePageHeader } from '@/components/ui'
 
 const MatchDetailPage = () => {
   const params = useParams()
@@ -74,14 +74,21 @@ const MatchDetailPage = () => {
   const isDateSet = !!match.matchDate
   const hasSets = (match.sets?.length || 0) > 0
 
-  // Generate match label for breadcrumb
-  const matchLabel = match.event
-    ? `${match.event.name} - Match`
-    : `${player1Name} vs ${player2Name}`
-
   return (
     <div className='container mx-auto p-4 space-y-4 lg:space-y-6'>
-      <PageBreadcrumb currentPageLabel={matchLabel || 'Match'} />
+      <SinglePageHeader backTo='/matches' />
+
+      {/* Match Header */}
+      <div className='mb-8'>
+        <div>
+          <h1 className='text-3xl font-bold'>
+            {match.event
+              ? `${match.event.name} - Match`
+              : `${player1Name} vs ${player2Name}`}
+          </h1>
+          <p className='text-muted-foreground mt-1'>Match Details</p>
+        </div>
+      </div>
 
       {/* Responsive 2-column layout: Main (scoring) + Sidebar (details) */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6'>

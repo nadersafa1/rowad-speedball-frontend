@@ -5,7 +5,7 @@ import { AttendanceSummary } from '@/components/training-sessions/attendance-sum
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import Loading from '@/components/ui/loading'
-import SinglePageHeader from '@/components/ui/single-page-header'
+import { SinglePageHeader } from '@/components/ui'
 import Unauthorized from '@/components/ui/unauthorized'
 import { getAgeGroup } from '@/db/schema'
 import { useTrainingSessionPermissions } from '@/hooks/authorization/use-training-session-permissions'
