@@ -47,6 +47,7 @@ import {
   dateToISOString,
 } from '@/lib/forms/patterns'
 import { LoadingButton, FormError } from '@/components/forms'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 // Validation schema using shared patterns
 // Aligned with API schema but uses Date objects internally
@@ -117,7 +118,7 @@ const PlayerForm = ({ player, onSuccess, onCancel }: PlayerFormProps) => {
   }
 
   return (
-    <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+    <DialogContent className={DIALOG_CLASSES.form}>
       <DialogHeader>
         <DialogTitle className='flex items-center gap-2 text-lg sm:text-xl'>
           <Trophy className='h-5 w-5 text-rowad-600' />

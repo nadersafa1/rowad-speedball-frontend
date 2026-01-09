@@ -45,6 +45,7 @@ import {
   TEAM_LEVEL_LABELS,
   type TeamLevel,
 } from '@/types/team-level'
+import { DIALOG_CLASSES } from '@/lib/ui-constants'
 
 const sessionTypeOptions = [
   { value: SessionType.SINGLES, label: 'Singles' },
@@ -241,7 +242,7 @@ const TrainingSessionForm = ({
   }
 
   return (
-    <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6'>
+    <DialogContent className={DIALOG_CLASSES.complexForm}>
       <DialogHeader>
         <DialogTitle className='flex items-center gap-2 text-lg sm:text-xl'>
           <Calendar className='h-5 w-5 text-rowad-600' />
