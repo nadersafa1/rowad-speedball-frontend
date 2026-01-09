@@ -12,7 +12,7 @@ import {
   Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { PageBreadcrumb } from '@/components/ui'
+import { BackButton } from '@/components/ui'
 import { Badge } from '@/components/ui/badge'
 import {
   Card,
@@ -119,7 +119,7 @@ const TrainingSessionDetailPage = () => {
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
       {/* Breadcrumb Navigation with Edit/Delete Actions */}
       <div className='mb-6 flex items-center justify-between gap-2'>
-        <PageBreadcrumb currentPageLabel={selectedTrainingSession?.name} />
+        <BackButton backTo='/sessions' />
         {(canUpdate || canDelete) && (
           <div className='flex gap-2'>
             {/* Create Event: uses update permission (creating events for a session) */}

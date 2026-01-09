@@ -11,7 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from './breadcrumb'
-import NavigationButtonGroup from './navigation-button-group'
+import BackButton from './back-button'
 
 interface BreadcrumbItem {
   label: string
@@ -56,7 +56,10 @@ const PageBreadcrumb = ({ items, currentPageLabel }: PageBreadcrumbProps) => {
       currentPath += `/${segment}`
 
       // Check if segment is an ID (UUID or numeric)
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment)
+      const isUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          segment
+        )
       const isNumeric = /^\d+$/.test(segment)
       const isID = isUUID || isNumeric
       const isLastSegment = index === segments.length - 1
@@ -70,7 +73,9 @@ const PageBreadcrumb = ({ items, currentPageLabel }: PageBreadcrumbProps) => {
         // If no label, skip the ID segment entirely
       } else if (!isID) {
         // Regular segment (not an ID)
-        const label = routeLabelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+        const label =
+          routeLabelMap[segment] ||
+          segment.charAt(0).toUpperCase() + segment.slice(1)
         const isLast = isLastSegment && !isID
         breadcrumbs.push({
           label,
@@ -87,7 +92,7 @@ const PageBreadcrumb = ({ items, currentPageLabel }: PageBreadcrumbProps) => {
 
   return (
     <div className='flex items-center gap-2'>
-      <NavigationButtonGroup />
+      <BackButton />
       {breadcrumbItems.length > 0 && (
         <Breadcrumb className='hidden md:flex'>
           <BreadcrumbList>
@@ -117,4 +122,3 @@ const PageBreadcrumb = ({ items, currentPageLabel }: PageBreadcrumbProps) => {
 }
 
 export default PageBreadcrumb
-
