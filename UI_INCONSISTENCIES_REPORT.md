@@ -6,7 +6,9 @@
 
 ## Executive Summary
 
-This report identifies UI inconsistencies across the Rowad Speedball application. The analysis found **4 critical issues**, **5 medium-priority issues**, and **2 low-priority issues** affecting code maintainability, user experience consistency, and design system integrity.
+This report identifies UI inconsistencies across the Rowad Speedball application. The analysis found **5 critical issues**, **5 medium-priority issues**, and **2 low-priority issues** affecting code maintainability, user experience consistency, and design system integrity.
+
+**NEW:** Comprehensive grid layout analysis added - found 65 grid instances with 26+ unique patterns causing significant responsive design issues.
 
 ---
 
@@ -170,6 +172,174 @@ Define standard dialog sizes:
 - **Medium:** `sm:max-w-[600px]` - Standard forms (most use cases)
 - **Large:** `sm:max-w-[800px]` - Complex forms (multi-section)
 - **Full:** `sm:max-w-[1000px]` - Data tables, complex UI
+
+---
+
+### 5. Grid Layout Inconsistencies ⚠️
+
+**Impact:** Inconsistent responsive behavior, visual misalignment, mobile usability issues
+
+#### Issue Details:
+Analysis of 65 grid instances across the codebase revealed **26+ unique grid patterns** for semantically similar content, causing significant layout inconsistencies.
+
+**Critical Finding:** Player Overview page uses `grid-cols-2 md:grid-cols-4` without mobile fallback - **breaks on small screens!**
+
+#### Grid Pattern Inconsistencies:
+
+**A. Simple 2-Column Grids - 4 Different Gap Values:**
+| Gap | Count | Files |
+|-----|-------|-------|
+| `gap-2` | 1 | registration-form.tsx |
+| `gap-3` | 1 | test-event-score-form.tsx |
+| `gap-4` | 4 | Most match components |
+| `gap-6` | 1 | match-card.tsx |
+
+**B. Detail Page Info Grids - 4 Different Patterns:**
+| Page | Pattern | Gap | File |
+|------|---------|-----|------|
+| Training Session | `1 md:2 lg:3` | 4 | sessions/[id]/page.tsx:229 |
+| Test Details | `1 md:3` | 4 | tests/[id]/page.tsx:273 |
+| Player Overview | `2 md:4` ⚠️ | 4 | **players/[id]/components/player-overview-tab.tsx:136** |
+| Match Details | `1 lg:3` | 4 lg:6 | matches/[id]/page.tsx:94 |
+
+**C. Stats Cards - 6 Different Patterns:**
+| Purpose | Pattern | Gap | File |
+|---------|---------|-----|------|
+| Attendance | `2 md:2 lg:3 xl:6` | 4 | attendance/components/attendance-stats-cards.tsx:82 |
+| Sessions | `2 md:4` | 4 | sessions/components/training-sessions-stats.tsx:15 |
+| Events | `2 md:4` | 4 | events/components/events-stats.tsx:15 |
+| Tests | `2 md:3` | 4 | tests/components/tests-stats.tsx:15 |
+| Coaches | `3` (fixed) | 4 | coaches/components/coaches-stats.tsx:15 |
+| Bracket | `2 sm:3 md:5` | 2 | events/bracket-stats.tsx:56 |
+
+**D. Form Layouts - 3 Different Patterns:**
+```tsx
+// Standard (5 files)
+grid grid-cols-1 sm:grid-cols-2 gap-4
+
+// Training Session (non-standard)
+grid grid-cols-2 sm:grid-cols-3 gap-4
+
+// Test Form (tight gap, 3 columns)
+grid grid-cols-1 sm:grid-cols-3 gap-2
+```
+
+#### Gap Spacing Distribution:
+- `gap-2`: 3 instances (5%)
+- `gap-3`: 2 instances (3%)
+- **`gap-4`: 36 instances (55%)** ← Most common
+- `gap-6`: 10 instances (15%)
+- `gap-8`: 1 instance (2%)
+
+#### Critical Issues Found:
+
+**1. Player Overview Mobile Breakage** ⚠️⚠️⚠️
+```tsx
+// Current (BROKEN on mobile)
+<div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+
+// Should be
+<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+```
+**File:** `src/app/players/[id]/components/player-overview-tab.tsx:136`
+
+**2. Attendance Filters Use 5-Column Grid** (Unusual pattern)
+```tsx
+// Current
+<div className='grid gap-4 md:grid-cols-2 lg:grid-cols-5'>
+
+// Should be (3-4 column pattern)
+<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+```
+**File:** `src/app/attendance/components/attendance-filters.tsx:80`
+
+**3. Test Form Has Tight Gap** (Inconsistent with other forms)
+```tsx
+// Current
+<div className='grid grid-cols-1 sm:grid-cols-3 gap-2'>
+
+// Should be
+<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+```
+**File:** `src/components/tests/test-form.tsx:189`
+
+**4. Match Detail Uses Responsive Gap** (Only page with this pattern)
+```tsx
+// Current
+<div className='grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6'>
+
+// Should be (consistent gap)
+<div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+```
+**File:** `src/app/matches/[id]/page.tsx:94`
+
+#### Files Requiring Updates:
+
+**Immediate (High Priority):**
+```
+1. src/app/players/[id]/components/player-overview-tab.tsx:136
+   - Add mobile column: grid-cols-1 md:grid-cols-2 lg:grid-cols-4
+
+2. src/components/tests/test-form.tsx:189
+   - Change to: grid-cols-1 sm:grid-cols-2 gap-4
+
+3. src/app/attendance/components/attendance-filters.tsx:80
+   - Change to: grid-cols-1 md:grid-cols-2 lg:grid-cols-4
+```
+
+**Medium Priority:**
+```
+4. Stats cards standardization (7 files)
+   - Standardize to: grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4
+
+5. Detail page info grids (4 files)
+   - Standardize to: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4
+
+6. src/app/matches/[id]/page.tsx:94
+   - Remove responsive gap, use consistent gap-4
+```
+
+**Low Priority:**
+```
+7. Training session form patterns (4 locations)
+8. 2-column grid gap standardization (9 files)
+```
+
+#### Recommended Standard Patterns:
+
+**Pattern A: Detail Page Info Grids**
+```tsx
+grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4
+```
+
+**Pattern B: Form Fields**
+```tsx
+grid grid-cols-1 sm:grid-cols-2 gap-4
+```
+
+**Pattern C: Stats Cards (6-item layout)**
+```tsx
+grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4
+```
+
+**Pattern D: Card Lists**
+```tsx
+grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4
+```
+
+**Pattern E: 2-Column Grids**
+```tsx
+grid grid-cols-2 gap-4
+```
+
+#### Impact Summary:
+- **65 grid instances analyzed**
+- **26+ unique patterns found**
+- **1 critical mobile breakage** (Player Overview)
+- **3 high-priority fixes needed**
+- **13 medium-priority alignments recommended**
+
+**Estimated Effort:** 8-12 hours to standardize all grid patterns
 
 ---
 
@@ -1620,17 +1790,25 @@ src/app/attendance/page.tsx  # Currently missing stats
 
 ### Phase 1: Critical Fixes (Week 1)
 
-**Day 1-2: Container & Spacing**
+**Day 1: Grid Layout Critical Fixes**
+- [ ] Fix Player Overview mobile breakage (CRITICAL)
+- [ ] Fix Test Form grid pattern and gap
+- [ ] Fix Attendance Filters 5-column grid
+- [ ] Test responsive behavior on mobile devices
+
+**Day 2-3: Container & Spacing**
 - [ ] Standardize container padding (7 files)
 - [ ] Fix SinglePageHeader spacing (9 files)
 - [ ] Test all pages for visual consistency
 
-**Day 3-4: Dialogs**
+**Day 4: Dialogs**
 - [ ] Migrate form dialog patterns (2 files)
 - [ ] Define and apply dialog size standards
 - [ ] Test dialog behavior on mobile/desktop
 
-**Day 5: Verification**
+**Day 5: Verification & Grid Medium Priority**
+- [ ] Fix Match Detail responsive gap
+- [ ] Begin stats cards standardization (7 files)
 - [ ] Visual regression testing
 - [ ] Cross-browser testing
 - [ ] Mobile responsiveness check
@@ -1750,36 +1928,62 @@ Always use responsive text:
 - MD: `sm:max-w-[600px]` - Standard forms (default)
 - LG: `sm:max-w-[800px]` - Complex forms
 - XL: `sm:max-w-[1000px]` - Data tables
+
+## Grid Layout Standards
+Always include mobile-first column definitions:
+
+\`\`\`tsx
+// Detail page info grids
+<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+
+// Form fields
+<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+
+// Stats cards (6-item)
+<div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4'>
+
+// Card lists
+<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+
+// Simple 2-column grids
+<div className='grid grid-cols-2 gap-4'>
+\`\`\`
+
+**IMPORTANT:**
+- Always start with `grid-cols-1` for mobile unless content requires 2 columns minimum
+- Use consistent `gap-4` for most layouts
+- Never use responsive gap values (gap-4 lg:gap-6) - keep gap consistent
 ```
 
 ---
 
 ## Conclusion
 
-This comprehensive analysis identified **10 major UI inconsistency categories** across the Rowad Speedball application:
+This comprehensive analysis identified **11 major UI inconsistency categories** across the Rowad Speedball application:
 
-**Critical Issues (4):**
+**Critical Issues (5):**
 1. Container padding patterns
 2. Header spacing double-margins
 3. Form dialog implementation inconsistency
 4. Dialog size standards missing
+5. **Grid layout inconsistencies (NEW)** - 65 instances, 26+ patterns, 1 mobile breakage
 
 **Medium Priority (5):**
-5. PageBreadcrumb cleanup needed
-6. Card padding standards needed
-7. Button responsive text incomplete
-8. Typography hierarchy inconsistent
-9. Section spacing strategy unclear
+6. PageBreadcrumb cleanup needed
+7. Card padding standards needed
+8. Button responsive text incomplete
+9. Typography hierarchy inconsistent
+10. Section spacing strategy unclear
 
 **Low Priority (2):**
-10. Admin page headers
-11. Stats component placement
+11. Admin page headers
+12. Stats component placement
 
 **Total Estimated Effort:**
-- Phase 1 (Critical): 40 hours
-- Phase 2 (Medium): 40 hours
+- Phase 1 (Critical): 48 hours (added 8 hours for grid fixes)
+- Phase 2 (Medium): 44 hours (added 4 hours for grid alignment)
 - Phase 3 (Polish): 24 hours
-- **Total: ~104 hours** (13 working days)
+- **Total: ~116 hours** (14.5 working days)
 
 **Recommended Approach:**
 1. Start with Phase 1 (critical) for immediate consistency
