@@ -1,7 +1,7 @@
 'use client'
 
 import { Table } from '@/components/ui/table'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useRoles } from '@/hooks/authorization/use-roles'
 import * as React from 'react'
 import { FederationsTableBody } from './federations-table-body'
 import { createColumns } from './federations-table-columns'
@@ -26,8 +26,7 @@ const FederationsTable = ({
   isLoading = false,
   onRefetch,
 }: FederationsTableProps) => {
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin } = context
+  const { isSystemAdmin } = useRoles()
 
   const {
     editFederation,

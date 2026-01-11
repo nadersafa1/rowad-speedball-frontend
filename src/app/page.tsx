@@ -14,7 +14,7 @@ import {
   User,
 } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useRoles } from '@/hooks/authorization/use-roles'
 
 const features = [
   {
@@ -66,8 +66,7 @@ const benefits = [
 
 export default function LandingPage() {
   const { data: session } = authClient.useSession()
-  const { isLoading: isContextLoading, context } = useOrganizationContext()
-  const { isSystemAdmin, isPlayer } = context
+  const { isSystemAdmin, isPlayer, isLoading: isContextLoading } = useRoles()
   const isAuthenticated = !!session?.user
 
   const isLoading = isContextLoading
