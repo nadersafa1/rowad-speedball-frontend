@@ -1460,6 +1460,27 @@ export class ApiClient {
       method: 'DELETE',
     })
   }
+
+  async bulkCreateFederationPlayerRequests(data: {
+    federationId: string
+    playerIds: string[]
+  }): Promise<{ success: boolean; count: number; requests: any[] }> {
+    return this.request<{ success: boolean; count: number; requests: any[] }>(
+      '/federation-player-requests/bulk',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    )
+  }
+
+  async getEligibleFederationPlayers(federationId: string): Promise<{
+    players: Array<any & { isEligible: boolean; ineligibilityReason: string | null }>
+  }> {
+    return this.request<{
+      players: Array<any & { isEligible: boolean; ineligibilityReason: string | null }>
+    }>(`/players/eligible-for-federation?federationId=${federationId}`)
+  }
 }
 
 // Singleton instance - use relative path

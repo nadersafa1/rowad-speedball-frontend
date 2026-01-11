@@ -6,6 +6,15 @@ export const createFederationPlayerRequestSchema = z.object({
   playerId: z.uuid('Invalid player ID'),
 })
 
+// Bulk schema for creating multiple federation player requests
+export const bulkCreateFederationPlayerRequestSchema = z.object({
+  federationId: z.uuid('Invalid federation ID'),
+  playerIds: z
+    .array(z.uuid('Invalid player ID'))
+    .min(1, 'At least one player is required')
+    .max(50, 'Maximum 50 players can be applied at once'),
+})
+
 // Schema for approving/rejecting a request
 export const updateFederationPlayerRequestStatusSchema = z.object({
   status: z.enum(['approved', 'rejected']),
@@ -48,6 +57,9 @@ export const federationPlayerRequestsQuerySchema = z.object({
 
 export type CreateFederationPlayerRequestInput = z.infer<
   typeof createFederationPlayerRequestSchema
+>
+export type BulkCreateFederationPlayerRequestInput = z.infer<
+  typeof bulkCreateFederationPlayerRequestSchema
 >
 export type UpdateFederationPlayerRequestStatusInput = z.infer<
   typeof updateFederationPlayerRequestStatusSchema

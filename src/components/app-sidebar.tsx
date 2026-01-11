@@ -12,6 +12,7 @@ import {
   Calendar,
   ShieldCheck,
   Building2,
+  Users,
 } from 'lucide-react'
 
 import { NavMain } from '@/components/nav-main'
@@ -193,14 +194,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     [navMain, teamManagement, federationManagement, administration]
   )
 
-  // Quick actions
-  const quickActions = [
-    {
-      name: 'Create Event',
-      url: '/events/create',
-      icon: Table2,
-    },
-  ]
+  // Quick actions - only for org admin/owner
+  const quickActions = useMemo(() => {
+    const actions = []
+
+    if (isAdmin || isOwner) {
+      actions.push({
+        name: 'Create Event',
+        url: '/events/create',
+        icon: Table2,
+      })
+
+      actions.push({
+        name: 'Bulk Federation Application',
+        url: '/players/federation/bulk-apply',
+        icon: Users,
+      })
+    }
+
+    return actions
+  }, [isAdmin, isOwner])
 
   return (
     <Sidebar variant='inset' {...props}>
@@ -225,7 +238,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={allNavItems} />
-        {/* <NavProjects projects={quickActions} /> */}
+        {quickActions.length > 0 && <NavProjects projects={quickActions} />}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
