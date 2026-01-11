@@ -14,6 +14,13 @@ import type {
   MarkSetPlayedPayload,
   UpdateMatchPayload,
 } from '@/lib/socket'
+import type {
+  SetCreatedData,
+  MatchScoreUpdatedData,
+  SetPlayedData,
+  MatchCompletedData,
+  MatchUpdatedData,
+} from '@/types'
 
 /**
  * Error messages used throughout the socket hook
@@ -390,11 +397,17 @@ export const useSocket = () => {
     updateMatch,
     // Listeners
     onMatchData: createListener(SOCKET_EVENTS.MATCH_DATA),
-    onSetCreated: createListener(SOCKET_EVENTS.SET_CREATED),
-    onScoreUpdated: createListener(SOCKET_EVENTS.MATCH_SCORE_UPDATED),
-    onSetPlayed: createListener(SOCKET_EVENTS.SET_PLAYED),
-    onMatchCompleted: createListener(SOCKET_EVENTS.MATCH_COMPLETED),
-    onMatchUpdated: createListener(SOCKET_EVENTS.MATCH_UPDATED),
+    onSetCreated: createListener<SetCreatedData>(SOCKET_EVENTS.SET_CREATED),
+    onScoreUpdated: createListener<MatchScoreUpdatedData>(
+      SOCKET_EVENTS.MATCH_SCORE_UPDATED
+    ),
+    onSetPlayed: createListener<SetPlayedData>(SOCKET_EVENTS.SET_PLAYED),
+    onMatchCompleted: createListener<MatchCompletedData>(
+      SOCKET_EVENTS.MATCH_COMPLETED
+    ),
+    onMatchUpdated: createListener<MatchUpdatedData>(
+      SOCKET_EVENTS.MATCH_UPDATED
+    ),
     onError: createListener(SOCKET_EVENTS.ERROR),
   }
 }
