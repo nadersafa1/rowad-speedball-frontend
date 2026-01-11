@@ -31,7 +31,6 @@ import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   // Get organization context (no auth required - players are public)
-  // Note: We still get context for potential future filtering, but all users see all players
   const context = await getOrganizationContext()
 
   const { searchParams } = new URL(request.url)
@@ -60,12 +59,30 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
     const conditions: any[] = []
 
+    // Determine filtering based on user role
+    const isClubRole = context.isOwner || context.isAdmin || context.isCoach
+    const isFederationRole =
+      context.isFederationAdmin || context.isFederationEditor
+    const shouldFilterByOrganization =
+      !context.isSystemAdmin && isClubRole && context.organization?.id
+    const shouldFilterByFederation =
+      !context.isSystemAdmin && isFederationRole && context.federationId
+
+    // Apply role-based filtering
+    if (shouldFilterByOrganization && context.organization) {
+      // Club roles: only see players from their organization
+      conditions.push(
+        eq(schema.players.organizationId, context.organization.id)
+      )
+    } else if (shouldFilterByFederation) {
+      // Federation roles: only see players linked to their federation
+      // This will be handled via join in the queries
+    }
+
     // Filter unassigned players (organizationId IS NULL)
     if (unassigned) {
       conditions.push(isNull(schema.players.organizationId))
     }
-
-    // All users (including coaches) can view all players - no filtering by organization
 
     if (q) {
       conditions.push(
@@ -183,20 +200,43 @@ export async function GET(request: NextRequest) {
           )
         : undefined
 
-    // Organization join is only needed for sorting by organizationId or displaying organization name
-    // Count query doesn't need join when filtering by organizationId
-    const needsOrganizationJoinForCount = sortBy === 'organizationId'
-    let countQuery = needsOrganizationJoinForCount
-      ? db
-          .select({ count: count() })
-          .from(schema.players)
-          .leftJoin(
-            schema.organization,
-            eq(schema.players.organizationId, schema.organization.id)
-          )
-      : db.select({ count: count() }).from(schema.players)
-    if (combinedCondition) {
-      countQuery = countQuery.where(combinedCondition) as any
+    // Determine if we need federation join
+    const needsFederationJoin = shouldFilterByFederation
+    const needsOrganizationJoinForCount =
+      sortBy === 'organizationId' || shouldFilterByOrganization
+
+    // Build count query with appropriate joins
+    let countQuery = db.select({ count: count() }).from(schema.players)
+
+    if (needsFederationJoin) {
+      // For federation roles: inner join to only get players linked to federation
+      countQuery = countQuery.innerJoin(
+        schema.federationPlayers,
+        eq(schema.players.id, schema.federationPlayers.playerId)
+      ) as any
+      // Add federation filter condition
+      const federationCondition = eq(
+        schema.federationPlayers.federationId,
+        context.federationId!
+      )
+      countQuery = countQuery.where(
+        combinedCondition
+          ? and(combinedCondition, federationCondition)
+          : federationCondition
+      ) as any
+    } else if (needsOrganizationJoinForCount) {
+      // Join organization for sorting or filtering
+      countQuery = countQuery.leftJoin(
+        schema.organization,
+        eq(schema.players.organizationId, schema.organization.id)
+      ) as any
+      if (combinedCondition) {
+        countQuery = countQuery.where(combinedCondition) as any
+      }
+    } else {
+      if (combinedCondition) {
+        countQuery = countQuery.where(combinedCondition) as any
+      }
     }
 
     // Join organization, select all player fields plus organization name
@@ -206,12 +246,37 @@ export async function GET(request: NextRequest) {
         organizationName: schema.organization.name,
       })
       .from(schema.players)
-      .leftJoin(
+
+    // Apply federation join if needed
+    if (needsFederationJoin) {
+      dataQuery = dataQuery
+        .innerJoin(
+          schema.federationPlayers,
+          eq(schema.players.id, schema.federationPlayers.playerId)
+        )
+        .leftJoin(
+          schema.organization,
+          eq(schema.players.organizationId, schema.organization.id)
+        ) as any
+      // Add federation filter condition
+      const federationCondition = eq(
+        schema.federationPlayers.federationId,
+        context.federationId!
+      )
+      dataQuery = dataQuery.where(
+        combinedCondition
+          ? and(combinedCondition, federationCondition)
+          : federationCondition
+      ) as any
+    } else {
+      // Regular organization join
+      dataQuery = dataQuery.leftJoin(
         schema.organization,
         eq(schema.players.organizationId, schema.organization.id)
-      )
-    if (combinedCondition) {
-      dataQuery = dataQuery.where(combinedCondition) as any
+      ) as any
+      if (combinedCondition) {
+        dataQuery = dataQuery.where(combinedCondition) as any
+      }
     }
 
     // Dynamic sorting
@@ -235,57 +300,100 @@ export async function GET(request: NextRequest) {
     }
 
     // Stats queries - use same filters but without pagination
-    // If sorting by organizationId, join organization table
-    const maleCountQuery = needsOrganizationJoinForCount
-      ? db
-          .select({ count: count() })
-          .from(schema.players)
-          .leftJoin(
-            schema.organization,
-            eq(schema.players.organizationId, schema.organization.id)
-          )
-          .where(
-            combinedCondition
-              ? and(combinedCondition, eq(schema.players.gender, 'male'))
-              : eq(schema.players.gender, 'male')
-          )
-      : db
-          .select({ count: count() })
-          .from(schema.players)
-          .where(
-            combinedCondition
-              ? and(combinedCondition, eq(schema.players.gender, 'male'))
-              : eq(schema.players.gender, 'male')
-          )
+    const genderCondition = (gender: 'male' | 'female') =>
+      eq(schema.players.gender, gender)
 
-    const femaleCountQuery = needsOrganizationJoinForCount
-      ? db
-          .select({ count: count() })
-          .from(schema.players)
-          .leftJoin(
-            schema.organization,
-            eq(schema.players.organizationId, schema.organization.id)
-          )
-          .where(
-            combinedCondition
-              ? and(combinedCondition, eq(schema.players.gender, 'female'))
-              : eq(schema.players.gender, 'female')
-          )
-      : db
-          .select({ count: count() })
-          .from(schema.players)
-          .where(
-            combinedCondition
-              ? and(combinedCondition, eq(schema.players.gender, 'female'))
-              : eq(schema.players.gender, 'female')
-          )
+    // Male count query
+    let maleCountQuery = db.select({ count: count() }).from(schema.players)
+
+    if (needsFederationJoin) {
+      maleCountQuery = maleCountQuery.innerJoin(
+        schema.federationPlayers,
+        eq(schema.players.id, schema.federationPlayers.playerId)
+      ) as any
+      const federationCondition = eq(
+        schema.federationPlayers.federationId,
+        context.federationId!
+      )
+      const maleFilter = and(genderCondition('male'), federationCondition)
+      maleCountQuery = maleCountQuery.where(
+        combinedCondition ? and(combinedCondition, maleFilter) : maleFilter
+      ) as any
+    } else if (needsOrganizationJoinForCount) {
+      maleCountQuery = maleCountQuery.leftJoin(
+        schema.organization,
+        eq(schema.players.organizationId, schema.organization.id)
+      ) as any
+      maleCountQuery = maleCountQuery.where(
+        combinedCondition
+          ? and(combinedCondition, genderCondition('male'))
+          : genderCondition('male')
+      ) as any
+    } else {
+      maleCountQuery = maleCountQuery.where(
+        combinedCondition
+          ? and(combinedCondition, genderCondition('male'))
+          : genderCondition('male')
+      ) as any
+    }
+
+    // Female count query
+    let femaleCountQuery = db.select({ count: count() }).from(schema.players)
+
+    if (needsFederationJoin) {
+      femaleCountQuery = femaleCountQuery.innerJoin(
+        schema.federationPlayers,
+        eq(schema.players.id, schema.federationPlayers.playerId)
+      ) as any
+      const federationCondition = eq(
+        schema.federationPlayers.federationId,
+        context.federationId!
+      )
+      const femaleFilter = and(genderCondition('female'), federationCondition)
+      femaleCountQuery = femaleCountQuery.where(
+        combinedCondition ? and(combinedCondition, femaleFilter) : femaleFilter
+      ) as any
+    } else if (needsOrganizationJoinForCount) {
+      femaleCountQuery = femaleCountQuery.leftJoin(
+        schema.organization,
+        eq(schema.players.organizationId, schema.organization.id)
+      ) as any
+      femaleCountQuery = femaleCountQuery.where(
+        combinedCondition
+          ? and(combinedCondition, genderCondition('female'))
+          : genderCondition('female')
+      ) as any
+    } else {
+      femaleCountQuery = femaleCountQuery.where(
+        combinedCondition
+          ? and(combinedCondition, genderCondition('female'))
+          : genderCondition('female')
+      ) as any
+    }
 
     // Get all filtered players for age groups calculation (without pagination)
     let allFilteredPlayersQuery = db.select().from(schema.players)
-    if (combinedCondition) {
+
+    if (needsFederationJoin) {
+      allFilteredPlayersQuery = allFilteredPlayersQuery.innerJoin(
+        schema.federationPlayers,
+        eq(schema.players.id, schema.federationPlayers.playerId)
+      ) as any
+      const federationCondition = eq(
+        schema.federationPlayers.federationId,
+        context.federationId!
+      )
       allFilteredPlayersQuery = allFilteredPlayersQuery.where(
         combinedCondition
+          ? and(combinedCondition, federationCondition)
+          : federationCondition
       ) as any
+    } else {
+      if (combinedCondition) {
+        allFilteredPlayersQuery = allFilteredPlayersQuery.where(
+          combinedCondition
+        ) as any
+      }
     }
 
     const [
@@ -308,7 +416,19 @@ export async function GET(request: NextRequest) {
 
     // Calculate unique age groups from all filtered players
     const ageGroups = new Set(
-      allFilteredPlayers.map((player) => getAgeGroup(player.dateOfBirth))
+      allFilteredPlayers
+        .map((player: any) => {
+          if (!player?.dateOfBirth) {
+            return null
+          }
+          // Convert Date object to string if needed (yyyy-MM-dd format)
+          const dateOfBirthStr =
+            player.dateOfBirth instanceof Date
+              ? player.dateOfBirth.toISOString().split('T')[0]
+              : String(player.dateOfBirth)
+          return getAgeGroup(dateOfBirthStr)
+        })
+        .filter((ageGroup: string | null) => ageGroup !== null)
     )
     const ageGroupsCount = ageGroups.size
 
