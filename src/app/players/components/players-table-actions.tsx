@@ -1,5 +1,5 @@
 import { Player } from '@/types'
-import { MoreHorizontal, Edit, Trash2, UserPlus } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, UserPlus, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -21,7 +21,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { LinkUserDialog } from '@/components/players/link-user-dialog'
+import { JoinFederationDialog } from '@/components/players/join-federation-dialog'
 import { usePlayerPermissions } from '@/hooks/authorization/use-player-permissions'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 
 interface PlayersTableActionsProps {
   player: Player & { userId?: string | null; organizationId?: string | null }
@@ -38,6 +40,8 @@ export const PlayersTableActions = ({
 }: PlayersTableActionsProps) => {
   // Use player permissions hook to check link user permission (same as update)
   const { canUpdate, canDelete } = usePlayerPermissions(player)
+  const { context } = useOrganizationContext()
+  const canApplyForFederation = (context.isOwner || context.isAdmin) && player.organizationId === context.organization?.id
 
   return (
     <AlertDialog>
@@ -72,6 +76,21 @@ export const PlayersTableActions = ({
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                     <UserPlus className='mr-2 h-4 w-4' />
                     {player.userId ? 'Change User' : 'Link User'}
+                  </DropdownMenuItem>
+                }
+              />
+            </>
+          )}
+          {canApplyForFederation && (
+            <>
+              <DropdownMenuSeparator />
+              <JoinFederationDialog
+                player={player}
+                onSuccess={onRefetch}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Building2 className='mr-2 h-4 w-4' />
+                    Apply for Federation
                   </DropdownMenuItem>
                 }
               />

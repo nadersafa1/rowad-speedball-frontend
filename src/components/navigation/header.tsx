@@ -1,28 +1,5 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
-import { authClient } from '@/lib/auth-client'
-import { cn } from '@/lib/utils'
-import {
-  Calendar,
-  LogOut,
-  Menu,
-  ShieldCheck,
-  Table2,
-  Trophy,
-  UserCheck,
-  Volleyball,
-  X,
-  User,
-  ChevronDown,
-  ClipboardCheck,
-  Users,
-} from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +11,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,23 +21,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { OrganizationRole } from '@/types/organization'
 import ThemeToggle from '@/components/ui/theme-toggle'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { authClient } from '@/lib/auth-client'
+import { cn } from '@/lib/utils'
+import { OrganizationRole } from '@/types/organization'
+import {
+  ChevronDown,
+  ClipboardCheck,
+  LogOut,
+  Menu,
+  Table2,
+  Trophy,
+  User,
+  Volleyball,
+  X,
+} from 'lucide-react'
 import { useTheme } from 'next-themes'
+import Image from 'next/image'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const navigation = [
-  // { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Players', href: '/players', icon: Volleyball },
   { name: 'Tests', href: '/tests', icon: Table2 },
   { name: 'Events', href: '/events', icon: Trophy },
-]
-
-const adminNavigation = [
-  { name: 'Coaches', href: '/coaches', icon: UserCheck },
-  { name: 'Sessions', href: '/sessions', icon: Calendar },
-  // { name: 'Clubs', href: '/clubs', icon: Building2 },
-  { name: 'Admin', href: '/admin', icon: ShieldCheck },
 ]
 
 const Header = () => {
@@ -79,9 +67,7 @@ const Header = () => {
 
   const {
     isSystemAdmin,
-    isAdmin,
-    isOwner,
-    isCoach,
+    isPlayer,
     isAuthenticated,
     isFederationAdmin,
     isFederationEditor,
@@ -161,13 +147,9 @@ const Header = () => {
           {/* Desktop Navigation */}
           <div className='hidden md:flex md:space-x-8'>
             {/* Attendance - Conditional routing based on role */}
-            {isAuthenticated && (
+            {isPlayer && (
               <Link
-                href={
-                  isSystemAdmin || isAdmin || isOwner || isCoach
-                    ? '/attendance/club'
-                    : '/attendance'
-                }
+                href='/attendance'
                 className={cn(
                   'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                   pathname === '/attendance' || pathname === '/attendance/club'
@@ -198,39 +180,6 @@ const Header = () => {
                 </Link>
               )
             })}
-            {(isSystemAdmin || isAdmin || isOwner || isCoach) &&
-              adminNavigation.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-
-                if (
-                  item.name === 'Coaches' &&
-                  !isSystemAdmin &&
-                  !isAdmin &&
-                  !isOwner
-                ) {
-                  return null
-                }
-                if (item.name === 'Admin' && !isSystemAdmin) {
-                  return null
-                }
-
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
-                        : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
-                    )}
-                  >
-                    <Icon className='h-4 w-4' />
-                    <span>{item.name}</span>
-                  </Link>
-                )
-              })}
           </div>
 
           {/* User Actions */}
@@ -363,13 +312,9 @@ const Header = () => {
           <div className='md:hidden border-t pt-4 pb-4'>
             <div className='space-y-1'>
               {/* Attendance - Conditional routing based on role */}
-              {isAuthenticated && (
+              {isPlayer && (
                 <Link
-                  href={
-                    isSystemAdmin || isAdmin || isOwner || isCoach
-                      ? '/attendance/club'
-                      : '/attendance'
-                  }
+                  href='/attendance'
                   className={cn(
                     'flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors',
                     pathname === '/attendance' ||
@@ -403,40 +348,6 @@ const Header = () => {
                   </Link>
                 )
               })}
-              {(isSystemAdmin || isAdmin || isOwner || isCoach) &&
-                adminNavigation.map((item) => {
-                  const Icon = item.icon
-                  const isActive = pathname === item.href
-
-                  if (
-                    item.name === 'Coaches' &&
-                    !isSystemAdmin &&
-                    !isAdmin &&
-                    !isOwner
-                  ) {
-                    return null
-                  }
-                  if (item.name === 'Admin' && !isSystemAdmin) {
-                    return null
-                  }
-
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        'flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors',
-                        isActive
-                          ? 'bg-rowad-100 text-rowad-700 dark:bg-rowad-900 dark:text-rowad-300'
-                          : 'text-muted-foreground hover:text-rowad-600 dark:hover:text-rowad-400 hover:bg-accent'
-                      )}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Icon className='h-5 w-5' />
-                      <span>{item.name}</span>
-                    </Link>
-                  )
-                })}
             </div>
             <div className='mt-4 pt-4 border-t border-border space-y-2'>
               <div className='flex items-center justify-between px-3 py-2'>

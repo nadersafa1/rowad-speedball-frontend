@@ -1313,7 +1313,10 @@ export const championshipEditions = pgTable(
   },
   (table) => [
     // Ensure year is within reasonable bounds
-    check('chk_year_valid', sql`${table.year} >= 2000 AND ${table.year} <= 2100`),
+    check(
+      'chk_year_valid',
+      sql`${table.year} >= 2000 AND ${table.year} <= 2100`
+    ),
     index('idx_editions_championship_year').on(
       table.championshipId,
       table.year
@@ -1660,6 +1663,93 @@ export const federationPlayers = pgTable(
   },
   (table) => [
     unique('unique_federation_player').on(table.federationId, table.playerId),
+    // Ensure registration numbers are unique per federation
+    unique('unique_federation_registration_number').on(
+      table.federationId,
+      table.federationRegistrationNumber
+    ),
+  ]
+)
+
+/**
+ * Federation Player Requests Table
+ *
+ * Tracks player requests to join federations with approval workflow.
+ * Enables club admins to apply for their players to join federations and federation admins to review.
+ *
+ * **Request Workflow**:
+ * 1. Club admin initiates request for player to join federation
+ * 2. Request created with status 'pending'
+ * 3. Federation admin reviews and approves/rejects
+ * 4. On approval: Record created in `federationPlayers` table with registration number
+ * 5. On rejection: Status updated to 'rejected'
+ *
+ * **Status Flow**:
+ * - `pending`: Awaiting federation admin review
+ * - `approved`: Accepted and player added to federation
+ * - `rejected`: Declined by federation admin
+ *
+ * **Authorization**:
+ * - Create: Club admins/owners (for players in their organization)
+ * - Update (Approve/Reject): Federation admins/editors
+ * - Read: Federation admins (all requests), Club admins (their own requests)
+ * - Delete: System admins, Federation admins, Club admins (own pending requests)
+ *
+ * **Important Notes**:
+ * - One pending request per player-federation pair (constraint enforced)
+ * - Approved requests create entry in `federationPlayers`
+ * - Deleting federation cascades to delete all pending requests
+ * - Deleting player cascades to delete its pending requests
+ * - Deleting organization cascades to delete its pending requests
+ * - After approval, request status updated but record kept for audit trail
+ *
+ * @see federations - The target federation
+ * @see players - The player being requested
+ * @see organization - The requesting club
+ * @see federationPlayers - Created after approval
+ * @see user - Federation admin who responded to request
+ */
+export const federationPlayerRequests = pgTable(
+  'federation_player_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    federationId: uuid('federation_id')
+      .notNull()
+      .references(() => federations.id, { onDelete: 'cascade' }),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: ['pending', 'approved', 'rejected'] })
+      .notNull()
+      .default('pending'),
+    requestedAt: timestamp('requested_at').notNull().defaultNow(),
+    respondedAt: timestamp('responded_at'), // When admin approved/rejected
+    respondedBy: uuid('responded_by').references(() => user.id, {
+      onDelete: 'set null',
+    }), // Federation admin who processed the request
+    rejectionReason: text('rejection_reason'), // Optional reason for rejection
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    // Ensure one pending request per player-federation pair
+    unique('unique_pending_player_federation_request').on(
+      table.playerId,
+      table.federationId,
+      table.status
+    ),
+    // Indexes for efficient lookups
+    index('idx_federation_player_requests_federation_id').on(
+      table.federationId
+    ),
+    index('idx_federation_player_requests_player_id').on(table.playerId),
+    index('idx_federation_player_requests_organization_id').on(
+      table.organizationId
+    ),
+    index('idx_federation_player_requests_status').on(table.status),
   ]
 )
 
@@ -1693,6 +1783,8 @@ export type ChampionshipEdition = typeof championshipEditions.$inferSelect
 export type FederationClub = typeof federationClubs.$inferSelect
 export type FederationClubRequest = typeof federationClubRequests.$inferSelect
 export type FederationPlayer = typeof federationPlayers.$inferSelect
+export type FederationPlayerRequest =
+  typeof federationPlayerRequests.$inferSelect
 export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect
 export type Invitation = typeof invitation.$inferSelect

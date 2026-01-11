@@ -1,0 +1,1 @@
+ALTER TABLE "federation_players" ADD CONSTRAINT "unique_federation_registration_number" UNIQUE("federation_id","federation_registration_number","registration_year");

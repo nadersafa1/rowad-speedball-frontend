@@ -85,11 +85,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: 'Championships',
         url: '/championships',
       },
-      ...(isFederationAdmin
+      ...(isFederationAdmin || isFederationEditor
         ? [
             {
               title: 'Member Clubs',
               url: '/admin/federation-clubs',
+            },
+            {
+              title: 'Federation Players',
+              url: '/admin/federation-players',
             },
           ]
         : []),
@@ -107,7 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Team Management section (admins, owners, coaches)
   const teamManagement = useMemo(() => {
-    if (!isSystemAdmin && !isAdmin && !isOwner && !isCoach) return []
+    if (!isAdmin && !isOwner && !isCoach) return []
 
     const items = [
       {
@@ -140,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         items,
       },
     ]
-  }, [isSystemAdmin, isAdmin, isOwner, isCoach])
+  }, [isAdmin, isOwner, isCoach])
 
   // Administration section (system admins only)
   const administration = useMemo(() => {

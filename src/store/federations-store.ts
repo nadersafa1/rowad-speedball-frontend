@@ -89,9 +89,7 @@ export const useFederationsStore = create<FederationsState>((set, get) => ({
     } catch (error) {
       set({
         error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to fetch federation',
+          error instanceof Error ? error.message : 'Failed to fetch federation',
         isLoading: false,
       })
     }
@@ -155,9 +153,7 @@ export const useFederationsStore = create<FederationsState>((set, get) => ({
       set((state) => ({
         federations: state.federations.filter((f) => f.id !== id),
         selectedFederation:
-          state.selectedFederation?.id === id
-            ? null
-            : state.selectedFederation,
+          state.selectedFederation?.id === id ? null : state.selectedFederation,
         isLoading: false,
       }))
     } catch (error) {
@@ -175,4 +171,3 @@ export const useFederationsStore = create<FederationsState>((set, get) => ({
   clearError: () => set({ error: null }),
   clearSelectedFederation: () => set({ selectedFederation: null }),
 }))
-
