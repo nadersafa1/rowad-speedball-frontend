@@ -88,7 +88,8 @@ src/
 
 ### 6. Organizations & Multi-tenancy
 - Multi-tenant support (club/organization management)
-- Federation-level management
+- Federation-level management with dedicated admin interface
+- Federation club/player request management
 - User invitations with email
 
 ### 7. Ranking & Points System
@@ -133,7 +134,7 @@ const authError = await checkPlayerCreateAuthorization(request);
 if (authError) return authError;
 ```
 
-Available permission hooks:
+Available permission hooks (17 total):
 - `usePlayerPermissions`
 - `useEventPermissions`
 - `useCoachPermissions`
@@ -142,6 +143,7 @@ Available permission hooks:
 - `useTrainingSessionPermissions`
 - `useChampionshipPermissions`
 - `useFederationPermissions`
+- `useFederationClubRequestPermissions`
 - `useGroupPermissions`
 - `useOrganizationPermissions`
 - `usePlayerNotePermissions`
@@ -150,6 +152,60 @@ Available permission hooks:
 - `useResultPermissions`
 - `useSetPermissions`
 - `useUserPermissions`
+
+### Specialized Context Hooks (NEW)
+
+In addition to entity-specific permission hooks, three specialized hooks provide direct access to role and context data:
+
+**`useRoles`** - Role checking and authentication status:
+```typescript
+import { useRoles } from '@/hooks/authorization/use-roles';
+
+const {
+  isSystemAdmin,
+  isFederationAdmin,
+  isFederationEditor,
+  isOwner,
+  isAdmin,
+  isCoach,
+  isPlayer,
+  isAuthenticated,
+  isLoading
+} = useRoles();
+```
+
+**`useOrganization`** - Organization context data:
+```typescript
+import { useOrganization } from '@/hooks/authorization/use-organization';
+
+const {
+  organization,
+  organizationId,
+  isOwner,
+  isAdmin,
+  isLoading
+} = useOrganization();
+```
+
+**`useFederation`** - Federation context data:
+```typescript
+import { useFederation } from '@/hooks/authorization/use-federation';
+
+const {
+  federationId,
+  isFederationAdmin,
+  isFederationEditor,
+  isSystemAdmin,
+  isLoading
+} = useFederation();
+```
+
+**When to use each:**
+- Use `useRoles()` for simple role checks in page components
+- Use `useOrganization()` when you need organization data or ID
+- Use `useFederation()` for federation-level features
+- Use `use[Entity]Permissions()` for entity-specific permission checks
+- Avoid using `useOrganizationContext()` directly in page components
 
 ## Table-Core System (NEW)
 
@@ -188,6 +244,8 @@ export const playersTableConfig: TableConfig<Player> = {
 - `member` - User-organization relationships
 - `session` - User sessions
 - `invitation` - Organization invitations
+- `federation_club_requests` - Club requests to join federation
+- `federation_player_requests` - Player requests for federation management
 
 ### Players & Coaches
 - `players` - Player profiles (name, DOB, gender, preferred hand, team level)
@@ -361,6 +419,11 @@ Available guides in `/docs/`:
 - `FORMS_REFERENCE.md` - Quick reference for validation schemas and components
 - `FORMS_CHECKLIST.md` - Migration and development checklists
 
+### Authorization & Security
+- `AUTHORIZATION_HOOKS_REFACTOR.md` - Specialized authorization hooks refactoring
+- `AUTHORIZATION_RULES.md` - Complete authorization rules and patterns
+- `PUBLIC_VS_AUTHENTICATED_ACCESS.md` - Access control documentation
+
 ### Table System
 - `table-core-guide.md` - Table system documentation
 - `PLAYERS_TABLE_IMPLEMENTATION.md` - Implementation example
@@ -369,28 +432,51 @@ Available guides in `/docs/`:
 - `GOOGLE_AUTH_IMPLEMENTATION.md` - OAuth setup
 - `ENV_SETUP.md` - Environment configuration
 
-### Implementation Notes
-- `PHASE_1_UTILITIES.md` - Tournament utilities
-- `IMPLEMENTATION_COMPLETE.md` - Phase completion notes
-- `CHANGELOG_PHASE1.md` - Change tracking
+### Architecture & Standards
+- `IMPLEMENTATION_STANDARDS.md` - Development standards and best practices
+- `TOURNAMENT_ALGORITHMS.md` - Tournament bracket algorithms
 
 ## Recent Development Focus
 
-1. **Ranking & Points System** - NEW
+1. **Authorization Hooks Refactoring** - LATEST (Jan 2026)
+   - Created 3 specialized context hooks: `useRoles`, `useOrganization`, `useFederation`
+   - Refactored 25+ page components to use specialized hooks instead of direct context access
+   - Improved separation of concerns and testability
+   - Better TypeScript inference and clearer component intent
+   - See `/docs/AUTHORIZATION_HOOKS_REFACTOR.md` for details
+
+2. **Federation Management System**
+   - Federation player request management system
+   - Federation club request handling
+   - Dedicated federation admin interface
+   - Role-based filtering for player queries
+
+3. **Socket.IO Enhancement**
+   - Enhanced type safety for socket event listeners
+   - Improved connection status management
+   - Better error handling for real-time features
+
+4. **Ranking & Points System**
    - Points schemas for flexible point allocation across event types
    - Placement tiers system (WINNER, FINALIST, SF, QF, R16, etc.)
    - Points schema entries for tier-to-points mapping
    - Support for championship vs. regular event point systems
    - Admin UI for managing points schemas and tiers
-2. **Forms standardization** - All 26 forms now use React Hook Form + Zod
+
+5. **Forms Standardization**
+   - All 26 forms use React Hook Form + Zod
    - Created shared validation schemas (`src/lib/forms/patterns.ts`)
    - Created reusable form components (LoadingButton, FormError, CharacterCounter)
    - Comprehensive documentation for form development
-3. **Backend authorization helpers** - Centralized authorization checks
-4. **Frontend permission hooks** - Expanded to 16 permission hooks
-5. **Component migration** - Using permission hooks throughout
-6. **Table-Core system** - Reusable data table abstraction (v1.3.29)
-7. **Combobox refactoring** - Refactored to use BaseCombobox for improved functionality
+
+6. **Authorization System**
+   - Backend authorization helpers with centralized checks
+   - Frontend permission hooks (17 entity-specific + 3 context hooks)
+   - Component migration to use permission hooks throughout
+
+7. **Table-Core System**
+   - Reusable data table abstraction (v1.3.29)
+   - Combobox refactoring with BaseCombobox for improved functionality
 
 ## When Implementing New Features
 
@@ -404,9 +490,42 @@ Available guides in `/docs/`:
 8. **Create components** in `src/components/[entity]/`
 9. **Create pages** in `src/app/[entity]/`
 
+## Socket.IO & Real-time Features
+
+The application uses Socket.IO for real-time updates.
+
+**Key Features:**
+- Type-safe socket event listeners
+- Connection status management
+- Error handling and reconnection logic
+- Real-time bracket updates
+- Live score updates
+
+**Usage Pattern:**
+```typescript
+import { useSocket } from '@/hooks/use-socket'
+
+const MyComponent = () => {
+  const { socket, isConnected } = useSocket()
+
+  useEffect(() => {
+    socket?.on('event-name', (data) => {
+      // Handle event
+    })
+
+    return () => {
+      socket?.off('event-name')
+    }
+  }, [socket])
+}
+```
+
 ## Important Notes
 
 - Always check authorization on both frontend (UI) and backend (API)
+- Use specialized authorization hooks (`useRoles`, `useOrganization`, `useFederation`) in page components
+- Avoid using `useOrganizationContext()` directly in page components
+- Use entity-specific permission hooks (`use[Entity]Permissions`) for permission checks
 - Use the table-core system for new entity tables
 - Follow the single-responsibility principle for stores
 - Use Zod for all validation
@@ -414,3 +533,4 @@ Available guides in `/docs/`:
 - Keep tournament logic in utility functions
 - Use the API client for all HTTP requests
 - Test bracket generation thoroughly (complex edge cases)
+- Ensure Socket.IO event listeners are properly typed and cleaned up
