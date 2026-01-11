@@ -85,11 +85,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: 'Championships',
         url: '/championships',
       },
-      ...(isFederationAdmin
+      ...(isFederationAdmin || isFederationEditor
         ? [
             {
               title: 'Member Clubs',
               url: '/admin/federation-clubs',
+            },
+            {
+              title: 'Federation Players',
+              url: '/admin/federation-players',
             },
           ]
         : []),

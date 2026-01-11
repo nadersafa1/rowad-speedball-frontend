@@ -31,14 +31,17 @@ export class ApiClient {
     if (!response.ok) {
       const error = await response
         .json()
-        .catch(() => ({ message: 'Network error' }))
+        .catch(() => ({ error: 'Network error' }))
 
       // If it's an authentication error, provide more specific message
       if (response.status === 401) {
         throw new Error('Authentication required. Please log in again.')
       }
 
-      throw new Error(error.message || `HTTP ${response.status}`)
+      // Handle both error.error and error.message formats
+      const errorMessage =
+        error.error || error.message || `HTTP ${response.status}`
+      throw new Error(errorMessage)
     }
 
     // Handle 204 No Content responses (e.g., DELETE operations)
@@ -262,6 +265,27 @@ export class ApiClient {
   }
 
   // Federation Clubs methods
+  async getFederationPlayers(params?: {
+    federationId?: string
+    sortBy?: 'createdAt' | 'registrationYear'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.federationId)
+      searchParams.set('federationId', params.federationId)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(
+      `/federation-players${query ? `?${query}` : ''}`
+    )
+  }
+
   async getFederationClubs(params?: {
     federationId?: string
     organizationId?: string
@@ -1374,6 +1398,65 @@ export class ApiClient {
 
   async deleteFederationClubRequest(id: string): Promise<void> {
     return this.request<void>(`/federation-club-requests/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Federation Player Requests methods
+  async getFederationPlayerRequests(params?: {
+    federationId?: string
+    playerId?: string
+    organizationId?: string
+    status?: 'pending' | 'approved' | 'rejected' | 'all'
+    sortBy?: 'requestedAt' | 'respondedAt' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.federationId)
+      searchParams.set('federationId', params.federationId)
+    if (params?.playerId) searchParams.set('playerId', params.playerId)
+    if (params?.organizationId)
+      searchParams.set('organizationId', params.organizationId)
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(
+      `/federation-player-requests${query ? `?${query}` : ''}`
+    )
+  }
+
+  async createFederationPlayerRequest(data: {
+    federationId: string
+    playerId: string
+  }): Promise<any> {
+    return this.request<any>('/federation-player-requests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateFederationPlayerRequestStatus(
+    id: string,
+    data: {
+      status: 'approved' | 'rejected'
+      rejectionReason?: string
+      federationRegistrationNumber?: string
+    }
+  ): Promise<any> {
+    return this.request<any>(`/federation-player-requests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteFederationPlayerRequest(id: string): Promise<void> {
+    return this.request<void>(`/federation-player-requests/${id}`, {
       method: 'DELETE',
     })
   }
