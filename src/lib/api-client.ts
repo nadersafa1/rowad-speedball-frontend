@@ -1461,25 +1461,226 @@ export class ApiClient {
     })
   }
 
-  async bulkCreateFederationPlayerRequests(data: {
-    federationId: string
-    playerIds: string[]
-  }): Promise<{ success: boolean; count: number; requests: any[] }> {
-    return this.request<{ success: boolean; count: number; requests: any[] }>(
-      '/federation-player-requests/bulk',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }
+
+  // ========================================
+  // Season methods
+  // ========================================
+
+  async getSeasons(params?: {
+    federationId?: string
+    status?: 'draft' | 'active' | 'closed' | 'archived'
+    year?: number
+    sortBy?: 'name' | 'startYear' | 'seasonStartDate' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.federationId) searchParams.set('federationId', params.federationId)
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.year) searchParams.set('year', params.year.toString())
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(`/seasons${query ? `?${query}` : ''}`)
+  }
+
+  async getSeason(id: string): Promise<any> {
+    return this.request<any>(`/seasons/${id}`)
+  }
+
+  async createSeason(data: any): Promise<any> {
+    return this.request<any>('/seasons', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateSeason(id: string, data: any): Promise<any> {
+    return this.request<any>(`/seasons/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteSeason(id: string): Promise<void> {
+    return this.request<void>(`/seasons/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // ========================================
+  // Season Age Group methods
+  // ========================================
+
+  async getSeasonAgeGroups(params?: {
+    seasonId?: string
+    sortBy?: 'displayOrder' | 'code' | 'name' | 'createdAt'
+    sortOrder?: 'asc' | 'desc'
+  }): Promise<{ data: any[] }> {
+    const searchParams = new URLSearchParams()
+    if (params?.seasonId) searchParams.set('seasonId', params.seasonId)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+
+    const query = searchParams.toString()
+    return this.request<{ data: any[] }>(`/season-age-groups${query ? `?${query}` : ''}`)
+  }
+
+  async getSeasonAgeGroup(id: string): Promise<any> {
+    return this.request<any>(`/season-age-groups/${id}`)
+  }
+
+  async createSeasonAgeGroup(data: any): Promise<any> {
+    return this.request<any>('/season-age-groups', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateSeasonAgeGroup(id: string, data: any): Promise<any> {
+    return this.request<any>(`/season-age-groups/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteSeasonAgeGroup(id: string): Promise<void> {
+    return this.request<void>(`/season-age-groups/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // ========================================
+  // Season Player Registration methods
+  // ========================================
+
+  async getSeasonPlayerRegistrations(params?: {
+    seasonId?: string
+    playerId?: string
+    seasonAgeGroupId?: string
+    organizationId?: string
+    status?: 'pending' | 'approved' | 'rejected' | 'cancelled'
+    paymentStatus?: 'unpaid' | 'paid' | 'refunded'
+    sortBy?: 'registrationDate' | 'approvedAt' | 'playerName' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.seasonId) searchParams.set('seasonId', params.seasonId)
+    if (params?.playerId) searchParams.set('playerId', params.playerId)
+    if (params?.seasonAgeGroupId) searchParams.set('seasonAgeGroupId', params.seasonAgeGroupId)
+    if (params?.organizationId) searchParams.set('organizationId', params.organizationId)
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.paymentStatus) searchParams.set('paymentStatus', params.paymentStatus)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(
+      `/season-player-registrations${query ? `?${query}` : ''}`
     )
   }
 
-  async getEligibleFederationPlayers(federationId: string): Promise<{
-    players: Array<any & { isEligible: boolean; ineligibilityReason: string | null }>
-  }> {
+  async getSeasonPlayerRegistration(id: string): Promise<any> {
+    return this.request<any>(`/season-player-registrations/${id}`)
+  }
+
+  async createSeasonPlayerRegistration(data: any): Promise<any> {
+    return this.request<any>('/season-player-registrations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async bulkCreateSeasonPlayerRegistrations(data: {
+    seasonId: string
+    playerIds: string[]
+    seasonAgeGroupIds: string[]
+    organizationId: string
+  }): Promise<{ success: boolean; count: number; registrations: any[]; errors?: any[] }> {
     return this.request<{
-      players: Array<any & { isEligible: boolean; ineligibilityReason: string | null }>
-    }>(`/players/eligible-for-federation?federationId=${federationId}`)
+      success: boolean
+      count: number
+      registrations: any[]
+      errors?: any[]
+    }>('/season-player-registrations/bulk', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateSeasonPlayerRegistrationStatus(id: string, data: any): Promise<any> {
+    return this.request<any>(`/season-player-registrations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteSeasonPlayerRegistration(id: string): Promise<void> {
+    return this.request<void>(`/season-player-registrations/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // ========================================
+  // Federation Member methods
+  // ========================================
+
+  async getFederationMembers(params?: {
+    federationId?: string
+    playerId?: string
+    status?: 'active' | 'suspended' | 'revoked'
+    search?: string
+    sortBy?: 'firstRegistrationDate' | 'federationIdNumber' | 'createdAt' | 'updatedAt'
+    sortOrder?: 'asc' | 'desc'
+    page?: number
+    limit?: number
+  }): Promise<PaginatedResponse<any>> {
+    const searchParams = new URLSearchParams()
+    if (params?.federationId) searchParams.set('federationId', params.federationId)
+    if (params?.playerId) searchParams.set('playerId', params.playerId)
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.search) searchParams.set('search', params.search)
+    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
+    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+
+    const query = searchParams.toString()
+    return this.request<PaginatedResponse<any>>(
+      `/federation-members${query ? `?${query}` : ''}`
+    )
+  }
+
+  async getFederationMember(id: string): Promise<any> {
+    return this.request<any>(`/federation-members/${id}`)
+  }
+
+  async createFederationMember(data: any): Promise<any> {
+    return this.request<any>('/federation-members', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateFederationMember(id: string, data: any): Promise<any> {
+    return this.request<any>(`/federation-members/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteFederationMember(id: string): Promise<void> {
+    return this.request<void>(`/federation-members/${id}`, {
+      method: 'DELETE',
+    })
   }
 }
 

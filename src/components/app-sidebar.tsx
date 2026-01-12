@@ -204,12 +204,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: '/events/create',
         icon: Table2,
       })
-
-      actions.push({
-        name: 'Bulk Federation Application',
-        url: '/players/federation/bulk-apply',
-        icon: Users,
-      })
     }
 
     return actions

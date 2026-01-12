@@ -239,6 +239,13 @@
       "when": 1767999233985,
       "tag": "0033_crazy_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1768223033164,
+      "tag": "0034_tense_sphinx",
+      "breakpoints": true
     }
   ]
 }

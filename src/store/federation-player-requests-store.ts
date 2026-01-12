@@ -37,10 +37,6 @@ interface FederationPlayerRequestsState {
   // Actions
   fetchRequests: (filters?: FederationPlayerRequestsFilters) => Promise<void>
   createRequest: (data: { federationId: string; playerId: string }) => Promise<void>
-  bulkCreateRequests: (data: {
-    federationId: string
-    playerIds: string[]
-  }) => Promise<{ success: boolean; count: number; requests: any[] }>
   updateRequestStatus: (
     id: string,
     data: {
@@ -123,29 +119,6 @@ export const useFederationPlayerRequestsStore =
             error instanceof Error
               ? error.message
               : 'Failed to create federation player request',
-          isLoading: false,
-        })
-        throw error
-      }
-    },
-
-    bulkCreateRequests: async (data: {
-      federationId: string
-      playerIds: string[]
-    }) => {
-      set({ isLoading: true, error: null })
-      try {
-        const result = await apiClient.bulkCreateFederationPlayerRequests(data)
-        // Optionally refresh the requests list
-        await get().fetchRequests()
-        set({ isLoading: false })
-        return result
-      } catch (error) {
-        set({
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Failed to create bulk requests',
           isLoading: false,
         })
         throw error

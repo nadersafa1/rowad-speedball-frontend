@@ -39,6 +39,7 @@ import {
   jsonb,
   index,
   check,
+  decimal,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import type { PositionScores } from '@/types/position-scores'
@@ -1308,6 +1309,12 @@ export const championshipEditions = pgTable(
       .default('draft'), // Draft: planning, Published: active, Archived: completed
     registrationStartDate: date('registration_start_date'), // Optional: when registration opens
     registrationEndDate: date('registration_end_date'), // Optional: when registration closes
+
+    // Link to season (nullable for backward compatibility with existing editions)
+    seasonId: uuid('season_id').references(() => seasons.id, {
+      onDelete: 'restrict',
+    }),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -1322,6 +1329,7 @@ export const championshipEditions = pgTable(
       table.year
     ),
     index('idx_editions_status').on(table.status),
+    index('idx_editions_season_id').on(table.seasonId),
   ]
 )
 
@@ -1643,74 +1651,146 @@ export const eventResults = pgTable(
   ]
 )
 
-// Federation Players Junction Table (player registration in federation)
-export const federationPlayers = pgTable(
-  'federation_players',
+// ============================================================================
+// FEDERATION SEASONS & REGISTRATIONS
+// ============================================================================
+
+/**
+ * Seasons Table
+ *
+ * Federation-level seasons that define time periods for competitions and player registrations.
+ * Each season has specific start/end dates, registration windows, and age group configurations.
+ *
+ * **Season Format**: "2023-2024" (year range, not single year)
+ * **Purpose**: Enable season-based player registration with federation-specific age groups
+ *
+ * **Key Features**:
+ * - Multiple registration periods (up to 2 per season)
+ * - Configurable max age groups per player
+ * - Season status workflow (draft → active → closed → archived)
+ * - Championship editions link to seasons
+ *
+ * @see season_age_groups - Age groups defined for this season
+ * @see season_player_registrations - Player registrations for this season
+ * @see championship_editions - Championships within this season
+ */
+export const seasons = pgTable(
+  'seasons',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     federationId: uuid('federation_id')
       .notNull()
       .references(() => federations.id, { onDelete: 'cascade' }),
-    playerId: uuid('player_id')
+
+    // Season identification
+    name: varchar('name', { length: 100 }).notNull(), // e.g., "2023-2024 Season"
+    startYear: integer('start_year').notNull(), // 2023
+    endYear: integer('end_year').notNull(), // 2024
+    seasonStartDate: date('season_start_date').notNull(), // 2023-07-01
+    seasonEndDate: date('season_end_date').notNull(), // 2024-06-30
+
+    // Registration periods
+    firstRegistrationStartDate: date('first_registration_start_date'),
+    firstRegistrationEndDate: date('first_registration_end_date'),
+    secondRegistrationStartDate: date('second_registration_start_date'),
+    secondRegistrationEndDate: date('second_registration_end_date'),
+
+    // Season configuration
+    maxAgeGroupsPerPlayer: integer('max_age_groups_per_player')
       .notNull()
-      .references(() => players.id, { onDelete: 'cascade' }),
-    federationRegistrationNumber: varchar('federation_registration_number', {
-      length: 50,
-    }).notNull(),
-    registrationYear: integer('registration_year').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+      .default(1), // Minimum 1, can be set to 9999 for unlimited
+
+    // Status
+    status: text('status', { enum: ['draft', 'active', 'closed', 'archived'] })
+      .notNull()
+      .default('draft'),
+
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
-    unique('unique_federation_player').on(table.federationId, table.playerId),
-    // Ensure registration numbers are unique per federation
-    unique('unique_federation_registration_number').on(
-      table.federationId,
-      table.federationRegistrationNumber
+    check('chk_year_range', sql`${table.endYear} = ${table.startYear} + 1`),
+    check(
+      'chk_season_dates',
+      sql`${table.seasonEndDate} > ${table.seasonStartDate}`
     ),
+    check(
+      'chk_max_age_groups',
+      sql`${table.maxAgeGroupsPerPlayer} >= 1`
+    ),
+    unique('unique_federation_season').on(
+      table.federationId,
+      table.startYear,
+      table.endYear
+    ),
+    index('idx_seasons_federation_id').on(table.federationId),
+    index('idx_seasons_status').on(table.status),
+    index('idx_seasons_dates').on(table.seasonStartDate, table.seasonEndDate),
   ]
 )
 
 /**
- * Federation Player Requests Table
+ * Season Age Groups Table
  *
- * Tracks player requests to join federations with approval workflow.
- * Enables club admins to apply for their players to join federations and federation admins to review.
+ * Federation-specific age groups defined for each season.
+ * Age restrictions are OPTIONAL - federations have full flexibility.
  *
- * **Request Workflow**:
- * 1. Club admin initiates request for player to join federation
- * 2. Request created with status 'pending'
- * 3. Federation admin reviews and approves/rejects
- * 4. On approval: Record created in `federationPlayers` table with registration number
- * 5. On rejection: Status updated to 'rejected'
+ * **Examples**:
+ * - Seniors: min_age=NULL, max_age=NULL (anyone can play)
+ * - U-21 flexible: min_age=NULL, max_age=21 (anyone ≤21)
+ * - U-18 with minimum: min_age=15, max_age=18 (only 15-18)
  *
- * **Status Flow**:
- * - `pending`: Awaiting federation admin review
- * - `approved`: Accepted and player added to federation
- * - `rejected`: Declined by federation admin
+ * **Age Validation**: System shows warnings but does NOT block registration
+ * Federation admin has final authority to approve/reject
  *
- * **Authorization**:
- * - Create: Club admins/owners (for players in their organization)
- * - Update (Approve/Reject): Federation admins/editors
- * - Read: Federation admins (all requests), Club admins (their own requests)
- * - Delete: System admins, Federation admins, Club admins (own pending requests)
- *
- * **Important Notes**:
- * - One pending request per player-federation pair (constraint enforced)
- * - Approved requests create entry in `federationPlayers`
- * - Deleting federation cascades to delete all pending requests
- * - Deleting player cascades to delete its pending requests
- * - Deleting organization cascades to delete its pending requests
- * - After approval, request status updated but record kept for audit trail
- *
- * @see federations - The target federation
- * @see players - The player being requested
- * @see organization - The requesting club
- * @see federationPlayers - Created after approval
- * @see user - Federation admin who responded to request
+ * @see seasons - Parent season
+ * @see season_player_registrations - Player registrations in this age group
  */
-export const federationPlayerRequests = pgTable(
-  'federation_player_requests',
+export const seasonAgeGroups = pgTable(
+  'season_age_groups',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    seasonId: uuid('season_id')
+      .notNull()
+      .references(() => seasons.id, { onDelete: 'cascade' }),
+
+    // Age group definition
+    code: varchar('code', { length: 20 }).notNull(), // 'U-16', 'U-18', 'Seniors'
+    name: varchar('name', { length: 100 }).notNull(), // 'Under 16', 'Seniors'
+
+    // OPTIONAL age restrictions (both nullable)
+    minAge: integer('min_age'), // NULL = no minimum
+    maxAge: integer('max_age'), // NULL = no maximum
+
+    displayOrder: integer('display_order').notNull().default(0),
+
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('unique_season_age_group').on(table.seasonId, table.code),
+    check(
+      'chk_age_range',
+      sql`${table.minAge} IS NULL OR ${table.maxAge} IS NULL OR ${table.maxAge} >= ${table.minAge}`
+    ),
+    index('idx_season_age_groups_season_id').on(table.seasonId),
+  ]
+)
+
+/**
+ * Federation Members Table
+ *
+ * Permanent federation membership (doesn't expire).
+ * Created when player's first season registration is approved.
+ *
+ * **Federation ID**: Manually entered by federation admin (NOT auto-generated)
+ * **Lifecycle**: Created on first season approval, persists forever
+ *
+ * @see seasons - Season when player first joined
+ * @see season_player_registrations - Season registrations for this member
+ */
+export const federationMembers = pgTable(
+  'federation_members',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     federationId: uuid('federation_id')
@@ -1719,39 +1799,126 @@ export const federationPlayerRequests = pgTable(
     playerId: uuid('player_id')
       .notNull()
       .references(() => players.id, { onDelete: 'cascade' }),
+
+    // MANUALLY ENTERED federation ID (not auto-generated)
+    federationIdNumber: varchar('federation_id_number', { length: 50 })
+      .notNull(),
+
+    // Created during first season registration
+    firstRegistrationSeasonId: uuid('first_registration_season_id')
+      .notNull()
+      .references(() => seasons.id, { onDelete: 'restrict' }),
+    firstRegistrationDate: timestamp('first_registration_date')
+      .notNull()
+      .defaultNow(),
+
+    // Membership status
+    status: text('status', { enum: ['active', 'suspended', 'revoked'] })
+      .notNull()
+      .default('active'),
+
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('unique_federation_member').on(table.federationId, table.playerId),
+    unique('unique_federation_id_number').on(
+      table.federationId,
+      table.federationIdNumber
+    ),
+    index('idx_federation_members_federation_id').on(table.federationId),
+    index('idx_federation_members_player_id').on(table.playerId),
+    index('idx_federation_members_id_number').on(table.federationIdNumber),
+  ]
+)
+
+/**
+ * Season Player Registrations Table
+ *
+ * Player registrations for specific seasons and age groups.
+ * Player can register for multiple age groups per season (subject to season limit).
+ *
+ * **Registration Flow**:
+ * 1. Club admin registers player for season + age group
+ * 2. System checks: federation membership, age warning, max registrations
+ * 3. If new member: admin enters federation ID
+ * 4. Registration created with status='pending'
+ * 5. Federation admin approves/rejects
+ * 6. On approval: federation membership created (if first time)
+ *
+ * **Age Validation**: Warnings only, not blocking
+ * **Payment**: Stub fields for future implementation
+ *
+ * @see seasons - Season being registered for
+ * @see season_age_groups - Age group selected
+ * @see players - Player being registered
+ * @see organization - Club registering the player
+ */
+export const seasonPlayerRegistrations = pgTable(
+  'season_player_registrations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    seasonId: uuid('season_id')
+      .notNull()
+      .references(() => seasons.id, { onDelete: 'cascade' }),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id, { onDelete: 'cascade' }),
+    seasonAgeGroupId: uuid('season_age_group_id')
+      .notNull()
+      .references(() => seasonAgeGroups.id, { onDelete: 'restrict' }),
     organizationId: uuid('organization_id')
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
-    status: text('status', { enum: ['pending', 'approved', 'rejected'] })
+
+    // Registration details
+    playerAgeAtRegistration: integer('player_age_at_registration').notNull(),
+    registrationDate: timestamp('registration_date').notNull().defaultNow(),
+
+    // Age warning flags (informational only, not blocking)
+    ageWarningShown: boolean('age_warning_shown').default(false),
+    ageWarningType: text('age_warning_type', {
+      enum: ['too_young', 'too_old', 'outside_range'],
+    }),
+
+    // Status workflow
+    status: text('status', {
+      enum: ['pending', 'approved', 'rejected', 'cancelled'],
+    })
       .notNull()
       .default('pending'),
-    requestedAt: timestamp('requested_at').notNull().defaultNow(),
-    respondedAt: timestamp('responded_at'), // When admin approved/rejected
-    respondedBy: uuid('responded_by').references(() => user.id, {
+    approvedAt: timestamp('approved_at'),
+    approvedBy: uuid('approved_by').references(() => user.id, {
       onDelete: 'set null',
-    }), // Federation admin who processed the request
-    rejectionReason: text('rejection_reason'), // Optional reason for rejection
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    }),
+    rejectionReason: text('rejection_reason'),
+
+    // Payment (future implementation)
+    paymentStatus: text('payment_status', {
+      enum: ['unpaid', 'paid', 'refunded'],
+    }).default('unpaid'),
+    paymentAmount: decimal('payment_amount', { precision: 10, scale: 2 }),
+    paymentDate: timestamp('payment_date'),
+
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
-    // Ensure one pending request per player-federation pair
-    unique('unique_pending_player_federation_request').on(
+    unique('unique_player_season_age_group').on(
+      table.seasonId,
       table.playerId,
-      table.federationId,
-      table.status
+      table.seasonAgeGroupId
     ),
-    // Indexes for efficient lookups
-    index('idx_federation_player_requests_federation_id').on(
-      table.federationId
-    ),
-    index('idx_federation_player_requests_player_id').on(table.playerId),
-    index('idx_federation_player_requests_organization_id').on(
-      table.organizationId
-    ),
-    index('idx_federation_player_requests_status').on(table.status),
+    index('idx_season_registrations_season_id').on(table.seasonId),
+    index('idx_season_registrations_player_id').on(table.playerId),
+    index('idx_season_registrations_age_group').on(table.seasonAgeGroupId),
+    index('idx_season_registrations_status').on(table.status),
+    index('idx_season_registrations_organization').on(table.organizationId),
   ]
 )
+
+// Note: Old federationPlayers and federationPlayerRequests tables have been removed
+// and replaced with the new season-based system above
 
 // Helper function to format date as "Nov 22, 2025"
 export const formatDateForSessionName = (date: Date): string => {
@@ -1782,9 +1949,10 @@ export type Championship = typeof championships.$inferSelect
 export type ChampionshipEdition = typeof championshipEditions.$inferSelect
 export type FederationClub = typeof federationClubs.$inferSelect
 export type FederationClubRequest = typeof federationClubRequests.$inferSelect
-export type FederationPlayer = typeof federationPlayers.$inferSelect
-export type FederationPlayerRequest =
-  typeof federationPlayerRequests.$inferSelect
+export type Season = typeof seasons.$inferSelect
+export type SeasonAgeGroup = typeof seasonAgeGroups.$inferSelect
+export type FederationMember = typeof federationMembers.$inferSelect
+export type SeasonPlayerRegistration = typeof seasonPlayerRegistrations.$inferSelect
 export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect
 export type Invitation = typeof invitation.$inferSelect
