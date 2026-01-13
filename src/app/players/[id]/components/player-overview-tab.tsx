@@ -294,7 +294,7 @@ const PlayerOverviewTab = ({
                 No Test Results Yet
               </h3>
               <p className='text-muted-foreground'>
-                This player hasn&apos;t participated in any tests yet.
+                This player hasn't participated in any tests yet.
               </p>
             </div>
           )}

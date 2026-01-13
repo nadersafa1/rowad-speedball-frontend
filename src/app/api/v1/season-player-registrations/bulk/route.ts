@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
 
     // Verify organization access
     if (
-      context.organizationId &&
-      validatedData.organizationId !== context.organizationId &&
+      context.organization?.id &&
+      validatedData.organizationId !== context.organization.id &&
       !context.isSystemAdmin
     ) {
       return NextResponse.json(

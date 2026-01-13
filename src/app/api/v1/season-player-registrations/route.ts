@@ -16,6 +16,7 @@ import {
 } from '@/types/api/seasons.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { calculateAge } from '@/db/schema'
+import z from 'zod'
 
 // GET /api/v1/season-player-registrations - List registrations with filtering
 export async function GET(request: NextRequest) {
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const params = Object.fromEntries(searchParams.entries())
 
-    const validatedParams = seasonPlayerRegistrationQueryParamsSchema.parse(params)
+    const validatedParams =
+      seasonPlayerRegistrationQueryParamsSchema.parse(params)
 
     const {
       seasonId,
@@ -48,14 +50,16 @@ export async function GET(request: NextRequest) {
     const conditions = []
 
     // Organization-level filtering
-    if (context.isOrganizationMember && context.organizationId) {
+    if (context.organization?.id) {
       // Organization users can only see their own organization's registrations
       conditions.push(
-        eq(seasonPlayerRegistrations.organizationId, context.organizationId)
+        eq(seasonPlayerRegistrations.organizationId, context.organization.id)
       )
     } else if (organizationId) {
       // Federation admins can filter by organization
-      conditions.push(eq(seasonPlayerRegistrations.organizationId, organizationId))
+      conditions.push(
+        eq(seasonPlayerRegistrations.organizationId, organizationId)
+      )
     }
 
     // Federation-level filtering
@@ -93,7 +97,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (paymentStatus) {
-      conditions.push(eq(seasonPlayerRegistrations.paymentStatus, paymentStatus))
+      conditions.push(
+        eq(seasonPlayerRegistrations.paymentStatus, paymentStatus)
+      )
     }
 
     // Build ORDER BY
@@ -126,11 +132,11 @@ export async function GET(request: NextRequest) {
         .select({
           id: seasonPlayerRegistrations.id,
           seasonId: seasonPlayerRegistrations.seasonId,
+          seasonName: seasons.name,
           playerId: seasonPlayerRegistrations.playerId,
           playerName: players.name,
           seasonAgeGroupId: seasonPlayerRegistrations.seasonAgeGroupId,
-          ageGroupCode: seasonAgeGroups.code,
-          ageGroupName: seasonAgeGroups.name,
+          seasonAgeGroup: seasonAgeGroups,
           organizationId: seasonPlayerRegistrations.organizationId,
           organizationName: organization.name,
           playerAgeAtRegistration:
@@ -160,6 +166,7 @@ export async function GET(request: NextRequest) {
           eq(seasonPlayerRegistrations.organizationId, organization.id)
         )
         .leftJoin(user, eq(seasonPlayerRegistrations.approvedBy, user.id))
+        .leftJoin(seasons, eq(seasonPlayerRegistrations.seasonId, seasons.id))
         .where(whereClause)
         .orderBy(orderByClause)
         .limit(limit)
@@ -215,8 +222,8 @@ export async function POST(request: NextRequest) {
 
     // Verify organization access
     if (
-      context.organizationId &&
-      validatedData.organizationId !== context.organizationId &&
+      context.organization?.id &&
+      validatedData.organizationId !== context.organization.id &&
       !context.isSystemAdmin
     ) {
       return NextResponse.json(
@@ -277,7 +284,9 @@ export async function POST(request: NextRequest) {
 
     if (existingRegistration) {
       return NextResponse.json(
-        { error: 'Player already registered for this age group in this season' },
+        {
+          error: 'Player already registered for this age group in this season',
+        },
         { status: 409 }
       )
     }

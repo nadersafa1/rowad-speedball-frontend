@@ -13,9 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-} from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +32,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { MoreHorizontal, Pencil, Trash2, Search, SortAsc, SortDesc, ExternalLink } from 'lucide-react'
+import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Search,
+  SortAsc,
+  SortDesc,
+  ExternalLink,
+} from 'lucide-react'
 import { usePointsSchemasStore } from '@/store/points-schemas-store'
 import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
 import type { PointsSchema } from '@/db/schema'
@@ -45,14 +51,21 @@ interface PointsSchemasTableProps {
   onRefetch: () => void
 }
 
-export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProps) {
+export default function PointsSchemasTable({
+  onRefetch,
+}: PointsSchemasTableProps) {
   const router = useRouter()
-  const { schemas, isLoading, deleteSchema, pagination } = usePointsSchemasStore()
+  const { schemas, isLoading, deleteSchema, pagination } =
+    usePointsSchemasStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedSchema, setSelectedSchema] = useState<PointsSchema | null>(null)
+  const [selectedSchema, setSelectedSchema] = useState<PointsSchema | null>(
+    null
+  )
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [schemaToDelete, setSchemaToDelete] = useState<PointsSchema | null>(null)
+  const [schemaToDelete, setSchemaToDelete] = useState<PointsSchema | null>(
+    null
+  )
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
@@ -104,7 +117,8 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
       if (sortBy === 'name') {
         comparison = a.name.localeCompare(b.name)
       } else {
-        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        comparison =
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       }
       return sortOrder === 'asc' ? comparison : -comparison
     })
@@ -133,7 +147,8 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
           />
         </div>
         <Badge variant='outline' className='text-sm'>
-          {filteredSchemas.length} schema{filteredSchemas.length !== 1 ? 's' : ''}
+          {filteredSchemas.length} schema
+          {filteredSchemas.length !== 1 ? 's' : ''}
         </Badge>
       </div>
 
@@ -158,7 +173,9 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
                     ))}
                 </Button>
               </TableHead>
-              <TableHead className='hidden md:table-cell'>Description</TableHead>
+              <TableHead className='hidden md:table-cell'>
+                Description
+              </TableHead>
               <TableHead className='hidden lg:table-cell'>
                 <Button
                   variant='ghost'
@@ -192,7 +209,9 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
                 <TableRow key={schema.id}>
                   <TableCell className='font-semibold'>
                     <button
-                      onClick={() => router.push(`/admin/points-schemas/${schema.id}`)}
+                      onClick={() =>
+                        router.push(`/admin/points-schemas/${schema.id}`)
+                      }
                       className='flex items-center gap-2 hover:text-rowad-600 transition-colors'
                     >
                       {schema.name}
@@ -217,7 +236,9 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() => router.push(`/admin/points-schemas/${schema.id}`)}
+                          onClick={() =>
+                            router.push(`/admin/points-schemas/${schema.id}`)
+                          }
                         >
                           <ExternalLink className='mr-2 h-4 w-4' />
                           View Entries
@@ -265,13 +286,14 @@ export default function PointsSchemasTable({ onRefetch }: PointsSchemasTableProp
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the points schema &quot;{schemaToDelete?.name}&quot;.
-              This action cannot be undone.
+              This will permanently delete the points schema "
+              {schemaToDelete?.name}". This action cannot be undone.
               {schemaToDelete && (
                 <div className='mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md border border-amber-200 dark:border-amber-800'>
                   <p className='text-sm text-amber-900 dark:text-amber-100'>
-                    <strong>Warning:</strong> This schema cannot be deleted if it is being used by any events.
-                    Remove it from all events first.
+                    <strong>Warning:</strong> This schema cannot be deleted if
+                    it is being used by any events. Remove it from all events
+                    first.
                   </p>
                 </div>
               )}

@@ -389,8 +389,8 @@ const FederationClubsPage = () => {
           <DialogHeader>
             <DialogTitle>Reject Club Request</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting this club&apos;s request to
-              join the federation.
+              Please provide a reason for rejecting this club's request to join
+              the federation.
             </DialogDescription>
           </DialogHeader>
           <div className='space-y-4 py-4'>

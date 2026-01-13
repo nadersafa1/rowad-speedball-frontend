@@ -4,6 +4,7 @@ import type { OrganizationContext } from '@/lib/organization-helpers'
 import type { EventType } from '@/types/event-types'
 import type { EventFormat } from '@/types/event-format'
 import type { TeamLevel } from '@/types/team-level'
+import { Season } from '@/db/schema'
 
 export class ApiClient {
   private baseUrl: string
@@ -265,27 +266,6 @@ export class ApiClient {
   }
 
   // Federation Clubs methods
-  async getFederationPlayers(params?: {
-    federationId?: string
-    sortBy?: 'createdAt' | 'registrationYear'
-    sortOrder?: 'asc' | 'desc'
-    page?: number
-    limit?: number
-  }): Promise<PaginatedResponse<any>> {
-    const searchParams = new URLSearchParams()
-    if (params?.federationId)
-      searchParams.set('federationId', params.federationId)
-    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
-    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
-    if (params?.page) searchParams.set('page', params.page.toString())
-    if (params?.limit) searchParams.set('limit', params.limit.toString())
-
-    const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(
-      `/federation-players${query ? `?${query}` : ''}`
-    )
-  }
-
   async getFederationClubs(params?: {
     federationId?: string
     organizationId?: string
@@ -1402,66 +1382,6 @@ export class ApiClient {
     })
   }
 
-  // Federation Player Requests methods
-  async getFederationPlayerRequests(params?: {
-    federationId?: string
-    playerId?: string
-    organizationId?: string
-    status?: 'pending' | 'approved' | 'rejected' | 'all'
-    sortBy?: 'requestedAt' | 'respondedAt' | 'createdAt' | 'updatedAt'
-    sortOrder?: 'asc' | 'desc'
-    page?: number
-    limit?: number
-  }): Promise<PaginatedResponse<any>> {
-    const searchParams = new URLSearchParams()
-    if (params?.federationId)
-      searchParams.set('federationId', params.federationId)
-    if (params?.playerId) searchParams.set('playerId', params.playerId)
-    if (params?.organizationId)
-      searchParams.set('organizationId', params.organizationId)
-    if (params?.status) searchParams.set('status', params.status)
-    if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
-    if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
-    if (params?.page) searchParams.set('page', params.page.toString())
-    if (params?.limit) searchParams.set('limit', params.limit.toString())
-
-    const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(
-      `/federation-player-requests${query ? `?${query}` : ''}`
-    )
-  }
-
-  async createFederationPlayerRequest(data: {
-    federationId: string
-    playerId: string
-  }): Promise<any> {
-    return this.request<any>('/federation-player-requests', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async updateFederationPlayerRequestStatus(
-    id: string,
-    data: {
-      status: 'approved' | 'rejected'
-      rejectionReason?: string
-      federationRegistrationNumber?: string
-    }
-  ): Promise<any> {
-    return this.request<any>(`/federation-player-requests/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async deleteFederationPlayerRequest(id: string): Promise<void> {
-    return this.request<void>(`/federation-player-requests/${id}`, {
-      method: 'DELETE',
-    })
-  }
-
-
   // ========================================
   // Season methods
   // ========================================
@@ -1470,13 +1390,19 @@ export class ApiClient {
     federationId?: string
     status?: 'draft' | 'active' | 'closed' | 'archived'
     year?: number
-    sortBy?: 'name' | 'startYear' | 'seasonStartDate' | 'createdAt' | 'updatedAt'
+    sortBy?:
+      | 'name'
+      | 'startYear'
+      | 'seasonStartDate'
+      | 'createdAt'
+      | 'updatedAt'
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
-  }): Promise<PaginatedResponse<any>> {
+  }): Promise<PaginatedResponse<Season>> {
     const searchParams = new URLSearchParams()
-    if (params?.federationId) searchParams.set('federationId', params.federationId)
+    if (params?.federationId)
+      searchParams.set('federationId', params.federationId)
     if (params?.status) searchParams.set('status', params.status)
     if (params?.year) searchParams.set('year', params.year.toString())
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
@@ -1485,7 +1411,9 @@ export class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString()
-    return this.request<PaginatedResponse<any>>(`/seasons${query ? `?${query}` : ''}`)
+    return this.request<PaginatedResponse<Season>>(
+      `/seasons${query ? `?${query}` : ''}`
+    )
   }
 
   async getSeason(id: string): Promise<any> {
@@ -1527,7 +1455,9 @@ export class ApiClient {
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
 
     const query = searchParams.toString()
-    return this.request<{ data: any[] }>(`/season-age-groups${query ? `?${query}` : ''}`)
+    return this.request<{ data: any[] }>(
+      `/season-age-groups${query ? `?${query}` : ''}`
+    )
   }
 
   async getSeasonAgeGroup(id: string): Promise<any> {
@@ -1565,7 +1495,12 @@ export class ApiClient {
     organizationId?: string
     status?: 'pending' | 'approved' | 'rejected' | 'cancelled'
     paymentStatus?: 'unpaid' | 'paid' | 'refunded'
-    sortBy?: 'registrationDate' | 'approvedAt' | 'playerName' | 'createdAt' | 'updatedAt'
+    sortBy?:
+      | 'registrationDate'
+      | 'approvedAt'
+      | 'playerName'
+      | 'createdAt'
+      | 'updatedAt'
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
@@ -1573,10 +1508,13 @@ export class ApiClient {
     const searchParams = new URLSearchParams()
     if (params?.seasonId) searchParams.set('seasonId', params.seasonId)
     if (params?.playerId) searchParams.set('playerId', params.playerId)
-    if (params?.seasonAgeGroupId) searchParams.set('seasonAgeGroupId', params.seasonAgeGroupId)
-    if (params?.organizationId) searchParams.set('organizationId', params.organizationId)
+    if (params?.seasonAgeGroupId)
+      searchParams.set('seasonAgeGroupId', params.seasonAgeGroupId)
+    if (params?.organizationId)
+      searchParams.set('organizationId', params.organizationId)
     if (params?.status) searchParams.set('status', params.status)
-    if (params?.paymentStatus) searchParams.set('paymentStatus', params.paymentStatus)
+    if (params?.paymentStatus)
+      searchParams.set('paymentStatus', params.paymentStatus)
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())
@@ -1604,7 +1542,12 @@ export class ApiClient {
     playerIds: string[]
     seasonAgeGroupIds: string[]
     organizationId: string
-  }): Promise<{ success: boolean; count: number; registrations: any[]; errors?: any[] }> {
+  }): Promise<{
+    success: boolean
+    count: number
+    registrations: any[]
+    errors?: any[]
+  }> {
     return this.request<{
       success: boolean
       count: number
@@ -1616,9 +1559,32 @@ export class ApiClient {
     })
   }
 
-  async updateSeasonPlayerRegistrationStatus(id: string, data: any): Promise<any> {
+  async updateSeasonPlayerRegistrationStatus(
+    id: string,
+    data: any
+  ): Promise<any> {
     return this.request<any>(`/season-player-registrations/${id}`, {
       method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async approveSeasonPlayerRegistration(
+    id: string,
+    data: { federationIdNumber?: string | null }
+  ): Promise<any> {
+    return this.request<any>(`/season-player-registrations/${id}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async rejectSeasonPlayerRegistration(
+    id: string,
+    data: { rejectionReason: string }
+  ): Promise<any> {
+    return this.request<any>(`/season-player-registrations/${id}/reject`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     })
   }
@@ -1638,13 +1604,18 @@ export class ApiClient {
     playerId?: string
     status?: 'active' | 'suspended' | 'revoked'
     search?: string
-    sortBy?: 'firstRegistrationDate' | 'federationIdNumber' | 'createdAt' | 'updatedAt'
+    sortBy?:
+      | 'firstRegistrationDate'
+      | 'federationIdNumber'
+      | 'createdAt'
+      | 'updatedAt'
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
   }): Promise<PaginatedResponse<any>> {
     const searchParams = new URLSearchParams()
-    if (params?.federationId) searchParams.set('federationId', params.federationId)
+    if (params?.federationId)
+      searchParams.set('federationId', params.federationId)
     if (params?.playerId) searchParams.set('playerId', params.playerId)
     if (params?.status) searchParams.set('status', params.status)
     if (params?.search) searchParams.set('search', params.search)

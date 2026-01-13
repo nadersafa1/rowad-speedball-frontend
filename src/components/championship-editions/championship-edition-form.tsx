@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -26,8 +26,10 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { LoadingButton } from '@/components/forms/loading-button'
 import { Button } from '@/components/ui/button'
+import { BaseCombobox } from '@/components/ui/combobox/base-combobox'
 import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
 import { formatDateForAPI } from '@/lib/date-utils'
+import { apiClient } from '@/lib/api-client'
 
 const formSchema = z
   .object({
@@ -38,6 +40,7 @@ const formSchema = z
       .min(2000, 'Year must be 2000 or later')
       .max(2100, 'Year must be 2100 or earlier'),
     status: z.enum(['draft', 'published', 'archived']),
+    seasonId: z.string().uuid().optional().nullable(),
     registrationStartDate: z.date().optional(),
     registrationEndDate: z.date().optional(),
   })
@@ -59,12 +62,14 @@ type FormData = z.infer<typeof formSchema>
 
 interface ChampionshipEditionFormProps {
   championshipId: string
+  federationId?: string
   onSuccess?: () => void
   onCancel?: () => void
 }
 
 export function ChampionshipEditionForm({
   championshipId,
+  federationId,
   onSuccess,
   onCancel,
 }: ChampionshipEditionFormProps) {
@@ -77,6 +82,7 @@ export function ChampionshipEditionForm({
       championshipId,
       year: new Date().getFullYear(),
       status: 'draft',
+      seasonId: null,
       registrationStartDate: undefined,
       registrationEndDate: undefined,
     },
@@ -92,6 +98,7 @@ export function ChampionshipEditionForm({
         championshipId: data.championshipId,
         year: data.year,
         status: data.status,
+        seasonId: data.seasonId || null,
         registrationStartDate: data.registrationStartDate
           ? formatDateForAPI(data.registrationStartDate)
           : null,
@@ -162,6 +169,47 @@ export function ChampionshipEditionForm({
             </FormItem>
           )}
         />
+
+        {federationId && (
+          <FormField
+            control={form.control}
+            name='seasonId'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Season (Optional)</FormLabel>
+                <FormControl>
+                  <BaseCombobox
+                    value={field.value || undefined}
+                    onChange={(value) => field.onChange(value || null)}
+                    fetchItems={async (query, page, limit) => {
+                      const response = await apiClient.getSeasons({
+                        federationId,
+                        sortBy: 'startYear',
+                        sortOrder: 'desc',
+                        page: page || 1,
+                        limit: limit || 20,
+                      })
+                      return {
+                        items: response.data || [],
+                        hasMore: response.page < response.totalPages,
+                      }
+                    }}
+                    formatLabel={(season: any) => season.name}
+                    placeholder='Select season...'
+                    searchPlaceholder='Search seasons...'
+                    emptyMessage='No seasons found'
+                    disabled={isLoading}
+                    allowClear={true}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Link this edition to a federation season
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

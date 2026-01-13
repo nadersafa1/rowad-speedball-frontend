@@ -398,7 +398,7 @@ export const verification = pgTable('verification', {
  * **Multi-tenancy**:
  * - Players belong to ONE organization
  * - Organization deletion sets organizationId to null (orphaned players)
- * - Players can be registered in federation via `federationPlayers` table
+ * - Players can be registered in federation via season registrations
  *
  * **Important Notes**:
  * - Age is calculated dynamically (not stored)
@@ -406,7 +406,8 @@ export const verification = pgTable('verification', {
  * - Players can participate in events matching their gender and age group
  * - Preferred hand used for position assignment in doubles/relay events
  *
- * @see federationPlayers - Federation registration
+ * @see federationMembers - Federation membership
+ * @see seasonPlayerRegistrations - Season registrations
  * @see registrationPlayers - Event registrations
  * @see testResults - Test scores
  * @see trainingSessionAttendance - Training attendance
@@ -1064,9 +1065,10 @@ export const trainingSessionAttendance = pgTable(
  * - Federations are created by system admins only
  * - Deleting federation cascades to championships, but NOT to organizations (set null)
  * - Federation membership tracked in `federationClubs` junction table
- * - Federation player registration tracked in `federationPlayers` table
+ * - Federation player membership tracked in `federationMembers` table
  *
  * @see federationClubs - Club memberships in federation
+ * @see federationMembers - Player memberships in federation
  * @see championships - Competitions organized by federation
  * @see user.role - Federation-level user roles
  * @see organization.federationId - Organizations linked to federation
@@ -1714,10 +1716,7 @@ export const seasons = pgTable(
       'chk_season_dates',
       sql`${table.seasonEndDate} > ${table.seasonStartDate}`
     ),
-    check(
-      'chk_max_age_groups',
-      sql`${table.maxAgeGroupsPerPlayer} >= 1`
-    ),
+    check('chk_max_age_groups', sql`${table.maxAgeGroupsPerPlayer} >= 1`),
     unique('unique_federation_season').on(
       table.federationId,
       table.startYear,
@@ -1801,8 +1800,9 @@ export const federationMembers = pgTable(
       .references(() => players.id, { onDelete: 'cascade' }),
 
     // MANUALLY ENTERED federation ID (not auto-generated)
-    federationIdNumber: varchar('federation_id_number', { length: 50 })
-      .notNull(),
+    federationIdNumber: varchar('federation_id_number', {
+      length: 50,
+    }).notNull(),
 
     // Created during first season registration
     firstRegistrationSeasonId: uuid('first_registration_season_id')
@@ -1952,7 +1952,8 @@ export type FederationClubRequest = typeof federationClubRequests.$inferSelect
 export type Season = typeof seasons.$inferSelect
 export type SeasonAgeGroup = typeof seasonAgeGroups.$inferSelect
 export type FederationMember = typeof federationMembers.$inferSelect
-export type SeasonPlayerRegistration = typeof seasonPlayerRegistrations.$inferSelect
+export type SeasonPlayerRegistration =
+  typeof seasonPlayerRegistrations.$inferSelect
 export type Organization = typeof organization.$inferSelect
 export type Member = typeof member.$inferSelect
 export type Invitation = typeof invitation.$inferSelect

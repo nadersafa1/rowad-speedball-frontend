@@ -4,7 +4,8 @@
   ],
   "rules": {
     "prefer-const": "error",
-    "no-var": "error"
+    "no-var": "error",
+    "react/no-unescaped-entities": "off"
   },
   "ignorePatterns": ["next.config.js", "tailwind.config.js", "postcss.config.js"]
 }

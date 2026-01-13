@@ -44,12 +44,12 @@ export async function GET(
 
     // Check access: organization members can only see their own, federation admins can see all
     if (
-      context.organizationId &&
+      context.organization?.id &&
       !context.isFederationAdmin &&
       !context.isFederationEditor &&
       !context.isSystemAdmin
     ) {
-      if (registration.organizationId !== context.organizationId) {
+      if (registration.organizationId !== context.organization.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
       }
     }
@@ -114,7 +114,7 @@ export async function PATCH(
     // If approving, set approval fields
     if (validatedData.status === 'approved') {
       updateData.approvedAt = new Date()
-      updateData.approvedBy = context.user?.id || null
+      updateData.approvedBy = context.userId || null
 
       // Create or update federation membership if approved
       // Check if player is already a federation member
@@ -205,8 +205,8 @@ export async function DELETE(
       !context.isSystemAdmin
     ) {
       if (
-        context.organizationId &&
-        existingRegistration.organizationId !== context.organizationId
+        context.organization?.id &&
+        existingRegistration.organizationId !== context.organization.id
       ) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
       }

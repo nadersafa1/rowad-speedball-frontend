@@ -56,6 +56,11 @@ interface SeasonPlayerRegistrationsState {
       paymentAmount?: string
     }
   ) => Promise<void>
+  approveRegistration: (
+    id: string,
+    data: { federationIdNumber?: string | null }
+  ) => Promise<void>
+  rejectRegistration: (id: string, data: { rejectionReason: string }) => Promise<void>
   deleteRegistration: (id: string) => Promise<void>
   setSelectedRegistration: (registration: SeasonPlayerRegistrationWithRelations | null) => void
   clearError: () => void
@@ -215,6 +220,73 @@ export const useSeasonPlayerRegistrationsStore =
             error instanceof Error
               ? error.message
               : 'Failed to update registration',
+          isLoading: false,
+        })
+        throw error
+      }
+    },
+
+    approveRegistration: async (
+      id: string,
+      data: { federationIdNumber?: string | null }
+    ) => {
+      set({ isLoading: true, error: null })
+
+      try {
+        const updatedRegistration =
+          (await apiClient.approveSeasonPlayerRegistration(
+            id,
+            data
+          )) as SeasonPlayerRegistrationWithRelations
+
+        set((state) => ({
+          registrations: state.registrations.map((r) =>
+            r.id === id ? updatedRegistration : r
+          ),
+          selectedRegistration:
+            state.selectedRegistration?.id === id
+              ? updatedRegistration
+              : state.selectedRegistration,
+          isLoading: false,
+        }))
+      } catch (error) {
+        set({
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to approve registration',
+          isLoading: false,
+        })
+        throw error
+      }
+    },
+
+    rejectRegistration: async (id: string, data: { rejectionReason: string }) => {
+      set({ isLoading: true, error: null })
+
+      try {
+        const updatedRegistration =
+          (await apiClient.rejectSeasonPlayerRegistration(
+            id,
+            data
+          )) as SeasonPlayerRegistrationWithRelations
+
+        set((state) => ({
+          registrations: state.registrations.map((r) =>
+            r.id === id ? updatedRegistration : r
+          ),
+          selectedRegistration:
+            state.selectedRegistration?.id === id
+              ? updatedRegistration
+              : state.selectedRegistration,
+          isLoading: false,
+        }))
+      } catch (error) {
+        set({
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to reject registration',
           isLoading: false,
         })
         throw error

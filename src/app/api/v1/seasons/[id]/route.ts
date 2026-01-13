@@ -17,13 +17,9 @@ export async function GET(
     const { id } = await params
     const context = await getOrganizationContext()
 
-    // Only federation admins, editors, and system admins can view seasons
-    if (
-      !context.isFederationAdmin &&
-      !context.isFederationEditor &&
-      !context.isSystemAdmin
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    // Authenticated users can view seasons (needed for club admins to register players)
+    if (!context.isAuthenticated) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const season = await db.query.seasons.findFirst({
@@ -32,15 +28,6 @@ export async function GET(
 
     if (!season) {
       return NextResponse.json({ error: 'Season not found' }, { status: 404 })
-    }
-
-    // Check federation access for federation admins/editors
-    if (
-      (context.isFederationAdmin || context.isFederationEditor) &&
-      context.federationId &&
-      season.federationId !== context.federationId
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     return NextResponse.json(season)

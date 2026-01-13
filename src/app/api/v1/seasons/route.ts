@@ -14,13 +14,9 @@ export async function GET(request: NextRequest) {
   try {
     const context = await getOrganizationContext()
 
-    // Only federation admins and system admins can view seasons
-    if (
-      !context.isFederationAdmin &&
-      !context.isFederationEditor &&
-      !context.isSystemAdmin
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    // Authenticated users can view seasons (needed for club admins to register players)
+    if (!context.isAuthenticated) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -28,15 +24,8 @@ export async function GET(request: NextRequest) {
 
     const validatedParams = seasonQueryParamsSchema.parse(params)
 
-    const {
-      federationId,
-      status,
-      year,
-      sortBy,
-      sortOrder,
-      page,
-      limit,
-    } = validatedParams
+    const { federationId, status, year, sortBy, sortOrder, page, limit } =
+      validatedParams
 
     // Build WHERE conditions
     const conditions = []
@@ -173,10 +162,14 @@ export async function POST(request: NextRequest) {
         ...validatedData,
         seasonStartDate: validatedData.seasonStartDate,
         seasonEndDate: validatedData.seasonEndDate,
-        firstRegistrationStartDate: validatedData.firstRegistrationStartDate || null,
-        firstRegistrationEndDate: validatedData.firstRegistrationEndDate || null,
-        secondRegistrationStartDate: validatedData.secondRegistrationStartDate || null,
-        secondRegistrationEndDate: validatedData.secondRegistrationEndDate || null,
+        firstRegistrationStartDate:
+          validatedData.firstRegistrationStartDate || null,
+        firstRegistrationEndDate:
+          validatedData.firstRegistrationEndDate || null,
+        secondRegistrationStartDate:
+          validatedData.secondRegistrationStartDate || null,
+        secondRegistrationEndDate:
+          validatedData.secondRegistrationEndDate || null,
       })
       .returning()
 
