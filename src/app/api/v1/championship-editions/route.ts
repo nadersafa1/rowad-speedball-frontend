@@ -106,6 +106,7 @@ export async function GET(request: NextRequest) {
         edition: schema.championshipEditions,
         championshipName: schema.championships.name,
         championshipCompetitionScope: schema.championships.competitionScope,
+        federationId: schema.championships.federationId,
         federationName: schema.federations.name,
       })
       .from(schema.championshipEditions)
@@ -170,6 +171,7 @@ export async function GET(request: NextRequest) {
       ...row.edition,
       championshipName: row.championshipName ?? null,
       championshipCompetitionScope: row.championshipCompetitionScope ?? null,
+      federationId: row.federationId ?? null,
       federationName: row.federationName ?? null,
     }))
 
@@ -202,7 +204,7 @@ export async function POST(request: NextRequest) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
 
-    const { championshipId, year, status, registrationStartDate, registrationEndDate } =
+    const { championshipId, year, status, seasonId, registrationStartDate, registrationEndDate } =
       parseResult.data
 
     // Check if championship exists and get its federation
@@ -245,6 +247,7 @@ export async function POST(request: NextRequest) {
         championshipId,
         year,
         status,
+        seasonId: seasonId || null,
         registrationStartDate: registrationStartDate || null,
         registrationEndDate: registrationEndDate || null,
       })

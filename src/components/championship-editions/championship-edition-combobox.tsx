@@ -4,20 +4,7 @@ import * as React from 'react'
 import { BaseCombobox } from '@/components/ui/combobox/base-combobox'
 import { apiClient } from '@/lib/api-client'
 import type { PaginatedResponse } from '@/types'
-
-interface ChampionshipEditionWithRelations {
-  id: string
-  championshipId: string
-  year: number
-  status: 'draft' | 'published' | 'archived'
-  registrationStartDate: string | null
-  registrationEndDate: string | null
-  createdAt: Date | string
-  updatedAt: Date | string
-  championshipName: string | null
-  championshipCompetitionScope: 'clubs' | 'open' | null
-  federationName: string | null
-}
+import type { ChampionshipEditionWithRelations } from './championship-editions-table-types'
 
 interface ChampionshipEditionComboboxProps {
   value?: string

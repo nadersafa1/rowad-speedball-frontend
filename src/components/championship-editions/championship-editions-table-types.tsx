@@ -3,6 +3,7 @@ import type { ChampionshipEdition } from '@/db/schema'
 export interface ChampionshipEditionWithRelations extends ChampionshipEdition {
   championshipName: string | null
   championshipCompetitionScope: 'clubs' | 'open' | null
+  federationId: string | null
   federationName: string | null
 }
 

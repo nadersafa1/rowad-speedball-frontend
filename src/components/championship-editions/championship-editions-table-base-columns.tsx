@@ -1,16 +1,10 @@
 import { ColumnDef } from '@tanstack/react-table'
-import { ChampionshipEdition } from '@/db/schema'
+import { ChampionshipEditionWithRelations } from './championship-editions-table-types'
 import {
   YearCell,
   StatusCell,
   RegistrationDatesCell,
 } from './championship-editions-table-cell-renderers'
-
-interface ChampionshipEditionWithRelations extends ChampionshipEdition {
-  championshipName: string | null
-  championshipCompetitionScope: 'clubs' | 'open' | null
-  federationName: string | null
-}
 
 interface SortableHeaderProps {
   label: string

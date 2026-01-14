@@ -82,6 +82,7 @@ export async function GET(
       ...editionData.edition,
       championshipName: editionData.championshipName ?? null,
       championshipCompetitionScope: editionData.championshipCompetitionScope ?? null,
+      federationId: editionData.federationId ?? null,
       federationName: editionData.federationName ?? null,
     }
 
@@ -172,13 +173,25 @@ export async function PATCH(
       }
     }
 
+    const { seasonId, registrationStartDate, registrationEndDate, ...restUpdateData } = updateData
+
+    const updateFields: any = {
+      ...restUpdateData,
+    }
+
+    if (seasonId !== undefined) {
+      updateFields.seasonId = seasonId || null
+    }
+    if (registrationStartDate !== undefined) {
+      updateFields.registrationStartDate = registrationStartDate || null
+    }
+    if (registrationEndDate !== undefined) {
+      updateFields.registrationEndDate = registrationEndDate || null
+    }
+
     const result = await db
       .update(schema.championshipEditions)
-      .set({
-        ...updateData,
-        registrationStartDate: updateData.registrationStartDate || null,
-        registrationEndDate: updateData.registrationEndDate || null,
-      })
+      .set(updateFields)
       .where(eq(schema.championshipEditions.id, id))
       .returning()
 

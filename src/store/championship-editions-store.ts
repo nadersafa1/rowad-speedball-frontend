@@ -1,8 +1,8 @@
 // Championship Editions Store - Single responsibility: Championship editions state management
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
-import type { ChampionshipEdition } from '@/db/schema'
 import type { PaginatedResponse } from '@/types/api/pagination'
+import type { ChampionshipEditionWithRelations } from '@/components/championship-editions/championship-editions-table-types'
 
 interface ChampionshipEditionsFilters {
   q?: string
@@ -13,12 +13,6 @@ interface ChampionshipEditionsFilters {
   sortOrder?: 'asc' | 'desc'
   page?: number
   limit?: number
-}
-
-interface ChampionshipEditionWithRelations extends ChampionshipEdition {
-  championshipName: string | null
-  championshipCompetitionScope: 'clubs' | 'open' | null
-  federationName: string | null
 }
 
 interface ChampionshipEditionsState {

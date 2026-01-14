@@ -17,6 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import {
   Select,
@@ -29,15 +30,18 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { LoadingButton } from '@/components/forms/loading-button'
 import { Button } from '@/components/ui/button'
+import { BaseCombobox } from '@/components/ui/combobox/base-combobox'
 import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
 import { toast } from 'sonner'
 import { ChampionshipEditionWithRelations } from './championship-editions-table-types'
 import { formatDateForAPI } from '@/lib/date-utils'
+import { apiClient } from '@/lib/api-client'
 
 const editSchema = z
   .object({
     year: z.number().int().min(2000).max(2100),
     status: z.enum(['draft', 'published', 'archived']),
+    seasonId: z.string().uuid().optional().nullable(),
     registrationStartDate: z.date().optional(),
     registrationEndDate: z.date().optional(),
   })
@@ -79,6 +83,7 @@ export function ChampionshipEditionsTableEditDialog({
     defaultValues: {
       year: edition?.year || new Date().getFullYear(),
       status: edition?.status || 'draft',
+      seasonId: edition?.seasonId || null,
       registrationStartDate: edition?.registrationStartDate
         ? new Date(edition.registrationStartDate)
         : undefined,
@@ -93,6 +98,7 @@ export function ChampionshipEditionsTableEditDialog({
       form.reset({
         year: edition.year,
         status: edition.status,
+        seasonId: edition.seasonId || null,
         registrationStartDate: edition.registrationStartDate
           ? new Date(edition.registrationStartDate)
           : undefined,
@@ -110,6 +116,7 @@ export function ChampionshipEditionsTableEditDialog({
       const payload = {
         year: data.year,
         status: data.status,
+        seasonId: data.seasonId || null,
         registrationStartDate: data.registrationStartDate
           ? formatDateForAPI(data.registrationStartDate)
           : null,
@@ -180,6 +187,47 @@ export function ChampionshipEditionsTableEditDialog({
                 </FormItem>
               )}
             />
+
+            {edition?.federationId && (
+              <FormField
+                control={form.control}
+                name='seasonId'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Season (Optional)</FormLabel>
+                    <FormControl>
+                      <BaseCombobox
+                        value={field.value || undefined}
+                        onChange={(value) => field.onChange(value || null)}
+                        fetchItems={async (query, page, limit) => {
+                          const response = await apiClient.getSeasons({
+                            federationId: edition.federationId!,
+                            sortBy: 'startYear',
+                            sortOrder: 'desc',
+                            page: page || 1,
+                            limit: limit || 20,
+                          })
+                          return {
+                            items: response.data || [],
+                            hasMore: response.page < response.totalPages,
+                          }
+                        }}
+                        formatLabel={(season: any) => season.name}
+                        placeholder='Select season...'
+                        searchPlaceholder='Search seasons...'
+                        emptyMessage='No seasons found'
+                        disabled={isLoading}
+                        allowClear={true}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Link this edition to a federation season
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

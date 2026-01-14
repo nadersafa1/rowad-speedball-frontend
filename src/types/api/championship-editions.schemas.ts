@@ -40,6 +40,7 @@ export const championshipEditionsCreateSchema = z
       .min(2000, 'Year must be 2000 or later')
       .max(2100, 'Year must be 2100 or earlier'),
     status: z.enum(['draft', 'published', 'archived']).default('draft'),
+    seasonId: uuidSchema.optional().nullable(),
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -79,6 +80,7 @@ export const championshipEditionsUpdateSchema = z
       .max(2100, 'Year must be 2100 or earlier')
       .optional(),
     status: z.enum(['draft', 'published', 'archived']).optional(),
+    seasonId: uuidSchema.optional().nullable(),
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
