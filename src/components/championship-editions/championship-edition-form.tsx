@@ -34,13 +34,8 @@ import { apiClient } from '@/lib/api-client'
 const formSchema = z
   .object({
     championshipId: z.uuid('Invalid championship ID'),
-    year: z
-      .number()
-      .int('Year must be an integer')
-      .min(2000, 'Year must be 2000 or later')
-      .max(2100, 'Year must be 2100 or earlier'),
     status: z.enum(['draft', 'published', 'archived']),
-    seasonId: z.string().uuid().optional().nullable(),
+    seasonId: z.uuid('Season is required'),
     registrationStartDate: z.date().optional(),
     registrationEndDate: z.date().optional(),
   })
@@ -62,7 +57,7 @@ type FormData = z.infer<typeof formSchema>
 
 interface ChampionshipEditionFormProps {
   championshipId: string
-  federationId?: string
+  federationId: string
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -80,9 +75,8 @@ export function ChampionshipEditionForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       championshipId,
-      year: new Date().getFullYear(),
       status: 'draft',
-      seasonId: null,
+      seasonId: '',
       registrationStartDate: undefined,
       registrationEndDate: undefined,
     },
@@ -96,9 +90,8 @@ export function ChampionshipEditionForm({
     try {
       const payload = {
         championshipId: data.championshipId,
-        year: data.year,
         status: data.status,
-        seasonId: data.seasonId || null,
+        seasonId: data.seasonId,
         registrationStartDate: data.registrationStartDate
           ? formatDateForAPI(data.registrationStartDate)
           : null,
@@ -125,27 +118,6 @@ export function ChampionshipEditionForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
         <FormField
           control={form.control}
-          name='year'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Year</FormLabel>
-              <FormControl>
-                <Input
-                  type='number'
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormDescription>
-                The year for this championship edition
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name='status'
           render={({ field }) => (
             <FormItem>
@@ -170,46 +142,44 @@ export function ChampionshipEditionForm({
           )}
         />
 
-        {federationId && (
-          <FormField
-            control={form.control}
-            name='seasonId'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Season (Optional)</FormLabel>
-                <FormControl>
-                  <BaseCombobox
-                    value={field.value || undefined}
-                    onChange={(value) => field.onChange(value || null)}
-                    fetchItems={async (query, page, limit) => {
-                      const response = await apiClient.getSeasons({
-                        federationId,
-                        sortBy: 'startYear',
-                        sortOrder: 'desc',
-                        page: page || 1,
-                        limit: limit || 20,
-                      })
-                      return {
-                        items: response.data || [],
-                        hasMore: response.page < response.totalPages,
-                      }
-                    }}
-                    formatLabel={(season: any) => season.name}
-                    placeholder='Select season...'
-                    searchPlaceholder='Search seasons...'
-                    emptyMessage='No seasons found'
-                    disabled={isLoading}
-                    allowClear={true}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Link this edition to a federation season
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name='seasonId'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Season</FormLabel>
+              <FormControl>
+                <BaseCombobox
+                  value={field.value || undefined}
+                  onChange={(value) => field.onChange(value || '')}
+                  fetchItems={async (query, page, limit) => {
+                    const response = await apiClient.getSeasons({
+                      federationId,
+                      sortBy: 'startYear',
+                      sortOrder: 'desc',
+                      page: page || 1,
+                      limit: limit || 20,
+                    })
+                    return {
+                      items: response.data || [],
+                      hasMore: response.page < response.totalPages,
+                    }
+                  }}
+                  formatLabel={(season: any) => season.name}
+                  placeholder='Select season...'
+                  searchPlaceholder='Search seasons...'
+                  emptyMessage='No seasons found'
+                  disabled={isLoading}
+                  allowClear={false}
+                />
+              </FormControl>
+              <FormDescription>
+                Link this edition to a federation season
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

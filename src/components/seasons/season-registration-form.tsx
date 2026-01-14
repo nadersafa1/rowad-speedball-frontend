@@ -8,7 +8,13 @@ import { Users, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
 import { LoadingButton, FormError } from '@/components/forms'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
@@ -22,9 +28,9 @@ import { CheckCircle2, AlertCircle } from 'lucide-react'
 
 // Form validation schema
 const registrationFormSchema = z.object({
-  federationId: z.string().uuid('Please select a federation'),
-  seasonId: z.string().uuid('Please select a season'),
-  ageGroupIds: z.array(z.string().uuid()).min(1, 'Please select at least one age group'),
+  federationId: z.uuid('Please select a federation'),
+  seasonId: z.uuid('Please select a season'),
+  ageGroupIds: z.array(z.uuid()).min(1, 'Please select at least one age group'),
 })
 
 type RegistrationFormData = z.infer<typeof registrationFormSchema>
@@ -33,9 +39,12 @@ interface SeasonRegistrationFormProps {
   onSuccess?: () => void
 }
 
-export default function SeasonRegistrationForm({ onSuccess }: SeasonRegistrationFormProps) {
+export default function SeasonRegistrationForm({
+  onSuccess,
+}: SeasonRegistrationFormProps) {
   const { organizationId } = useOrganization()
-  const { bulkCreateRegistrations, error, clearError } = useSeasonPlayerRegistrationsStore()
+  const { bulkCreateRegistrations, error, clearError } =
+    useSeasonPlayerRegistrationsStore()
   const [selectedPlayers, setSelectedPlayers] = useState<
     { playerId: string; ageGroupIds: string[]; isFederationMember: boolean }[]
   >([])
@@ -109,7 +118,9 @@ export default function SeasonRegistrationForm({ onSuccess }: SeasonRegistration
         seasonId: data.seasonId,
         organizationId,
         playerIds: selectedPlayers.map((sp) => sp.playerId),
-        seasonAgeGroupIds: Array.from(new Set(selectedPlayers.flatMap((sp) => sp.ageGroupIds))),
+        seasonAgeGroupIds: Array.from(
+          new Set(selectedPlayers.flatMap((sp) => sp.ageGroupIds))
+        ),
       })
 
       toast.success(
@@ -152,7 +163,9 @@ export default function SeasonRegistrationForm({ onSuccess }: SeasonRegistration
         <CardContent className='space-y-6'>
           <div className='space-y-4'>
             <div>
-              <p className='text-sm font-semibold text-muted-foreground'>Season</p>
+              <p className='text-sm font-semibold text-muted-foreground'>
+                Season
+              </p>
               <p className='text-lg'>{seasonName}</p>
             </div>
 
@@ -177,15 +190,21 @@ export default function SeasonRegistrationForm({ onSuccess }: SeasonRegistration
             <Separator />
 
             <div>
-              <p className='text-sm font-semibold text-muted-foreground mb-2'>Summary</p>
+              <p className='text-sm font-semibold text-muted-foreground mb-2'>
+                Summary
+              </p>
               <div className='grid grid-cols-2 gap-4 text-sm'>
                 <div>
                   <p className='text-muted-foreground'>Players Selected</p>
-                  <p className='text-lg font-semibold'>{selectedPlayers.length}</p>
+                  <p className='text-lg font-semibold'>
+                    {selectedPlayers.length}
+                  </p>
                 </div>
                 <div>
                   <p className='text-muted-foreground'>Total Registrations</p>
-                  <p className='text-lg font-semibold'>{getTotalRegistrations()}</p>
+                  <p className='text-lg font-semibold'>
+                    {getTotalRegistrations()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -194,8 +213,9 @@ export default function SeasonRegistrationForm({ onSuccess }: SeasonRegistration
           <Alert>
             <AlertCircle className='h-4 w-4' />
             <AlertDescription>
-              After submission, registrations will be sent to the federation admin for
-              review and approval. You will be notified once they are processed.
+              After submission, registrations will be sent to the federation
+              admin for review and approval. You will be notified once they are
+              processed.
             </AlertDescription>
           </Alert>
 
@@ -226,7 +246,10 @@ export default function SeasonRegistrationForm({ onSuccess }: SeasonRegistration
   // Registration form step
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleProceedToReview)} className='space-y-8'>
+      <form
+        onSubmit={form.handleSubmit(handleProceedToReview)}
+        className='space-y-8'
+      >
         {/* Step 1: Season Selection */}
         <Card>
           <CardHeader>
@@ -235,7 +258,8 @@ export default function SeasonRegistrationForm({ onSuccess }: SeasonRegistration
               Step 1: Select Season and Age Groups
             </CardTitle>
             <CardDescription>
-              Choose the federation, season, and age groups you want to register players for
+              Choose the federation, season, and age groups you want to register
+              players for
             </CardDescription>
           </CardHeader>
           <CardContent>

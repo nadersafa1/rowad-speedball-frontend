@@ -276,10 +276,9 @@ export default function ChampionshipEditionsTableRefactored({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Championship Edition</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the{' '}
-              <span className='font-semibold'>{deletingEdition?.year}</span>{' '}
-              edition? This action cannot be undone and will also delete all
-              associated events.
+              Are you sure you want to delete this championship edition? This
+              action cannot be undone and will also delete all associated
+              events.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

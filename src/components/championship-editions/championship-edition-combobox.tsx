@@ -29,7 +29,10 @@ const ChampionshipEditionCombobox = ({
       page: number,
       limit: number,
       signal?: AbortSignal
-    ): Promise<{ items: ChampionshipEditionWithRelations[]; hasMore: boolean }> => {
+    ): Promise<{
+      items: ChampionshipEditionWithRelations[]
+      hasMore: boolean
+    }> => {
       try {
         const response = (await apiClient.getChampionshipEditions({
           q: query,
@@ -61,9 +64,7 @@ const ChampionshipEditionCombobox = ({
           editionId
         )) as ChampionshipEditionWithRelations
       } catch (error: any) {
-        throw new Error(
-          error.message || 'Failed to fetch championship edition'
-        )
+        throw new Error(error.message || 'Failed to fetch championship edition')
       }
     },
     []
@@ -81,7 +82,7 @@ const ChampionshipEditionCombobox = ({
   const formatLabel = React.useCallback(
     (edition: ChampionshipEditionWithRelations) => {
       const name = edition.championshipName || 'Unknown Championship'
-      return `${name} - ${edition.year}`
+      return name
     },
     []
   )
@@ -110,4 +111,3 @@ const ChampionshipEditionCombobox = ({
 }
 
 export default ChampionshipEditionCombobox
-

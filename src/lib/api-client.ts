@@ -346,8 +346,7 @@ export class ApiClient {
     q?: string
     championshipId?: string
     status?: 'draft' | 'published' | 'archived'
-    year?: number
-    sortBy?: 'year' | 'status' | 'createdAt' | 'updatedAt'
+    sortBy?: 'status' | 'createdAt' | 'updatedAt'
     sortOrder?: 'asc' | 'desc'
     page?: number
     limit?: number
@@ -357,7 +356,6 @@ export class ApiClient {
     if (params?.championshipId)
       searchParams.set('championshipId', params.championshipId)
     if (params?.status) searchParams.set('status', params.status)
-    if (params?.year) searchParams.set('year', params.year.toString())
     if (params?.sortBy) searchParams.set('sortBy', params.sortBy)
     if (params?.sortOrder) searchParams.set('sortOrder', params.sortOrder)
     if (params?.page) searchParams.set('page', params.page.toString())

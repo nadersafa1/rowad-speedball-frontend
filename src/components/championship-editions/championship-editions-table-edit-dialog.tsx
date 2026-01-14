@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { LoadingButton } from '@/components/forms/loading-button'
 import { Button } from '@/components/ui/button'
@@ -39,9 +38,8 @@ import { apiClient } from '@/lib/api-client'
 
 const editSchema = z
   .object({
-    year: z.number().int().min(2000).max(2100),
     status: z.enum(['draft', 'published', 'archived']),
-    seasonId: z.string().uuid().optional().nullable(),
+    seasonId: z.uuid('Season is required'),
     registrationStartDate: z.date().optional(),
     registrationEndDate: z.date().optional(),
   })
@@ -81,9 +79,8 @@ export function ChampionshipEditionsTableEditDialog({
   const form = useForm<EditFormData>({
     resolver: zodResolver(editSchema),
     defaultValues: {
-      year: edition?.year || new Date().getFullYear(),
       status: edition?.status || 'draft',
-      seasonId: edition?.seasonId || null,
+      seasonId: edition?.seasonId || '',
       registrationStartDate: edition?.registrationStartDate
         ? new Date(edition.registrationStartDate)
         : undefined,
@@ -96,9 +93,8 @@ export function ChampionshipEditionsTableEditDialog({
   useEffect(() => {
     if (edition) {
       form.reset({
-        year: edition.year,
         status: edition.status,
-        seasonId: edition.seasonId || null,
+        seasonId: edition.seasonId || '',
         registrationStartDate: edition.registrationStartDate
           ? new Date(edition.registrationStartDate)
           : undefined,
@@ -114,9 +110,8 @@ export function ChampionshipEditionsTableEditDialog({
 
     try {
       const payload = {
-        year: data.year,
         status: data.status,
-        seasonId: data.seasonId || null,
+        seasonId: data.seasonId,
         registrationStartDate: data.registrationStartDate
           ? formatDateForAPI(data.registrationStartDate)
           : null,
@@ -144,24 +139,6 @@ export function ChampionshipEditionsTableEditDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='year'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Year</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name='status'
@@ -194,11 +171,11 @@ export function ChampionshipEditionsTableEditDialog({
                 name='seasonId'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Season (Optional)</FormLabel>
+                    <FormLabel>Season</FormLabel>
                     <FormControl>
                       <BaseCombobox
                         value={field.value || undefined}
-                        onChange={(value) => field.onChange(value || null)}
+                        onChange={(value) => field.onChange(value || '')}
                         fetchItems={async (query, page, limit) => {
                           const response = await apiClient.getSeasons({
                             federationId: edition.federationId!,
@@ -217,7 +194,7 @@ export function ChampionshipEditionsTableEditDialog({
                         searchPlaceholder='Search seasons...'
                         emptyMessage='No seasons found'
                         disabled={isLoading}
-                        allowClear={true}
+                        allowClear={false}
                       />
                     </FormControl>
                     <FormDescription>

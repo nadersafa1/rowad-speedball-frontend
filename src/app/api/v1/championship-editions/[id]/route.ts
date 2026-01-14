@@ -1,19 +1,19 @@
-import { NextRequest } from 'next/server'
-import { and, eq } from 'drizzle-orm'
-import z from 'zod'
-import { db } from '@/lib/db'
 import * as schema from '@/db/schema'
+import { handleApiError } from '@/lib/api-error-handler'
+import {
+  checkChampionshipEditionDeleteAuthorization,
+  checkChampionshipEditionReadAuthorization,
+  checkChampionshipEditionUpdateAuthorization,
+} from '@/lib/authorization'
+import { db } from '@/lib/db'
+import { getOrganizationContext } from '@/lib/organization-helpers'
 import {
   championshipEditionsParamsSchema,
   championshipEditionsUpdateSchema,
 } from '@/types/api/championship-editions.schemas'
-import { getOrganizationContext } from '@/lib/organization-helpers'
-import {
-  checkChampionshipEditionReadAuthorization,
-  checkChampionshipEditionUpdateAuthorization,
-  checkChampionshipEditionDeleteAuthorization,
-} from '@/lib/authorization'
-import { handleApiError } from '@/lib/api-error-handler'
+import { and, eq, ne } from 'drizzle-orm'
+import { NextRequest } from 'next/server'
+import z from 'zod'
 
 export async function GET(
   request: NextRequest,
@@ -47,10 +47,7 @@ export async function GET(
       .from(schema.championshipEditions)
       .leftJoin(
         schema.championships,
-        eq(
-          schema.championshipEditions.championshipId,
-          schema.championships.id
-        )
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
       )
       .leftJoin(
         schema.federations,
@@ -72,7 +69,10 @@ export async function GET(
     if (!isSystemAdmin && userFederationId) {
       if (editionData.federationId !== userFederationId) {
         return Response.json(
-          { message: 'You do not have permission to view this championship edition' },
+          {
+            message:
+              'You do not have permission to view this championship edition',
+          },
           { status: 403 }
         )
       }
@@ -81,7 +81,8 @@ export async function GET(
     const response = {
       ...editionData.edition,
       championshipName: editionData.championshipName ?? null,
-      championshipCompetitionScope: editionData.championshipCompetitionScope ?? null,
+      championshipCompetitionScope:
+        editionData.championshipCompetitionScope ?? null,
       federationId: editionData.federationId ?? null,
       federationName: editionData.federationName ?? null,
     }
@@ -105,7 +106,8 @@ export async function PATCH(
   const resolvedParams = await params
 
   try {
-    const paramsResult = championshipEditionsParamsSchema.safeParse(resolvedParams)
+    const paramsResult =
+      championshipEditionsParamsSchema.safeParse(resolvedParams)
     if (!paramsResult.success) {
       return Response.json(z.treeifyError(paramsResult.error), { status: 400 })
     }
@@ -129,10 +131,7 @@ export async function PATCH(
       .from(schema.championshipEditions)
       .leftJoin(
         schema.championships,
-        eq(
-          schema.championshipEditions.championshipId,
-          schema.championships.id
-        )
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
       )
       .where(eq(schema.championshipEditions.id, id))
       .limit(1)
@@ -151,36 +150,45 @@ export async function PATCH(
     )
     if (authError) return authError
 
-    // If updating year, check for duplicates
-    if (updateData.year !== undefined) {
+    // If updating seasonId, check for duplicates
+    if (updateData.seasonId !== undefined) {
       const duplicate = await db.query.championshipEditions.findFirst({
         where: and(
           eq(
             schema.championshipEditions.championshipId,
             existing[0].edition.championshipId
           ),
-          eq(schema.championshipEditions.year, updateData.year),
+          eq(schema.championshipEditions.seasonId, updateData.seasonId),
           // Exclude current edition
-          eq(schema.championshipEditions.id, id)
+          ne(schema.championshipEditions.id, id)
         ),
       })
 
-      if (duplicate && duplicate.id !== id) {
+      if (duplicate) {
         return Response.json(
-          { message: `Edition for year ${updateData.year} already exists` },
+          {
+            message:
+              'An edition for this championship and season already exists',
+          },
           { status: 409 }
         )
       }
     }
 
-    const { seasonId, registrationStartDate, registrationEndDate, ...restUpdateData } = updateData
+    const {
+      seasonId,
+      registrationStartDate,
+      registrationEndDate,
+      ...restUpdateData
+    } = updateData
 
     const updateFields: any = {
       ...restUpdateData,
     }
 
+    // If seasonId is provided, use it; otherwise keep existing value
     if (seasonId !== undefined) {
-      updateFields.seasonId = seasonId || null
+      updateFields.seasonId = seasonId
     }
     if (registrationStartDate !== undefined) {
       updateFields.registrationStartDate = registrationStartDate || null
@@ -214,7 +222,8 @@ export async function DELETE(
   const resolvedParams = await params
 
   try {
-    const parseResult = championshipEditionsParamsSchema.safeParse(resolvedParams)
+    const parseResult =
+      championshipEditionsParamsSchema.safeParse(resolvedParams)
     if (!parseResult.success) {
       return Response.json(z.treeifyError(parseResult.error), { status: 400 })
     }
@@ -230,10 +239,7 @@ export async function DELETE(
       .from(schema.championshipEditions)
       .leftJoin(
         schema.championships,
-        eq(
-          schema.championshipEditions.championshipId,
-          schema.championships.id
-        )
+        eq(schema.championshipEditions.championshipId, schema.championships.id)
       )
       .where(eq(schema.championshipEditions.id, id))
       .limit(1)

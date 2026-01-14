@@ -1,10 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 
-export const YearCell = ({ year }: { year: number }) => (
-  <span className='text-sm font-medium'>{year}</span>
-)
-
 export const StatusCell = ({
   status,
 }: {

@@ -5,11 +5,16 @@ import { z } from 'zod'
 // Season Schemas
 // ============================================================================
 
-export const seasonStatusEnum = z.enum(['draft', 'active', 'closed', 'archived'])
+export const seasonStatusEnum = z.enum([
+  'draft',
+  'active',
+  'closed',
+  'archived',
+])
 
 export const createSeasonSchema = z
   .object({
-    federationId: z.string().uuid('Invalid federation ID'),
+    federationId: z.uuid('Invalid federation ID'),
     name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
     startYear: z
       .number()
@@ -66,15 +71,20 @@ export const createSeasonSchema = z
     message: 'End year must be exactly 1 year after start year',
     path: ['endYear'],
   })
-  .refine((data) => new Date(data.seasonEndDate) > new Date(data.seasonStartDate), {
-    message: 'Season end date must be after start date',
-    path: ['seasonEndDate'],
-  })
+  .refine(
+    (data) => new Date(data.seasonEndDate) > new Date(data.seasonStartDate),
+    {
+      message: 'Season end date must be after start date',
+      path: ['seasonEndDate'],
+    }
+  )
 
-export const updateSeasonSchema = createSeasonSchema.partial().omit({ federationId: true })
+export const updateSeasonSchema = createSeasonSchema
+  .partial()
+  .omit({ federationId: true })
 
 export const seasonQueryParamsSchema = z.object({
-  federationId: z.string().uuid().optional(),
+  federationId: z.uuid().optional(),
   status: seasonStatusEnum.optional(),
   year: z.coerce.number().int().optional(), // Filter by year (matches startYear or endYear)
   sortBy: z
@@ -91,12 +101,15 @@ export const seasonQueryParamsSchema = z.object({
 
 export const createSeasonAgeGroupSchema = z
   .object({
-    seasonId: z.string().uuid('Invalid season ID'),
+    seasonId: z.uuid('Invalid season ID'),
     code: z
       .string()
       .min(1, 'Code is required')
       .max(20, 'Code too long')
-      .regex(/^[A-Z0-9-]+$/, 'Code must contain only uppercase letters, numbers, and hyphens'),
+      .regex(
+        /^[A-Z0-9-]+$/,
+        'Code must contain only uppercase letters, numbers, and hyphens'
+      ),
     name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
     minAge: z
       .number()
@@ -132,8 +145,10 @@ export const updateSeasonAgeGroupSchema = createSeasonAgeGroupSchema
   .omit({ seasonId: true })
 
 export const seasonAgeGroupQueryParamsSchema = z.object({
-  seasonId: z.string().uuid().optional(),
-  sortBy: z.enum(['displayOrder', 'code', 'name', 'createdAt']).default('displayOrder'),
+  seasonId: z.uuid().optional(),
+  sortBy: z
+    .enum(['displayOrder', 'code', 'name', 'createdAt'])
+    .default('displayOrder'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 })
 
@@ -141,17 +156,24 @@ export const seasonAgeGroupQueryParamsSchema = z.object({
 // Federation Member Schemas
 // ============================================================================
 
-export const federationMemberStatusEnum = z.enum(['active', 'suspended', 'revoked'])
+export const federationMemberStatusEnum = z.enum([
+  'active',
+  'suspended',
+  'revoked',
+])
 
 export const createFederationMemberSchema = z.object({
-  federationId: z.string().uuid('Invalid federation ID'),
-  playerId: z.string().uuid('Invalid player ID'),
+  federationId: z.uuid('Invalid federation ID'),
+  playerId: z.uuid('Invalid player ID'),
   federationIdNumber: z
     .string()
     .min(1, 'Federation ID number is required')
     .max(50, 'Federation ID number too long')
-    .regex(/^[A-Z0-9-]+$/, 'ID must contain only uppercase letters, numbers, and hyphens'),
-  firstRegistrationSeasonId: z.string().uuid('Invalid season ID'),
+    .regex(
+      /^[A-Z0-9-]+$/,
+      'ID must contain only uppercase letters, numbers, and hyphens'
+    ),
+  firstRegistrationSeasonId: z.uuid('Invalid season ID'),
   status: federationMemberStatusEnum.default('active'),
 })
 
@@ -160,18 +182,26 @@ export const updateFederationMemberSchema = z.object({
     .string()
     .min(1, 'Federation ID number is required')
     .max(50, 'Federation ID number too long')
-    .regex(/^[A-Z0-9-]+$/, 'ID must contain only uppercase letters, numbers, and hyphens')
+    .regex(
+      /^[A-Z0-9-]+$/,
+      'ID must contain only uppercase letters, numbers, and hyphens'
+    )
     .optional(),
   status: federationMemberStatusEnum.optional(),
 })
 
 export const federationMemberQueryParamsSchema = z.object({
-  federationId: z.string().uuid().optional(),
-  playerId: z.string().uuid().optional(),
+  federationId: z.uuid().optional(),
+  playerId: z.uuid().optional(),
   status: federationMemberStatusEnum.optional(),
   search: z.string().optional(), // Search by federation ID number or player name
   sortBy: z
-    .enum(['firstRegistrationDate', 'federationIdNumber', 'createdAt', 'updatedAt'])
+    .enum([
+      'firstRegistrationDate',
+      'federationIdNumber',
+      'createdAt',
+      'updatedAt',
+    ])
     .default('firstRegistrationDate'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().positive().default(1),
@@ -182,15 +212,24 @@ export const federationMemberQueryParamsSchema = z.object({
 // Season Player Registration Schemas
 // ============================================================================
 
-export const registrationStatusEnum = z.enum(['pending', 'approved', 'rejected', 'cancelled'])
+export const registrationStatusEnum = z.enum([
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled',
+])
 export const paymentStatusEnum = z.enum(['unpaid', 'paid', 'refunded'])
-export const ageWarningTypeEnum = z.enum(['too_young', 'too_old', 'outside_range'])
+export const ageWarningTypeEnum = z.enum([
+  'too_young',
+  'too_old',
+  'outside_range',
+])
 
 export const createSeasonPlayerRegistrationSchema = z.object({
-  seasonId: z.string().uuid('Invalid season ID'),
-  playerId: z.string().uuid('Invalid player ID'),
-  seasonAgeGroupId: z.string().uuid('Invalid age group ID'),
-  organizationId: z.string().uuid('Invalid organization ID'),
+  seasonId: z.uuid('Invalid season ID'),
+  playerId: z.uuid('Invalid player ID'),
+  seasonAgeGroupId: z.uuid('Invalid age group ID'),
+  organizationId: z.uuid('Invalid organization ID'),
   playerAgeAtRegistration: z
     .number()
     .int('Player age must be an integer')
@@ -206,20 +245,24 @@ export const createSeasonPlayerRegistrationSchema = z.object({
 })
 
 export const bulkCreateSeasonPlayerRegistrationsSchema = z.object({
-  seasonId: z.string().uuid('Invalid season ID'),
+  seasonId: z.uuid('Invalid season ID'),
   playerIds: z
-    .array(z.string().uuid('Invalid player ID'))
+    .array(z.uuid('Invalid player ID'))
     .min(1, 'At least one player is required')
     .max(100, 'Cannot register more than 100 players at once'),
   seasonAgeGroupIds: z
-    .array(z.string().uuid('Invalid age group ID'))
+    .array(z.uuid('Invalid age group ID'))
     .min(1, 'At least one age group is required'),
-  organizationId: z.string().uuid('Invalid organization ID'),
+  organizationId: z.uuid('Invalid organization ID'),
 })
 
 export const updateSeasonPlayerRegistrationStatusSchema = z.object({
   status: z.enum(['approved', 'rejected', 'cancelled']),
-  rejectionReason: z.string().max(500, 'Rejection reason too long').optional().nullable(),
+  rejectionReason: z
+    .string()
+    .max(500, 'Rejection reason too long')
+    .optional()
+    .nullable(),
   paymentStatus: paymentStatusEnum.optional(),
   paymentAmount: z
     .string()
@@ -229,14 +272,20 @@ export const updateSeasonPlayerRegistrationStatusSchema = z.object({
 })
 
 export const seasonPlayerRegistrationQueryParamsSchema = z.object({
-  seasonId: z.string().uuid().optional(),
-  playerId: z.string().uuid().optional(),
-  seasonAgeGroupId: z.string().uuid().optional(),
-  organizationId: z.string().uuid().optional(),
+  seasonId: z.uuid().optional(),
+  playerId: z.uuid().optional(),
+  seasonAgeGroupId: z.uuid().optional(),
+  organizationId: z.uuid().optional(),
   status: registrationStatusEnum.optional(),
   paymentStatus: paymentStatusEnum.optional(),
   sortBy: z
-    .enum(['registrationDate', 'approvedAt', 'playerName', 'createdAt', 'updatedAt'])
+    .enum([
+      'registrationDate',
+      'approvedAt',
+      'playerName',
+      'createdAt',
+      'updatedAt',
+    ])
     .default('registrationDate'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().positive().default(1),
@@ -251,13 +300,25 @@ export type CreateSeasonInput = z.infer<typeof createSeasonSchema>
 export type UpdateSeasonInput = z.infer<typeof updateSeasonSchema>
 export type SeasonQueryParams = z.infer<typeof seasonQueryParamsSchema>
 
-export type CreateSeasonAgeGroupInput = z.infer<typeof createSeasonAgeGroupSchema>
-export type UpdateSeasonAgeGroupInput = z.infer<typeof updateSeasonAgeGroupSchema>
-export type SeasonAgeGroupQueryParams = z.infer<typeof seasonAgeGroupQueryParamsSchema>
+export type CreateSeasonAgeGroupInput = z.infer<
+  typeof createSeasonAgeGroupSchema
+>
+export type UpdateSeasonAgeGroupInput = z.infer<
+  typeof updateSeasonAgeGroupSchema
+>
+export type SeasonAgeGroupQueryParams = z.infer<
+  typeof seasonAgeGroupQueryParamsSchema
+>
 
-export type CreateFederationMemberInput = z.infer<typeof createFederationMemberSchema>
-export type UpdateFederationMemberInput = z.infer<typeof updateFederationMemberSchema>
-export type FederationMemberQueryParams = z.infer<typeof federationMemberQueryParamsSchema>
+export type CreateFederationMemberInput = z.infer<
+  typeof createFederationMemberSchema
+>
+export type UpdateFederationMemberInput = z.infer<
+  typeof updateFederationMemberSchema
+>
+export type FederationMemberQueryParams = z.infer<
+  typeof federationMemberQueryParamsSchema
+>
 
 export type CreateSeasonPlayerRegistrationInput = z.infer<
   typeof createSeasonPlayerRegistrationSchema

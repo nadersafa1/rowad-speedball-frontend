@@ -1,7 +1,6 @@
 import { ColumnDef } from '@tanstack/react-table'
 import { ChampionshipEditionWithRelations } from './championship-editions-table-types'
 import {
-  YearCell,
   StatusCell,
   RegistrationDatesCell,
 } from './championship-editions-table-cell-renderers'
@@ -40,21 +39,6 @@ export const createBaseColumns = (
   sortOrder?: 'asc' | 'desc',
   onSort?: (columnId: string) => void
 ): ColumnDef<ChampionshipEditionWithRelations>[] => [
-  {
-    accessorKey: 'year',
-    id: 'year',
-    enableHiding: false,
-    header: () => (
-      <SortableHeader
-        label='Year'
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        field='year'
-        onSort={onSort}
-      />
-    ),
-    cell: ({ row }) => <YearCell year={row.getValue('year')} />,
-  },
   {
     accessorKey: 'status',
     id: 'status',

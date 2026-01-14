@@ -1305,31 +1305,22 @@ export const championshipEditions = pgTable(
     championshipId: uuid('championship_id')
       .notNull()
       .references(() => championships.id, { onDelete: 'cascade' }),
-    year: integer('year').notNull(), // Edition year (e.g., 2024)
     status: text('status', { enum: ['draft', 'published', 'archived'] })
       .notNull()
       .default('draft'), // Draft: planning, Published: active, Archived: completed
     registrationStartDate: date('registration_start_date'), // Optional: when registration opens
     registrationEndDate: date('registration_end_date'), // Optional: when registration closes
 
-    // Link to season (nullable for backward compatibility with existing editions)
-    seasonId: uuid('season_id').references(() => seasons.id, {
-      onDelete: 'restrict',
-    }),
+    seasonId: uuid('season_id')
+      .notNull()
+      .references(() => seasons.id, {
+        onDelete: 'restrict',
+      }),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
-    // Ensure year is within reasonable bounds
-    check(
-      'chk_year_valid',
-      sql`${table.year} >= 2000 AND ${table.year} <= 2100`
-    ),
-    index('idx_editions_championship_year').on(
-      table.championshipId,
-      table.year
-    ),
     index('idx_editions_status').on(table.status),
     index('idx_editions_season_id').on(table.seasonId),
   ]

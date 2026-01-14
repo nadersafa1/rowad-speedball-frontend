@@ -1,24 +1,8 @@
 'use client'
 
-import * as React from 'react'
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useChampionshipsStore } from '@/store/championships-store'
-import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
-import { useEventsStore } from '@/store/events-store'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Plus, ArrowLeft, Edit, Trash2, Trophy } from 'lucide-react'
-import LoadingState from '@/components/shared/loading-state'
-import { Dialog } from '@/components/ui/dialog'
-import { BaseDataTable, PaginationConfig } from '@/lib/table-core'
-import { championshipEventsTableConfig } from '@/config/tables/championship-events.config'
-import { createChampionshipEventsColumns } from '@/config/tables/columns/championship-events-columns'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
-import { toast } from 'sonner'
-import { format } from 'date-fns'
 import EventForm from '@/components/events/event-form'
+import LoadingState from '@/components/shared/loading-state'
+import { SinglePageHeader } from '@/components/ui'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +13,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { SinglePageHeader } from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog } from '@/components/ui/dialog'
+import { championshipEventsTableConfig } from '@/config/tables/championship-events.config'
+import { createChampionshipEventsColumns } from '@/config/tables/columns/championship-events-columns'
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { BaseDataTable } from '@/lib/table-core'
+import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
+import { useChampionshipsStore } from '@/store/championships-store'
+import { useEventsStore } from '@/store/events-store'
+import { Plus } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import * as React from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 const ChampionshipEditionEventsPage = () => {
   const params = useParams()
@@ -168,7 +166,7 @@ const ChampionshipEditionEventsPage = () => {
       <div className='mb-6'>
         <div>
           <h1 className='text-2xl sm:text-3xl font-bold'>
-            {selectedChampionship.name} - {selectedEdition.year}
+            {selectedChampionship.name}
           </h1>
           <p className='text-muted-foreground mt-1'>
             {selectedChampionship.description || 'Manage championship details'}
@@ -217,7 +215,7 @@ const ChampionshipEditionEventsPage = () => {
         <EventForm
           championshipEditionId={editionId}
           title='Create Championship Event'
-          description={`Add a new event for ${selectedChampionship.name} - ${selectedEdition.year}`}
+          description={`Add a new event for ${selectedChampionship.name}`}
           onSuccess={handleCreateSuccess}
           onCancel={() => setCreateDialogOpen(false)}
         />

@@ -8,8 +8,7 @@ interface ChampionshipEditionsFilters {
   q?: string
   championshipId?: string
   status?: 'draft' | 'published' | 'archived'
-  year?: number
-  sortBy?: 'year' | 'status' | 'createdAt' | 'updatedAt'
+  sortBy?: 'status' | 'createdAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
   page?: number
   limit?: number
@@ -58,7 +57,6 @@ export const useChampionshipEditionsStore = create<ChampionshipEditionsState>(
           q: filters.q,
           championshipId: filters.championshipId,
           status: filters.status,
-          year: filters.year,
           sortBy: filters.sortBy,
           sortOrder: filters.sortOrder,
           page: filters.page,

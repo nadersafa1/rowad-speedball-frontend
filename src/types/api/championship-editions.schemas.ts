@@ -1,14 +1,10 @@
-import { z } from 'zod'
-import {
-  nameSchema,
-  uuidSchema,
-  descriptionSchema,
-} from '@/lib/forms/patterns'
 import {
   standardPaginationSchema,
   standardSortSchema,
   standardTextSearchSchema,
 } from '@/lib/api-helpers/query-builders'
+import { uuidSchema } from '@/lib/forms/patterns'
+import { z } from 'zod'
 
 // Query parameters for GET /championship-editions
 export const championshipEditionsQuerySchema = z
@@ -18,10 +14,7 @@ export const championshipEditionsQuerySchema = z
     ...standardSortSchema.shape,
     championshipId: uuidSchema.optional(),
     status: z.enum(['draft', 'published', 'archived']).optional(),
-    year: z.coerce.number().int().min(2000).max(2100).optional(),
-    sortBy: z
-      .enum(['year', 'status', 'createdAt', 'updatedAt'])
-      .optional(),
+    sortBy: z.enum(['status', 'createdAt', 'updatedAt']).optional(),
   })
   .strict()
 
@@ -34,13 +27,8 @@ export const championshipEditionsParamsSchema = z.object({
 export const championshipEditionsCreateSchema = z
   .object({
     championshipId: uuidSchema,
-    year: z.coerce
-      .number()
-      .int('Year must be an integer')
-      .min(2000, 'Year must be 2000 or later')
-      .max(2100, 'Year must be 2100 or earlier'),
     status: z.enum(['draft', 'published', 'archived']).default('draft'),
-    seasonId: uuidSchema.optional().nullable(),
+    seasonId: uuidSchema,
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -73,14 +61,8 @@ export const championshipEditionsCreateSchema = z
 // Update championship edition schema for PATCH /championship-editions/:id
 export const championshipEditionsUpdateSchema = z
   .object({
-    year: z.coerce
-      .number()
-      .int('Year must be an integer')
-      .min(2000, 'Year must be 2000 or later')
-      .max(2100, 'Year must be 2100 or earlier')
-      .optional(),
     status: z.enum(['draft', 'published', 'archived']).optional(),
-    seasonId: uuidSchema.optional().nullable(),
+    seasonId: uuidSchema.optional(),
     registrationStartDate: z
       .string()
       .refine((date) => !isNaN(Date.parse(date)), 'Invalid date format')
@@ -92,6 +74,18 @@ export const championshipEditionsUpdateSchema = z
       .optional()
       .nullable(),
   })
+  .refine(
+    (data) => {
+      // If seasonId is not provided, ensure at least one other field is provided
+      if (data.seasonId === undefined && Object.keys(data).length === 0) {
+        return false
+      }
+      return true
+    },
+    {
+      message: 'At least one field must be provided for update',
+    }
+  )
   .refine(
     (data) => Object.keys(data).length > 0,
     'At least one field must be provided for update'
