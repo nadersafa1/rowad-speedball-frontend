@@ -203,18 +203,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const actions = []
 
     if (isAdmin || isOwner) {
-      actions.push(
-        {
-          name: 'Create Event',
-          url: '/events/create',
-          icon: Table2,
-        },
-        {
-          name: 'Season Registration',
-          url: '/players/season-registration',
-          icon: Users,
-        }
-      )
+      actions.push({
+        name: 'Season Registration',
+        url: '/players/season-registration',
+        icon: Users,
+      })
     }
 
     return actions
