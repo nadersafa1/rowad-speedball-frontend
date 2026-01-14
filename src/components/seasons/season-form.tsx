@@ -37,7 +37,7 @@ import { dateToISOString, isoStringToDate } from '@/lib/forms/patterns'
 import type { Season } from '@/db/schema'
 import { useFederation } from '@/hooks/authorization/use-federation'
 import { ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // Form validation schema
 const seasonFormSchema = z
@@ -90,16 +90,32 @@ const SeasonForm = ({ season, onSuccess, onCancel }: SeasonFormProps) => {
   const [firstPeriodOpen, setFirstPeriodOpen] = useState(!!season?.firstRegistrationStartDate)
   const [secondPeriodOpen, setSecondPeriodOpen] = useState(!!season?.secondRegistrationStartDate)
 
+  // Helper function to get default season dates based on years
+  const getDefaultSeasonDates = (startYear: number, endYear: number) => {
+    // Season pattern: July 1 to June 30
+    // July = month 6 (0-indexed), June = month 5
+    return {
+      seasonStartDate: new Date(startYear, 6, 1), // July 1
+      seasonEndDate: new Date(endYear, 5, 30), // June 30
+    }
+  }
+
+  const initialStartYear = season?.startYear || new Date().getFullYear()
+  const initialEndYear = season?.endYear || new Date().getFullYear() + 1
+  const defaultDates = getDefaultSeasonDates(initialStartYear, initialEndYear)
+
   const form = useForm({
     resolver: zodResolver(seasonFormSchema) as any,
     defaultValues: {
       name: season?.name || '',
-      startYear: season?.startYear || new Date().getFullYear(),
-      endYear: season?.endYear || new Date().getFullYear() + 1,
+      startYear: initialStartYear,
+      endYear: initialEndYear,
       seasonStartDate: season?.seasonStartDate
         ? isoStringToDate(season.seasonStartDate)!
-        : undefined,
-      seasonEndDate: season?.seasonEndDate ? isoStringToDate(season.seasonEndDate)! : undefined,
+        : defaultDates.seasonStartDate,
+      seasonEndDate: season?.seasonEndDate
+        ? isoStringToDate(season.seasonEndDate)!
+        : defaultDates.seasonEndDate,
       firstRegistrationStartDate: season?.firstRegistrationStartDate
         ? isoStringToDate(season.firstRegistrationStartDate)
         : null,
@@ -118,15 +134,53 @@ const SeasonForm = ({ season, onSuccess, onCancel }: SeasonFormProps) => {
   })
 
   const { isSubmitting } = form.formState
-  const watchedStartYear = form.watch('startYear')
 
-  // Auto-update end year when start year changes
+  // Reset form when season prop changes
+  useEffect(() => {
+    if (season) {
+      form.reset({
+        name: season.name,
+        startYear: season.startYear,
+        endYear: season.endYear,
+        seasonStartDate: season.seasonStartDate
+          ? isoStringToDate(season.seasonStartDate)!
+          : getDefaultSeasonDates(season.startYear, season.endYear).seasonStartDate,
+        seasonEndDate: season.seasonEndDate
+          ? isoStringToDate(season.seasonEndDate)!
+          : getDefaultSeasonDates(season.startYear, season.endYear).seasonEndDate,
+        firstRegistrationStartDate: season.firstRegistrationStartDate
+          ? isoStringToDate(season.firstRegistrationStartDate)
+          : null,
+        firstRegistrationEndDate: season.firstRegistrationEndDate
+          ? isoStringToDate(season.firstRegistrationEndDate)
+          : null,
+        secondRegistrationStartDate: season.secondRegistrationStartDate
+          ? isoStringToDate(season.secondRegistrationStartDate)
+          : null,
+        secondRegistrationEndDate: season.secondRegistrationEndDate
+          ? isoStringToDate(season.secondRegistrationEndDate)
+          : null,
+        maxAgeGroupsPerPlayer: season.maxAgeGroupsPerPlayer || 1,
+        status: season.status || 'draft',
+      })
+    }
+  }, [season, form])
+
+  // Auto-update end year and season dates when start year changes
   const handleStartYearChange = (value: string) => {
     const startYear = Number(value)
-    form.setValue('startYear', startYear)
-    form.setValue('endYear', startYear + 1)
-    // Auto-generate name
-    form.setValue('name', `${startYear}-${startYear + 1} Season`)
+    const endYear = startYear + 1
+    form.setValue('endYear', endYear)
+    
+    // Only auto-generate name when creating (not editing)
+    if (!isEditing) {
+      form.setValue('name', `${startYear}-${endYear} Season`)
+    }
+    
+    // Auto-update season dates based on new years
+    const dates = getDefaultSeasonDates(startYear, endYear)
+    form.setValue('seasonStartDate', dates.seasonStartDate)
+    form.setValue('seasonEndDate', dates.seasonEndDate)
   }
 
   const onSubmit = async (data: SeasonFormData) => {
@@ -195,7 +249,11 @@ const SeasonForm = ({ season, onSuccess, onCancel }: SeasonFormProps) => {
                       max={2100}
                       placeholder='2024'
                       disabled={isSubmitting}
-                      onChange={(e) => handleStartYearChange(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        field.onChange(value)
+                        handleStartYearChange(value)
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

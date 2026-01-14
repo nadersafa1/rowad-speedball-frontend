@@ -189,6 +189,9 @@ export function ChampionshipEditionsTableEditDialog({
                             hasMore: response.page < response.totalPages,
                           }
                         }}
+                        fetchItem={async (id: string) => {
+                          return await apiClient.getSeason(id)
+                        }}
                         formatLabel={(season: any) => season.name}
                         placeholder='Select season...'
                         searchPlaceholder='Search seasons...'

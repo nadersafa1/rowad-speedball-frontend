@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { seasons, seasonAgeGroups, seasonPlayerRegistrations } from '@/db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import {
   updateSeasonSchema,
   type UpdateSeasonInput,
@@ -74,6 +74,34 @@ export async function PATCH(
 
     const body = (await request.json()) as UpdateSeasonInput
     const validatedData = updateSeasonSchema.parse(body)
+
+    // If updating startYear or endYear, check for duplicates
+    const newStartYear = validatedData.startYear ?? existingSeason.startYear
+    const newEndYear = validatedData.endYear ?? existingSeason.endYear
+
+    if (
+      validatedData.startYear !== undefined ||
+      validatedData.endYear !== undefined
+    ) {
+      // Check if another season with these years exists for the same federation
+      const duplicate = await db.query.seasons.findFirst({
+        where: and(
+          eq(seasons.federationId, existingSeason.federationId),
+          eq(seasons.startYear, newStartYear),
+          eq(seasons.endYear, newEndYear),
+          ne(seasons.id, id)
+        ),
+      })
+
+      if (duplicate) {
+        return NextResponse.json(
+          {
+            error: `A season for ${newStartYear}-${newEndYear} already exists for this federation`,
+          },
+          { status: 409 }
+        )
+      }
+    }
 
     // Update season
     const [updatedSeason] = await db
