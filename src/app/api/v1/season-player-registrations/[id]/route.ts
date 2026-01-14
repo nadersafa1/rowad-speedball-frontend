@@ -11,6 +11,10 @@ import {
   type UpdateSeasonPlayerRegistrationStatusInput,
 } from '@/types/api/seasons.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
+import {
+  checkSeasonRegistrationUpdateAuthorization,
+  checkSeasonRegistrationDeleteAuthorization,
+} from '@/lib/authorization/helpers/season-registration-authorization'
 
 // GET /api/v1/season-player-registrations/[id] - Get registration by ID
 export async function GET(
@@ -73,10 +77,9 @@ export async function PATCH(
     const { id } = await params
     const context = await getOrganizationContext()
 
-    // Only federation admins can approve/reject registrations
-    if (!context.isFederationAdmin && !context.isSystemAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    // Check authorization
+    const authError = await checkSeasonRegistrationUpdateAuthorization(context)
+    if (authError) return authError
 
     // Fetch existing registration
     const existingRegistration =
@@ -174,17 +177,6 @@ export async function DELETE(
     const { id } = await params
     const context = await getOrganizationContext()
 
-    // Organization owners/admins can delete their own registrations
-    // Federation admins can delete any registration
-    if (
-      !context.isOwner &&
-      !context.isAdmin &&
-      !context.isFederationAdmin &&
-      !context.isSystemAdmin
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     // Fetch existing registration
     const existingRegistration =
       await db.query.seasonPlayerRegistrations.findFirst({
@@ -198,19 +190,9 @@ export async function DELETE(
       )
     }
 
-    // Check organization access for org admins
-    if (
-      (context.isOwner || context.isAdmin) &&
-      !context.isFederationAdmin &&
-      !context.isSystemAdmin
-    ) {
-      if (
-        context.organization?.id &&
-        existingRegistration.organizationId !== context.organization.id
-      ) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-    }
+    // Check authorization
+    const authError = await checkSeasonRegistrationDeleteAuthorization(context, existingRegistration)
+    if (authError) return authError
 
     // Check federation access for federation admins
     if (context.isFederationAdmin && context.federationId) {

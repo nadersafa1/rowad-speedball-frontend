@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { handleApiError } from '@/lib/api-error-handler'
+import { checkSeasonRegistrationApprovalAuthorization } from '@/lib/authorization/helpers/season-registration-authorization'
 
 // Reject request schema
 const rejectRequestSchema = z.object({
@@ -32,10 +33,9 @@ export async function PUT(
     const { id } = await params
     const context = await getOrganizationContext()
 
-    // Authorization check
-    if (!context.isFederationAdmin && !context.isSystemAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    // Check authorization
+    const authError = await checkSeasonRegistrationApprovalAuthorization(context)
+    if (authError) return authError
 
     // Fetch registration with season data
     const registrationResult = await db

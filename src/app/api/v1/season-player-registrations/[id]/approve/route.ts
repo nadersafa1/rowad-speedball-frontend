@@ -12,6 +12,7 @@ import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { handleApiError } from '@/lib/api-error-handler'
+import { checkSeasonRegistrationApprovalAuthorization } from '@/lib/authorization/helpers/season-registration-authorization'
 
 // Approve request schema
 const approveRequestSchema = z.object({
@@ -36,10 +37,9 @@ export async function PUT(
     const { id } = await params
     const context = await getOrganizationContext()
 
-    // Authorization check
-    if (!context.isFederationAdmin && !context.isSystemAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    // Check authorization
+    const authError = await checkSeasonRegistrationApprovalAuthorization(context)
+    if (authError) return authError
 
     // Fetch registration with season data
     const registrationResult = await db
@@ -127,9 +127,16 @@ export async function PUT(
       })
 
       if (duplicateFedId) {
+        // Fetch the player name for better error message
+        const existingPlayer = await db.query.players.findFirst({
+          where: eq(players.id, duplicateFedId.playerId),
+        })
+
         return NextResponse.json(
           {
-            error: `Federation ID '${validFederationIdNumber}' is already assigned to another player`,
+            error: `Federation ID '${validFederationIdNumber}' is already assigned to ${existingPlayer?.name || 'another player'}`,
+            existingPlayerId: duplicateFedId.playerId,
+            existingPlayerName: existingPlayer?.name,
           },
           { status: 400 }
         )

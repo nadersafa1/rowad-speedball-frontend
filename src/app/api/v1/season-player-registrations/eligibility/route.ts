@@ -28,24 +28,31 @@ function calculateAge(dateOfBirth: Date): number {
   return age
 }
 
-// Determine age warning type
+// Determine age warning type with blocking status
 function getAgeWarningType(
   playerAge: number,
   minAge: number | null,
   maxAge: number | null
-): 'too_young' | 'too_old' | 'outside_range' | null {
-  if (minAge === null && maxAge === null) return null
-
-  if (minAge !== null && maxAge !== null) {
-    if (playerAge < minAge) return 'too_young'
-    if (playerAge > maxAge) return 'too_old'
-    return null
+): {
+  warningType: 'too_young' | 'too_old' | null
+  warningLevel: 'soft' | 'hard' | null
+  isBlocked: boolean
+} {
+  if (minAge === null && maxAge === null) {
+    return { warningType: null, warningLevel: null, isBlocked: false }
   }
 
-  if (minAge !== null && playerAge < minAge) return 'too_young'
-  if (maxAge !== null && playerAge > maxAge) return 'too_old'
+  // Hard block for too old
+  if (maxAge !== null && playerAge > maxAge) {
+    return { warningType: 'too_old', warningLevel: 'hard', isBlocked: true }
+  }
 
-  return null
+  // Soft warning for too young
+  if (minAge !== null && playerAge < minAge) {
+    return { warningType: 'too_young', warningLevel: 'soft', isBlocked: false }
+  }
+
+  return { warningType: null, warningLevel: null, isBlocked: false }
 }
 
 // POST /api/v1/season-player-registrations/eligibility - Check player eligibility
@@ -135,16 +142,20 @@ export async function POST(request: NextRequest) {
         string,
         {
           isEligible: boolean
-          ageWarningType: 'too_young' | 'too_old' | 'outside_range' | null
+          isBlocked: boolean
+          ageWarningType: 'too_young' | 'too_old' | null
+          warningLevel: 'soft' | 'hard' | null
         }
       > = {}
 
       for (const ageGroup of ageGroupList) {
-        const warningType = getAgeWarningType(playerAge, ageGroup.minAge, ageGroup.maxAge)
+        const warningResult = getAgeWarningType(playerAge, ageGroup.minAge, ageGroup.maxAge)
 
         ageGroupEligibility[ageGroup.id] = {
-          isEligible: true, // Age warnings don't block eligibility
-          ageWarningType: warningType,
+          isEligible: !warningResult.isBlocked, // False if blocked
+          isBlocked: warningResult.isBlocked,
+          ageWarningType: warningResult.warningType,
+          warningLevel: warningResult.warningLevel,
         }
       }
 

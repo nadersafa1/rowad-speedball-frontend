@@ -19,10 +19,7 @@ export function isSeasonInRegistrationPeriod(season: Season): boolean {
   const now = new Date()
 
   // Check first registration period
-  if (
-    season.firstRegistrationStartDate &&
-    season.firstRegistrationEndDate
-  ) {
+  if (season.firstRegistrationStartDate && season.firstRegistrationEndDate) {
     const firstStart = new Date(season.firstRegistrationStartDate)
     const firstEnd = new Date(season.firstRegistrationEndDate)
 
@@ -32,10 +29,7 @@ export function isSeasonInRegistrationPeriod(season: Season): boolean {
   }
 
   // Check second registration period
-  if (
-    season.secondRegistrationStartDate &&
-    season.secondRegistrationEndDate
-  ) {
+  if (season.secondRegistrationStartDate && season.secondRegistrationEndDate) {
     const secondStart = new Date(season.secondRegistrationStartDate)
     const secondEnd = new Date(season.secondRegistrationEndDate)
 
@@ -54,10 +48,7 @@ export function getCurrentRegistrationPeriod(season: Season): 1 | 2 | null {
   const now = new Date()
 
   // Check first registration period
-  if (
-    season.firstRegistrationStartDate &&
-    season.firstRegistrationEndDate
-  ) {
+  if (season.firstRegistrationStartDate && season.firstRegistrationEndDate) {
     const firstStart = new Date(season.firstRegistrationStartDate)
     const firstEnd = new Date(season.firstRegistrationEndDate)
 
@@ -67,10 +58,7 @@ export function getCurrentRegistrationPeriod(season: Season): 1 | 2 | null {
   }
 
   // Check second registration period
-  if (
-    season.secondRegistrationStartDate &&
-    season.secondRegistrationEndDate
-  ) {
+  if (season.secondRegistrationStartDate && season.secondRegistrationEndDate) {
     const secondStart = new Date(season.secondRegistrationStartDate)
     const secondEnd = new Date(season.secondRegistrationEndDate)
 
@@ -86,8 +74,10 @@ export function getCurrentRegistrationPeriod(season: Season): 1 | 2 | null {
  * Check if a player's age fits within an age group's restrictions
  */
 export interface AgeEligibilityResult {
-  isEligible: boolean
-  warningType: 'too_young' | 'too_old' | 'outside_range' | null
+  isEligible: boolean // false if age > maxAge (blocked)
+  isBlocked: boolean // true if hard block applied (age > maxAge)
+  warningType: 'too_young' | 'too_old' | null
+  warningLevel: 'soft' | 'hard' | null // 'soft' for too_young, 'hard' for too_old
   message: string | null
 }
 
@@ -95,50 +85,45 @@ export function checkAgeEligibility(
   playerAge: number,
   ageGroup: SeasonAgeGroup
 ): AgeEligibilityResult {
-  // If no age restrictions, player can register with warning
+  // If no age restrictions, player can register without warning
   if (ageGroup.minAge === null && ageGroup.maxAge === null) {
     return {
       isEligible: true,
+      isBlocked: false,
       warningType: null,
+      warningLevel: null,
       message: null,
     }
   }
 
-  // Check if too young
-  if (ageGroup.minAge !== null && playerAge < ageGroup.minAge) {
-    return {
-      isEligible: true, // Still eligible but with warning
-      warningType: 'too_young',
-      message: `Player is ${playerAge} years old, which is below the recommended minimum age of ${ageGroup.minAge} for ${ageGroup.name}`,
-    }
-  }
-
-  // Check if too old
+  // HARD BLOCK: Too old (age > maxAge)
   if (ageGroup.maxAge !== null && playerAge > ageGroup.maxAge) {
     return {
-      isEligible: true, // Still eligible but with warning
+      isEligible: false, // BLOCKED - cannot register
+      isBlocked: true,
       warningType: 'too_old',
-      message: `Player is ${playerAge} years old, which is above the recommended maximum age of ${ageGroup.maxAge} for ${ageGroup.name}`,
+      warningLevel: 'hard',
+      message: `Player cannot register: age ${playerAge} exceeds maximum age of ${ageGroup.maxAge} for ${ageGroup.name}`,
     }
   }
 
-  // Check if outside range (when both min and max exist)
-  if (
-    ageGroup.minAge !== null &&
-    ageGroup.maxAge !== null &&
-    (playerAge < ageGroup.minAge || playerAge > ageGroup.maxAge)
-  ) {
+  // SOFT WARNING: Too young (age < minAge)
+  if (ageGroup.minAge !== null && playerAge < ageGroup.minAge) {
     return {
-      isEligible: true, // Still eligible but with warning
-      warningType: 'outside_range',
-      message: `Player is ${playerAge} years old, which is outside the recommended age range of ${ageGroup.minAge}-${ageGroup.maxAge} for ${ageGroup.name}`,
+      isEligible: true, // Allow but warn
+      isBlocked: false,
+      warningType: 'too_young',
+      warningLevel: 'soft',
+      message: `Player is ${playerAge} years old, which is below the recommended minimum age of ${ageGroup.minAge} for ${ageGroup.name}`,
     }
   }
 
   // Within age range
   return {
     isEligible: true,
+    isBlocked: false,
     warningType: null,
+    warningLevel: null,
     message: null,
   }
 }
@@ -334,6 +319,8 @@ export async function getPlayersEligibilityForSeason(
     const ageGroupsInfo = ageGroups.map((ageGroup) => {
       let eligibility: AgeEligibilityResult = {
         isEligible: true,
+        isBlocked: false,
+        warningLevel: null,
         warningType: null,
         message: null,
       }

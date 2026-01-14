@@ -13,6 +13,7 @@ import {
 } from '@/types/api/seasons.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { calculateAge } from '@/db/schema'
+import { checkSeasonRegistrationCreateAuthorization } from '@/lib/authorization/helpers/season-registration-authorization'
 
 interface PlayerWithEligibility {
   id: string
@@ -36,10 +37,9 @@ export async function POST(request: NextRequest) {
   try {
     const context = await getOrganizationContext()
 
-    // Organization owners, admins can create registrations
-    if (!context.isOwner && !context.isAdmin && !context.isSystemAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    // Check authorization
+    const authError = await checkSeasonRegistrationCreateAuthorization(context)
+    if (authError) return authError
 
     const body = (await request.json()) as BulkCreateSeasonPlayerRegistrationsInput
 
@@ -150,23 +150,27 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Determine age warning
+        // Determine age warning and blocking
         let ageWarningShown = false
-        let ageWarningType: 'too_young' | 'too_old' | 'outside_range' | null = null
+        let ageWarningType: 'too_young' | 'too_old' | null = null
 
+        // HARD BLOCK: Too old (age > maxAge)
+        if (ageGroup.maxAge !== null && currentAge > ageGroup.maxAge) {
+          // Skip this registration - player is blocked
+          errors.push({
+            playerId: player.id,
+            playerName: player.name,
+            ageGroupId: ageGroup.id,
+            ageGroupName: ageGroup.name,
+            error: `Player age (${currentAge}) exceeds maximum age (${ageGroup.maxAge})`,
+          })
+          continue // Skip to next age group
+        }
+
+        // SOFT WARNING: Too young (age < minAge)
         if (ageGroup.minAge !== null && currentAge < ageGroup.minAge) {
           ageWarningShown = true
           ageWarningType = 'too_young'
-        } else if (ageGroup.maxAge !== null && currentAge > ageGroup.maxAge) {
-          ageWarningShown = true
-          ageWarningType = 'too_old'
-        } else if (
-          ageGroup.minAge !== null &&
-          ageGroup.maxAge !== null &&
-          (currentAge < ageGroup.minAge || currentAge > ageGroup.maxAge)
-        ) {
-          ageWarningShown = true
-          ageWarningType = 'outside_range'
         }
 
         registrationsToCreate.push({

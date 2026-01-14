@@ -319,6 +319,9 @@ export default function SeasonRegistrationsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Player</TableHead>
+                        <TableHead className='hidden sm:table-cell'>
+                          Federation ID
+                        </TableHead>
                         <TableHead>Organization</TableHead>
                         <TableHead className='hidden md:table-cell'>
                           Age Group
@@ -351,6 +354,17 @@ export default function SeasonRegistrationsPage() {
                             <TableCell className='font-medium'>
                               {reg.playerName || 'Unknown'}
                             </TableCell>
+                            <TableCell className='hidden sm:table-cell'>
+                              {reg.federationIdNumber ? (
+                                <span className='font-mono text-sm'>
+                                  {reg.federationIdNumber}
+                                </span>
+                              ) : (
+                                <Badge variant='secondary' className='text-xs'>
+                                  Not a Member
+                                </Badge>
+                              )}
+                            </TableCell>
                             <TableCell>
                               {reg.organizationName || 'N/A'}
                             </TableCell>
@@ -364,9 +378,15 @@ export default function SeasonRegistrationsPage() {
                             </TableCell>
                             <TableCell className='hidden lg:table-cell'>
                               <div className='flex items-center gap-2'>
-                                {reg.playerAgeAtRegistration || 'N/A'}
-                                {reg.ageWarningType && (
-                                  <AlertCircle className='h-4 w-4 text-yellow-600' />
+                                <span>{reg.playerAgeAtRegistration || 'N/A'}</span>
+                                {reg.ageWarningType === 'too_young' && (
+                                  <Badge
+                                    variant='outline'
+                                    className='bg-yellow-50 text-yellow-700 border-yellow-300 text-xs'
+                                  >
+                                    <AlertCircle className='h-3 w-3 mr-1' />
+                                    Too Young
+                                  </Badge>
                                 )}
                               </div>
                             </TableCell>

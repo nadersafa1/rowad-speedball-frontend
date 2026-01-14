@@ -142,28 +142,66 @@ export function ApproveRegistrationDialog({
             </div>
           </div>
 
-          {/* Age Warning */}
+          {/* Age Warning - Enhanced */}
           {registration.ageWarningType && (
             <Alert variant='default' className='border-yellow-500 bg-yellow-50'>
               <AlertCircle className='h-4 w-4 text-yellow-600' />
-              <AlertTitle className='text-yellow-900'>Age Warning</AlertTitle>
-              <AlertDescription className='text-yellow-800'>
-                Player is {registration.playerAgeAtRegistration} years old,
-                which is {registration.ageWarningType.replace('_', ' ')}.
-                {registration.seasonAgeGroup.minAge !== null &&
-                  registration.seasonAgeGroup.maxAge !== null && (
-                    <>
-                      {' '}
-                      Recommended range: {registration.seasonAgeGroup.minAge}-
-                      {registration.seasonAgeGroup.maxAge} years.
-                    </>
-                  )}
+              <AlertTitle className='text-yellow-900 font-semibold'>
+                Age Warning: Player Below Minimum Age
+              </AlertTitle>
+              <AlertDescription className='text-yellow-800 space-y-2'>
+                <div>
+                  <strong>Player Age:</strong> {registration.playerAgeAtRegistration} years
+                  old
+                </div>
+                <div>
+                  <strong>Age Group Range:</strong>{' '}
+                  {registration.seasonAgeGroup.minAge !== null
+                    ? `${registration.seasonAgeGroup.minAge}`
+                    : 'No min'}{' '}
+                  -{' '}
+                  {registration.seasonAgeGroup.maxAge !== null
+                    ? `${registration.seasonAgeGroup.maxAge}`
+                    : 'No max'}{' '}
+                  years
+                </div>
+                <p className='pt-2 border-t border-yellow-200'>
+                  This player is below the recommended minimum age. Review carefully before
+                  approval. Federation admin has final authority to approve.
+                </p>
               </AlertDescription>
             </Alert>
           )}
 
-          {/* Federation ID Field (only for new members) */}
-          {!isFederationMember && (
+          {/* Federation ID Section */}
+          {isFederationMember ? (
+            // Existing Member: Show federation ID in alert
+            <Alert className='border-green-500 bg-green-50'>
+              <CheckCircle2 className='h-4 w-4 text-green-600' />
+              <AlertTitle className='text-green-900 font-semibold'>
+                Existing Federation Member
+              </AlertTitle>
+              <AlertDescription className='text-green-800 space-y-2'>
+                <div>
+                  <strong>Federation ID:</strong>{' '}
+                  <span className='font-mono font-bold text-lg'>
+                    {registration.federationIdNumber}
+                  </span>
+                </div>
+                <div className='text-sm'>
+                  <strong>Status:</strong>{' '}
+                  <Badge variant='outline' className='bg-green-100'>
+                    Active
+                  </Badge>
+                </div>
+                <p className='pt-2 border-t border-green-200 text-xs'>
+                  Player is already registered with the federation. No new federation ID
+                  needed.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            // New Member: Show federation ID input
             <FormField
               control={form.control}
               name='federationIdNumber'
@@ -177,31 +215,17 @@ export function ApproveRegistrationDialog({
                       placeholder='e.g., EGY-2024-042'
                       disabled={isSubmitting}
                       className='font-mono uppercase'
-                      onChange={(e) =>
-                        field.onChange(e.target.value.toUpperCase())
-                      }
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     />
                   </FormControl>
                   <FormDescription>
-                    This will be the player's permanent federation ID. Required
-                    for new members.
+                    This will be the player's permanent federation ID. Must be unique
+                    within the federation.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
-
-          {isFederationMember && (
-            <Alert>
-              <CheckCircle2 className='h-4 w-4' />
-              <AlertDescription>
-                Player is already a federation member with ID:{' '}
-                <span className='font-mono font-semibold'>
-                  {registration.federationIdNumber}
-                </span>
-              </AlertDescription>
-            </Alert>
           )}
 
           <FormError error={error} />

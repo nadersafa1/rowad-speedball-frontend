@@ -41,7 +41,9 @@ interface PlayerEligibility {
     string,
     {
       isEligible: boolean
-      ageWarningType: 'too_young' | 'too_old' | 'outside_range' | null
+      isBlocked: boolean
+      ageWarningType: 'too_young' | 'too_old' | null
+      warningLevel: 'soft' | 'hard' | null
     }
   >
   currentRegistrationCount: number
@@ -187,19 +189,25 @@ export default function SeasonRegistrationPlayerTable({
   }
 
   const getAgeWarningBadge = (
-    warningType: 'too_young' | 'too_old' | 'outside_range' | null
+    warningType: 'too_young' | 'too_old' | null,
+    warningLevel: 'soft' | 'hard' | null
   ) => {
     if (!warningType) return null
 
     const variants = {
-      too_young: { text: 'Too Young', color: 'yellow' },
-      too_old: { text: 'Too Old', color: 'orange' },
-      outside_range: { text: 'Outside Range', color: 'red' },
+      too_young: {
+        text: 'Too Young',
+        className: 'bg-yellow-50 text-yellow-700 border-yellow-300',
+      },
+      too_old: {
+        text: 'Too Old (Blocked)',
+        className: 'bg-red-50 text-red-700 border-red-500',
+      },
     }
 
     const variant = variants[warningType]
     return (
-      <Badge variant='outline' className={`text-xs bg-${variant.color}-50`}>
+      <Badge variant='outline' className={`text-xs ${variant.className}`}>
         <AlertCircle className='h-3 w-3 mr-1' />
         {variant.text}
       </Badge>
@@ -272,8 +280,9 @@ export default function SeasonRegistrationPlayerTable({
       <Alert>
         <Info className='h-4 w-4' />
         <AlertDescription className='text-sm'>
-          Age warnings are shown but do not block registration. Federation admins will
-          review and approve all registrations. Players can register for up to{' '}
+          <strong>Age Restrictions:</strong> Players exceeding the maximum age are blocked
+          from registration. Players below minimum age show warnings but can register
+          (subject to federation admin approval). Players can register for up to{' '}
           {maxAgeGroupsPerPlayer} age group(s).
         </AlertDescription>
       </Alert>
@@ -358,6 +367,7 @@ export default function SeasonRegistrationPlayerTable({
                           const isSelected =
                             selectedPlayerAgeGroups[player.id]?.includes(ageGroupId)
                           const canSelect = canSelectAgeGroup(player.id, ageGroupId)
+                          const isBlocked = ageGroupElig?.isBlocked || false
 
                           return (
                             <TooltipProvider key={ageGroupId}>
@@ -373,13 +383,22 @@ export default function SeasonRegistrationPlayerTable({
                                           !!checked
                                         )
                                       }
-                                      disabled={!canSelect && !isSelected}
+                                      disabled={isBlocked || (!canSelect && !isSelected)}
                                     />
-                                    <span className='text-xs font-mono'>
+                                    <span
+                                      className={`text-xs font-mono ${
+                                        isBlocked
+                                          ? 'line-through text-muted-foreground'
+                                          : ''
+                                      }`}
+                                    >
                                       {ageGroup.code}
                                     </span>
                                     {ageGroupElig?.ageWarningType &&
-                                      getAgeWarningBadge(ageGroupElig.ageWarningType)}
+                                      getAgeWarningBadge(
+                                        ageGroupElig.ageWarningType,
+                                        ageGroupElig.warningLevel
+                                      )}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -392,9 +411,15 @@ export default function SeasonRegistrationPlayerTable({
                                         : 'No restrictions'}
                                     </p>
                                     <p className='text-xs'>Player Age: {playerAge}</p>
-                                    {ageGroupElig?.ageWarningType && (
+                                    {isBlocked && (
+                                      <p className='text-xs text-red-600 font-semibold'>
+                                        Registration blocked: Player exceeds maximum age
+                                      </p>
+                                    )}
+                                    {ageGroupElig?.ageWarningType === 'too_young' && (
                                       <p className='text-xs text-yellow-600'>
-                                        Warning: Player age outside recommended range
+                                        Warning: Player is below minimum age (approval may be
+                                        required)
                                       </p>
                                     )}
                                   </div>

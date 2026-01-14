@@ -7,6 +7,7 @@ import {
   seasonAgeGroups,
   organization,
   user,
+  federationMembers,
 } from '@/db/schema'
 import { eq, and, desc, asc, sql, or, ilike } from 'drizzle-orm'
 import {
@@ -16,6 +17,8 @@ import {
 } from '@/types/api/seasons.schemas'
 import { getOrganizationContext } from '@/lib/organization-helpers'
 import { calculateAge } from '@/db/schema'
+import { checkAgeEligibility } from '@/lib/season-helpers'
+import { checkSeasonRegistrationCreateAuthorization } from '@/lib/authorization/helpers/season-registration-authorization'
 import z from 'zod'
 
 // GET /api/v1/season-player-registrations - List registrations with filtering
@@ -154,6 +157,7 @@ export async function GET(request: NextRequest) {
           paymentDate: seasonPlayerRegistrations.paymentDate,
           createdAt: seasonPlayerRegistrations.createdAt,
           updatedAt: seasonPlayerRegistrations.updatedAt,
+          federationIdNumber: federationMembers.federationIdNumber,
         })
         .from(seasonPlayerRegistrations)
         .leftJoin(players, eq(seasonPlayerRegistrations.playerId, players.id))
@@ -167,6 +171,14 @@ export async function GET(request: NextRequest) {
         )
         .leftJoin(user, eq(seasonPlayerRegistrations.approvedBy, user.id))
         .leftJoin(seasons, eq(seasonPlayerRegistrations.seasonId, seasons.id))
+        .leftJoin(
+          federationMembers,
+          and(
+            eq(federationMembers.playerId, players.id),
+            eq(federationMembers.federationId, seasons.federationId),
+            eq(federationMembers.status, 'active')
+          )
+        )
         .where(whereClause)
         .orderBy(orderByClause)
         .limit(limit)
@@ -211,10 +223,9 @@ export async function POST(request: NextRequest) {
   try {
     const context = await getOrganizationContext()
 
-    // Organization owners, admins can create registrations
-    if (!context.isOwner && !context.isAdmin && !context.isSystemAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    // Check authorization
+    const authError = await checkSeasonRegistrationCreateAuthorization(context)
+    if (authError) return authError
 
     const body = (await request.json()) as CreateSeasonPlayerRegistrationInput
 
@@ -267,6 +278,26 @@ export async function POST(request: NextRequest) {
         { error: 'Age group not found' },
         { status: 404 }
       )
+    }
+
+    // Check age eligibility - BLOCK if too old
+    if (player.dateOfBirth) {
+      const playerAge = calculateAge(player.dateOfBirth)
+      const eligibility = checkAgeEligibility(playerAge, ageGroup)
+
+      if (eligibility.isBlocked) {
+        return NextResponse.json(
+          {
+            error:
+              eligibility.message ||
+              'Player age exceeds maximum age for this age group',
+            playerAge,
+            maxAge: ageGroup.maxAge,
+            ageGroup: ageGroup.name,
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Check if player already registered for this age group in this season
