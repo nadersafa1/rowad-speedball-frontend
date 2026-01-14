@@ -155,6 +155,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check if season with these years already exists for this federation
+    const existingSeason = await db.query.seasons.findFirst({
+      where: and(
+        eq(seasons.federationId, validatedData.federationId),
+        eq(seasons.startYear, validatedData.startYear),
+        eq(seasons.endYear, validatedData.endYear)
+      ),
+    })
+
+    if (existingSeason) {
+      return NextResponse.json(
+        {
+          error: `A season for ${validatedData.startYear}-${validatedData.endYear} already exists for this federation`,
+        },
+        { status: 409 }
+      )
+    }
+
     // Create season
     const [newSeason] = await db
       .insert(seasons)
