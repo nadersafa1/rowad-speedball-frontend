@@ -75,8 +75,8 @@ export const EventsTableActions = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Event</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete &quot;{event.name}&quot;? This
-            action cannot be undone and will permanently delete:
+            Are you sure you want to delete "{event.name}"? This action cannot
+            be undone and will permanently delete:
             <ul className='list-disc list-inside mt-2 space-y-1'>
               <li>All groups in this event</li>
               <li>All registrations</li>

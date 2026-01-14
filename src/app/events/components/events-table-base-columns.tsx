@@ -93,13 +93,8 @@ export const createBaseColumns = (
     header: () => <div>Championship</div>,
     cell: ({ row }) => {
       const name = row.getValue('championshipName') as string | null
-      const year = (row.original as any).championshipEditionYear
       if (!name) return <span className='text-sm text-muted-foreground'>—</span>
-      return (
-        <span className='text-sm'>
-          {name} {year ? `(${year})` : ''}
-        </span>
-      )
+      return <span className='text-sm'>{name}</span>
     },
   },
   {

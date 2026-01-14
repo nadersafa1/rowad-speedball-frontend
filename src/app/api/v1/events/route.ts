@@ -1,4 +1,19 @@
-import { NextRequest } from 'next/server'
+import * as schema from '@/db/schema'
+import { handleApiError } from '@/lib/api-error-handler'
+import { checkEventCreateAuthorization } from '@/lib/authorization'
+import { db } from '@/lib/db'
+import {
+  getOrganizationContext,
+  resolveOrganizationId,
+} from '@/lib/organization-helpers'
+import { validateAttendanceAccess } from '@/lib/training-session-attendance-helpers'
+import { registerSessionAttendeesToEvent } from '@/lib/training-session-event-helpers'
+import {
+  eventsCreateSchema,
+  eventsQuerySchema,
+} from '@/types/api/events.schemas'
+import { createPaginatedResponse } from '@/types/api/pagination'
+import { isSinglePlayerEventType } from '@/types/event-types'
 import {
   and,
   asc,
@@ -6,29 +21,14 @@ import {
   desc,
   eq,
   ilike,
+  inArray,
+  isNull,
   max,
   or,
-  isNull,
-  inArray,
   sql,
 } from 'drizzle-orm'
+import { NextRequest } from 'next/server'
 import z from 'zod'
-import { db } from '@/lib/db'
-import * as schema from '@/db/schema'
-import {
-  eventsCreateSchema,
-  eventsQuerySchema,
-} from '@/types/api/events.schemas'
-import { createPaginatedResponse } from '@/types/api/pagination'
-import {
-  getOrganizationContext,
-  resolveOrganizationId,
-} from '@/lib/organization-helpers'
-import { validateAttendanceAccess } from '@/lib/training-session-attendance-helpers'
-import { registerSessionAttendeesToEvent } from '@/lib/training-session-event-helpers'
-import { isSinglePlayerEventType } from '@/types/event-types'
-import { checkEventCreateAuthorization } from '@/lib/authorization'
-import { handleApiError } from '@/lib/api-error-handler'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -205,7 +205,6 @@ export async function GET(request: NextRequest) {
       .select({
         event: schema.events,
         organizationName: schema.organization.name,
-        championshipEditionYear: schema.championshipEditions.year,
         championshipName: schema.championships.name,
         pointsSchemaName: schema.pointsSchemas.name,
       })
@@ -365,7 +364,6 @@ export async function GET(request: NextRequest) {
     let eventsWithComputedFields = dataResult.map((row) => ({
       ...row.event,
       organizationName: row.organizationName ?? null,
-      championshipEditionYear: row.championshipEditionYear ?? null,
       championshipName: row.championshipName ?? null,
       pointsSchemaName: row.pointsSchemaName ?? null,
       registrationsCount: 0,

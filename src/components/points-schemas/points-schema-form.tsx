@@ -111,7 +111,8 @@ const PointsSchemaForm = ({
                   />
                 </FormControl>
                 <FormDescription>
-                  A descriptive name for this points schema (e.g., &quot;National Championship 2024&quot;, &quot;Regional League Points&quot;)
+                  A descriptive name for this points schema (e.g., "National
+                  Championship 2024", "Regional League Points")
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -135,7 +136,8 @@ const PointsSchemaForm = ({
                   />
                 </FormControl>
                 <FormDescription>
-                  Additional details about when and how this points schema should be used
+                  Additional details about when and how this points schema
+                  should be used
                 </FormDescription>
                 <FormMessage />
               </FormItem>

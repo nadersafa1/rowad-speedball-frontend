@@ -89,12 +89,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ...(isFederationAdmin || isFederationEditor
         ? [
             {
-              title: 'Member Clubs',
-              url: '/admin/federation-clubs',
+              title: 'Seasons',
+              url: '/admin/seasons',
             },
             {
-              title: 'Federation Players',
-              url: '/admin/federation-players',
+              title: 'Season Registrations',
+              url: '/admin/season-registrations',
+            },
+            {
+              title: 'Member Clubs',
+              url: '/admin/federation-clubs',
             },
           ]
         : []),
@@ -200,14 +204,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     if (isAdmin || isOwner) {
       actions.push({
-        name: 'Create Event',
-        url: '/events/create',
-        icon: Table2,
-      })
-
-      actions.push({
-        name: 'Bulk Federation Application',
-        url: '/players/federation/bulk-apply',
+        name: 'Season Registration',
+        url: '/players/season-registration',
         icon: Users,
       })
     }

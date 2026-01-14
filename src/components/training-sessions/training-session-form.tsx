@@ -597,9 +597,9 @@ const TrainingSessionForm = ({
                         Auto-Create Attendance Records
                       </FormLabel>
                       <FormDescription>
-                        Automatically create attendance records with
-                        &apos;pending&apos; status for all players matching the
-                        selected age groups and team levels
+                        Automatically create attendance records with 'pending'
+                        status for all players matching the selected age groups
+                        and team levels
                       </FormDescription>
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 import GridSingleItem from '@/components/gird-single-item'
 import { SinglePageHeader } from '@/components/ui'
-import { Award, Building2, Globe, Trophy, Users } from 'lucide-react'
+import { Award, Building2, Globe, Trophy, Users, Calendar, ClipboardCheck } from 'lucide-react'
 
 const ADMIN_ITEMS = [
   {
@@ -20,6 +20,18 @@ const ADMIN_ITEMS = [
     title: 'Federations',
     description: 'Manage federations and their settings',
     Icon: Globe,
+  },
+  {
+    href: '/admin/seasons',
+    title: 'Seasons',
+    description: 'Manage federation seasons and age groups',
+    Icon: Calendar,
+  },
+  {
+    href: '/admin/season-registrations',
+    title: 'Season Registrations',
+    description: 'Review and approve player season registrations',
+    Icon: ClipboardCheck,
   },
   {
     href: '/admin/placement-tiers',

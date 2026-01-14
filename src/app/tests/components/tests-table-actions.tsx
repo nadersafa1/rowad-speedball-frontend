@@ -77,8 +77,8 @@ export const TestsTableActions = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Test</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete &quot;{test.name}&quot;? This action
-            cannot be undone and will permanently delete:
+            Are you sure you want to delete "{test.name}"? This action cannot be
+            undone and will permanently delete:
             <ul className='list-disc list-inside mt-2 space-y-1'>
               <li>All test results associated with this test</li>
               <li>All player scores and rankings</li>

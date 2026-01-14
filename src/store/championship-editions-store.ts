@@ -1,24 +1,17 @@
 // Championship Editions Store - Single responsibility: Championship editions state management
 import { create } from 'zustand'
 import { apiClient } from '@/lib/api-client'
-import type { ChampionshipEdition } from '@/db/schema'
 import type { PaginatedResponse } from '@/types/api/pagination'
+import type { ChampionshipEditionWithRelations } from '@/components/championship-editions/championship-editions-table-types'
 
 interface ChampionshipEditionsFilters {
   q?: string
   championshipId?: string
   status?: 'draft' | 'published' | 'archived'
-  year?: number
-  sortBy?: 'year' | 'status' | 'createdAt' | 'updatedAt'
+  sortBy?: 'status' | 'createdAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
   page?: number
   limit?: number
-}
-
-interface ChampionshipEditionWithRelations extends ChampionshipEdition {
-  championshipName: string | null
-  championshipCompetitionScope: 'clubs' | 'open' | null
-  federationName: string | null
 }
 
 interface ChampionshipEditionsState {
@@ -64,7 +57,6 @@ export const useChampionshipEditionsStore = create<ChampionshipEditionsState>(
           q: filters.q,
           championshipId: filters.championshipId,
           status: filters.status,
-          year: filters.year,
           sortBy: filters.sortBy,
           sortOrder: filters.sortOrder,
           page: filters.page,

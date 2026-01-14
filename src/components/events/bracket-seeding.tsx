@@ -170,8 +170,7 @@ const BracketSeeding = ({
         </div>
         {hasExistingMatches && (
           <p className='text-sm text-muted-foreground mt-2'>
-            Bracket already generated. Use &quot;Reset Bracket&quot; to start
-            over.
+            Bracket already generated. Use "Reset Bracket" to start over.
           </p>
         )}
       </CardHeader>

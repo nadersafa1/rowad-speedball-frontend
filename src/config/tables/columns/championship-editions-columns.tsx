@@ -43,19 +43,6 @@ export function createChampionshipEditionsColumns({
   championshipId,
 }: CreateColumnsOptions): ColumnDef<ChampionshipEditionWithRelations>[] {
   const baseColumns: ColumnDef<ChampionshipEditionWithRelations>[] = [
-    // Year column
-    {
-      accessorKey: 'year',
-      id: 'year',
-      enableHiding: false,
-      header: () =>
-        createSortableHeader('Year', 'year', sortBy, sortOrder, onSort),
-      cell: ({ row }) => {
-        const year = row.getValue('year') as number
-        return <div className='font-semibold text-lg'>{year}</div>
-      },
-    },
-
     // Status column
     {
       accessorKey: 'status',

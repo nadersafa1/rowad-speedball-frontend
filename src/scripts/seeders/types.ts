@@ -102,7 +102,6 @@ export interface SeededChampionship {
 export interface SeededChampionshipEdition {
   id: string
   championshipId: string
-  year: number
   status: 'draft' | 'published' | 'archived'
   registrationStartDate: string | null
   registrationEndDate: string | null

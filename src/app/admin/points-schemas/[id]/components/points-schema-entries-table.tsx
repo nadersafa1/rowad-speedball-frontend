@@ -255,9 +255,9 @@ export default function PointsSchemaEntriesTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the points entry for &quot;
-              {entryToDelete?.placementTier?.name}&quot; (
-              {entryToDelete?.points} points). This action cannot be undone.
+              This will permanently delete the points entry for "
+              {entryToDelete?.placementTier?.name}" ({entryToDelete?.points}{' '}
+              points). This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

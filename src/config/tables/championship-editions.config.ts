@@ -34,7 +34,7 @@ export const championshipEditionsTableConfig: TableConfig<
     columnVisibility: false,
   },
   defaultSort: {
-    sortBy: 'year',
+    sortBy: 'status',
     sortOrder: 'desc',
   },
   defaultPageSize: 25,

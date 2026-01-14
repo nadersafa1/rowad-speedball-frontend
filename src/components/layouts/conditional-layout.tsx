@@ -111,11 +111,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
                   year?: number
                 } | null
                 if (edition) {
-                  name = edition.championshipName
-                    ? `${edition.championshipName} ${edition.year}`
-                    : edition.year
-                    ? String(edition.year)
-                    : null
+                  name = edition.championshipName || null
                 }
                 break
               }

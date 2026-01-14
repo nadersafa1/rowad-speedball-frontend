@@ -1,15 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useChampionshipsStore } from '@/store/championships-store'
-import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Plus, Edit, Trophy } from 'lucide-react'
-import LoadingState from '@/components/shared/loading-state'
-import ChampionshipEditionsTableRefactored from '@/components/championship-editions/championship-editions-table-refactored'
 import { ChampionshipEditionForm } from '@/components/championship-editions/championship-edition-form'
+import ChampionshipEditionsTableRefactored from '@/components/championship-editions/championship-editions-table-refactored'
+import LoadingState from '@/components/shared/loading-state'
+import { SinglePageHeader } from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -18,7 +14,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
-import { SinglePageHeader } from '@/components/ui'
+import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
+import { useChampionshipsStore } from '@/store/championships-store'
+import { Edit, Plus } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 
 const ChampionshipDetailPage = () => {
   const params = useParams()
@@ -45,7 +45,7 @@ const ChampionshipDetailPage = () => {
   const [statusFilter, setStatusFilter] = useState<
     'draft' | 'published' | 'archived' | 'all'
   >('all')
-  const [sortBy, setSortBy] = useState('year')
+  const [sortBy, setSortBy] = useState('status')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
@@ -158,7 +158,9 @@ const ChampionshipDetailPage = () => {
       {/* Championship Header */}
       <div className='mb-6'>
         <div>
-          <h1 className='text-2xl sm:text-3xl font-bold'>{selectedChampionship.name}</h1>
+          <h1 className='text-2xl sm:text-3xl font-bold'>
+            {selectedChampionship.name}
+          </h1>
           <p className='text-muted-foreground mt-1'>
             {selectedChampionship.description || 'Manage championship details'}
           </p>
@@ -209,6 +211,7 @@ const ChampionshipDetailPage = () => {
           </DialogHeader>
           <ChampionshipEditionForm
             championshipId={championshipId}
+            federationId={selectedChampionship?.federationId || ''}
             onSuccess={handleCreateSuccess}
             onCancel={() => setCreateDialogOpen(false)}
           />

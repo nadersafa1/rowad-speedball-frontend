@@ -30,7 +30,7 @@ import type { UseComboboxOptions } from '@/hooks/use-combobox'
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer'
 
 export interface BaseComboboxProps<T extends { id: string }>
-  extends UseComboboxOptions<T> {
+  extends Omit<UseComboboxOptions<T>, 'onValueChange'> {
   // Display props
   placeholder?: string
   searchPlaceholder?: string
@@ -41,6 +41,10 @@ export interface BaseComboboxProps<T extends { id: string }>
   // Formatting
   formatLabel: (item: T) => string | React.ReactNode
   formatSelectedLabel?: (item: T) => string | React.ReactNode
+
+  // Value change handler (alias for onValueChange)
+  onChange?: (value: string | null | string[]) => void
+  onValueChange?: (value: string | null | string[]) => void
 
   // Features
   allowClear?: boolean
@@ -99,6 +103,8 @@ export function BaseCombobox<T extends { id: string }>({
   onCacheReady,
   useInfiniteScroll = true,
   infiniteScrollThreshold = 0.8,
+  onChange,
+  onValueChange,
   ...comboboxOptions
 }: BaseComboboxProps<T>) {
   const {
@@ -122,7 +128,10 @@ export function BaseCombobox<T extends { id: string }>({
     clearError,
     clearCache,
     invalidateCache,
-  } = useCombobox<T>(comboboxOptions)
+  } = useCombobox<T>({
+    ...comboboxOptions,
+    onValueChange: onChange || onValueChange,
+  })
 
   const [recentItems, setRecentItems] = React.useState<T[]>([])
   const [isMobile, setIsMobile] = React.useState(false)

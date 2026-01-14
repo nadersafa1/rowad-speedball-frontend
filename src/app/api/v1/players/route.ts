@@ -211,12 +211,12 @@ export async function GET(request: NextRequest) {
     if (needsFederationJoin) {
       // For federation roles: inner join to only get players linked to federation
       countQuery = countQuery.innerJoin(
-        schema.federationPlayers,
-        eq(schema.players.id, schema.federationPlayers.playerId)
+        schema.federationMembers,
+        eq(schema.players.id, schema.federationMembers.playerId)
       ) as any
       // Add federation filter condition
       const federationCondition = eq(
-        schema.federationPlayers.federationId,
+        schema.federationMembers.federationId,
         context.federationId!
       )
       countQuery = countQuery.where(
@@ -251,8 +251,8 @@ export async function GET(request: NextRequest) {
     if (needsFederationJoin) {
       dataQuery = dataQuery
         .innerJoin(
-          schema.federationPlayers,
-          eq(schema.players.id, schema.federationPlayers.playerId)
+          schema.federationMembers,
+          eq(schema.players.id, schema.federationMembers.playerId)
         )
         .leftJoin(
           schema.organization,
@@ -260,7 +260,7 @@ export async function GET(request: NextRequest) {
         ) as any
       // Add federation filter condition
       const federationCondition = eq(
-        schema.federationPlayers.federationId,
+        schema.federationMembers.federationId,
         context.federationId!
       )
       dataQuery = dataQuery.where(
@@ -308,11 +308,11 @@ export async function GET(request: NextRequest) {
 
     if (needsFederationJoin) {
       maleCountQuery = maleCountQuery.innerJoin(
-        schema.federationPlayers,
-        eq(schema.players.id, schema.federationPlayers.playerId)
+        schema.federationMembers,
+        eq(schema.players.id, schema.federationMembers.playerId)
       ) as any
       const federationCondition = eq(
-        schema.federationPlayers.federationId,
+        schema.federationMembers.federationId,
         context.federationId!
       )
       const maleFilter = and(genderCondition('male'), federationCondition)
@@ -342,11 +342,11 @@ export async function GET(request: NextRequest) {
 
     if (needsFederationJoin) {
       femaleCountQuery = femaleCountQuery.innerJoin(
-        schema.federationPlayers,
-        eq(schema.players.id, schema.federationPlayers.playerId)
+        schema.federationMembers,
+        eq(schema.players.id, schema.federationMembers.playerId)
       ) as any
       const federationCondition = eq(
-        schema.federationPlayers.federationId,
+        schema.federationMembers.federationId,
         context.federationId!
       )
       const femaleFilter = and(genderCondition('female'), federationCondition)
@@ -376,11 +376,11 @@ export async function GET(request: NextRequest) {
 
     if (needsFederationJoin) {
       allFilteredPlayersQuery = allFilteredPlayersQuery.innerJoin(
-        schema.federationPlayers,
-        eq(schema.players.id, schema.federationPlayers.playerId)
+        schema.federationMembers,
+        eq(schema.players.id, schema.federationMembers.playerId)
       ) as any
       const federationCondition = eq(
-        schema.federationPlayers.federationId,
+        schema.federationMembers.federationId,
         context.federationId!
       )
       allFilteredPlayersQuery = allFilteredPlayersQuery.where(

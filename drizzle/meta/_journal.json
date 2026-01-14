@@ -239,6 +239,27 @@
       "when": 1767999233985,
       "tag": "0033_crazy_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1768223033164,
+      "tag": "0034_tense_sphinx",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1768424201720,
+      "tag": "0035_burly_layla_miller",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1768424672811,
+      "tag": "0036_numerous_stone_men",
+      "breakpoints": true
     }
   ]
 }

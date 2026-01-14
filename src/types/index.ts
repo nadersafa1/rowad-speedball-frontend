@@ -368,7 +368,6 @@ export type {
   Federation,
   Championship,
   FederationClub,
-  FederationPlayer,
   Organization,
   Member,
   Invitation,

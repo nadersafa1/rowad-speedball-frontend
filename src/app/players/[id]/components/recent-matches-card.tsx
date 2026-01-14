@@ -130,7 +130,7 @@ const RecentMatchesCard = ({ playerId }: RecentMatchesCardProps) => {
               No Matches Yet
             </h3>
             <p className='text-muted-foreground'>
-              This player hasn&apos;t played any matches yet.
+              This player hasn't played any matches yet.
             </p>
           </div>
         ) : (

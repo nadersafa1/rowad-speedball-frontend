@@ -131,21 +131,21 @@ const PointsSchemasPage = () => {
             <span className='font-semibold'>Examples:</span>
             <ul className='list-disc list-inside mt-1 space-y-1 text-blue-800 dark:text-blue-200'>
               <li>
-                &quot;National Championship 2024&quot; - High-value points for
+                "National Championship 2024" - High-value points for
                 championship events
               </li>
               <li>
-                &quot;Regional League 2024&quot; - Standard points for regular
+                "Regional League 2024" - Standard points for regular
                 competitions
               </li>
               <li>
-                &quot;Time-Based Standard&quot; - Points for time-based events
+                "Time-Based Standard" - Points for time-based events
                 (super-solo, speed-solo)
               </li>
             </ul>
           </div>
           <div className='text-xs text-blue-700 dark:text-blue-400 mt-2'>
-            Note: After creating a schema, you&apos;ll need to add Points Schema
+            Note: After creating a schema, you'll need to add Points Schema
             Entries to map placement tiers to point values.
           </div>
         </CardContent>

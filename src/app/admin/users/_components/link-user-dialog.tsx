@@ -247,14 +247,14 @@ export const LinkUserDialog = ({
 
           {linkType === 'coach' && !canLinkToCoach && (
             <div className='text-sm text-muted-foreground'>
-              You don&apos;t have permission to link users to coaches. Only
-              admins and owners can link coaches.
+              You don't have permission to link users to coaches. Only admins
+              and owners can link coaches.
             </div>
           )}
 
           {linkType === 'player' && !canLinkToPlayer && (
             <div className='text-sm text-muted-foreground'>
-              You don&apos;t have permission to link users to players.
+              You don't have permission to link users to players.
             </div>
           )}
         </div>
