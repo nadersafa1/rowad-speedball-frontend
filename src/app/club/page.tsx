@@ -61,7 +61,7 @@ const CLUB_ITEMS = [
     Icon: Trophy,
   },
   {
-    href: '/attendance',
+    href: '/attendance/club',
     title: 'Attendance',
     description: 'Track player attendance for sessions and events',
     Icon: ClipboardList,
