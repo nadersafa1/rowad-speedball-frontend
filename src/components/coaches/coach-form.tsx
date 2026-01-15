@@ -26,6 +26,8 @@ import {
 import ClubCombobox from '@/components/organizations/club-combobox'
 import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import { DIALOG_CLASSES } from '@/lib/ui-constants'
+import { FormError } from '@/components/forms/form-error'
+import { LoadingButton } from '@/components/forms/loading-button'
 
 const coachSchema = z.object({
   name: z
@@ -198,11 +200,7 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
             />
           )}
 
-          {error && (
-            <div className='bg-destructive/10 border border-destructive/20 rounded-md p-3'>
-              <p className='text-destructive text-sm'>{error}</p>
-            </div>
-          )}
+          <FormError error={error} />
 
           <DialogFooter className='flex-col sm:flex-row gap-2 sm:gap-3 mt-4'>
             {onCancel && (
@@ -217,23 +215,15 @@ const CoachForm = ({ coach, onSuccess, onCancel }: CoachFormProps) => {
               </Button>
             )}
 
-            <Button
+            <LoadingButton
               type='submit'
-              disabled={isSubmitting}
+              isLoading={isSubmitting}
+              loadingText={isEditing ? 'Updating...' : 'Creating...'}
               className='w-full sm:w-auto min-w-[44px] min-h-[44px] bg-rowad-600 hover:bg-rowad-700'
+              icon={<Save className='h-4 w-4' />}
             >
-              {isSubmitting ? (
-                <div className='flex items-center gap-2'>
-                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
-                  {isEditing ? 'Updating...' : 'Creating...'}
-                </div>
-              ) : (
-                <div className='flex items-center gap-2'>
-                  <Save className='h-4 w-4' />
-                  {isEditing ? 'Update Coach' : 'Create Coach'}
-                </div>
-              )}
-            </Button>
+              {isEditing ? 'Update Coach' : 'Create Coach'}
+            </LoadingButton>
           </DialogFooter>
         </form>
       </Form>

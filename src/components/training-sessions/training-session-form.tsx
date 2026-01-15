@@ -46,6 +46,8 @@ import {
   type TeamLevel,
 } from '@/types/team-level'
 import { DIALOG_CLASSES } from '@/lib/ui-constants'
+import { FormError } from '@/components/forms/form-error'
+import { LoadingButton } from '@/components/forms/loading-button'
 
 const sessionTypeOptions = [
   { value: SessionType.SINGLES, label: 'Singles' },
@@ -628,11 +630,7 @@ const TrainingSessionForm = ({
             )}
           />
 
-          {error && (
-            <div className='bg-destructive/10 border border-destructive/20 rounded-md p-3'>
-              <p className='text-destructive text-sm'>{error}</p>
-            </div>
-          )}
+          <FormError error={error} />
 
           <DialogFooter className='flex-col sm:flex-row gap-2 sm:gap-3 mt-4'>
             {onCancel && (
@@ -646,23 +644,15 @@ const TrainingSessionForm = ({
                 Cancel
               </Button>
             )}
-            <Button
+            <LoadingButton
               type='submit'
-              disabled={isLoading}
+              isLoading={isLoading}
+              loadingText={isEditing ? 'Updating...' : 'Creating...'}
               className='w-full sm:w-auto min-w-[44px] min-h-[44px] bg-rowad-600 hover:bg-rowad-700'
+              icon={<Save className='h-4 w-4' />}
             >
-              {isLoading ? (
-                <div className='flex items-center gap-2'>
-                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
-                  {isEditing ? 'Updating...' : 'Creating...'}
-                </div>
-              ) : (
-                <div className='flex items-center gap-2'>
-                  <Save className='h-4 w-4' />
-                  {isEditing ? 'Update Session' : 'Create Session'}
-                </div>
-              )}
-            </Button>
+              {isEditing ? 'Update Session' : 'Create Session'}
+            </LoadingButton>
           </DialogFooter>
         </form>
       </Form>
