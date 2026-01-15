@@ -83,6 +83,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const items = [
       {
+        title: 'Dashboard',
+        url: '/federation',
+      },
+      {
         title: 'Championships',
         url: '/championships',
       },
@@ -107,7 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return [
       {
         title: 'Federation Management',
-        url: '#',
+        url: '/federation',
         icon: Trophy,
         items,
       },
@@ -119,6 +123,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (!isAdmin && !isOwner && !isCoach) return []
 
     const items = [
+      {
+        title: 'Dashboard',
+        url: '/club',
+      },
       {
         title: 'Coaches',
         url: '/coaches',
@@ -144,7 +152,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return [
       {
         title: 'Team Management',
-        url: '#',
+        url: '/club',
         icon: Trophy,
         items,
       },
