@@ -250,15 +250,274 @@ vi.mock('@/hooks/authorization/use-organization', () => ({
 }))
 ```
 
+---
+
+## Completing the Migration
+
+### Current Migration Status
+
+While the specialized hooks (`useRoles`, `useOrganization`, `useFederation`) have been created, many page components still use the legacy `useOrganizationContext()` pattern. This section provides guidance for completing the migration.
+
+### Migration Checklist
+
+- [ ] Identify all page components using `useOrganizationContext()`
+- [ ] Determine which specialized hook to use for each component
+- [ ] Replace `useOrganizationContext()` with specialized hook
+- [ ] Remove unused imports
+- [ ] Test authorization behavior with different roles
+- [ ] Verify loading states work correctly
+- [ ] Ensure organization/federation context still available when needed
+
+### Decision Tree: Which Hook to Use?
+
+```
+Need only role checks (isSystemAdmin, isAdmin, etc.)
+  └─ Use useRoles()
+
+Need organization data or organization ID
+  └─ Use useOrganization()
+
+Need federation context or federation admin checks
+  └─ Use useFederation()
+
+Need entity-specific permissions (canCreate, canEdit, canDelete)
+  └─ Use use[Entity]Permissions()
+
+Need multiple contexts (roles + organization)
+  └─ Use multiple specialized hooks
+```
+
+### Common Migration Patterns
+
+#### Pattern 1: Role Checks Only
+
+**Before** (using `useOrganizationContext`):
+```typescript
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+
+const MyPage = () => {
+  const { context, isLoading } = useOrganizationContext()
+  const { isSystemAdmin, isAdmin, isOwner } = context
+
+  if (isLoading) return <Loading />
+
+  return <PageContent />
+}
+```
+
+**After** (using `useRoles`):
+```typescript
+import { useRoles } from '@/hooks/authorization/use-roles'
+
+const MyPage = () => {
+  const { isSystemAdmin, isAdmin, isOwner, isLoading } = useRoles()
+
+  if (isLoading) return <Loading />
+
+  return <PageContent />
+}
+```
+
+**Benefits**:
+- Clearer intent: "I need role information"
+- Direct access to role flags
+- No nested `context` object
+
+#### Pattern 2: Role Checks + Organization Data
+
+**Before**:
+```typescript
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+
+const MyPage = () => {
+  const { context, isLoading } = useOrganizationContext()
+  const { isSystemAdmin, organization } = context
+
+  if (!organization && !isSystemAdmin) {
+    return <NoOrganization />
+  }
+
+  return <PageContent organizationName={organization?.name} />
+}
+```
+
+**After** (using both hooks):
+```typescript
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { useOrganization } from '@/hooks/authorization/use-organization'
+
+const MyPage = () => {
+  const { isSystemAdmin, isLoading: rolesLoading } = useRoles()
+  const { organization, isLoading: orgLoading } = useOrganization()
+
+  const isLoading = rolesLoading || orgLoading
+
+  if (isLoading) return <Loading />
+
+  if (!organization && !isSystemAdmin) {
+    return <NoOrganization />
+  }
+
+  return <PageContent organizationName={organization?.name} />
+}
+```
+
+**Benefits**:
+- Separation of concerns
+- Clear which data comes from where
+- Independent loading states (if needed)
+
+#### Pattern 3: Authentication Check + Organization Data
+
+**Before**:
+```typescript
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+
+const MyPage = () => {
+  const { context, isLoading } = useOrganizationContext()
+  const { isAuthenticated, organization } = context
+
+  if (isLoading) return <Loading />
+  if (!isAuthenticated) return <Unauthorized />
+
+  return <PageContent organization={organization} />
+}
+```
+
+**After**:
+```typescript
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { useOrganization } from '@/hooks/authorization/use-organization'
+
+const MyPage = () => {
+  const { isAuthenticated, isLoading: authLoading } = useRoles()
+  const { organization, isLoading: orgLoading } = useOrganization()
+
+  const isLoading = authLoading || orgLoading
+
+  if (isLoading) return <Loading />
+  if (!isAuthenticated) return <Unauthorized />
+
+  return <PageContent organization={organization} />
+}
+```
+
+#### Pattern 4: Federation Context
+
+**Before**:
+```typescript
+import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+
+const MyPage = () => {
+  const { context, isLoading } = useOrganizationContext()
+  const { isFederationAdmin, federationId } = context
+
+  if (!isFederationAdmin) return <Unauthorized />
+
+  return <FederationContent federationId={federationId} />
+}
+```
+
+**After**:
+```typescript
+import { useFederation } from '@/hooks/authorization/use-federation'
+
+const MyPage = () => {
+  const { isFederationAdmin, federationId, isLoading } = useFederation()
+
+  if (isLoading) return <Loading />
+  if (!isFederationAdmin) return <Unauthorized />
+
+  return <FederationContent federationId={federationId} />
+}
+```
+
+### Audit Command
+
+**Find all page components using `useOrganizationContext`**:
+```bash
+grep -r "useOrganizationContext" src/app/ --include="page.tsx"
+```
+
+### Files to Update (Priority Order)
+
+#### Priority 1: Public-Facing Pages
+- `src/app/players/page.tsx`
+- `src/app/events/page.tsx`
+- `src/app/tests/page.tsx`
+- High visibility, most users access these
+
+#### Priority 2: Admin Pages
+- `src/app/coaches/page.tsx`
+- `src/app/training-sessions/page.tsx`
+- `src/app/admin/*/page.tsx`
+- Moderate visibility, admin users only
+
+#### Priority 3: Internal Pages
+- Settings pages
+- Profile pages
+- Low visibility or infrequently accessed
+
+### Testing After Migration
+
+**For Each Updated Component**:
+
+1. **Test with different roles**:
+   - System admin
+   - Organization admin
+   - Coach
+   - Player/Member
+   - Unauthenticated user
+
+2. **Verify loading states**:
+   - Component shows loading spinner initially
+   - Content renders after loading complete
+
+3. **Check authorization**:
+   - Unauthorized users see appropriate message
+   - Authorized users see full content
+   - Role-specific features show/hide correctly
+
+4. **Test organization context**:
+   - Organization data available when needed
+   - Organization ID used in API calls
+   - Multi-tenant filtering works correctly
+
+### Rollback Plan
+
+If issues arise after migration:
+
+1. **Revert specific component**:
+   ```bash
+   git checkout HEAD~1 -- src/app/[feature]/page.tsx
+   ```
+
+2. **Keep specialized hooks** - they're additive, not breaking
+
+3. **Document issues** - help improve migration guide
+
+### When NOT to Migrate
+
+**Keep `useOrganizationContext()` if**:
+- Component needs full context object for some reason
+- Component is about to be deleted/refactored anyway
+- Too risky to change (critical production component)
+
+**Migration is optional** - both patterns are supported.
+
+---
+
 ## Future Improvements
 
 1. Consider adding more specific hooks for common patterns (e.g., `useCanAccessAdminPages`)
 2. Add JSDoc comments to all hooks with usage examples
 3. Consider creating a context hook composition pattern for complex pages
 4. Add unit tests for the new hooks
+5. Complete migration of all page components to specialized hooks
 
 ## Related Documentation
 
-- [Authorization System](/docs/AUTH_PERMISSIONS_ANALYSIS.md)
-- [Forms Guide](/docs/FORMS_GUIDE.md)
-- [Table Core Guide](/docs/table-core-guide.md)
+- **Authorization Rules**: See `/docs/AUTHORIZATION_RULES.md`
+- **Public vs Authenticated Access**: See `/docs/PUBLIC_VS_AUTHENTICATED_ACCESS.md`
+- **Component Standards**: See `/docs/COMPONENT_STANDARDS.md`
+- **Implementation Standards**: See `/docs/IMPLEMENTATION_STANDARDS.md`
