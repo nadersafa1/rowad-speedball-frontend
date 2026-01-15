@@ -1364,13 +1364,214 @@ const form = useForm({
 
 ---
 
+## Quick Reference
+
+### Validation Schemas Table
+
+All schemas imported from `@/lib/forms/patterns`
+
+| Schema | Type | Rules | Usage |
+|--------|------|-------|-------|
+| `nameSchema` | `string` | Required, 2-255 chars, trimmed | Player names, coach names, etc. |
+| `rtlNameSchema` | `string \| null` | Optional, max 255 chars | Arabic/RTL names |
+| `emailSchema` | `string` | Required, valid email, trimmed, lowercase | User emails |
+| `descriptionSchema` | `string \| null` | Optional, max 1000 chars | Short descriptions |
+| `longTextSchema(maxLength)` | `string \| null` | Optional, configurable max | Notes, long descriptions |
+| `passwordSchema` | `string` | 8+ chars, uppercase, lowercase, number, special char | New passwords, password reset |
+| `passwordSignInSchema` | `string` | 8+ chars only | Sign-in forms |
+| `dateOfBirthSchema` | `Date` | Must be 2+ years old, not in future | Player DOB |
+| `dateSchema` | `Date` | Cannot be in future | General past dates |
+| `futureDateSchema` | `Date` | Any date | Event dates |
+| `optionalDateSchema` | `Date \| null` | Optional date | Optional date fields |
+| `dateStringSchema` | `string` | Valid date, not in future | API date strings |
+| `optionalDateStringSchema` | `string \| null` | Optional date string | Optional API dates |
+| `positiveIntSchema(fieldName)` | `number` | Integer > 0 | Counts, quantities |
+| `nonNegativeIntSchema(fieldName)` | `number` | Integer >= 0 | Scores, ages |
+| `scoreSchema` | `number \| null` | Optional, integer >= 0 | Optional scores |
+| `uuidSchema` | `string` | Valid UUID | Required IDs |
+| `optionalUuidSchema` | `string \| null` | Optional UUID | Optional foreign keys |
+| `genderSchema` | `'male' \| 'female'` | Enum | Player gender |
+| `eventGenderSchema` | `'male' \| 'female' \| 'mixed'` | Enum | Event gender |
+| `preferredHandSchema` | `'left' \| 'right' \| 'both'` | Enum | Player preferred hand |
+| `visibilitySchema` | `'public' \| 'private'` | Enum | Visibility settings |
+
+### Transform Helpers
+
+| Function | Input | Output | Usage |
+|----------|-------|--------|-------|
+| `dateToISOString(date)` | `Date \| null \| undefined` | `string \| null` | Convert Date to YYYY-MM-DD for API |
+| `isoStringToDate(str)` | `string \| null \| undefined` | `Date \| null` | Convert API date string to Date |
+| `transformDatesForAPI(data, fields)` | `object, string[]` | `object` | Batch transform multiple date fields |
+
+### Common Patterns Cheat Sheet
+
+| Pattern | Code |
+|---------|------|
+| **Import form basics** | `import { useForm } from 'react-hook-form'`<br>`import { zodResolver } from '@hookform/resolvers/zod'`<br>`import { z } from 'zod'` |
+| **Import form components** | `import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'` |
+| **Import custom components** | `import { LoadingButton, FormError, CharacterCounter } from '@/components/forms'` |
+| **Import validation schemas** | `import { nameSchema, emailSchema, dateToISOString } from '@/lib/forms/patterns'` |
+| **Create schema** | `const schema = z.object({ name: nameSchema })` |
+| **Infer type** | `type FormData = z.infer<typeof schema>` |
+| **Setup form** | `const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: {} })` |
+| **Get submit state** | `const { isSubmitting } = form.formState` |
+| **Submit handler** | `const onSubmit = async (data: FormData) => { ... }` |
+| **Render form** | `<Form {...form}><form onSubmit={form.handleSubmit(onSubmit)}>` |
+| **Transform date for API** | `dateToISOString(data.dateOfBirth)` |
+| **Parse date from API** | `isoStringToDate(apiData.dateOfBirth)` |
+
+### File Locations
+
+| Item | Path |
+|------|------|
+| **Validation schemas** | `src/lib/forms/patterns.ts` |
+| **LoadingButton** | `src/components/forms/loading-button.tsx` |
+| **FormError** | `src/components/forms/form-error.tsx` |
+| **CharacterCounter** | `src/components/forms/character-counter.tsx` |
+| **Form primitives** | `src/components/ui/form.tsx` |
+| **Input component** | `src/components/ui/input.tsx` |
+| **Select component** | `src/components/ui/select.tsx` |
+| **Textarea component** | `src/components/ui/textarea.tsx` |
+| **Calendar component** | `src/components/ui/calendar.tsx` |
+| **Checkbox component** | `src/components/ui/checkbox.tsx` |
+| **Radio Group component** | `src/components/ui/radio-group.tsx` |
+
+---
+
+## Development Checklists
+
+### New Form Checklist
+
+Use this when creating a new form from scratch.
+
+**Planning & Setup:**
+- [ ] Identify all form fields and their types
+- [ ] Determine validation rules for each field
+- [ ] Check if shared validation schemas exist in `src/lib/forms/patterns.ts`
+- [ ] Identify cross-field validation requirements
+- [ ] Determine if dates need to be transformed for API submission
+- [ ] Plan for error handling (field-level and form-level)
+
+**Implementation:**
+- [ ] Import React Hook Form, Zod, and form components
+- [ ] Create Zod schema using shared schemas where possible
+- [ ] Infer TypeScript type: `type FormData = z.infer<typeof formSchema>`
+- [ ] Setup `useForm` hook with `zodResolver` and `defaultValues`
+- [ ] Create async `onSubmit` handler with date transformations
+- [ ] Add `FormField` components for each input
+- [ ] Add `FormError` component for form-level errors
+- [ ] Add `LoadingButton` with `isSubmitting` state
+
+**Testing:**
+- [ ] Test form renders without errors
+- [ ] Test all field inputs work correctly
+- [ ] Test all validation rules trigger properly
+- [ ] Test error messages display correctly
+- [ ] Test successful submission flow
+- [ ] Test API error handling
+- [ ] Test loading states during submission
+- [ ] Test date transformations (if applicable)
+- [ ] Test cross-field validations (if applicable)
+
+### Migration Checklist
+
+Use this when migrating an existing form to React Hook Form + Zod.
+
+**Analysis:**
+- [ ] Identify current form implementation pattern
+- [ ] List all form fields and their current validation
+- [ ] Identify all submission logic and API calls
+- [ ] Note any special behaviors (conditional fields, dynamic arrays, etc.)
+- [ ] Check for date handling requirements
+
+**Implementation:**
+- [ ] Create Zod schema matching current validation
+- [ ] Add `.refine()` for cross-field validation if needed
+- [ ] Replace `useState` with `useForm` hook
+- [ ] Remove manual validation logic
+- [ ] Convert inputs to `FormField` pattern
+- [ ] Replace manual error display with `FormMessage`
+- [ ] Replace submit handler with `form.handleSubmit(onSubmit)`
+- [ ] Replace loading state with `form.formState.isSubmitting`
+- [ ] Use `LoadingButton` component
+- [ ] Transform dates with `dateToISOString` if needed
+
+**Cleanup:**
+- [ ] Remove unused imports (`useState`, etc.)
+- [ ] Remove unused state variables
+- [ ] Remove manual validation functions
+- [ ] Remove old error handling code
+
+### Common Pitfalls
+
+**❌ Not Spreading Field Props:**
+```typescript
+// Wrong
+<Input value={field.value} onChange={field.onChange} />
+// Correct
+<Input {...field} />
+```
+
+**❌ Forgetting to Parse Number Inputs:**
+```typescript
+// Wrong - field.value will be a string!
+<Input type="number" {...field} />
+// Correct
+<Input
+  type="number"
+  {...field}
+  onChange={(e) =>
+    field.onChange(
+      e.target.value === '' ? 0 : parseInt(e.target.value, 10) || 0
+    )
+  }
+/>
+```
+
+**❌ Not Transforming Dates for API:**
+```typescript
+// Wrong - Date objects sent to API will cause errors
+await apiClient.post('/api/endpoint', data)
+// Correct
+const payload = {
+  ...data,
+  dateOfBirth: dateToISOString(data.dateOfBirth),
+}
+await apiClient.post('/api/endpoint', payload)
+```
+
+**❌ Forgetting zodResolver:**
+```typescript
+// Wrong - No validation!
+const form = useForm({ defaultValues: { ... } })
+// Correct
+const form = useForm({
+  resolver: zodResolver(formSchema),
+  defaultValues: { ... },
+})
+```
+
+**❌ Not Initializing All Fields:**
+```typescript
+// Wrong - defaultValues: undefined
+const form = useForm({ resolver: zodResolver(formSchema) })
+// Correct
+const form = useForm({
+  resolver: zodResolver(formSchema),
+  defaultValues: {
+    name: '',
+    email: '',
+  },
+})
+```
+
+---
+
 ## Additional Resources
 
 - **React Hook Form Docs**: https://react-hook-form.com/
 - **Zod Docs**: https://zod.dev/
 - **Radix UI Form**: https://www.radix-ui.com/primitives/docs/components/form
-- **Internal Reference**: See `docs/FORMS_REFERENCE.md` for quick schema lookup
-- **Migration Checklist**: See `docs/FORMS_CHECKLIST.md` for step-by-step migration
 
 ---
 

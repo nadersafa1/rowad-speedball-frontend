@@ -906,10 +906,10 @@ className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 
 ## Related Documentation
 
-- **Component Structure**: See `/docs/COMPONENT_STANDARDS.md`
-- **Forms**: See `/docs/FORMS_GUIDE.md`
-- **State Management**: See `/docs/STATE_MANAGEMENT_STANDARDS.md`
-- **Naming Conventions**: See `/docs/NAMING_CONVENTIONS.md`
+- **Component Standards**: See [`COMPONENT_STANDARDS.md`](./COMPONENT_STANDARDS.md) - Component structure, organization, patterns
+- **Forms Guide**: See [`FORMS_GUIDE.md`](./FORMS_GUIDE.md) - Form development patterns
+- **State Management**: See [`STATE_MANAGEMENT_STANDARDS.md`](./STATE_MANAGEMENT_STANDARDS.md) - Zustand store patterns
+- **Naming Conventions**: See [`NAMING_CONVENTIONS.md`](./NAMING_CONVENTIONS.md) - Comprehensive naming standards
 
 ---
 

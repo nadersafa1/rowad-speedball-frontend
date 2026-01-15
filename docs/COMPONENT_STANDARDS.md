@@ -208,94 +208,22 @@ export const PlayerCard = ({ player }: PlayerCardProps) => (
 
 ## Component Naming
 
-### File Naming Convention
+**For comprehensive naming conventions, see [NAMING_CONVENTIONS.md](./NAMING_CONVENTIONS.md).**
 
-**Pattern**: `kebab-case.tsx`
+### Quick Reference
 
-```
-✅ Good:
-- player-form.tsx
-- event-card.tsx
-- date-of-birth-picker.tsx
-- coach-selector.tsx
+- **File names**: `kebab-case.tsx` (e.g., `player-form.tsx`)
+- **Component names**: `PascalCase` (e.g., `PlayerForm`)
+- **Naming patterns**: `[Entity]Form`, `[Entity]Card`, `[Entity]Dialog`, etc.
 
-❌ Bad:
-- PlayerForm.tsx        (PascalCase)
-- player_form.tsx       (snake_case)
-- playerForm.tsx        (camelCase)
-```
+### Component Type Patterns
 
-### Component Naming Convention
-
-**Pattern**: `PascalCase` (matches component name, not file name)
-
-```typescript
-// File: player-form.tsx
-export const PlayerForm = ({ ... }) => { ... }
-
-// File: event-card.tsx
-export const EventCard = ({ ... }) => { ... }
-```
-
-### Naming Patterns by Component Type
-
-**Forms**: `[Entity]Form`
-```typescript
-PlayerForm
-CoachForm
-EventForm
-TrainingSessionForm
-```
-
-**Dialogs**: `[Entity][Action]Dialog` or `[Entity]Dialog`
-```typescript
-PlayerCreateDialog
-DeleteConfirmDialog
-EventDetailsDialog
-```
-
-**Cards**: `[Entity]Card`
-```typescript
-PlayerCard
-EventCard
-StatsCard
-```
-
-**Lists**: `[Entity]List` or `[Entity]Table`
-```typescript
-PlayerList
-EventTable
-PlayersList  // Avoid plural in component name
-```
-
-**Pickers/Selectors**: `[Entity]Picker` or `[Entity]Selector`
-```typescript
-DateOfBirthPicker
-CoachSelector
-OrganizationPicker
-ClubCombobox  // Combobox suffix also acceptable
-```
-
-**Stats/Display**: `[Entity]Stats` or `[Entity]Display`
-```typescript
-PlayersStats
-EventStats
-PlayerDisplay
-```
-
-### Descriptive and Specific Names
-
-```typescript
-// ✅ Good: Specific
-PlayerForm
-EventRegistrationForm
-CoachAssignmentDialog
-
-// ❌ Bad: Generic
-Form
-Dialog
-Component
-```
+- **Forms**: `PlayerForm`, `CoachForm`, `EventForm`
+- **Dialogs**: `PlayerCreateDialog`, `DeleteConfirmDialog`
+- **Cards**: `PlayerCard`, `EventCard`, `StatsCard`
+- **Tables/Lists**: `PlayersTable`, `EventList`
+- **Pickers**: `DateOfBirthPicker`, `CoachSelector`
+- **Stats**: `PlayersStats`, `EventStats`
 
 ---
 
@@ -823,10 +751,10 @@ export const ComponentName = ({ entity, onSuccess }: ComponentNameProps) => {
 
 ## Related Documentation
 
-- **UI Standards**: See `/docs/UI_COMPONENT_STANDARDS.md`
-- **Forms**: See `/docs/FORMS_GUIDE.md`
-- **State Management**: See `/docs/STATE_MANAGEMENT_STANDARDS.md`
-- **Naming Conventions**: See `/docs/NAMING_CONVENTIONS.md`
+- **UI Component Standards**: See [`UI_COMPONENT_STANDARDS.md`](./UI_COMPONENT_STANDARDS.md) - Radix UI usage, Tailwind patterns, layout
+- **Forms Guide**: See [`FORMS_GUIDE.md`](./FORMS_GUIDE.md) - Form development patterns
+- **State Management**: See [`STATE_MANAGEMENT_STANDARDS.md`](./STATE_MANAGEMENT_STANDARDS.md) - Zustand store patterns
+- **Naming Conventions**: See [`NAMING_CONVENTIONS.md`](./NAMING_CONVENTIONS.md) - Comprehensive naming standards
 
 ---
 
