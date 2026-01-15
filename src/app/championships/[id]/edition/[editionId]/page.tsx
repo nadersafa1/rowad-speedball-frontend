@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog } from '@/components/ui/dialog'
 import { championshipEventsTableConfig } from '@/config/tables/championship-events.config'
 import { createChampionshipEventsColumns } from '@/config/tables/columns/championship-events-columns'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useFederation } from '@/hooks/authorization/use-federation'
 import { BaseDataTable } from '@/lib/table-core'
 import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
 import { useChampionshipsStore } from '@/store/championships-store'
@@ -35,8 +35,7 @@ const ChampionshipEditionEventsPage = () => {
   const championshipId = params.id as string
   const editionId = params.editionId as string
 
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin, isFederationAdmin, isFederationEditor } = context
+  const { isSystemAdmin, isFederationAdmin, isFederationEditor } = useFederation()
 
   const {
     selectedChampionship,

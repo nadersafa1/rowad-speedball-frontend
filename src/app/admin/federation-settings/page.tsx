@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
 import { Settings, Building2, Users, Calendar, Clock } from 'lucide-react'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useFederation } from '@/hooks/authorization/use-federation'
 import Loading from '@/components/ui/loading'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,7 +35,7 @@ interface FederationStats {
 }
 
 const FederationSettingsPage = () => {
-  const { context, isLoading: isContextLoading } = useOrganizationContext()
+  const { federationId, isFederationAdmin, isFederationEditor, isSystemAdmin, isLoading: isContextLoading } = useFederation()
   const {
     selectedFederation,
     isLoading: isFederationLoading,
@@ -56,11 +56,11 @@ const FederationSettingsPage = () => {
   const [isLoadingStats, setIsLoadingStats] = useState(false)
 
   useEffect(() => {
-    if (context.federationId) {
-      fetchFederation(context.federationId)
+    if (federationId) {
+      fetchFederation(federationId)
       fetchStats()
     }
-  }, [context.federationId, fetchFederation])
+  }, [federationId, fetchFederation])
 
   useEffect(() => {
     if (selectedFederation) {
@@ -72,26 +72,26 @@ const FederationSettingsPage = () => {
   }, [selectedFederation])
 
   const fetchStats = async () => {
-    if (!context.federationId) return
+    if (!federationId) return
 
     setIsLoadingStats(true)
     try {
       // Fetch member clubs count
       const clubsResponse = await apiClient.getFederationClubs({
-        federationId: context.federationId,
+        federationId: federationId,
         limit: 1,
       })
 
       // Fetch pending requests count
       const requestsResponse = await apiClient.getFederationClubRequests({
-        federationId: context.federationId,
+        federationId: federationId,
         status: 'pending',
         limit: 1,
       })
 
       // Fetch active seasons count
       const seasonsResponse = await apiClient.getSeasons({
-        federationId: context.federationId,
+        federationId: federationId,
         limit: 100, // Get all seasons to count active ones
       })
 
@@ -125,13 +125,13 @@ const FederationSettingsPage = () => {
   }
 
   const handleSave = async () => {
-    if (!context.federationId) return
+    if (!federationId) return
 
     try {
-      await updateFederation(context.federationId, formData)
+      await updateFederation(federationId, formData)
       setEditDialogOpen(false)
       toast.success('Federation updated successfully')
-      fetchFederation(context.federationId)
+      fetchFederation(federationId)
     } catch (error) {
       toast.error('Failed to update federation')
       console.error('Error updating federation:', error)
@@ -143,7 +143,7 @@ const FederationSettingsPage = () => {
   }
 
   // Check authorization
-  if (!context.isFederationAdmin && !context.isFederationEditor && !context.isSystemAdmin) {
+  if (!isFederationAdmin && !isFederationEditor && !isSystemAdmin) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
@@ -157,7 +157,7 @@ const FederationSettingsPage = () => {
     )
   }
 
-  if (!context.federationId && !context.isSystemAdmin) {
+  if (!federationId && !isSystemAdmin) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
@@ -175,7 +175,7 @@ const FederationSettingsPage = () => {
     return <Loading />
   }
 
-  const canEdit = context.isFederationAdmin || context.isSystemAdmin
+  const canEdit = isFederationAdmin || isSystemAdmin
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>

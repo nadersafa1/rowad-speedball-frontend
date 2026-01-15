@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useFederation } from '@/hooks/authorization/use-federation'
 import { useChampionshipEditionsStore } from '@/store/championship-editions-store'
 import { useChampionshipsStore } from '@/store/championships-store'
 import { Edit, Plus } from 'lucide-react'
@@ -25,8 +25,7 @@ const ChampionshipDetailPage = () => {
   const router = useRouter()
   const championshipId = params.id as string
 
-  const { context } = useOrganizationContext()
-  const { isSystemAdmin, isFederationAdmin, isFederationEditor } = context
+  const { isSystemAdmin, isFederationAdmin, isFederationEditor } = useFederation()
 
   const {
     selectedChampionship,

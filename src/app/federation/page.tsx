@@ -3,7 +3,7 @@
 import GridSingleItem from '@/components/gird-single-item'
 import { SinglePageHeader } from '@/components/ui'
 import { Building2, Calendar, ClipboardCheck, Trophy, Settings } from 'lucide-react'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useFederation } from '@/hooks/authorization/use-federation'
 import Loading from '@/components/ui/loading'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -41,14 +41,14 @@ const FEDERATION_ITEMS = [
 ]
 
 const FederationPage = () => {
-  const { context, isLoading } = useOrganizationContext()
+  const { isFederationAdmin, isFederationEditor, isSystemAdmin, federationId, isLoading } = useFederation()
 
   if (isLoading) {
     return <Loading />
   }
 
   // Check authorization
-  if (!context.isFederationAdmin && !context.isFederationEditor && !context.isSystemAdmin) {
+  if (!isFederationAdmin && !isFederationEditor && !isSystemAdmin) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
@@ -62,7 +62,7 @@ const FederationPage = () => {
     )
   }
 
-  if (!context.federationId && !context.isSystemAdmin) {
+  if (!federationId && !isSystemAdmin) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
