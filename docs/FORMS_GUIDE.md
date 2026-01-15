@@ -549,6 +549,304 @@ const onSubmit = async (data: FormData) => {
 
 ---
 
+## Standard Form Component Structure
+
+### Recommended Pattern (Modern)
+
+All new forms should follow this standardized structure using shared components:
+
+```typescript
+'use client'
+
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useState } from 'react'
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { LoadingButton } from '@/components/forms/loading-button'
+import { FormError } from '@/components/forms/form-error'
+import { useEntityStore } from '@/store/entity-store'
+import { nameSchema, emailSchema } from '@/lib/forms/patterns'
+import { toast } from 'sonner'
+
+// 1. Define validation schema using shared patterns
+const schema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+})
+
+type FormData = z.infer<typeof schema>
+
+// 2. Define props interface
+interface EntityFormProps {
+  entity?: Entity       // Optional for edit mode
+  onSuccess?: () => void
+  onCancel?: () => void
+}
+
+// 3. Component implementation
+export const EntityForm = ({ entity, onSuccess, onCancel }: EntityFormProps) => {
+  // Store actions and state
+  const { createEntity, updateEntity, error: storeError, clearError } = useEntityStore()
+
+  // Local error state for form-specific errors
+  const [error, setError] = useState<string | null>(null)
+
+  const isEditing = !!entity
+
+  // Initialize form with default values
+  const form = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: entity?.name || '',
+      email: entity?.email || '',
+    },
+  })
+
+  // Submit handler
+  const onSubmit = async (data: FormData) => {
+    clearError()
+    setError(null)
+
+    try {
+      if (isEditing) {
+        await updateEntity(entity.id, data)
+        toast.success('Updated successfully')
+      } else {
+        await createEntity(data)
+        toast.success('Created successfully')
+      }
+
+      onSuccess?.()
+    } catch (err) {
+      // Error already in store state, optionally set local error
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Form fields */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Error display using shared component */}
+        <FormError error={error || storeError} />
+
+        {/* Form actions */}
+        <div className="flex justify-end gap-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+
+          {/* Submit button using shared LoadingButton */}
+          <LoadingButton
+            type="submit"
+            isLoading={form.formState.isSubmitting}
+            loadingText={isEditing ? 'Updating...' : 'Creating...'}
+          >
+            {isEditing ? 'Update' : 'Create'}
+          </LoadingButton>
+        </div>
+      </form>
+    </Form>
+  )
+}
+```
+
+### Key Components
+
+#### 1. FormError Component
+
+**Location**: `src/components/forms/form-error.tsx`
+
+**Usage**:
+```typescript
+import { FormError } from '@/components/forms/form-error'
+
+const [error, setError] = useState<string | null>(null)
+
+// In JSX
+<FormError error={error} />
+```
+
+**Features**:
+- Only renders when error exists
+- Red destructive color scheme
+- AlertCircle icon
+- `role="alert"` for accessibility
+- Consistent styling across all forms
+
+**Reference**: `src/components/forms/form-error.tsx`
+
+#### 2. LoadingButton Component
+
+**Location**: `src/components/forms/loading-button.tsx`
+
+**Usage**:
+```typescript
+import { LoadingButton } from '@/components/forms/loading-button'
+
+<LoadingButton
+  type="submit"
+  isLoading={form.formState.isSubmitting}
+  loadingText="Saving..."
+>
+  Save Changes
+</LoadingButton>
+```
+
+**Features**:
+- Automatic disable during loading
+- Rotating spinner (Loader2 icon)
+- Optional custom loading text
+- Optional icon support
+
+**Reference**: `src/components/forms/loading-button.tsx`
+
+#### 3. Shared Validation Patterns
+
+**Location**: `src/lib/forms/patterns.ts`
+
+**Available Patterns**:
+```typescript
+import {
+  nameSchema,           // 2-255 chars, required
+  rtlNameSchema,        // Optional RTL name, max 255
+  emailSchema,          // Email validation
+  descriptionSchema,    // Max 1000 chars, optional
+  dateOfBirthSchema,    // DOB with age validation
+  genderSchema,         // 'male' | 'female'
+  preferredHandSchema,  // 'left' | 'right' | 'both'
+  visibilitySchema,     // 'public' | 'private'
+  uuidSchema,           // UUID validation
+  optionalUuidSchema,   // Optional UUID
+} from '@/lib/forms/patterns'
+```
+
+**Reference**: `src/lib/forms/patterns.ts`
+
+### Migrating Legacy Forms
+
+**Legacy Pattern** (To be updated):
+```typescript
+// ❌ Old pattern - inline error div
+{error && (
+  <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+    <p className="text-destructive text-sm">{error}</p>
+  </div>
+)}
+
+// ❌ Old pattern - manual button loading
+<Button
+  type="submit"
+  disabled={form.formState.isSubmitting}
+>
+  {form.formState.isSubmitting ? (
+    <>
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      Saving...
+    </>
+  ) : (
+    'Save'
+  )}
+</Button>
+
+// ❌ Old pattern - inline Zod schema
+const schema = z.object({
+  name: z.string().min(1, 'Name is required').max(255),
+  email: z.string().email('Invalid email'),
+})
+```
+
+**Modern Pattern** (Use this):
+```typescript
+// ✅ New pattern - shared FormError component
+<FormError error={error} />
+
+// ✅ New pattern - shared LoadingButton component
+<LoadingButton
+  type="submit"
+  isLoading={form.formState.isSubmitting}
+  loadingText="Saving..."
+>
+  Save
+</LoadingButton>
+
+// ✅ New pattern - shared validation patterns
+import { nameSchema, emailSchema } from '@/lib/forms/patterns'
+
+const schema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+})
+```
+
+### Migration Checklist
+
+When updating an existing form:
+
+- [ ] Replace inline error divs with `<FormError error={error} />`
+- [ ] Replace manual button loading with `<LoadingButton>`
+- [ ] Replace inline Zod schemas with shared patterns from `@/lib/forms/patterns.ts`
+- [ ] Ensure form uses `toast.success()` for success feedback
+- [ ] Test form submission (success and error cases)
+- [ ] Verify loading states display correctly
+- [ ] Check error messages appear properly
+
+### Benefits of Standard Pattern
+
+**Consistency**:
+- All forms look and behave the same
+- Users have predictable experience
+- Easier maintenance
+
+**Reusability**:
+- Shared components reduce code duplication
+- Validation patterns prevent mistakes
+- Less code to write and test
+
+**Accessibility**:
+- FormError has `role="alert"` built-in
+- LoadingButton handles disabled state
+- Consistent focus management
+
+**Type Safety**:
+- Shared schemas ensure consistent validation
+- TypeScript inference works automatically
+- Catch errors at compile time
+
+---
+
 ## Common Patterns
 
 ### Number Input Pattern
