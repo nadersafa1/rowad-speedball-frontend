@@ -6,10 +6,10 @@ This is a full-stack web application for managing Speedball sports teams, tourna
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15 (React 19) with TypeScript
+- **Frontend**: Next.js 16.1 (React 19.2) with TypeScript
 - **Backend**: Next.js API Routes
-- **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: better-auth with Google OAuth
+- **Database**: PostgreSQL with Drizzle ORM 0.45
+- **Authentication**: better-auth 1.4 with Google OAuth
 - **State Management**: Zustand
 - **UI**: Radix UI components + Tailwind CSS
 - **Forms**: React Hook Form with Zod validation
@@ -438,14 +438,26 @@ Available guides in `/docs/`:
 
 ## Recent Development Focus
 
-1. **Authorization Hooks Refactoring** - LATEST (Jan 2026)
+1. **Next.js 16.1 Migration** - LATEST (Jan 2026)
+   - Upgraded from Next.js 15.5.4 to 16.1.1
+   - Updated React from 19.1.0 to 19.2.3
+   - Updated React types to @types/react 19.2.8
+   - Updated Drizzle ORM from 0.44.6 to 0.45.1
+   - Updated better-auth from 1.3.29 to 1.4.12
+   - Updated lucide-react, date-fns, and drizzle-kit
+   - Fixed CSS @import ordering for Turbopack compatibility
+   - All async Dynamic APIs already using correct patterns
+   - Production build verified successful
+   - Key benefits: Security fixes (CVE-2025-55182, CVE-2025-66478), Turbopack improvements
+
+2. **Authorization Hooks Refactoring** (Jan 2026)
    - Created 3 specialized context hooks: `useRoles`, `useOrganization`, `useFederation`
    - Refactored 25+ page components to use specialized hooks instead of direct context access
    - Improved separation of concerns and testability
    - Better TypeScript inference and clearer component intent
    - See `/docs/AUTHORIZATION_HOOKS_REFACTOR.md` for details
 
-2. **Federation Management System**
+3. **Federation Management System**
    - Federation player request management system
    - Federation club request handling
    - Dedicated federation admin interface
