@@ -139,7 +139,11 @@ export default function SeasonRegistrationForm({
       setShowReview(false)
       onSuccess?.()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to submit registrations')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to submit registrations'
+      )
     }
   }
 

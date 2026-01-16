@@ -57,7 +57,11 @@ export const UserRow = ({
       { userId },
       {
         onError: (error) => {
-          toast.error(error.error.message || 'Failed to impersonate')
+          toast.error(
+            error.error instanceof Error
+              ? error.error.message
+              : 'Failed to impersonate user'
+          )
         },
         onSuccess: () => {
           refetch()
@@ -72,10 +76,14 @@ export const UserRow = ({
       { userId },
       {
         onError: (error) => {
-          toast.error(error.error.message || 'Failed to ban user')
+          toast.error(
+            error.error instanceof Error
+              ? error.error.message
+              : 'Failed to ban user'
+          )
         },
         onSuccess: () => {
-          toast.success('User banned')
+          toast.success('User banned successfully')
           router.refresh()
         },
       }
@@ -87,10 +95,14 @@ export const UserRow = ({
       { userId },
       {
         onError: (error) => {
-          toast.error(error.error.message || 'Failed to unban user')
+          toast.error(
+            error.error instanceof Error
+              ? error.error.message
+              : 'Failed to unban user'
+          )
         },
         onSuccess: () => {
-          toast.success('User unbanned')
+          toast.success('User unbanned successfully')
           router.refresh()
         },
       }
@@ -102,10 +114,14 @@ export const UserRow = ({
       { userId },
       {
         onError: (error) => {
-          toast.error(error.error.message || 'Failed to revoke user sessions')
+          toast.error(
+            error.error instanceof Error
+              ? error.error.message
+              : 'Failed to revoke user sessions'
+          )
         },
         onSuccess: () => {
-          toast.success('User sessions revoked')
+          toast.success('User sessions revoked successfully')
         },
       }
     )
@@ -116,10 +132,14 @@ export const UserRow = ({
       { userId },
       {
         onError: (error) => {
-          toast.error(error.error.message || 'Failed to delete user')
+          toast.error(
+            error.error instanceof Error
+              ? error.error.message
+              : 'Failed to delete user'
+          )
         },
         onSuccess: () => {
-          toast.success('User deleted')
+          toast.success('User deleted successfully')
           router.refresh()
         },
       }

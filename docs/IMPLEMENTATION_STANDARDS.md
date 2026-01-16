@@ -1032,3 +1032,4 @@ For questions or issues during migration:
 - **Naming Conventions**: See `/docs/NAMING_CONVENTIONS.md`
 - **Forms**: See `/docs/FORMS_GUIDE.md`
 - **Authorization**: See `/docs/AUTHORIZATION_RULES.md`
+- **Toast Standards**: See [`TOAST_STANDARDS.md`](./TOAST_STANDARDS.md) - Toast notification patterns and best practices

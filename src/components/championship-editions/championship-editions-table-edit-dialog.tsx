@@ -124,7 +124,11 @@ export function ChampionshipEditionsTableEditDialog({
       toast.success('Championship edition updated successfully')
       onSuccess()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update championship edition')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update championship edition'
+      )
     }
   }
 

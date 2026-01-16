@@ -56,13 +56,17 @@ export const OrganizationInfo = ({ organization }: OrganizationInfoProps) => {
         organizationId: organization.id,
       })
       if (res.error) {
-        toast.error(res.error.message || 'Failed to delete club')
+        toast.error(
+          res.error instanceof Error ? res.error.message : 'Failed to delete club'
+        )
       } else {
         toast.success('Club deleted successfully')
         router.push('/admin/clubs')
       }
     } catch (error) {
-      toast.error('Failed to delete club')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete club'
+      )
     }
   }
 

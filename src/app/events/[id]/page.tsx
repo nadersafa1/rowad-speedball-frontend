@@ -119,7 +119,9 @@ const EventDetailPage = () => {
       toast.success('Event deleted successfully')
       router.push('/events')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete event')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete event'
+      )
     }
   }
 
@@ -137,7 +139,9 @@ const EventDetailPage = () => {
       toast.success('Scores updated successfully')
       handleRefresh()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update scores')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update scores'
+      )
     }
   }
 
@@ -150,7 +154,9 @@ const EventDetailPage = () => {
       toast.success('Heats generated successfully')
       handleRefresh()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to generate heats')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to generate heats'
+      )
     } finally {
       setIsGeneratingHeats(false)
     }

@@ -81,7 +81,11 @@ export const CreateOrganizationDialog = () => {
     })
 
     if (res.error) {
-      toast.error(res.error.message || 'Failed to create club')
+      toast.error(
+        res.error instanceof Error
+          ? res.error.message
+          : 'Failed to create club'
+      )
     } else {
       toast.success('Club created successfully')
       form.reset()

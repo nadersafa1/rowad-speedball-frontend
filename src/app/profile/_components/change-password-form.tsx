@@ -46,7 +46,11 @@ const ChangePasswordForm = () => {
       },
       {
         onError: (error) => {
-          toast.error(error.error.message || 'Failed to change password')
+          toast.error(
+            error.error instanceof Error
+              ? error.error.message
+              : 'Failed to change password'
+          )
         },
         onSuccess: () => {
           toast.success('Password changed successfully')

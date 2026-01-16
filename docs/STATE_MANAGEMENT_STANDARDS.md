@@ -481,7 +481,7 @@ createEntity: async (data) => {
 const onSubmit = async (data) => {
   try {
     await createEntity(data)
-    toast.success('Created successfully')
+    toast.success('Player created successfully')
     onClose()
   } catch (err) {
     // Error already in store state, just keep dialog open

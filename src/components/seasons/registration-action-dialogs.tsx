@@ -104,7 +104,11 @@ export function ApproveRegistrationDialog({
       form.reset()
       onSuccess?.()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to approve registration')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to approve registration'
+      )
     }
   }
 
@@ -289,7 +293,11 @@ export function RejectRegistrationDialog({
       form.reset()
       onSuccess?.()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to reject registration')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to reject registration'
+      )
     }
   }
 

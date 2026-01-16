@@ -755,6 +755,7 @@ export const ComponentName = ({ entity, onSuccess }: ComponentNameProps) => {
 - **Forms Guide**: See [`FORMS_GUIDE.md`](./FORMS_GUIDE.md) - Form development patterns
 - **State Management**: See [`STATE_MANAGEMENT_STANDARDS.md`](./STATE_MANAGEMENT_STANDARDS.md) - Zustand store patterns
 - **Naming Conventions**: See [`NAMING_CONVENTIONS.md`](./NAMING_CONVENTIONS.md) - Comprehensive naming standards
+- **Toast Standards**: See [`TOAST_STANDARDS.md`](./TOAST_STANDARDS.md) - Toast notification patterns and best practices
 
 ---
 

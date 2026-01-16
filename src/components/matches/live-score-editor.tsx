@@ -57,7 +57,9 @@ const LiveScoreEditor = ({
       await onScoreUpdate(set.id, newScores.reg1, newScores.reg2)
       setScores(newScores)
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update score')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update score'
+      )
     } finally {
       setIsUpdating(false)
     }
@@ -74,10 +76,14 @@ const LiveScoreEditor = ({
     setIsUpdating(true)
     try {
       await onMarkAsPlayed(set.id)
-      toast.success('Set marked as played')
+      toast.success('Set marked as played successfully')
       setShowConfirmDialog(false)
     } catch (error: any) {
-      toast.error(error.message || 'Failed to mark set as played')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to mark set as played'
+      )
     } finally {
       setIsUpdating(false)
     }

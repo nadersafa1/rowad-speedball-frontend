@@ -70,7 +70,9 @@ export default function PointsSchemaEntriesTable({
       toast.success('Points entry deleted successfully')
       onRefetch()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete points entry')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete points entry'
+      )
     } finally {
       setDeleteDialogOpen(false)
       setEntryToDelete(null)

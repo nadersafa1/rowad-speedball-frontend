@@ -612,10 +612,10 @@ export const EntityForm = ({ entity, onSuccess, onCancel }: EntityFormProps) => 
     try {
       if (isEditing) {
         await updateEntity(entity.id, data)
-        toast.success('Updated successfully')
+        toast.success('Player updated successfully')
       } else {
         await createEntity(data)
-        toast.success('Created successfully')
+        toast.success('Player created successfully')
       }
 
       onSuccess?.()
@@ -1572,6 +1572,7 @@ const form = useForm({
 - **React Hook Form Docs**: https://react-hook-form.com/
 - **Zod Docs**: https://zod.dev/
 - **Radix UI Form**: https://www.radix-ui.com/primitives/docs/components/form
+- **Toast Standards**: See [`TOAST_STANDARDS.md`](./TOAST_STANDARDS.md) - Toast notification patterns and best practices
 
 ---
 

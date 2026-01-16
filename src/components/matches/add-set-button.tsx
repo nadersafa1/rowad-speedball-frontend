@@ -32,7 +32,9 @@ const AddSetButton = ({
       await onCreateSet(matchId)
       toast.success('Set created successfully')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create set')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create set'
+      )
     } finally {
       setIsLoading(false)
     }

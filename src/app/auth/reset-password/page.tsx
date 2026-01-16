@@ -61,7 +61,11 @@ const ResetPasswordForm = () => {
       },
       {
         onError: (error) => {
-          toast.error(error.error.message || 'Failed to reset password')
+          toast.error(
+            error.error instanceof Error
+              ? error.error.message
+              : 'Failed to reset password'
+          )
         },
         onSuccess: () => {
           toast.success('Password reset successful', {

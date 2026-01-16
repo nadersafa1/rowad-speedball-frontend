@@ -46,7 +46,9 @@ const MatchDatePicker = ({
       await onDateChange(selectedDate)
       toast.success('Match date updated successfully')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update match date')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update match date'
+      )
     } finally {
       setIsSubmitting(false)
     }

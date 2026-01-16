@@ -32,7 +32,7 @@ export function ActionButton({
     startTransition(async () => {
       const data = await action();
       if (data.error) {
-        toast.error(data.message ?? "Error");
+        toast.error(data.message || 'Action failed');
       }
     });
   }

@@ -36,7 +36,9 @@ export const OrganizationRow = ({ organization }: OrganizationRowProps) => {
       organizationId: organization.id,
     })
     if (res.error) {
-      toast.error(res.error.message || 'Failed to delete club')
+      toast.error(
+        res.error instanceof Error ? res.error.message : 'Failed to delete club'
+      )
     } else {
       toast.success('Club deleted successfully')
       router.refresh()

@@ -99,7 +99,9 @@ const HeatManagement = ({
       toast.success('Heats reset successfully')
       onHeatsGenerated()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to reset heats')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to reset heats'
+      )
     } finally {
       setIsResetting(false)
     }
@@ -120,7 +122,9 @@ const HeatManagement = ({
       toast.success('Heats generated successfully')
       onHeatsGenerated()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to generate heats')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to generate heats'
+      )
     } finally {
       setIsGenerating(false)
     }
