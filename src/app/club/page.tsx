@@ -13,7 +13,8 @@ import {
   ClipboardList,
   UserPlus,
 } from 'lucide-react'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { useOrganization } from '@/hooks/authorization/use-organization'
 import Loading from '@/components/ui/loading'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -75,14 +76,17 @@ const CLUB_ITEMS = [
 ]
 
 const ClubPage = () => {
-  const { context, isLoading } = useOrganizationContext()
+  const { isOwner, isAdmin, isCoach, isLoading: rolesLoading } = useRoles()
+  const { organization, isLoading: orgLoading } = useOrganization()
+
+  const isLoading = rolesLoading || orgLoading
 
   if (isLoading) {
     return <Loading />
   }
 
   // Check authorization
-  if (!context.isOwner && !context.isAdmin && !context.isCoach) {
+  if (!isOwner && !isAdmin && !isCoach) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
@@ -96,7 +100,7 @@ const ClubPage = () => {
     )
   }
 
-  if (!context.organization?.id) {
+  if (!organization?.id) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>

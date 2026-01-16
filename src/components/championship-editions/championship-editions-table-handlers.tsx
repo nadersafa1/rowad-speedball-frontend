@@ -38,7 +38,11 @@ export function useChampionshipEditionsTableHandlers({
       toast.success('Championship edition deleted successfully')
       onRefetch?.()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete championship edition')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete championship edition'
+      )
     }
   }
 

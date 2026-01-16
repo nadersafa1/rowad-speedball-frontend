@@ -16,17 +16,14 @@ import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
 import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
 import PointsSchemasTable from './components/points-schemas-table'
 import { usePointsSchemasStore } from '@/store/points-schemas-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useFederation } from '@/hooks/authorization/use-federation'
 
 const PointsSchemasPage = () => {
-  const { context, isLoading: contextLoading } = useOrganizationContext()
+  const { isSystemAdmin, isFederationAdmin, isFederationEditor, isLoading: contextLoading } = useFederation()
   const { fetchSchemas, isLoading, error, clearError } = usePointsSchemasStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   // Check if user is system admin or federation admin/editor
-  const isSystemAdmin = context.isSystemAdmin
-  const isFederationAdmin = context.isFederationAdmin
-  const isFederationEditor = context.isFederationEditor
   const hasAccess = isSystemAdmin || isFederationAdmin || isFederationEditor
 
   useEffect(() => {

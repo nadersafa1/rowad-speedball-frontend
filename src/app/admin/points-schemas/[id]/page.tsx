@@ -18,14 +18,14 @@ import PointsSchemaEntryForm from '@/components/points-schemas/points-schema-ent
 import PointsSchemaEntriesTable from './components/points-schema-entries-table'
 import { usePointsSchemasStore } from '@/store/points-schemas-store'
 import { usePointsSchemaEntriesStore } from '@/store/points-schema-entries-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useFederation } from '@/hooks/authorization/use-federation'
 
 const PointsSchemaDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const schemaId = params.id as string
 
-  const { context, isLoading: contextLoading } = useOrganizationContext()
+  const { isSystemAdmin, isFederationAdmin, isFederationEditor, isLoading: contextLoading } = useFederation()
   const {
     selectedSchema,
     fetchSchema,
@@ -42,9 +42,6 @@ const PointsSchemaDetailPage = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   // Check if user is system admin or federation admin/editor
-  const isSystemAdmin = context.isSystemAdmin
-  const isFederationAdmin = context.isFederationAdmin
-  const isFederationEditor = context.isFederationEditor
   const hasAccess = isSystemAdmin || isFederationAdmin || isFederationEditor
 
   useEffect(() => {

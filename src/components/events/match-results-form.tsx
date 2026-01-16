@@ -92,9 +92,11 @@ const MatchResultsForm = ({
     const dateString = format(date, 'yyyy-MM-dd')
     try {
       await updateMatch(match.id, { matchDate: dateString })
-      toast.success('Match date updated')
+      toast.success('Match date updated successfully')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update match date')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update match date'
+      )
     }
   }
 
@@ -110,7 +112,9 @@ const MatchResultsForm = ({
       })
       toast.success('Set added successfully')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to add set')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to add set'
+      )
     }
   }
 
@@ -120,9 +124,11 @@ const MatchResultsForm = ({
   ) => {
     try {
       await updateSet(setId, scores)
-      toast.success('Set updated')
+      toast.success('Set updated successfully')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update set')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update set'
+      )
     }
   }
 
@@ -133,10 +139,14 @@ const MatchResultsForm = ({
         toast.success('Match completed! Winner determined.')
         onSuccess?.()
       } else {
-        toast.success('Set marked as played')
+        toast.success('Set marked as played successfully')
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to mark set as played')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to mark set as played'
+      )
     }
   }
 
@@ -145,7 +155,9 @@ const MatchResultsForm = ({
       await deleteSet(setId)
       toast.success('Set deleted successfully')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete set')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete set'
+      )
     }
   }
 

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
 import { Building2 } from 'lucide-react'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useOrganization } from '@/hooks/authorization/use-organization'
 import Loading from '@/components/ui/loading'
 import { Badge } from '@/components/ui/badge'
 import { JoinFederationDialog } from '@/components/federations/join-federation-dialog'
@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button'
 // import { useToast } from //toast hook not implemented
 
 const OrganizationPage = () => {
-  const { context, isLoading: isContextLoading } = useOrganizationContext()
+  const { organization, isOwner, isAdmin, isLoading } = useOrganization()
   // const { toast } = useToast()
   const { requests, fetchRequests, deleteRequest } =
     useFederationClubRequestsStore()
@@ -40,13 +40,13 @@ const OrganizationPage = () => {
   const [isLoadingMembership, setIsLoadingMembership] = useState(false)
 
   useEffect(() => {
-    if (context.organization?.id) {
+    if (organization?.id) {
       // Fetch federation membership
       const fetchMembership = async () => {
         setIsLoadingMembership(true)
         try {
           const response = await apiClient.getFederationClubs({
-            organizationId: context.organization?.id!,
+            organizationId: organization?.id!,
             limit: 1,
           })
           if (response.data.length > 0) {
@@ -61,7 +61,7 @@ const OrganizationPage = () => {
 
       // Fetch pending requests
       fetchRequests({
-        organizationId: context.organization?.id,
+        organizationId: organization?.id,
         status: 'all',
         sortBy: 'requestedAt',
         sortOrder: 'desc',
@@ -70,7 +70,7 @@ const OrganizationPage = () => {
 
       fetchMembership()
     }
-  }, [context.organization?.id, fetchRequests])
+  }, [organization?.id, fetchRequests])
 
   const handleDeleteRequest = async (requestId: string) => {
     try {
@@ -82,9 +82,9 @@ const OrganizationPage = () => {
   }
 
   const handleRefresh = () => {
-    if (context.organization?.id) {
+    if (organization?.id) {
       fetchRequests({
-        organizationId: context.organization?.id,
+        organizationId: organization?.id,
         status: 'all',
         sortBy: 'requestedAt',
         sortOrder: 'desc',
@@ -93,12 +93,12 @@ const OrganizationPage = () => {
     }
   }
 
-  if (isContextLoading) {
+  if (isLoading) {
     return <Loading />
   }
 
   // Only organization owners/admins can access this page
-  if (!context.isOwner && !context.isAdmin) {
+  if (!isOwner && !isAdmin) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
@@ -112,7 +112,7 @@ const OrganizationPage = () => {
     )
   }
 
-  if (!context.organization?.id) {
+  if (!organization?.id) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
@@ -148,12 +148,12 @@ const OrganizationPage = () => {
             <div className='space-y-2'>
               <div>
                 <span className='text-sm font-medium'>Name:</span>
-                <p className='text-lg'>{context.organization?.name || 'N/A'}</p>
+                <p className='text-lg'>{organization?.name || 'N/A'}</p>
               </div>
               <div>
                 <span className='text-sm font-medium'>Slug:</span>
                 <p className='text-muted-foreground'>
-                  {context.organization?.slug || 'N/A'}
+                  {organization?.slug || 'N/A'}
                 </p>
               </div>
             </div>

@@ -60,9 +60,17 @@ const UserProfileForm = ({ user }: { user: User }) => {
     const changeEmailResult = results[1] ?? { error: false }
 
     if (updateUserResult.error) {
-      toast.error(updateUserResult.error.message || 'Failed to update profile')
+      toast.error(
+        updateUserResult.error instanceof Error
+          ? updateUserResult.error.message
+          : 'Failed to update profile'
+      )
     } else if (changeEmailResult.error) {
-      toast.error(changeEmailResult.error.message || 'Failed to update email')
+      toast.error(
+        changeEmailResult.error instanceof Error
+          ? changeEmailResult.error.message
+          : 'Failed to update email'
+      )
     } else {
       if (data.email !== user.email) {
         toast.success('Email update pending', {

@@ -22,7 +22,6 @@ import { Edit, Trash2 } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
 import PlayerNotesTab from './components/player-notes-tab'
 import PlayerOverviewTab from './components/player-overview-tab'
 
@@ -34,7 +33,6 @@ const PlayerDetailPage = () => {
     usePlayersStore()
   const { canUpdate, canDelete } = usePlayerPermissions(selectedPlayer)
   const { canReadNotes } = usePlayerNotesPermissions(selectedPlayer)
-  const { context } = useOrganizationContext()
   const [editPlayerFormOpen, setEditPlayerFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [userImage, setUserImage] = useState<string | null>(null)

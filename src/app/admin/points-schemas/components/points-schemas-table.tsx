@@ -87,7 +87,9 @@ export default function PointsSchemasTable({
       toast.success('Points schema deleted successfully')
       onRefetch()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete points schema')
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete points schema'
+      )
     } finally {
       setDeleteDialogOpen(false)
       setSchemaToDelete(null)

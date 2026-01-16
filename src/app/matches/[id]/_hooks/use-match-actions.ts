@@ -52,7 +52,9 @@ export const useMatchActions = (matchId: string) => {
       try {
         await socketMarkSetPlayed(setId)
       } catch (err: any) {
-        toast.error(err.message || 'Failed to mark set as played')
+        toast.error(
+          err instanceof Error ? err.message : 'Failed to mark set as played'
+        )
         throw err
       }
     },
@@ -78,4 +80,3 @@ export const useMatchActions = (matchId: string) => {
     },
   }
 }
-

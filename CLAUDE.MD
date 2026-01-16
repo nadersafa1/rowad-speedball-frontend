@@ -273,6 +273,130 @@ export const playersTableConfig: TableConfig<Player> = {
 - `points_schemas` - Named point systems for events
 - `points_schema_entries` - Maps placement tiers to point values within schemas
 
+## Development Standards & Documentation
+
+### Core Standards (Always Follow)
+
+Before writing any code, consult the relevant standards documentation:
+
+1. **Authorization & Access Control**
+   - **Read**: `/docs/AUTHORIZATION_RULES.md` - Complete entity authorization matrix
+   - **Read**: `/docs/AUTHORIZATION_HOOKS_REFACTOR.md` - Specialized hook usage patterns
+   - **Use**: Specialized hooks (`useRoles()`, `useOrganization()`, `useFederation()`)
+   - **Pattern**: Backend auth helpers + frontend permission hooks
+
+2. **Forms Development**
+   - **Read**: `/docs/FORMS_GUIDE.md` - Comprehensive form development guide
+   - **Read**: `/docs/FORMS_REFERENCE.md` - Quick validation schema reference
+   - **Use**: React Hook Form + Zod validation
+   - **Use**: `<FormError>`, `<LoadingButton>`, shared validation schemas from `@/lib/forms/patterns.ts`
+
+3. **Error Handling**
+   - **Read**: `/docs/IMPLEMENTATION_STANDARDS.md` - Error handling patterns
+   - **Use**: `handleApiError()` in all API routes with error IDs and severity levels
+   - **Pattern**: Structured logging ready for production monitoring (Sentry, DataDog, CloudWatch)
+
+4. **UI & Components**
+   - **Read**: `/docs/UI_COMPONENT_STANDARDS.md` - Radix UI + Tailwind patterns
+   - **Read**: `/docs/COMPONENT_STANDARDS.md` - Component organization & structure
+   - **Use**: Standard layout patterns (Container → PageHeader → Card → Content)
+   - **Use**: Loading/error/empty state components (`<Loading />`, `<FormError>`, `<EmptyState>`)
+
+5. **State Management**
+   - **Read**: `/docs/STATE_MANAGEMENT_STANDARDS.md` - Zustand store patterns
+   - **Use**: Single-responsibility stores with standard structure
+   - **Pattern**: Standard async action pattern (set loading → try/catch → update state)
+   - **Don't**: Use stores for form state, filters, or temporary UI state
+
+6. **Naming Conventions**
+   - **Read**: `/docs/NAMING_CONVENTIONS.md` - Complete naming standards
+   - **Files**: kebab-case.tsx for components, kebab-case-store.ts for stores
+   - **Components**: PascalCase (PlayerForm, EventCard)
+   - **Variables**: camelCase (playerName, isLoading)
+   - **Constants**: SCREAMING_SNAKE_CASE (MAX_NAME_LENGTH)
+   - **Functions**: camelCase with action verb (calculateAge, handleSubmit)
+
+7. **Data Tables**
+   - **Read**: `/docs/table-core-guide.md` - Table system documentation
+   - **New tables**: Always use table-core system (1 config file vs 7 files)
+   - **Existing tables**: Migrate opportunistically when making changes
+   - **Pattern**: Declarative config with built-in features (search, filters, sorting, export)
+
+8. **API Development**
+   - **Read**: `/docs/IMPLEMENTATION_STANDARDS.md` - API patterns & standards
+   - **Use**: Zod validation with safeParse, organization context, standardized responses
+   - **Pattern**: PaginatedResponse for lists, error responses with tracking IDs
+   - **Use**: `resolveOrganizationId()` helper to reduce duplicate code
+
+### Quick Reference
+
+**Before Writing Code**:
+1. Identify which standard applies (authorization, forms, UI, state, etc.)
+2. Read the relevant standards documentation
+3. Review a reference implementation in existing code
+4. Follow the established patterns
+
+**Reference Implementations** (Real code examples):
+- **Forms**: `src/components/players/player-form.tsx`
+- **API Routes**: `src/app/api/v1/players/route.ts`
+- **Page Layout**: `src/app/players/page.tsx`
+- **Store**: `src/store/players-store.ts`
+- **Table Config**: `src/config/tables/playersTableConfig.ts`
+- **Authorization**: `src/lib/authorization/` + `src/hooks/authorization/`
+
+### Standards Documentation Map
+
+```
+Authorization:
+├── AUTHORIZATION_RULES.md          ← Entity permissions matrix
+├── AUTHORIZATION_HOOKS_REFACTOR.md ← Specialized hooks guide
+└── PUBLIC_VS_AUTHENTICATED_ACCESS.md ← Access control
+
+Forms:
+├── FORMS_GUIDE.md                  ← Comprehensive guide
+├── FORMS_REFERENCE.md              ← Quick reference
+└── FORMS_CHECKLIST.md              ← Development checklist
+
+UI & Components:
+├── UI_COMPONENT_STANDARDS.md       ← Radix UI + Tailwind patterns
+├── COMPONENT_STANDARDS.md          ← Component organization
+└── NAMING_CONVENTIONS.md           ← File, component, variable naming
+
+Backend:
+├── IMPLEMENTATION_STANDARDS.md     ← Error handling, API patterns, migrations
+└── table-core-guide.md             ← Data tables
+
+State & Algorithms:
+├── STATE_MANAGEMENT_STANDARDS.md   ← Zustand store patterns
+└── TOURNAMENT_ALGORITHMS.md        ← Bracket generation
+```
+
+### When Implementing New Features
+
+Follow this checklist for new entity features:
+
+1. **Database**: Create schema in `src/db/schema.ts`
+2. **Types**: Create Zod schemas in `src/types/api/[entity].schemas.ts`
+3. **API**: Create route in `src/app/api/v1/[entity]/route.ts`
+   - Use `handleApiError()` for error handling
+   - Use `resolveOrganizationId()` for org context
+   - Return `PaginatedResponse` for lists
+4. **Store**: Create Zustand store in `src/store/[entity]-store.ts`
+   - Follow standard state shape (items, pagination, isLoading, error)
+   - Use standard async action pattern
+5. **Authorization**:
+   - Backend: Create helpers in `src/lib/authorization/`
+   - Frontend: Create hook in `src/hooks/authorization/`
+6. **Table**: Create config in `src/config/tables/[entity].config.ts`
+   - Use table-core system
+   - Configure features (search, filters, sorting, export)
+7. **Components**: Create in `src/components/[entity]/`
+   - Form: Use `<FormError>`, `<LoadingButton>`, shared validation schemas
+   - Card: Follow standard card pattern
+8. **Pages**: Create in `src/app/[entity]/`
+   - Use standard layout (Container → PageHeader → Card → Content)
+   - Use specialized authorization hooks (useRoles, useOrganization)
+
 ## Common Patterns & Conventions
 
 ### 1. API Client Pattern

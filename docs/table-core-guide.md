@@ -810,3 +810,255 @@ See the refactored Players table implementation in:
 - Component: `/app/players/components/players-table-refactored.tsx`
 
 This serves as a complete reference implementation.
+
+---
+
+## Migration Strategy
+
+### Current State
+
+The Rowad Speedball codebase currently has **two table systems**:
+
+1. **Legacy System** (Multi-file fragmentation):
+   - `[entity]-table.tsx` - Main component
+   - `[entity]-columns.tsx` - Column definitions
+   - `[entity]-controls.tsx` - Filters and search
+   - `[entity]-handlers.tsx` - Event handlers
+   - `[entity]-hooks.tsx` - Internal state management
+   - `[entity]-body.tsx` - Table body rendering
+   - `[entity]-header.tsx` - Table header
+   - `[entity]-pagination.tsx` - Pagination controls
+   - **7 files per table**
+
+2. **New table-core System** (Single config file):
+   - `[entity].config.ts` - All configuration in one place
+   - **1 file per table**
+
+### Migration Approach
+
+**Opportunistic Migration** - No forced migration required.
+
+#### For New Features
+✅ **Always use table-core system**
+- Faster development (1 config file vs 7 files)
+- Built-in features (search, filters, sorting, export)
+- Consistent behavior across all tables
+
+#### For Existing Tables
+🔄 **Migrate when making significant changes**
+- If updating table layout or columns
+- If adding new features (export, bulk actions)
+- If fixing bugs that require extensive refactoring
+
+⏸️ **Keep legacy system if**
+- Table works perfectly as-is
+- Only making minor bug fixes
+- Table will be replaced/removed soon
+
+### Benefits of Migration
+
+**Developer Experience**:
+- 7 files → 1 config file (86% reduction)
+- Clear separation of concerns
+- Type-safe column definitions
+- Reusable column helpers
+
+**Features**:
+- Built-in CSV export
+- Bulk selection and actions
+- Advanced filtering
+- Consistent sorting behavior
+- Loading states handled automatically
+
+**Maintenance**:
+- Easier to understand (all config in one place)
+- Less code to maintain
+- Consistent patterns across tables
+- Better TypeScript inference
+
+**Performance**:
+- Optimized rendering
+- Memoized column definitions
+- Efficient selection handling
+
+### Migration Checklist
+
+When migrating an existing table to table-core:
+
+- [ ] **Create config file** in `src/config/tables/[entity].config.ts`
+- [ ] **Define columns** using column helpers and custom columns
+- [ ] **Configure features** (search, filters, sorting, pagination, export)
+- [ ] **Set navigation paths** (create, edit, detail)
+- [ ] **Add permission checks** (if entity has permissions)
+- [ ] **Update page component** to use table-core
+- [ ] **Test all functionality**:
+  - [ ] Search works
+  - [ ] Filters apply correctly
+  - [ ] Sorting works for all sortable columns
+  - [ ] Pagination navigates correctly
+  - [ ] Export generates correct CSV
+  - [ ] Row selection (if enabled)
+  - [ ] Create/edit/delete actions work
+  - [ ] Permission checks enforce correctly
+- [ ] **Remove old table files** (7 files)
+- [ ] **Update imports** in parent components
+- [ ] **Test with different user roles**
+- [ ] **Verify responsive behavior** (mobile, tablet, desktop)
+
+### Step-by-Step Migration Guide
+
+#### Step 1: Create Config File
+
+Create `src/config/tables/[entity].config.ts`:
+
+```typescript
+import { TableConfig } from '@/lib/table-core/types'
+import { Entity } from '@/types'
+import { createStandardColumns } from '@/config/tables/columns/column-helpers'
+
+export const entityTableConfig: TableConfig<Entity> = {
+  entity: 'entity',
+
+  columns: [
+    ...createStandardColumns<Entity>(['name', 'createdAt', 'status']),
+    // Add custom columns as needed
+  ],
+
+  features: {
+    search: true,
+    filters: true,
+    sorting: true,
+    pagination: true,
+    selection: true,
+    export: true,
+    columnVisibility: true,
+  },
+
+  navigation: {
+    createPath: '/entities/new',
+    editPath: (id) => `/entities/${id}`,
+  },
+}
+```
+
+#### Step 2: Update Page Component
+
+Replace old table with table-core:
+
+```typescript
+// OLD: 7 imports
+import EntityTable from './components/entity-table'
+import EntityColumns from './components/entity-columns'
+import EntityControls from './components/entity-controls'
+// ... 4 more imports
+
+// NEW: 1 import
+import { entityTableConfig } from '@/config/tables/entity.config'
+import { BaseDataTable } from '@/lib/table-core/components/base-data-table'
+
+const EntitiesPage = () => {
+  const { entities, isLoading } = useEntitiesStore()
+
+  return (
+    <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8">
+      <PageHeader title="Entities" />
+      <Card>
+        <CardContent className="p-6">
+          <BaseDataTable
+            config={entityTableConfig}
+            data={entities}
+            isLoading={isLoading}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+```
+
+#### Step 3: Remove Old Files
+
+After verifying the new implementation works:
+
+```bash
+# Remove old table files
+rm src/app/[entity]/components/entity-table.tsx
+rm src/app/[entity]/components/entity-columns.tsx
+rm src/app/[entity]/components/entity-controls.tsx
+rm src/app/[entity]/components/entity-handlers.tsx
+rm src/app/[entity]/components/entity-hooks.tsx
+rm src/app/[entity]/components/entity-body.tsx
+rm src/app/[entity]/components/entity-header.tsx
+rm src/app/[entity]/components/entity-pagination.tsx
+```
+
+### Migration Progress Tracking
+
+**Migrated Tables** (Using table-core):
+- ✅ Players (reference implementation)
+
+**Legacy Tables** (To be migrated opportunistically):
+- Coaches
+- Events
+- Training Sessions
+- Tests
+- Matches
+- And ~15 more entity tables
+
+### Example Migration: Players Table
+
+The players table has been migrated and serves as the reference implementation:
+
+**Before Migration**:
+- 7 separate files in `src/app/players/components/`
+- ~1500 lines of code total
+- Complex state management across files
+- Inconsistent patterns
+
+**After Migration**:
+- 1 config file: `src/config/tables/playersTableConfig.ts`
+- 1 columns file: `src/config/tables/columns/players-columns.tsx`
+- ~300 lines of code total
+- Clear, declarative configuration
+- Consistent with table-core patterns
+
+**Toggle Implementation**:
+The players page currently has both implementations with a toggle for comparison:
+```typescript
+const [useNewTable, setUseNewTable] = useState(false)
+
+{useNewTable ? (
+  <PlayersTableRefactored /> // table-core
+) : (
+  <PlayersTable />            // legacy
+)}
+```
+
+This allows side-by-side comparison during migration period.
+
+### When Migration is Complete
+
+Eventually, when all tables are migrated:
+1. Remove toggle from players page
+2. Delete all legacy table components
+3. Update documentation to reference only table-core
+4. Celebrate 🎉 (saved thousands of lines of code!)
+
+### No Forced Migration
+
+**Both systems are fully supported**:
+- Legacy tables continue to work
+- No breaking changes
+- Migrate at your own pace
+- Natural migration as tables are updated
+
+**Key Principle**: Migrate when it makes sense, not because you must.
+
+---
+
+## Related Documentation
+
+- **Component Standards**: See `/docs/COMPONENT_STANDARDS.md`
+- **UI Standards**: See `/docs/UI_COMPONENT_STANDARDS.md`
+- **State Management**: See `/docs/STATE_MANAGEMENT_STANDARDS.md`
+- **Naming Conventions**: See `/docs/NAMING_CONVENTIONS.md`

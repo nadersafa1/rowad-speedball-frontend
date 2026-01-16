@@ -11,15 +11,13 @@ import CoachesStats from './components/coaches-stats'
 import { useCoaches } from './hooks/use-coaches'
 import { CoachesFilters } from './types'
 import { Gender } from './types/enums'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useRoles } from '@/hooks/authorization/use-roles'
 import { useCoachPermissions } from '@/hooks/authorization/use-coach-permissions'
 import Loading from '@/components/ui/loading'
 import Unauthorized from '@/components/ui/unauthorized'
 
 const CoachesPage = () => {
-  const { context, isLoading: isOrganizationContextLoading } =
-    useOrganizationContext()
-  const { isAuthenticated } = context
+  const { isAuthenticated, isLoading: authLoading } = useRoles()
   const { canCreate } = useCoachPermissions(null)
 
   const [coachFormOpen, setCoachFormOpen] = useState(false)
@@ -43,7 +41,7 @@ const CoachesPage = () => {
     refetch,
   } = useCoaches(filters)
 
-  if (isOrganizationContextLoading) {
+  if (authLoading) {
     return <Loading />
   }
 

@@ -18,6 +18,7 @@ import EventDateFields from './form-sections/event-date-fields'
 import EventMatchConfigFields from './form-sections/event-match-config-fields'
 import EventOrganizationFields from './form-sections/event-organization-fields'
 import { DIALOG_CLASSES } from '@/lib/ui-constants'
+import { LoadingButton } from '@/components/forms/loading-button'
 
 const EventForm = ({
   event,
@@ -122,18 +123,15 @@ const EventForm = ({
                 Cancel
               </Button>
             )}
-            <Button
+            <LoadingButton
               type='submit'
-              disabled={formState.isSubmitting}
+              isLoading={formState.isSubmitting}
+              loadingText='Saving...'
               className='w-full sm:w-auto'
+              icon={<Save className='h-4 w-4' />}
             >
-              <Save className='mr-2 h-4 w-4' />
-              {formState.isSubmitting
-                ? 'Saving...'
-                : formState.isEditing
-                ? 'Update'
-                : 'Create'}
-            </Button>
+              {formState.isEditing ? 'Update' : 'Create'}
+            </LoadingButton>
           </DialogFooter>
         </form>
       </Form>

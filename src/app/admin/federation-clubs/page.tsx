@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
 import { Building2, Users } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useFederation } from '@/hooks/authorization/use-federation'
 import { useFederationClubRequestsStore } from '@/store/federation-club-requests-store'
 import Loading from '@/components/ui/loading'
 import { Badge } from '@/components/ui/badge'
@@ -33,7 +33,7 @@ import { apiClient } from '@/lib/api-client'
 import type { FederationClub } from '@/db/schema'
 
 const FederationClubsPage = () => {
-  const { context, isLoading: isContextLoading } = useOrganizationContext()
+  const { federationId, isFederationAdmin, isSystemAdmin, isLoading: isContextLoading } = useFederation()
   // const { toast } = useToast()
   const {
     requests,
@@ -56,11 +56,11 @@ const FederationClubsPage = () => {
 
   // Fetch pending requests and member clubs
   const fetchData = useCallback(async () => {
-    if (!context.federationId) return
+    if (!federationId) return
 
     // Fetch pending requests
     await fetchRequests({
-      federationId: context.federationId,
+      federationId: federationId,
       status:
         activeTab === 'all'
           ? 'all'
@@ -75,7 +75,7 @@ const FederationClubsPage = () => {
       setIsLoadingClubs(true)
       try {
         const response = await apiClient.getFederationClubs({
-          federationId: context.federationId,
+          federationId: federationId,
           limit: 100,
         })
         setMemberClubs(response.data)
@@ -85,13 +85,13 @@ const FederationClubsPage = () => {
         setIsLoadingClubs(false)
       }
     }
-  }, [context.federationId, activeTab, fetchRequests])
+  }, [federationId, activeTab, fetchRequests])
 
   useEffect(() => {
-    if (context.federationId) {
+    if (federationId) {
       fetchData()
     }
-  }, [context.federationId, fetchData])
+  }, [federationId, fetchData])
 
   const handleApprove = async (requestId: string) => {
     try {
@@ -134,7 +134,7 @@ const FederationClubsPage = () => {
   }
 
   // Only federation admins can access this page
-  if (!context.isFederationAdmin && !context.isSystemAdmin) {
+  if (!isFederationAdmin && !isSystemAdmin) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>
@@ -148,7 +148,7 @@ const FederationClubsPage = () => {
     )
   }
 
-  if (!context.federationId && !context.isSystemAdmin) {
+  if (!federationId && !isSystemAdmin) {
     return (
       <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
         <Card className='border-destructive'>

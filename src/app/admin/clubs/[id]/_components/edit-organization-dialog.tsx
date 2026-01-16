@@ -96,7 +96,9 @@ export const EditOrganizationDialog = ({
     })
 
     if (res.error) {
-      toast.error(res.error.message || 'Failed to update club')
+      toast.error(
+        res.error instanceof Error ? res.error.message : 'Failed to update club'
+      )
     } else {
       toast.success('Club updated successfully')
       form.reset()

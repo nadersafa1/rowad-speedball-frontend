@@ -73,7 +73,11 @@ export default function PlacementTiersTable({ onRefetch }: PlacementTiersTablePr
       toast.success('Placement tier deleted successfully')
       onRefetch()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete placement tier')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete placement tier'
+      )
     } finally {
       setDeleteDialogOpen(false)
       setTierToDelete(null)

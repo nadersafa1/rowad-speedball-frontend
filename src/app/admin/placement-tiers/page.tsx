@@ -16,15 +16,12 @@ import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
 import PlacementTierForm from '@/components/placement-tiers/placement-tier-form'
 import PlacementTiersTable from './components/placement-tiers-table'
 import { usePlacementTiersStore } from '@/store/placement-tiers-store'
-import { useOrganizationContext } from '@/hooks/authorization/use-organization-context'
+import { useRoles } from '@/hooks/authorization/use-roles'
 
 const PlacementTiersPage = () => {
-  const { context, isLoading: contextLoading } = useOrganizationContext()
+  const { isSystemAdmin, isLoading: contextLoading } = useRoles()
   const { fetchTiers, isLoading, error, clearError } = usePlacementTiersStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-
-  // Check if user is system admin
-  const isSystemAdmin = context.isSystemAdmin
 
   useEffect(() => {
     if (!contextLoading && isSystemAdmin) {

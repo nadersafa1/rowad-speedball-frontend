@@ -109,7 +109,11 @@ export function ChampionshipEditionForm({
         router.push(`/championships/${championshipId}`)
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create championship edition')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to create championship edition'
+      )
     }
   }
 
