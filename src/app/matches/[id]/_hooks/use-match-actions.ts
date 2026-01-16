@@ -80,4 +80,3 @@ export const useMatchActions = (matchId: string) => {
     },
   }
 }
-
