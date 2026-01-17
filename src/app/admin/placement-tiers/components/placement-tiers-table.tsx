@@ -1,29 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import * as React from 'react'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+  getCoreRowModel,
+  useReactTable,
+  VisibilityState,
+} from '@tanstack/react-table'
+import { toast } from 'sonner'
 import {
   Dialog,
-  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,253 +23,258 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { MoreHorizontal, Pencil, Trash2, Search, SortAsc, SortDesc } from 'lucide-react'
-import { usePlacementTiersStore } from '@/store/placement-tiers-store'
-import PlacementTierForm from '@/components/placement-tiers/placement-tier-form'
 import type { PlacementTier } from '@/db/schema'
-import { formatDate } from '@/lib/utils'
-import { toast } from 'sonner'
+import PlacementTierForm from '@/components/placement-tiers/placement-tier-form'
+import {
+  BaseDataTable,
+  PaginationConfig,
+  TableControls,
+  TablePagination,
+  useTableExport,
+  useTableSorting,
+  useTableHandlers,
+} from '@/lib/table-core'
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { createPlacementTiersColumns } from '@/config/tables/columns/placement-tiers-columns'
+import { placementTiersTableConfig } from '@/config/tables/placement-tiers.config'
+import { SortOrder } from '@/types'
+import type { PlacementTiersSortBy } from '@/config/tables/placement-tiers.config'
 
-interface PlacementTiersTableProps {
-  onRefetch: () => void
+export interface PlacementTiersTableProps {
+  tiers: PlacementTier[]
+  pagination: PaginationConfig
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: number) => void
+  onSearchChange?: (search: string) => void
+  searchValue?: string
+  sortBy?: PlacementTiersSortBy
+  sortOrder?: SortOrder
+  onSortingChange?: (
+    sortBy?: PlacementTiersSortBy,
+    sortOrder?: SortOrder
+  ) => void
+  isLoading?: boolean
+  onRefetch?: () => void
 }
 
-export default function PlacementTiersTable({ onRefetch }: PlacementTiersTableProps) {
-  const { tiers, isLoading, deleteTier, pagination } = usePlacementTiersStore()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedTier, setSelectedTier] = useState<PlacementTier | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [tierToDelete, setTierToDelete] = useState<PlacementTier | null>(null)
-  const [sortBy, setSortBy] = useState<'rank' | 'name'>('rank')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+export default function PlacementTiersTable({
+  tiers,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  onSearchChange,
+  searchValue = '',
+  sortBy,
+  sortOrder,
+  onSortingChange,
+  isLoading = false,
+  onRefetch,
+}: PlacementTiersTableProps) {
+  const { isSystemAdmin } = useRoles()
 
-  const handleEdit = (tier: PlacementTier) => {
-    setSelectedTier(tier)
-    setEditDialogOpen(true)
-  }
+  // Permission checks
+  const canEdit = isSystemAdmin
+  const canDelete = isSystemAdmin
 
-  const handleDeleteClick = (tier: PlacementTier) => {
-    setTierToDelete(tier)
-    setDeleteDialogOpen(true)
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (!tierToDelete) return
-
-    try {
-      await deleteTier(tierToDelete.id)
-      toast.success('Placement tier deleted successfully')
-      onRefetch()
-    } catch (error: any) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to delete placement tier'
-      )
-    } finally {
-      setDeleteDialogOpen(false)
-      setTierToDelete(null)
-    }
-  }
-
-  const toggleSort = (column: 'rank' | 'name') => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(column)
-      setSortOrder('asc')
-    }
-  }
-
-  // Filter and sort tiers
-  const filteredTiers = tiers
-    .filter((tier) => {
-      const query = searchQuery.toLowerCase()
-      return (
-        tier.name.toLowerCase().includes(query) ||
-        tier.displayName?.toLowerCase().includes(query) ||
-        tier.description?.toLowerCase().includes(query)
-      )
+  // Column visibility state
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({
+      description: false,
+      createdAt: false,
     })
-    .sort((a, b) => {
-      let comparison = 0
-      if (sortBy === 'rank') {
-        comparison = a.rank - b.rank
-      } else {
-        comparison = a.name.localeCompare(b.name)
+
+  // Use table sorting hook
+  const { handleSort } = useTableSorting<PlacementTier, PlacementTiersSortBy>({
+    sortBy,
+    sortOrder,
+    onSortingChange: (
+      newSortBy?: PlacementTiersSortBy,
+      newSortOrder?: SortOrder
+    ) => {
+      onSortingChange?.(newSortBy, newSortOrder)
+    },
+  })
+
+  // Use table handlers hook
+  const {
+    editingItem: editTier,
+    editDialogOpen,
+    setEditDialogOpen,
+    handleEdit,
+    handleDelete,
+    handleEditSuccess,
+    deletingItem,
+    handleDeleteConfirm,
+    deleteDialogOpen,
+    isDeleting,
+    handleDeleteCancel,
+    setDeleteDialogOpen,
+  } = useTableHandlers<PlacementTier>({
+    deleteItem: async (id: string) => {
+      const { usePlacementTiersStore } = await import(
+        '@/store/placement-tiers-store'
+      )
+      const { deleteTier } = usePlacementTiersStore.getState()
+      try {
+        await deleteTier(id)
+        toast.success('Placement tier deleted successfully')
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete placement tier'
+        )
+        throw error
       }
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
+    },
+    onRefetch,
+  })
 
-  if (isLoading) {
-    return (
-      <div className='rounded-md border'>
-        <div className='p-8 text-center text-muted-foreground'>
-          Loading placement tiers...
-        </div>
-      </div>
-    )
-  }
+  // Create columns
+  const columns = React.useMemo(
+    () =>
+      createPlacementTiersColumns({
+        canEdit,
+        canDelete,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+        sortBy,
+        sortOrder,
+        onSort: (columnId: string) =>
+          handleSort(columnId as PlacementTiersSortBy),
+      }),
+    [
+      canEdit,
+      canDelete,
+      handleEdit,
+      handleDelete,
+      sortBy,
+      sortOrder,
+      handleSort,
+    ]
+  )
+
+  // Initialize table for column visibility control
+  const table = useReactTable({
+    data: tiers,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    state: {
+      columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
+  })
+
+  // Export functionality
+  const { handleExport, isExporting } = useTableExport<PlacementTier>({
+    data: tiers,
+    columns: [
+      { key: 'rank', label: 'Rank' },
+      { key: 'name', label: 'Name' },
+      { key: 'displayName', label: 'Display Name' },
+      { key: 'description', label: 'Description' },
+      { key: 'createdAt', label: 'Created At' },
+    ],
+    filename: 'placement-tiers',
+    enabled: placementTiersTableConfig.features.export,
+  })
 
   return (
-    <>
-      {/* Search and Filters */}
-      <div className='mb-4 flex items-center gap-4'>
-        <div className='relative flex-1 max-w-sm'>
-          <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-          <Input
-            placeholder='Search placement tiers...'
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className='pl-9'
-          />
-        </div>
-        <Badge variant='outline' className='text-sm'>
-          {filteredTiers.length} tier{filteredTiers.length !== 1 ? 's' : ''}
-        </Badge>
-      </div>
+    <div className='w-full space-y-4'>
+      {/* Table Controls */}
+      <TableControls<PlacementTier>
+        searchValue={searchValue}
+        onSearchChange={onSearchChange ?? (() => {})}
+        table={table}
+        getColumnLabel={(columnId: string) => {
+          const columnMap: Record<string, string> = {
+            rank: 'Rank',
+            name: 'Name',
+            displayName: 'Display Name',
+            description: 'Description',
+            createdAt: 'Created At',
+          }
+          return columnMap[columnId] || columnId
+        }}
+        exportEnabled={placementTiersTableConfig.features.export}
+        onExport={handleExport}
+        isExporting={isExporting}
+      />
 
-      {/* Table */}
-      <div className='rounded-md border'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className='w-[100px]'>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-8 px-2'
-                  onClick={() => toggleSort('rank')}
-                >
-                  Rank
-                  {sortBy === 'rank' &&
-                    (sortOrder === 'asc' ? (
-                      <SortAsc className='ml-1 h-3 w-3' />
-                    ) : (
-                      <SortDesc className='ml-1 h-3 w-3' />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-8 px-2'
-                  onClick={() => toggleSort('name')}
-                >
-                  Name
-                  {sortBy === 'name' &&
-                    (sortOrder === 'asc' ? (
-                      <SortAsc className='ml-1 h-3 w-3' />
-                    ) : (
-                      <SortDesc className='ml-1 h-3 w-3' />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead>Display Name</TableHead>
-              <TableHead className='hidden md:table-cell'>Description</TableHead>
-              <TableHead className='hidden lg:table-cell'>Created At</TableHead>
-              <TableHead className='w-[70px]'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTiers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className='h-24 text-center'>
-                  {searchQuery
-                    ? 'No placement tiers found matching your search.'
-                    : 'No placement tiers yet. Create your first one!'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTiers.map((tier) => (
-                <TableRow key={tier.id}>
-                  <TableCell>
-                    <Badge variant='secondary'>{tier.rank}</Badge>
-                  </TableCell>
-                  <TableCell className='font-mono font-semibold'>
-                    {tier.name}
-                  </TableCell>
-                  <TableCell>{tier.displayName || '-'}</TableCell>
-                  <TableCell className='hidden md:table-cell max-w-xs truncate'>
-                    {tier.description || '-'}
-                  </TableCell>
-                  <TableCell className='hidden lg:table-cell text-muted-foreground'>
-                    {formatDate(tier.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant='ghost' size='icon' className='h-8 w-8'>
-                          <MoreHorizontal className='h-4 w-4' />
-                          <span className='sr-only'>Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end'>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleEdit(tier)}>
-                          <Pencil className='mr-2 h-4 w-4' />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteClick(tier)}
-                          className='text-destructive'
-                        >
-                          <Trash2 className='mr-2 h-4 w-4' />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Data Table */}
+      <BaseDataTable
+        data={tiers}
+        columns={columns}
+        pagination={pagination}
+        isLoading={isLoading}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        emptyMessage={
+          searchValue
+            ? 'No placement tiers found matching your search.'
+            : 'No placement tiers yet. Create your first one!'
+        }
+      />
+
+      {/* Pagination */}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        pageSizeOptions={placementTiersTableConfig.pageSizeOptions}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <PlacementTierForm
-          tier={selectedTier || undefined}
-          onSuccess={() => {
-            setEditDialogOpen(false)
-            setSelectedTier(null)
-            onRefetch()
-          }}
-          onCancel={() => {
-            setEditDialogOpen(false)
-            setSelectedTier(null)
-          }}
-        />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editTier ? 'Edit Placement Tier' : 'Create Placement Tier'}
+            </DialogTitle>
+          </DialogHeader>
+          <PlacementTierForm
+            tier={editTier || undefined}
+            onSuccess={() => {
+              handleEditSuccess()
+              onRefetch?.()
+            }}
+            onCancel={() => {
+              setEditDialogOpen(false)
+            }}
+          />
+        </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Placement Tier</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the placement tier{' '}
-              <span className='font-semibold'>{tierToDelete?.name}</span>.
-              This action cannot be undone.
+              Are you sure you want to delete{' '}
+              <span className='font-semibold'>
+                {deletingItem?.name || 'this placement tier'}
+              </span>
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setTierToDelete(null)}>
+            <AlertDialogCancel
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              className='bg-destructive hover:bg-destructive/90'
+              disabled={isDeleting}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >
-              Delete
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 }

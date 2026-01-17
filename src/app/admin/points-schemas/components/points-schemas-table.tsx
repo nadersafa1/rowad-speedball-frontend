@@ -1,27 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Dialog } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,264 +12,248 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Search,
-  SortAsc,
-  SortDesc,
-  ExternalLink,
-} from 'lucide-react'
-import { usePointsSchemasStore } from '@/store/points-schemas-store'
-import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { createPointsSchemasColumns } from '@/config/tables/columns/points-schemas-columns'
+import type { PointsSchemasSortBy } from '@/config/tables/points-schemas.config'
+import { pointsSchemasTableConfig } from '@/config/tables/points-schemas.config'
 import type { PointsSchema } from '@/db/schema'
-import { formatDate } from '@/lib/utils'
+import { useFederation } from '@/hooks/authorization/use-federation'
+import {
+  BaseDataTable,
+  PaginationConfig,
+  TableControls,
+  TablePagination,
+  useTableExport,
+  useTableHandlers,
+  useTableSorting,
+} from '@/lib/table-core'
+import { SortOrder } from '@/types'
+import {
+  getCoreRowModel,
+  useReactTable,
+  VisibilityState,
+} from '@tanstack/react-table'
+import * as React from 'react'
 import { toast } from 'sonner'
 
-interface PointsSchemasTableProps {
-  onRefetch: () => void
+export interface PointsSchemasTableProps {
+  schemas: PointsSchema[]
+  pagination: PaginationConfig
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: number) => void
+  onSearchChange?: (search: string) => void
+  searchValue?: string
+  sortBy?: PointsSchemasSortBy
+  sortOrder?: SortOrder
+  onSortingChange?: (
+    sortBy?: PointsSchemasSortBy,
+    sortOrder?: SortOrder
+  ) => void
+  isLoading?: boolean
+  onRefetch?: () => void
 }
 
 export default function PointsSchemasTable({
+  schemas,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  onSearchChange,
+  searchValue = '',
+  sortBy,
+  sortOrder,
+  onSortingChange,
+  isLoading = false,
   onRefetch,
 }: PointsSchemasTableProps) {
-  const router = useRouter()
-  const { schemas, isLoading, deleteSchema, pagination } =
-    usePointsSchemasStore()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedSchema, setSelectedSchema] = useState<PointsSchema | null>(
-    null
-  )
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [schemaToDelete, setSchemaToDelete] = useState<PointsSchema | null>(
-    null
-  )
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('createdAt')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const { isSystemAdmin, isFederationAdmin, isFederationEditor } =
+    useFederation()
 
-  const handleEdit = (schema: PointsSchema) => {
-    setSelectedSchema(schema)
-    setEditDialogOpen(true)
-  }
+  // Permission checks
+  const canEdit = isSystemAdmin || isFederationAdmin || isFederationEditor
+  const canDelete = isSystemAdmin || isFederationAdmin
 
-  const handleDeleteClick = (schema: PointsSchema) => {
-    setSchemaToDelete(schema)
-    setDeleteDialogOpen(true)
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (!schemaToDelete) return
-
-    try {
-      await deleteSchema(schemaToDelete.id)
-      toast.success('Points schema deleted successfully')
-      onRefetch()
-    } catch (error: any) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to delete points schema'
-      )
-    } finally {
-      setDeleteDialogOpen(false)
-      setSchemaToDelete(null)
-    }
-  }
-
-  const toggleSort = (column: 'name' | 'createdAt') => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(column)
-      setSortOrder(column === 'name' ? 'asc' : 'desc')
-    }
-  }
-
-  // Filter and sort schemas
-  const filteredSchemas = schemas
-    .filter((schema) => {
-      const query = searchQuery.toLowerCase()
-      return (
-        schema.name.toLowerCase().includes(query) ||
-        schema.description?.toLowerCase().includes(query)
-      )
+  // Column visibility state
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({
+      description: false,
+      createdAt: false,
     })
-    .sort((a, b) => {
-      let comparison = 0
-      if (sortBy === 'name') {
-        comparison = a.name.localeCompare(b.name)
-      } else {
-        comparison =
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+
+  // Use table sorting hook
+  const { handleSort } = useTableSorting<PointsSchema, PointsSchemasSortBy>({
+    sortBy,
+    sortOrder,
+    onSortingChange: (
+      newSortBy?: PointsSchemasSortBy,
+      newSortOrder?: SortOrder
+    ) => {
+      onSortingChange?.(newSortBy, newSortOrder)
+    },
+  })
+
+  // Use table handlers hook
+  const {
+    editingItem: editSchema,
+    editDialogOpen,
+    setEditDialogOpen,
+    handleEdit,
+    handleDelete,
+    handleEditSuccess,
+    deletingItem,
+    handleDeleteConfirm,
+    deleteDialogOpen,
+    isDeleting,
+    handleDeleteCancel,
+    setDeleteDialogOpen,
+  } = useTableHandlers<PointsSchema>({
+    deleteItem: async (id: string) => {
+      const { usePointsSchemasStore } = await import(
+        '@/store/points-schemas-store'
+      )
+      const { deleteSchema } = usePointsSchemasStore.getState()
+      try {
+        await deleteSchema(id)
+        toast.success('Points schema deleted successfully')
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete points schema'
+        )
+        throw error
       }
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
+    },
+    onRefetch,
+  })
 
-  if (isLoading) {
-    return (
-      <div className='rounded-md border'>
-        <div className='p-8 text-center text-muted-foreground'>
-          Loading points schemas...
-        </div>
-      </div>
-    )
-  }
+  // Create columns
+  const columns = React.useMemo(
+    () =>
+      createPointsSchemasColumns({
+        canEdit,
+        canDelete,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+        sortBy,
+        sortOrder,
+        onSort: (columnId: string) =>
+          handleSort(columnId as PointsSchemasSortBy),
+      }),
+    [
+      canEdit,
+      canDelete,
+      handleEdit,
+      handleDelete,
+      sortBy,
+      sortOrder,
+      handleSort,
+    ]
+  )
+
+  // Initialize table for column visibility control
+  const table = useReactTable({
+    data: schemas,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    state: {
+      columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
+  })
+
+  // Export functionality
+  const { handleExport, isExporting } = useTableExport<PointsSchema>({
+    data: schemas,
+    columns: [
+      { key: 'name', label: 'Name' },
+      { key: 'description', label: 'Description' },
+      { key: 'createdAt', label: 'Created At' },
+    ],
+    filename: 'points-schemas',
+    enabled: pointsSchemasTableConfig.features.export,
+  })
 
   return (
-    <>
-      {/* Search and Filters */}
-      <div className='mb-4 flex items-center gap-4'>
-        <div className='relative flex-1 max-w-sm'>
-          <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-          <Input
-            placeholder='Search points schemas...'
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className='pl-9'
-          />
-        </div>
-        <Badge variant='outline' className='text-sm'>
-          {filteredSchemas.length} schema
-          {filteredSchemas.length !== 1 ? 's' : ''}
-        </Badge>
-      </div>
+    <div className='w-full space-y-4'>
+      {/* Table Controls */}
+      <TableControls<PointsSchema>
+        searchValue={searchValue}
+        onSearchChange={onSearchChange ?? (() => {})}
+        table={table}
+        getColumnLabel={(columnId: string) => {
+          const columnMap: Record<string, string> = {
+            name: 'Name',
+            description: 'Description',
+            createdAt: 'Created At',
+          }
+          return columnMap[columnId] || columnId
+        }}
+        exportEnabled={pointsSchemasTableConfig.features.export}
+        onExport={handleExport}
+        isExporting={isExporting}
+      />
 
-      {/* Table */}
-      <div className='rounded-md border'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-8 px-2'
-                  onClick={() => toggleSort('name')}
-                >
-                  Name
-                  {sortBy === 'name' &&
-                    (sortOrder === 'asc' ? (
-                      <SortAsc className='ml-1 h-3 w-3' />
-                    ) : (
-                      <SortDesc className='ml-1 h-3 w-3' />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead className='hidden md:table-cell'>
-                Description
-              </TableHead>
-              <TableHead className='hidden lg:table-cell'>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-8 px-2'
-                  onClick={() => toggleSort('createdAt')}
-                >
-                  Created At
-                  {sortBy === 'createdAt' &&
-                    (sortOrder === 'asc' ? (
-                      <SortAsc className='ml-1 h-3 w-3' />
-                    ) : (
-                      <SortDesc className='ml-1 h-3 w-3' />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead className='w-[70px]'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSchemas.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className='h-24 text-center'>
-                  {searchQuery
-                    ? 'No points schemas found matching your search.'
-                    : 'No points schemas yet. Create your first one!'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredSchemas.map((schema) => (
-                <TableRow key={schema.id}>
-                  <TableCell className='font-semibold'>
-                    <button
-                      onClick={() =>
-                        router.push(`/admin/points-schemas/${schema.id}`)
-                      }
-                      className='flex items-center gap-2 hover:text-rowad-600 transition-colors'
-                    >
-                      {schema.name}
-                      <ExternalLink className='h-3 w-3' />
-                    </button>
-                  </TableCell>
-                  <TableCell className='hidden md:table-cell max-w-xs truncate'>
-                    {schema.description || '-'}
-                  </TableCell>
-                  <TableCell className='hidden lg:table-cell text-muted-foreground'>
-                    {formatDate(schema.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant='ghost' size='icon' className='h-8 w-8'>
-                          <MoreHorizontal className='h-4 w-4' />
-                          <span className='sr-only'>Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end'>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            router.push(`/admin/points-schemas/${schema.id}`)
-                          }
-                        >
-                          <ExternalLink className='mr-2 h-4 w-4' />
-                          View Entries
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEdit(schema)}>
-                          <Pencil className='mr-2 h-4 w-4' />
-                          Edit Schema
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteClick(schema)}
-                          className='text-destructive'
-                        >
-                          <Trash2 className='mr-2 h-4 w-4' />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Data Table */}
+      <BaseDataTable
+        data={schemas}
+        columns={columns}
+        pagination={pagination}
+        isLoading={isLoading}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        emptyMessage={
+          searchValue
+            ? 'No points schemas found matching your search.'
+            : 'No points schemas yet. Create your first one!'
+        }
+      />
+
+      {/* Pagination */}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        pageSizeOptions={pointsSchemasTableConfig.pageSizeOptions}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <PointsSchemaForm
-          schema={selectedSchema || undefined}
-          onSuccess={() => {
-            setEditDialogOpen(false)
-            setSelectedSchema(null)
-            onRefetch()
-          }}
-          onCancel={() => {
-            setEditDialogOpen(false)
-            setSelectedSchema(null)
-          }}
-        />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editSchema ? 'Edit Points Schema' : 'Create Points Schema'}
+            </DialogTitle>
+          </DialogHeader>
+          <PointsSchemaForm
+            schema={editSchema || undefined}
+            onSuccess={() => {
+              handleEditSuccess()
+              onRefetch?.()
+            }}
+            onCancel={() => {
+              setEditDialogOpen(false)
+            }}
+          />
+        </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Points Schema</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the points schema "
-              {schemaToDelete?.name}". This action cannot be undone.
-              {schemaToDelete && (
+              Are you sure you want to delete{' '}
+              <span className='font-semibold'>
+                {deletingItem?.name || 'this points schema'}
+              </span>
+              ? This action cannot be undone.
+              {deletingItem && (
                 <div className='mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md border border-amber-200 dark:border-amber-800'>
                   <p className='text-sm text-amber-900 dark:text-amber-100'>
                     <strong>Warning:</strong> This schema cannot be deleted if
@@ -302,16 +265,22 @@ export default function PointsSchemasTable({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              disabled={isDeleting}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >
-              Delete
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 }

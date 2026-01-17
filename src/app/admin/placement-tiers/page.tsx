@@ -11,23 +11,46 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
-import { Dialog } from '@/components/ui/dialog'
 import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
 import PlacementTierForm from '@/components/placement-tiers/placement-tier-form'
 import PlacementTiersTable from './components/placement-tiers-table'
 import { usePlacementTiersStore } from '@/store/placement-tiers-store'
 import { useRoles } from '@/hooks/authorization/use-roles'
+import { SortOrder } from '@/types'
+import type { PlacementTiersSortBy } from '@/config/tables/placement-tiers.config'
 
 const PlacementTiersPage = () => {
   const { isSystemAdmin, isLoading: contextLoading } = useRoles()
-  const { fetchTiers, isLoading, error, clearError } = usePlacementTiersStore()
+  const { tiers, fetchTiers, isLoading, error, clearError, pagination } =
+    usePlacementTiersStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+
+  // Local filter state
+  const [filters, setFilters] = useState<{
+    q: string
+    page: number
+    limit: number
+    sortBy: PlacementTiersSortBy
+    sortOrder: SortOrder
+  }>({
+    q: '',
+    page: 1,
+    limit: 25,
+    sortBy: 'rank',
+    sortOrder: SortOrder.ASC,
+  })
 
   useEffect(() => {
     if (!contextLoading && isSystemAdmin) {
-      fetchTiers({ sortBy: 'rank', sortOrder: 'asc', limit: 100 })
+      fetchTiers({
+        q: filters.q,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        page: filters.page,
+        limit: filters.limit,
+      })
     }
-  }, [fetchTiers, isSystemAdmin, contextLoading])
+  }, [fetchTiers, isSystemAdmin, contextLoading, filters])
 
   // Show loading state while checking auth
   if (contextLoading) {
@@ -86,7 +109,13 @@ const PlacementTiersPage = () => {
               <PlacementTierForm
                 onSuccess={() => {
                   setCreateDialogOpen(false)
-                  fetchTiers({ sortBy: 'rank', sortOrder: 'asc', limit: 100 })
+                  fetchTiers({
+                    q: filters.q,
+                    sortBy: filters.sortBy,
+                    sortOrder: filters.sortOrder,
+                    page: filters.page,
+                    limit: filters.limit,
+                  })
                 }}
                 onCancel={() => setCreateDialogOpen(false)}
               />
@@ -125,9 +154,38 @@ const PlacementTiersPage = () => {
       {/* Table */}
       <div className='mt-6'>
         <PlacementTiersTable
-          onRefetch={() =>
-            fetchTiers({ sortBy: 'rank', sortOrder: 'asc', limit: 100 })
-          }
+          tiers={tiers}
+          pagination={pagination}
+          onPageChange={(page) => {
+            setFilters({ ...filters, page })
+          }}
+          onPageSizeChange={(pageSize) => {
+            setFilters({ ...filters, limit: pageSize, page: 1 })
+          }}
+          onSearchChange={(search) => {
+            setFilters({ ...filters, q: search, page: 1 })
+          }}
+          searchValue={filters.q}
+          sortBy={filters.sortBy}
+          sortOrder={filters.sortOrder}
+          onSortingChange={(sortBy, sortOrder) => {
+            setFilters({
+              ...filters,
+              sortBy: sortBy || 'rank',
+              sortOrder: sortOrder || SortOrder.ASC,
+              page: 1,
+            })
+          }}
+          isLoading={isLoading}
+          onRefetch={() => {
+            fetchTiers({
+              q: filters.q,
+              sortBy: filters.sortBy,
+              sortOrder: filters.sortOrder,
+              page: filters.page,
+              limit: filters.limit,
+            })
+          }}
         />
       </div>
     </div>

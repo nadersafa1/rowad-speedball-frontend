@@ -1,13 +1,13 @@
 // Points Schemas Store - Single responsibility: Points schemas state management
-import { create } from 'zustand'
-import { apiClient } from '@/lib/api-client'
 import type { PointsSchema } from '@/db/schema'
-import type { PaginatedResponse } from '@/types/api/pagination'
+import { apiClient } from '@/lib/api-client'
+import { SortOrder } from '@/types'
+import { create } from 'zustand'
 
 interface PointsSchemasFilters {
   q?: string
   sortBy?: 'name' | 'createdAt' | 'updatedAt'
-  sortOrder?: 'asc' | 'desc'
+  sortOrder?: SortOrder
   page?: number
   limit?: number
 }
@@ -129,7 +129,9 @@ export const usePointsSchemasStore = create<PointsSchemasState>((set, get) => ({
       set((state) => ({
         schemas: state.schemas.map((s) => (s.id === id ? updatedSchema : s)),
         selectedSchema:
-          state.selectedSchema?.id === id ? updatedSchema : state.selectedSchema,
+          state.selectedSchema?.id === id
+            ? updatedSchema
+            : state.selectedSchema,
         isLoading: false,
       }))
     } catch (error) {
@@ -150,7 +152,8 @@ export const usePointsSchemasStore = create<PointsSchemasState>((set, get) => ({
       await apiClient.deletePointsSchema(id)
       set((state) => ({
         schemas: state.schemas.filter((s) => s.id !== id),
-        selectedSchema: state.selectedSchema?.id === id ? null : state.selectedSchema,
+        selectedSchema:
+          state.selectedSchema?.id === id ? null : state.selectedSchema,
         isLoading: false,
       }))
     } catch (error) {

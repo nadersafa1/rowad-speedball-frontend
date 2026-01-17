@@ -11,26 +11,54 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PageHeader } from '@/components/ui'
-import { Dialog } from '@/components/ui/dialog'
 import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
 import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
 import PointsSchemasTable from './components/points-schemas-table'
 import { usePointsSchemasStore } from '@/store/points-schemas-store'
 import { useFederation } from '@/hooks/authorization/use-federation'
+import { SortOrder } from '@/types'
+import type { PointsSchemasSortBy } from '@/config/tables/points-schemas.config'
 
 const PointsSchemasPage = () => {
-  const { isSystemAdmin, isFederationAdmin, isFederationEditor, isLoading: contextLoading } = useFederation()
-  const { fetchSchemas, isLoading, error, clearError } = usePointsSchemasStore()
+  const {
+    isSystemAdmin,
+    isFederationAdmin,
+    isFederationEditor,
+    isLoading: contextLoading,
+  } = useFederation()
+  const { schemas, fetchSchemas, isLoading, error, clearError, pagination } =
+    usePointsSchemasStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   // Check if user is system admin or federation admin/editor
   const hasAccess = isSystemAdmin || isFederationAdmin || isFederationEditor
 
+  // Local filter state
+  const [filters, setFilters] = useState<{
+    q: string
+    page: number
+    limit: number
+    sortBy: PointsSchemasSortBy
+    sortOrder: SortOrder
+  }>({
+    q: '',
+    page: 1,
+    limit: 25,
+    sortBy: 'createdAt',
+    sortOrder: SortOrder.DESC,
+  })
+
   useEffect(() => {
     if (!contextLoading && hasAccess) {
-      fetchSchemas({ sortBy: 'createdAt', sortOrder: 'desc', limit: 100 })
+      fetchSchemas({
+        q: filters.q,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        page: filters.page,
+        limit: filters.limit,
+      })
     }
-  }, [fetchSchemas, hasAccess, contextLoading])
+  }, [fetchSchemas, hasAccess, contextLoading, filters])
 
   // Show loading state while checking auth
   if (contextLoading) {
@@ -90,9 +118,11 @@ const PointsSchemasPage = () => {
                 onSuccess={() => {
                   setCreateDialogOpen(false)
                   fetchSchemas({
-                    sortBy: 'createdAt',
-                    sortOrder: 'desc',
-                    limit: 100,
+                    q: filters.q,
+                    sortBy: filters.sortBy,
+                    sortOrder: filters.sortOrder,
+                    page: filters.page,
+                    limit: filters.limit,
                   })
                 }}
                 onCancel={() => setCreateDialogOpen(false)}
@@ -151,9 +181,38 @@ const PointsSchemasPage = () => {
       {/* Table */}
       <div className='mt-6'>
         <PointsSchemasTable
-          onRefetch={() =>
-            fetchSchemas({ sortBy: 'createdAt', sortOrder: 'desc', limit: 100 })
-          }
+          schemas={schemas}
+          pagination={pagination}
+          onPageChange={(page) => {
+            setFilters({ ...filters, page })
+          }}
+          onPageSizeChange={(pageSize) => {
+            setFilters({ ...filters, limit: pageSize, page: 1 })
+          }}
+          onSearchChange={(search) => {
+            setFilters({ ...filters, q: search, page: 1 })
+          }}
+          searchValue={filters.q}
+          sortBy={filters.sortBy}
+          sortOrder={filters.sortOrder}
+          onSortingChange={(sortBy, sortOrder) => {
+            setFilters({
+              ...filters,
+              sortBy: sortBy || 'createdAt',
+              sortOrder: sortOrder || SortOrder.DESC,
+              page: 1,
+            })
+          }}
+          isLoading={isLoading}
+          onRefetch={() => {
+            fetchSchemas({
+              q: filters.q,
+              sortBy: filters.sortBy,
+              sortOrder: filters.sortOrder,
+              page: filters.page,
+              limit: filters.limit,
+            })
+          }}
         />
       </div>
     </div>
