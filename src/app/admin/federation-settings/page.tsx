@@ -35,7 +35,13 @@ interface FederationStats {
 }
 
 const FederationSettingsPage = () => {
-  const { federationId, isFederationAdmin, isFederationEditor, isSystemAdmin, isLoading: isContextLoading } = useFederation()
+  const {
+    federationId,
+    isFederationAdmin,
+    isFederationEditor,
+    isSystemAdmin,
+    isLoading: isContextLoading,
+  } = useFederation()
   const {
     selectedFederation,
     isLoading: isFederationLoading,
@@ -194,32 +200,41 @@ const FederationSettingsPage = () => {
                 <CardTitle>Federation Information</CardTitle>
                 <CardDescription>Basic federation details</CardDescription>
               </div>
-              {canEdit && (
-                <Button onClick={handleEditClick}>Edit</Button>
-              )}
+              {canEdit && <Button onClick={handleEditClick}>Edit</Button>}
             </div>
           </CardHeader>
           <CardContent>
             <div className='space-y-4'>
               <div>
-                <span className='text-sm font-medium text-muted-foreground'>Name</span>
-                <p className='text-lg font-semibold'>{selectedFederation.name}</p>
+                <span className='text-sm font-medium text-muted-foreground'>
+                  Name
+                </span>
+                <p className='text-lg font-semibold'>
+                  {selectedFederation.name}
+                </p>
               </div>
               {selectedFederation.description && (
                 <div>
-                  <span className='text-sm font-medium text-muted-foreground'>Description</span>
+                  <span className='text-sm font-medium text-muted-foreground'>
+                    Description
+                  </span>
                   <p className='text-base'>{selectedFederation.description}</p>
                 </div>
               )}
               <div>
-                <span className='text-sm font-medium text-muted-foreground'>Created</span>
+                <span className='text-sm font-medium text-muted-foreground'>
+                  Created
+                </span>
                 <p className='text-base'>
                   {selectedFederation.createdAt
-                    ? new Date(selectedFederation.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })
+                    ? new Date(selectedFederation.createdAt).toLocaleDateString(
+                        'en-US',
+                        {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        }
+                      )
                     : 'N/A'}
                 </p>
               </div>
@@ -231,14 +246,18 @@ const FederationSettingsPage = () => {
         <div className='grid gap-4 md:grid-cols-3'>
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Member Clubs</CardTitle>
+              <CardTitle className='text-sm font-medium'>
+                Member Clubs
+              </CardTitle>
               <Building2 className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
               {isLoadingStats ? (
                 <div className='text-2xl font-bold'>-</div>
               ) : (
-                <div className='text-2xl font-bold'>{stats.memberClubsCount}</div>
+                <div className='text-2xl font-bold'>
+                  {stats.memberClubsCount}
+                </div>
               )}
               <p className='text-xs text-muted-foreground'>
                 Total clubs in federation
@@ -248,14 +267,18 @@ const FederationSettingsPage = () => {
 
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Active Seasons</CardTitle>
+              <CardTitle className='text-sm font-medium'>
+                Active Seasons
+              </CardTitle>
               <Calendar className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
               {isLoadingStats ? (
                 <div className='text-2xl font-bold'>-</div>
               ) : (
-                <div className='text-2xl font-bold'>{stats.activeSeasonsCount}</div>
+                <div className='text-2xl font-bold'>
+                  {stats.activeSeasonsCount}
+                </div>
               )}
               <p className='text-xs text-muted-foreground'>
                 Currently active seasons
@@ -265,14 +288,18 @@ const FederationSettingsPage = () => {
 
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Pending Requests</CardTitle>
+              <CardTitle className='text-sm font-medium'>
+                Pending Requests
+              </CardTitle>
               <Clock className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
               {isLoadingStats ? (
                 <div className='text-2xl font-bold'>-</div>
               ) : (
-                <div className='text-2xl font-bold'>{stats.pendingRequestsCount}</div>
+                <div className='text-2xl font-bold'>
+                  {stats.pendingRequestsCount}
+                </div>
               )}
               <p className='text-xs text-muted-foreground'>
                 Club requests awaiting approval
@@ -287,9 +314,7 @@ const FederationSettingsPage = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Federation</DialogTitle>
-            <DialogDescription>
-              Update federation information
-            </DialogDescription>
+            <DialogDescription>Update federation information</DialogDescription>
           </DialogHeader>
           <div className='space-y-4 py-4'>
             <div className='space-y-2'>
@@ -297,7 +322,9 @@ const FederationSettingsPage = () => {
               <Input
                 id='name'
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder='Enter federation name'
               />
             </div>
@@ -315,10 +342,7 @@ const FederationSettingsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant='outline'
-              onClick={() => setEditDialogOpen(false)}
-            >
+            <Button variant='outline' onClick={() => setEditDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleSave}>Save Changes</Button>

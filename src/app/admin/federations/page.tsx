@@ -7,8 +7,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useFederationPermissions } from '@/hooks/authorization/use-federation-permissions'
 import { Building2, Plus } from 'lucide-react'
 import { useState } from 'react'
+import { SortOrder } from '@/types'
 import FederationsTable from './components/federations-table'
 import { useFederations } from './hooks/use-federations'
+import type { FederationsSortBy } from '@/config/tables/federations.config'
 
 const FederationsPage = () => {
   const { canCreate } = useFederationPermissions(null)
@@ -16,12 +18,18 @@ const FederationsPage = () => {
   const [federationFormOpen, setFederationFormOpen] = useState(false)
 
   // Local filter state
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    q: string
+    page: number
+    limit: number
+    sortBy: FederationsSortBy
+    sortOrder: SortOrder
+  }>({
     q: '',
     page: 1,
     limit: 25,
-    sortBy: 'createdAt' as 'name' | 'createdAt' | 'updatedAt',
-    sortOrder: 'desc' as 'asc' | 'desc',
+    sortBy: 'createdAt',
+    sortOrder: SortOrder.DESC,
   })
 
   const {
@@ -102,8 +110,8 @@ const FederationsPage = () => {
             onSortingChange={(sortBy, sortOrder) => {
               setFilters({
                 ...filters,
-                sortBy: sortBy as 'name' | 'createdAt' | 'updatedAt',
-                sortOrder: sortOrder || 'desc',
+                sortBy: sortBy || 'createdAt',
+                sortOrder: sortOrder || SortOrder.DESC,
                 page: 1,
               })
             }}

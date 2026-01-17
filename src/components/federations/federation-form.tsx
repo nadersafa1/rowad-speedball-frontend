@@ -142,7 +142,7 @@ const FederationForm = ({
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className='flex flex-col-reverse md:flex-row gap-2 '>
             {onCancel && (
               <Button
                 type='button'
@@ -160,8 +160,8 @@ const FederationForm = ({
                   ? 'Updating...'
                   : 'Creating...'
                 : isEditing
-                  ? 'Update Federation'
-                  : 'Create Federation'}
+                ? 'Update Federation'
+                : 'Create Federation'}
             </Button>
           </DialogFooter>
         </form>
@@ -171,4 +171,3 @@ const FederationForm = ({
 }
 
 export default FederationForm
-
