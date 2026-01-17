@@ -23,8 +23,8 @@ export function useOrganizations() {
       setIsLoading(true)
       setError(null)
       try {
-        const orgs = await apiClient.getOrganizations()
-        setOrganizations(orgs)
+        const response = await apiClient.getOrganizations()
+        setOrganizations(response.data.map((org) => ({ id: org.id, name: org.name })))
       } catch (err) {
         console.error('Failed to fetch organizations:', err)
         setError(

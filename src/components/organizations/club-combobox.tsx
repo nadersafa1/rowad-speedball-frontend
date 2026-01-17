@@ -39,14 +39,18 @@ const ClubCombobox = ({
       signal?: AbortSignal
     ): Promise<{ items: Organization[]; hasMore: boolean }> => {
       try {
-        const orgs = await apiClient.getOrganizations()
+        const response = await apiClient.getOrganizations({
+          q: query,
+          page,
+          limit,
+        })
 
-        // Filter organizations by search query
+        // Filter organizations by search query (if not already filtered by API)
         const filtered = query
-          ? orgs.filter((org) =>
+          ? response.data.filter((org) =>
               org.name.toLowerCase().includes(query.toLowerCase())
             )
-          : orgs
+          : response.data
 
         // Simple client-side pagination
         const startIndex = (page - 1) * limit
@@ -71,8 +75,8 @@ const ClubCombobox = ({
   const fetchOrganization = React.useCallback(
     async (orgId: string): Promise<Organization> => {
       try {
-        const orgs = await apiClient.getOrganizations()
-        const found = orgs.find((org) => org.id === orgId)
+        const response = await apiClient.getOrganizations({ limit: 100 })
+        const found = response.data.find((org) => org.id === orgId)
         if (!found) {
           throw new Error('Club not found')
         }

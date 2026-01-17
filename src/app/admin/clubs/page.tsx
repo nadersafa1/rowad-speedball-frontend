@@ -1,110 +1,124 @@
-import { SinglePageHeader } from '@/components/ui'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import * as schema from '@/db/schema'
-import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
-import { getOrganizationContext } from '@/lib/organization-helpers'
-import { and, count, eq, not } from 'drizzle-orm'
-import { Building2 } from 'lucide-react'
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { PageHeader, Unauthorized } from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import type { ClubsSortBy } from '@/config/tables/clubs.config'
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { SortOrder } from '@/types'
+import { Building2, Plus } from 'lucide-react'
+import { useState } from 'react'
+import ClubsTable from './components/clubs-table'
+import { useClubs } from './hooks/use-clubs'
 import { CreateOrganizationDialog } from './_components/create-organization-dialog'
-import { OrganizationRow } from './_components/organization-row'
 
-const OrganizationsPage = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
+const ClubsPage = () => {
+  const { isSystemAdmin } = useRoles()
+
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+
+  // Local filter state
+  const [filters, setFilters] = useState<{
+    q: string
+    page: number
+    limit: number
+    sortBy: ClubsSortBy
+    sortOrder: SortOrder
+  }>({
+    q: '',
+    page: 1,
+    limit: 25,
+    sortBy: 'createdAt',
+    sortOrder: SortOrder.DESC,
   })
 
-  if (!session) {
-    return redirect('/auth/login')
+  const {
+    clubs,
+    isLoading,
+    error,
+    pagination,
+    clearError,
+    handlePageChange,
+    refetch,
+  } = useClubs(filters)
+
+  if (!isSystemAdmin) return <Unauthorized />
+
+  if (error) {
+    return (
+      <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+        <Card className='border-destructive'>
+          <CardContent>
+            <p className='text-destructive'>Error: {error}</p>
+            <Button onClick={clearError} className='mt-4'>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
-
-  const context = await getOrganizationContext()
-  if (!context.isSystemAdmin) {
-    return redirect('/')
-  }
-
-  // Get all organizations
-  const organizations = await auth.api.listOrganizations({
-    headers: await headers(),
-  })
-
-  // Get member counts for each organization
-  const organizationsWithCounts = await Promise.all(
-    organizations.map(async (org) => {
-      const memberCountResult = await db
-        .select({ count: count() })
-        .from(schema.member)
-        .where(
-          and(
-            eq(schema.member.organizationId, org.id),
-            not(eq(schema.member.role, 'super_admin'))
-          )
-        )
-
-      return {
-        ...org,
-        memberCount: memberCountResult[0]?.count || 0,
-      }
-    })
-  )
 
   return (
     <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
-      <SinglePageHeader backTo='/admin' />
+      <PageHeader
+        icon={Building2}
+        title='Clubs'
+        description='Manage clubs and assign admins/coaches'
+        actionDialogs={[
+          {
+            open: createDialogOpen,
+            onOpenChange: setCreateDialogOpen,
+            trigger: (
+              <Button size='sm' variant='outline' className='gap-2'>
+                <Plus className='h-4 w-4' />
+                Create Club
+              </Button>
+            ),
+            content: (
+              <CreateOrganizationDialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                onSuccess={() => {
+                  setCreateDialogOpen(false)
+                  refetch()
+                }}
+              />
+            ),
+          },
+        ]}
+      />
 
-      <Card>
-        <CardHeader>
-          <div className='flex items-center justify-between'>
-            <div>
-              <CardTitle className='flex items-center gap-2'>
-                <Building2 className='h-5 w-5' />
-                Clubs ({organizations.length})
-              </CardTitle>
-              <CardDescription>
-                Manage clubs and assign admins/coaches
-              </CardDescription>
-            </div>
-            <CreateOrganizationDialog />
-          </div>
-        </CardHeader>
+      <Card className='mt-4 sm:mt-6'>
         <CardContent>
-          <div className='rounded-md border'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Members</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className='w-[100px]'>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {organizationsWithCounts.map((org) => (
-                  <OrganizationRow key={org.id} organization={org} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <ClubsTable
+            clubs={clubs}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onPageSizeChange={(pageSize) => {
+              setFilters({ ...filters, limit: pageSize, page: 1 })
+            }}
+            onSearchChange={(search) => {
+              setFilters({ ...filters, q: search, page: 1 })
+            }}
+            searchValue={filters.q}
+            sortBy={filters.sortBy}
+            sortOrder={filters.sortOrder}
+            onSortingChange={(sortBy, sortOrder) => {
+              setFilters({
+                ...filters,
+                sortBy: sortBy || 'createdAt',
+                sortOrder: sortOrder || SortOrder.DESC,
+                page: 1,
+              })
+            }}
+            isLoading={isLoading}
+            onRefetch={refetch}
+          />
         </CardContent>
       </Card>
     </div>
   )
 }
 
-export default OrganizationsPage
+export default ClubsPage

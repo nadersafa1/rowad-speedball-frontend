@@ -1200,26 +1200,34 @@ export class ApiClient {
   async getOrganizations(params?: {
     q?: string
     sortBy?: 'name' | 'slug' | 'createdAt'
-    sortOrder?: 'asc' | 'desc'
+    sortOrder?: SortOrder
     page?: number
     limit?: number
   }): Promise<
-    Array<{ id: string; name: string; slug: string; createdAt?: Date }>
+    PaginatedResponse<{
+      id: string
+      name: string
+      slug: string
+      createdAt?: Date
+    }>
   > {
-    // For backward compatibility, if no params provided, fetch up to max limit
-    if (!params) {
-      params = { limit: 100 }
+    // Default params if not provided
+    const queryParams = {
+      page: params?.page || 1,
+      limit: params?.limit || 100,
+      ...params,
     }
 
     const searchParams = new URLSearchParams()
-    if (params.q) searchParams.set('q', params.q)
-    if (params.sortBy) searchParams.set('sortBy', params.sortBy)
-    if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder)
-    if (params.page) searchParams.set('page', params.page.toString())
-    if (params.limit) searchParams.set('limit', params.limit.toString())
+    if (queryParams.q) searchParams.set('q', queryParams.q)
+    if (queryParams.sortBy) searchParams.set('sortBy', queryParams.sortBy)
+    if (queryParams.sortOrder)
+      searchParams.set('sortOrder', queryParams.sortOrder)
+    searchParams.set('page', queryParams.page.toString())
+    searchParams.set('limit', queryParams.limit.toString())
 
     const query = searchParams.toString()
-    const endpoint = query ? `/organizations?${query}` : '/organizations'
+    const endpoint = `/organizations?${query}`
 
     const response = await this.request<
       PaginatedResponse<{
@@ -1227,11 +1235,43 @@ export class ApiClient {
         name: string
         slug: string
         createdAt?: Date
+        memberCount?: number
       }>
     >(endpoint)
 
-    // Return just the data array for backward compatibility
-    return response.data
+    return response
+  }
+
+  async getOrganization(
+    id: string
+  ): Promise<{ id: string; name: string; slug: string; createdAt?: Date }> {
+    return this.request<{
+      id: string
+      name: string
+      slug: string
+      createdAt?: Date
+    }>(`/organizations/${id}`)
+  }
+
+  async updateOrganization(
+    id: string,
+    data: { name?: string; slug?: string }
+  ): Promise<{ id: string; name: string; slug: string; createdAt?: Date }> {
+    return this.request<{
+      id: string
+      name: string
+      slug: string
+      createdAt?: Date
+    }>(`/organizations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteOrganization(id: string): Promise<void> {
+    return this.request<void>(`/organizations/${id}`, {
+      method: 'DELETE',
+    })
   }
 
   async createOrganization(data: {

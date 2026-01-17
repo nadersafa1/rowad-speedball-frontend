@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,13 +8,11 @@ import { toast } from 'sonner'
 import z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Form,
@@ -26,8 +24,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { LoadingSwap } from '@/components/ui/loading-swap'
-import { apiClient } from '@/lib/api-client'
-import { Plus } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 
 const createOrganizationSchema = z.object({
@@ -44,9 +40,18 @@ const createOrganizationSchema = z.object({
 
 type CreateOrganizationSchema = z.infer<typeof createOrganizationSchema>
 
-export const CreateOrganizationDialog = () => {
+interface CreateOrganizationDialogProps {
+  onSuccess?: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export const CreateOrganizationDialog = ({
+  onSuccess,
+  open,
+  onOpenChange,
+}: CreateOrganizationDialogProps) => {
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
   const form = useForm<CreateOrganizationSchema>({
     resolver: zodResolver(createOrganizationSchema),
     defaultValues: {
@@ -67,95 +72,88 @@ export const CreateOrganizationDialog = () => {
           .trim()
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
       )
     }
   }, [name, setValue])
 
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset()
+    }
+  }, [open, form])
+
   const handleCreate = async (data: CreateOrganizationSchema) => {
     const res = await authClient.organization.create({
       name: data.name,
-      slug: data.name
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-'),
+      slug: data.slug,
     })
 
     if (res.error) {
       toast.error(
-        res.error instanceof Error
-          ? res.error.message
-          : 'Failed to create club'
+        res.error instanceof Error ? res.error.message : 'Failed to create club'
       )
     } else {
       toast.success('Club created successfully')
       form.reset()
-      setIsOpen(false)
+      onOpenChange(false)
       await authClient.organization.setActive({ organizationId: res.data.id })
       router.refresh()
+      onSuccess?.()
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className='h-4 w-4 mr-2' />
-          Create Club
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create Club</DialogTitle>
-          <DialogDescription>
-            Create a new club and assign admins/coaches
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleCreate)}
-            className='space-y-4'
-          >
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder='Rowad Club' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='slug'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input placeholder='rowad-club' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button
-                type='button'
-                variant='outline'
-                onClick={() => setIsOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type='submit' disabled={isSubmitting}>
-                <LoadingSwap isLoading={isSubmitting}>Create</LoadingSwap>
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Create Club</DialogTitle>
+        <DialogDescription>
+          Create a new club and assign admins/coaches
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleCreate)} className='space-y-4'>
+          <FormField
+            control={form.control}
+            name='name'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder='Rowad Club' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='slug'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Slug</FormLabel>
+                <FormControl>
+                  <Input placeholder='rowad-club' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <DialogFooter>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type='submit' disabled={isSubmitting}>
+              <LoadingSwap isLoading={isSubmitting}>Create</LoadingSwap>
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
   )
 }

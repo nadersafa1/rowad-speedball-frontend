@@ -64,8 +64,10 @@ export const EventsTableControls = ({
       const fetchOrganizations = async () => {
         setIsLoadingOrgs(true)
         try {
-          const orgs = await apiClient.getOrganizations()
-          setOrganizations(orgs)
+          const response = await apiClient.getOrganizations()
+          setOrganizations(
+            response.data.map((org) => ({ id: org.id, name: org.name }))
+          )
         } catch (error) {
           console.error('Failed to fetch organizations:', error)
         } finally {
