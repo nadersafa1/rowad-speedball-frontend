@@ -204,6 +204,9 @@ export default function PointsSchemasTable({
         columns={columns}
         pagination={pagination}
         isLoading={isLoading}
+        enableNavigation={pointsSchemasTableConfig.features.navigation}
+        routingBasePath={pointsSchemasTableConfig.routing.basePath}
+        routingDetailPath={pointsSchemasTableConfig.routing.detailPath}
         columnVisibility={columnVisibility}
         onColumnVisibilityChange={setColumnVisibility}
         emptyMessage={

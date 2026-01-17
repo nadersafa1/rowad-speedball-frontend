@@ -1,8 +1,5 @@
 'use client'
 
-import { ColumnDef } from '@tanstack/react-table'
-import type { Federation } from '@/db/schema'
-import { MoreHorizontal, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,9 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import type { FederationsSortBy } from '@/config/tables/federations.config'
+import type { Federation } from '@/db/schema'
+import { createSortableHeader } from '@/lib/table-core'
 import { formatDate } from '@/lib/utils'
 import { SortOrder } from '@/types'
-import type { FederationsSortBy } from '@/config/tables/federations.config'
+import { ColumnDef } from '@tanstack/react-table'
+import { Edit, MoreHorizontal, Trash2 } from 'lucide-react'
 
 interface CreateColumnsOptions {
   canEdit: boolean
@@ -40,29 +41,8 @@ export const createFederationsColumns = ({
     {
       id: 'name',
       accessorKey: 'name',
-      header: () => {
-        const isSorted = sortBy === 'name'
-        const isAsc = isSorted && sortOrder === SortOrder.ASC
-
-        return (
-          <Button
-            variant='ghost'
-            onClick={() => onSort?.('name')}
-            className='-ml-3 h-8 data-[state=open]:bg-accent'
-          >
-            Name
-            {isSorted ? (
-              isAsc ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
-            ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4 opacity-50' />
-            )}
-          </Button>
-        )
-      },
+      header: () =>
+        createSortableHeader('Name', 'name', sortBy, sortOrder, onSort),
       cell: ({ row }) => (
         <div className='font-medium'>{row.getValue('name')}</div>
       ),
@@ -85,63 +65,30 @@ export const createFederationsColumns = ({
     {
       id: 'createdAt',
       accessorKey: 'createdAt',
-      header: () => {
-        const isSorted = sortBy === 'createdAt'
-        const isAsc = isSorted && sortOrder === SortOrder.ASC
+      header: () =>
+        createSortableHeader(
+          'Created At',
+          'createdAt',
+          sortBy,
+          sortOrder,
+          onSort
+        ),
 
-        return (
-          <Button
-            variant='ghost'
-            onClick={() => onSort?.('createdAt')}
-            className='-ml-3 h-8 data-[state=open]:bg-accent'
-          >
-            Created
-            {isSorted ? (
-              isAsc ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
-            ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4 opacity-50' />
-            )}
-          </Button>
-        )
-      },
-      cell: ({ row }) => (
-        <div>{formatDate(row.getValue('createdAt'))}</div>
-      ),
+      cell: ({ row }) => <div>{formatDate(row.getValue('createdAt'))}</div>,
     },
     // Updated At column (hidden by default)
     {
       id: 'updatedAt',
       accessorKey: 'updatedAt',
-      header: () => {
-        const isSorted = sortBy === 'updatedAt'
-        const isAsc = isSorted && sortOrder === SortOrder.ASC
-
-        return (
-          <Button
-            variant='ghost'
-            onClick={() => onSort?.('updatedAt')}
-            className='-ml-3 h-8 data-[state=open]:bg-accent'
-          >
-            Updated
-            {isSorted ? (
-              isAsc ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
-            ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4 opacity-50' />
-            )}
-          </Button>
-        )
-      },
-      cell: ({ row }) => (
-        <div>{formatDate(row.getValue('updatedAt'))}</div>
-      ),
+      header: () =>
+        createSortableHeader(
+          'Updated At',
+          'updatedAt',
+          sortBy,
+          sortOrder,
+          onSort
+        ),
+      cell: ({ row }) => <div>{formatDate(row.getValue('updatedAt'))}</div>,
     },
   ]
 

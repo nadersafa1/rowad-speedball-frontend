@@ -10,17 +10,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { ClubsSortBy, ClubWithCount } from '@/config/tables/clubs.config'
+import { createSortableHeader } from '@/lib/table-core'
 import { formatDate } from '@/lib/utils'
 import { SortOrder } from '@/types'
 import { ColumnDef } from '@tanstack/react-table'
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Edit,
-  MoreHorizontal,
-  Trash2,
-} from 'lucide-react'
+import { Edit, MoreHorizontal, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface CreateColumnsOptions {
@@ -47,29 +41,8 @@ export const createClubsColumns = ({
     {
       id: 'name',
       accessorKey: 'name',
-      header: () => {
-        const isSorted = sortBy === 'name'
-        const isAsc = isSorted && sortOrder === SortOrder.ASC
-
-        return (
-          <Button
-            variant='ghost'
-            onClick={() => onSort?.('name')}
-            className='-ml-3 h-8 data-[state=open]:bg-accent'
-          >
-            Name
-            {isSorted ? (
-              isAsc ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
-            ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4 opacity-50' />
-            )}
-          </Button>
-        )
-      },
+      header: () =>
+        createSortableHeader('Name', 'name', sortBy, sortOrder, onSort),
       cell: ({ row }) => {
         const organization = row.original
         return (
@@ -86,29 +59,8 @@ export const createClubsColumns = ({
     {
       id: 'slug',
       accessorKey: 'slug',
-      header: () => {
-        const isSorted = sortBy === 'slug'
-        const isAsc = isSorted && sortOrder === SortOrder.ASC
-
-        return (
-          <Button
-            variant='ghost'
-            onClick={() => onSort?.('slug')}
-            className='-ml-3 h-8 data-[state=open]:bg-accent'
-          >
-            Slug
-            {isSorted ? (
-              isAsc ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
-            ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4 opacity-50' />
-            )}
-          </Button>
-        )
-      },
+      header: () =>
+        createSortableHeader('Slug', 'slug', sortBy, sortOrder, onSort),
       cell: ({ row }) => (
         <code className='text-sm bg-muted px-2 py-1 rounded'>
           {row.getValue('slug')}
@@ -119,29 +71,14 @@ export const createClubsColumns = ({
     {
       id: 'createdAt',
       accessorKey: 'createdAt',
-      header: () => {
-        const isSorted = sortBy === 'createdAt'
-        const isAsc = isSorted && sortOrder === SortOrder.ASC
-
-        return (
-          <Button
-            variant='ghost'
-            onClick={() => onSort?.('createdAt')}
-            className='-ml-3 h-8 data-[state=open]:bg-accent'
-          >
-            Created
-            {isSorted ? (
-              isAsc ? (
-                <ArrowUp className='ml-2 h-4 w-4' />
-              ) : (
-                <ArrowDown className='ml-2 h-4 w-4' />
-              )
-            ) : (
-              <ArrowUpDown className='ml-2 h-4 w-4 opacity-50' />
-            )}
-          </Button>
-        )
-      },
+      header: () =>
+        createSortableHeader(
+          'Created At',
+          'createdAt',
+          sortBy,
+          sortOrder,
+          onSort
+        ),
       cell: ({ row }) => <div>{formatDate(row.getValue('createdAt'))}</div>,
     },
   ]

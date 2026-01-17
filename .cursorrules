@@ -43,6 +43,13 @@ When creating or modifying data tables in this project, follow these mandatory s
 - **ALWAYS** use `TablePagination` component
 - Import from: `@/lib/table-core`
 
+### 7. Column Helpers
+
+- **ALWAYS** use `createSortableHeader` for sortable column headers
+- **ALWAYS** use `createTextColumn`, `createDateColumn`, `createBadgeColumn` helpers when applicable
+- Import from: `@/lib/table-core`
+- Example: `createSortableHeader('Name', 'name', sortBy, sortOrder, onSort)`
+
 ## Type Safety Requirements
 
 ### SortOrder Enum
@@ -195,6 +202,9 @@ export default function YourEntityTable({ ... }: YourEntityTableProps) {
         columns={columns}
         pagination={pagination}
         isLoading={isLoading}
+        enableNavigation={yourEntityTableConfig.features.navigation}
+        routingBasePath={yourEntityTableConfig.routing.basePath}
+        routingDetailPath={yourEntityTableConfig.routing.detailPath}
         columnVisibility={columnVisibility}
         onColumnVisibilityChange={setColumnVisibility}
         // ... other props
@@ -268,6 +278,12 @@ export const yourEntityTableConfig: TableConfig<
 
 7. ❌ **DON'T** forget filter reset for multiple filters
    ✅ **DO** implement `handleResetFilters` when needed
+
+8. ❌ **DON'T** implement manual sortable headers
+   ✅ **DO** use `createSortableHeader` helper function
+
+9. ❌ **DON'T** forget to enable navigation when config has `navigation: true`
+   ✅ **DO** pass `enableNavigation`, `routingBasePath`, and `routingDetailPath` to `BaseDataTable`
 
 ## Documentation
 

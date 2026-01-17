@@ -7,12 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { createSortableHeader, createDateColumn } from '@/lib/table-core'
-import { SortOrder } from '@/types'
 import type { PointsSchema } from '@/db/schema'
+import { createDateColumn, createSortableHeader } from '@/lib/table-core'
+import { SortOrder } from '@/types'
 import { ColumnDef } from '@tanstack/react-table'
-import { MoreHorizontal, Pencil, Trash2, ExternalLink } from 'lucide-react'
-import Link from 'next/link'
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 
 interface CreatePointsSchemasColumnsOptions {
   canEdit: boolean
@@ -40,18 +39,9 @@ export function createPointsSchemasColumns({
       id: 'name',
       header: () =>
         createSortableHeader('Name', 'name', sortBy, sortOrder, onSort),
-      cell: ({ row }) => {
-        const schema = row.original
-        return (
-          <Link
-            href={`/admin/points-schemas/${schema.id}`}
-            className='flex items-center gap-2 font-semibold hover:text-rowad-600 transition-colors'
-          >
-            {schema.name}
-            <ExternalLink className='h-3 w-3' />
-          </Link>
-        )
-      },
+      cell: ({ row }) => (
+        <div className='font-medium'>{row.getValue('name')}</div>
+      ),
     },
     // Description column
     {
@@ -106,12 +96,6 @@ export function createPointsSchemasColumns({
             <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/points-schemas/${schema.id}`}>
-                  <ExternalLink className='mr-2 h-4 w-4' />
-                  View Entries
-                </Link>
-              </DropdownMenuItem>
               {canEdit && (
                 <DropdownMenuItem onClick={() => onEdit(schema)}>
                   <Pencil className='mr-2 h-4 w-4' />
