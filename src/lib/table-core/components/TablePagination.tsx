@@ -5,13 +5,6 @@
 
 'use client'
 
-import * as React from 'react'
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -20,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react'
 import { PaginationConfig } from '../types'
 import { getPaginationRange, getVisiblePages } from '../utils'
 
@@ -54,21 +53,24 @@ export function TablePagination({
   const paginationRange = getPaginationRange(pagination)
 
   return (
-    <div className="flex flex-col gap-4 px-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className='flex flex-col gap-4 px-2 py-4 sm:flex-row sm:items-center sm:justify-between'>
       {/* Page size selector */}
       {showPageSizeSelector && (
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground" id="rows-per-page-label">
+        <div className='flex items-center gap-2'>
+          <p className='text-sm text-muted-foreground' id='rows-per-page-label'>
             Rows per page
           </p>
           <Select
             value={limit.toString()}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="h-8 w-[70px]" aria-labelledby="rows-per-page-label">
+            <SelectTrigger
+              className='h-8 w-[70px]'
+              aria-labelledby='rows-per-page-label'
+            >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent side="top">
+            <SelectContent side='top'>
               {pageSizeOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={pageSize.toString()}>
                   {pageSize}
@@ -80,35 +82,43 @@ export function TablePagination({
       )}
 
       {/* Pagination info */}
-      <div className="flex items-center gap-4">
-        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+      <div className='flex items-center gap-4'>
+        <p
+          className='text-sm text-muted-foreground'
+          role='status'
+          aria-live='polite'
+        >
           {paginationRange}
         </p>
 
         {/* Pagination controls */}
-        <nav className="flex items-center gap-1" role="navigation" aria-label="Pagination navigation">
+        <nav
+          className='flex items-center gap-1'
+          role='navigation'
+          aria-label='Pagination navigation'
+        >
           {/* First page */}
           <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
+            variant='outline'
+            size='icon'
+            className='h-8 w-8'
             onClick={() => onPageChange(1)}
             disabled={!canGoToPrevious}
-            aria-label="Go to first page"
+            aria-label='Go to first page'
           >
-            <ChevronsLeft className="h-4 w-4" />
+            <ChevronsLeft className='h-4 w-4' />
           </Button>
 
           {/* Previous page */}
           <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
+            variant='outline'
+            size='icon'
+            className='h-8 w-8'
             onClick={() => onPageChange(page - 1)}
             disabled={!canGoToPrevious}
-            aria-label="Go to previous page"
+            aria-label='Go to previous page'
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className='h-4 w-4' />
           </Button>
 
           {/* Page numbers */}
@@ -118,7 +128,7 @@ export function TablePagination({
                 return (
                   <span
                     key={`ellipsis-${index}`}
-                    className="flex h-8 w-8 items-center justify-center text-sm text-muted-foreground"
+                    className='flex h-8 w-8 items-center justify-center text-sm text-muted-foreground'
                   >
                     ...
                   </span>
@@ -130,8 +140,8 @@ export function TablePagination({
                 <Button
                   key={pageNumber}
                   variant={page === pageNumber ? 'default' : 'outline'}
-                  size="icon"
-                  className="h-8 w-8"
+                  size='icon'
+                  className='h-8 w-8'
                   onClick={() => onPageChange(pageNumber)}
                   aria-label={`Go to page ${pageNumber}`}
                   aria-current={page === pageNumber ? 'page' : undefined}
@@ -143,26 +153,26 @@ export function TablePagination({
 
           {/* Next page */}
           <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
+            variant='outline'
+            size='icon'
+            className='h-8 w-8'
             onClick={() => onPageChange(page + 1)}
             disabled={!canGoToNext}
-            aria-label="Go to next page"
+            aria-label='Go to next page'
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className='h-4 w-4' />
           </Button>
 
           {/* Last page */}
           <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
+            variant='outline'
+            size='icon'
+            className='h-8 w-8'
             onClick={() => onPageChange(totalPages)}
             disabled={!canGoToNext}
-            aria-label="Go to last page"
+            aria-label='Go to last page'
           >
-            <ChevronsRight className="h-4 w-4" />
+            <ChevronsRight className='h-4 w-4' />
           </Button>
         </nav>
       </div>

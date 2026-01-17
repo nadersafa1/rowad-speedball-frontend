@@ -4,7 +4,7 @@
  */
 
 import { TableConfig } from '@/lib/table-core'
-import { Player } from '@/types'
+import { Player, SortOrder } from '@/types'
 
 export interface PlayersTableFilters extends Record<string, unknown> {
   q?: string
@@ -33,7 +33,7 @@ export const playersTableConfig: TableConfig<Player, PlayersTableFilters> = {
   },
   defaultSort: {
     sortBy: 'name',
-    sortOrder: 'asc',
+    sortOrder: SortOrder.ASC,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50, 100],

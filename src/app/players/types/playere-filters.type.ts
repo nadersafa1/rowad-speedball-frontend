@@ -1,3 +1,4 @@
+import { SortOrder } from '@/types'
 import { AgeGroup, Gender, Team } from './enums'
 
 interface PlayersFilters {
@@ -17,7 +18,7 @@ interface PlayersFilters {
     | 'preferredHand'
     | 'teamLevel'
     | 'organizationId'
-  sortOrder?: 'asc' | 'desc'
+  sortOrder?: SortOrder
 }
 
 export type { PlayersFilters }

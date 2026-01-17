@@ -5,6 +5,7 @@
 
 import { TableConfig } from '@/lib/table-core'
 import type { Championship } from '@/db/schema'
+import { SortOrder } from '@/types'
 
 export interface ChampionshipsTableFilters extends Record<string, unknown> {
   q?: string
@@ -33,7 +34,7 @@ export const championshipsTableConfig: TableConfig<
   },
   defaultSort: {
     sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortOrder: SortOrder.DESC,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50, 100],

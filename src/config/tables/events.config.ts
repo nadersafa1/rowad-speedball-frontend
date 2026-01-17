@@ -5,6 +5,7 @@
 
 import { TableConfig } from '@/lib/table-core'
 import type { Event } from '@/types'
+import { SortOrder } from '@/types'
 
 export interface EventsTableFilters extends Record<string, unknown> {
   q?: string
@@ -36,7 +37,7 @@ export const eventsTableConfig: TableConfig<Event, EventsTableFilters> = {
   },
   defaultSort: {
     sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortOrder: SortOrder.DESC,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50, 100],

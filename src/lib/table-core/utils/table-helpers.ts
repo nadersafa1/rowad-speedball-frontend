@@ -4,6 +4,7 @@
  */
 
 import { BaseTableEntity, PaginationConfig, SortConfig } from '../types'
+import { SortOrder } from '@/types'
 
 /**
  * Calculate pagination info
@@ -46,11 +47,11 @@ export function toggleSortOrder(
   if (!columnId) return {}
 
   if (currentSort?.sortBy !== columnId) {
-    return { sortBy: columnId, sortOrder: 'asc' }
+    return { sortBy: columnId, sortOrder: SortOrder.ASC }
   }
 
-  if (currentSort.sortOrder === 'asc') {
-    return { sortBy: columnId, sortOrder: 'desc' }
+  if (currentSort.sortOrder === SortOrder.ASC) {
+    return { sortBy: columnId, sortOrder: SortOrder.DESC }
   }
 
   return {}
@@ -196,6 +197,63 @@ export function exportToCSV<TData extends BaseTableEntity>(
   link.download = filename.endsWith('.csv') ? filename : `${filename}.csv`
   link.click()
   URL.revokeObjectURL(link.href)
+}
+
+/**
+ * Export data to Excel (XLSX)
+ */
+export function exportToExcel<TData extends BaseTableEntity>(
+  data: TData[],
+  columns: { key: keyof TData; label: string }[],
+  filename: string
+): void {
+  // Dynamic import to avoid SSR issues
+  import('xlsx').then((XLSX) => {
+    // Create worksheet data
+    const worksheetData = [
+      // Header row
+      columns.map((col) => col.label),
+      // Data rows
+      ...data.map((item) =>
+        columns.map((col) => {
+          const value = item[col.key]
+          if (value === null || value === undefined) return ''
+          // Handle dates
+          if (value instanceof Date) {
+            return value.toISOString()
+          }
+          // Handle objects (convert to JSON string)
+          if (typeof value === 'object') {
+            return JSON.stringify(value)
+          }
+          return String(value)
+        })
+      ),
+    ]
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
+
+    // Set column widths (auto-size based on content)
+    const maxWidths = columns.map((_, colIndex) => {
+      const columnData = worksheetData.map((row) => row[colIndex])
+      const maxLength = Math.max(
+        ...columnData.map((cell) => String(cell || '').length)
+      )
+      return { wch: Math.min(Math.max(maxLength, 10), 50) } // Min 10, max 50
+    })
+    worksheet['!cols'] = maxWidths
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
+
+    // Generate file and download
+    const finalFilename = filename.endsWith('.xlsx')
+      ? filename
+      : `${filename}.xlsx`
+    XLSX.writeFile(workbook, finalFilename)
+  })
 }
 
 /**

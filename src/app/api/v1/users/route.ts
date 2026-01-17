@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
   const authError = checkUserListAuthorization(context)
   if (authError) return authError
 
-  const { isSystemAdmin: isSystemAdminResult, activeOrgId: activeOrganizationId } = context
+  const {
+    isSystemAdmin: isSystemAdminResult,
+    activeOrgId: activeOrganizationId,
+  } = context
 
   const { searchParams } = new URL(request.url)
   const queryParams = Object.fromEntries(searchParams.entries())
@@ -124,11 +127,15 @@ export async function GET(request: NextRequest) {
 
     const totalItems = countResult[0].count
 
-    // Get organization memberships for all users
+    // Get organization memberships and federations for all users
     const userIds = users.map((u) => u.id)
-    const memberships =
+    const federationIds = users
+      .map((u) => u.federationId)
+      .filter(Boolean) as string[]
+
+    const [memberships, federations] = await Promise.all([
       userIds.length > 0
-        ? await db
+        ? db
             .select({
               userId: schema.member.userId,
               organizationId: schema.member.organizationId,
@@ -141,16 +148,36 @@ export async function GET(request: NextRequest) {
               eq(schema.member.organizationId, schema.organization.id)
             )
             .where(inArray(schema.member.userId, userIds))
-        : []
+        : [],
+      federationIds.length > 0
+        ? db
+            .select({
+              id: schema.federations.id,
+              name: schema.federations.name,
+            })
+            .from(schema.federations)
+            .where(inArray(schema.federations.id, federationIds))
+        : [],
+    ])
 
-    // Create a map of userId -> membership
+    // Create maps for quick lookup
     const membershipMap = new Map(memberships.map((m) => [m.userId, m]))
+    const federationMap = new Map(federations.map((f) => [f.id, f]))
 
-    // Enrich users with organization info
+    // Enrich users with organization and federation info
     const usersWithOrganizations = users.map((user) => {
       const membership = membershipMap.get(user.id)
+      const federation = user.federationId
+        ? federationMap.get(user.federationId)
+        : null
       return {
         ...user,
+        federation: federation
+          ? {
+              id: federation.id,
+              name: federation.name,
+            }
+          : null,
         organization: membership
           ? {
               id: membership.organizationId,

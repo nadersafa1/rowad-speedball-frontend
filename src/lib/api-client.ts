@@ -5,6 +5,9 @@ import type { EventType } from '@/types/event-types'
 import type { EventFormat } from '@/types/event-format'
 import type { TeamLevel } from '@/types/team-level'
 import { Season } from '@/db/schema'
+import type { UsersGetData } from '@/types/api/users.schemas'
+import { SortOrder } from '@/types'
+import { UserRoles, UsersSortBy } from '@/app/admin/users/types'
 
 export class ApiClient {
   private baseUrl: string
@@ -59,6 +62,10 @@ export class ApiClient {
     return response.json()
   }
 
+  // ========================================
+  // Auth methods
+  // ========================================
+
   async logout() {
     return this.request('/auth/logout', {
       method: 'POST',
@@ -70,7 +77,10 @@ export class ApiClient {
     return this.request('/auth/verify')
   }
 
+  // ========================================
   // Player methods
+  // ========================================
+
   async getPlayers(
     params?: {
       q?: string
@@ -165,7 +175,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Player Notes methods
+  // ========================================
+
   async getPlayerNotes(
     playerId: string,
     params?: {
@@ -220,7 +233,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Federation methods
+  // ========================================
+
   async getFederations(params?: {
     q?: string
     sortBy?: 'name' | 'createdAt' | 'updatedAt'
@@ -265,7 +281,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Federation Clubs methods
+  // ========================================
+
   async getFederationClubs(params?: {
     federationId?: string
     organizationId?: string
@@ -290,7 +309,10 @@ export class ApiClient {
     )
   }
 
+  // ========================================
   // Championship methods
+  // ========================================
+
   async getChampionships(params?: {
     q?: string
     federationId?: string
@@ -341,7 +363,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Championship Editions methods
+  // ========================================
+
   async getChampionshipEditions(params?: {
     q?: string
     championshipId?: string
@@ -391,7 +416,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Test methods
+  // ========================================
+
   async getTests(params?: {
     q?: string
     playingTime?: number
@@ -455,7 +483,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Results methods
+  // ========================================
+
   async getResults(params?: {
     testId: string
     q?: string
@@ -512,7 +543,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Events methods
+  // ========================================
+
   async getEvents(params?: {
     q?: string
     eventType?: EventType
@@ -590,6 +624,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
+  // Bracket methods
+  // ========================================
+
   async generateBracket(
     eventId: string,
     seeds?: Array<{ registrationId: string; seed: number }>
@@ -606,7 +644,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Heat generation methods (for test events)
+  // ========================================
+
   async generateHeats(
     eventId: string,
     options?: {
@@ -627,7 +668,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Groups methods
+  // ========================================
+
   async getGroups(eventId?: string) {
     const params = eventId ? `?eventId=${eventId}` : ''
     return this.request(`/groups${params}`)
@@ -646,7 +690,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Registrations methods
+  // ========================================
+
   async getRegistrations(
     eventId?: string,
     groupId?: string,
@@ -705,6 +752,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
+  // Player Position Scores methods
+  // ========================================
+
   async updatePlayerPositionScores(
     registrationId: string,
     payload: {
@@ -731,7 +782,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Matches methods
+  // ========================================
+
   async getMatches(params?: {
     eventId?: string
     groupId?: string
@@ -773,7 +827,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Sets methods
+  // ========================================
+
   async getSets(matchId?: string) {
     const params = matchId ? `?matchId=${matchId}` : ''
     return this.request(`/sets${params}`)
@@ -810,7 +867,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Coaches methods
+  // ========================================
+
   async getCoaches(params?: {
     q?: string
     gender?: string
@@ -873,7 +933,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Training Sessions methods
+  // ========================================
+
   async getTrainingSessions(params?: {
     q?: string
     intensity?: string
@@ -935,7 +998,10 @@ export class ApiClient {
     })
   }
 
-  // Training Session Attendance
+  // ========================================
+  // Training Session Attendance methods
+  // ========================================
+
   async getTrainingSessionAttendance(sessionId: string) {
     return this.request(`/training-sessions/${sessionId}/attendance`)
   }
@@ -1000,7 +1066,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Generic methods for convenience
+  // ========================================
+
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint)
   }
@@ -1025,16 +1094,19 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Users API
+  // ========================================
+
   async getUsers(params?: {
     q?: string
-    role?: 'admin' | 'user'
-    sortBy?: 'name' | 'email' | 'createdAt' | 'updatedAt'
-    sortOrder?: 'asc' | 'desc'
+    role?: UserRoles
+    sortBy?: UsersSortBy
+    sortOrder?: SortOrder
     page?: number
     limit?: number
     unassigned?: string | boolean
-  }): Promise<PaginatedResponse<any>> {
+  }): Promise<PaginatedResponse<UsersGetData>> {
     const searchParams = new URLSearchParams()
     if (params?.q) searchParams.set('q', params.q)
     if (params?.role) searchParams.set('role', params.role)
@@ -1051,7 +1123,7 @@ export class ApiClient {
       )
     }
 
-    return this.request<PaginatedResponse<any>>(
+    return this.request<PaginatedResponse<UsersGetData>>(
       `/users?${searchParams.toString()}`
     )
   }
@@ -1059,6 +1131,20 @@ export class ApiClient {
   async getUser(id: string): Promise<any> {
     return this.request(`/users/${id}`)
   }
+
+  async updateUserFederationRole(
+    userId: string,
+    data: { role: string | null; federationId: string | null }
+  ): Promise<any> {
+    return this.request(`/users/${userId}/federation-role`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // ========================================
+  // My Memberships methods
+  // ========================================
 
   async getMyMemberships(): Promise<
     Array<{
@@ -1107,7 +1193,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Organizations API
+  // ========================================
+
   async getOrganizations(params?: {
     q?: string
     sortBy?: 'name' | 'slug' | 'createdAt'
@@ -1159,7 +1248,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Placement Tier methods
+  // ========================================
+
   async getPlacementTiers(
     params?: {
       q?: string
@@ -1218,7 +1310,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Points Schema methods
+  // ========================================
+
   async getPointsSchemas(params?: {
     q?: string
     sortBy?: 'name' | 'createdAt' | 'updatedAt'
@@ -1270,7 +1365,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Points Schema Entry methods
+  // ========================================
+
   async getPointsSchemaEntries(params?: {
     pointsSchemaId?: string
     placementTierId?: string
@@ -1325,7 +1423,10 @@ export class ApiClient {
     })
   }
 
+  // ========================================
   // Federation Club Request methods
+  // ========================================
+
   async getFederationClubRequests(params?: {
     federationId?: string
     organizationId?: string

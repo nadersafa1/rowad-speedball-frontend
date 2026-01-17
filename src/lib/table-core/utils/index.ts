@@ -5,3 +5,4 @@
 
 export * from './column-helpers'
 export * from './table-helpers'
+export { exportToCSV, exportToExcel } from './table-helpers'

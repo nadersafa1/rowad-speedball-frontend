@@ -6,6 +6,7 @@
 
 import { TableConfig } from '@/lib/table-core'
 import type { Event } from '@/types'
+import { SortOrder } from '@/types'
 
 export interface ChampionshipEventsTableFilters
   extends Record<string, unknown> {
@@ -34,7 +35,7 @@ export const championshipEventsTableConfig: TableConfig<
   },
   defaultSort: {
     sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortOrder: SortOrder.DESC,
   },
   defaultPageSize: 100,
   pageSizeOptions: [10, 25, 50, 100],

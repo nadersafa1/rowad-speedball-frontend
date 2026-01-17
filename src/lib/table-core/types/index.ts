@@ -4,6 +4,7 @@
  */
 
 import { ColumnDef, SortingState, VisibilityState } from '@tanstack/react-table'
+import { SortOrder } from '@/types'
 
 /**
  * Base entity interface that all table entities should extend
@@ -26,10 +27,11 @@ export interface PaginationConfig {
 
 /**
  * Sorting configuration
+ * TField can be keyof TData or a string enum type (e.g., UsersSortBy)
  */
 export interface SortConfig<TField extends string = string> {
   sortBy?: TField
-  sortOrder?: 'asc' | 'desc'
+  sortOrder?: SortOrder
 }
 
 /**
@@ -141,9 +143,10 @@ export interface BaseTableProps<
   onPageSizeChange: (pageSize: number) => void
 
   // Sorting
+  // TSortBy can be keyof TData or a string enum type (e.g., UsersSortBy)
   sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-  onSortingChange?: (sortBy?: string, sortOrder?: 'asc' | 'desc') => void
+  sortOrder?: SortOrder
+  onSortingChange?: (sortBy?: string, sortOrder?: SortOrder) => void
 
   // Search
   searchValue?: string
@@ -171,7 +174,7 @@ export interface BaseTableProps<
 export type ColumnFactory<TData extends BaseTableEntity> = (
   options: {
     sortBy?: string
-    sortOrder?: 'asc' | 'desc'
+    sortOrder?: SortOrder
     onSort?: (columnId: string) => void
     permissions?: TablePermissions
     actions?: TableActionHandlers<TData>

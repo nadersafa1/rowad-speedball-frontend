@@ -5,6 +5,7 @@
 
 import { TableConfig } from '@/lib/table-core'
 import type { Coach } from '@/types'
+import { SortOrder } from '@/types'
 
 export interface CoachesTableFilters extends Record<string, unknown> {
   q?: string
@@ -31,7 +32,7 @@ export const coachesTableConfig: TableConfig<Coach, CoachesTableFilters> = {
   },
   defaultSort: {
     sortBy: 'name',
-    sortOrder: 'asc',
+    sortOrder: SortOrder.ASC,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50, 100],

@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/lib/api-client'
 import type { PaginatedResponse } from '@/types/api/pagination'
+import { UserRoles } from '@/app/admin/users/types'
 import { LinkUserDialog } from './link-user-dialog'
 
 interface UnassignedUser {
@@ -42,7 +43,7 @@ export const UnassignedUsersList = ({
     try {
       const response = (await apiClient.getUsers({
         unassigned: 'true',
-        role: 'user',
+        role: UserRoles.USER,
         limit: 100,
       })) as PaginatedResponse<UnassignedUser>
       setUsers(response.data || [])

@@ -1,0 +1,274 @@
+# Table Creation Standards
+
+When creating or modifying data tables in this project, follow these mandatory standards:
+
+## Required Components and Hooks
+
+### 1. TableControls Component
+
+- **ALWAYS** use `TableControls` component for search, export, and column visibility
+- Import from: `@/lib/table-core`
+- Two-row layout: First row (search, export, columns), Second row (filters)
+
+### 2. Sorting Hook
+
+- **ALWAYS** use `useTableSorting` hook for sorting logic
+- **NEVER** implement manual sorting handlers
+- **ALWAYS** use `SortOrder` enum (never string literals 'asc'/'desc')
+- Import: `import { useTableSorting } from '@/lib/table-core'`
+- Import: `import { SortOrder } from '@/types'`
+
+### 3. Export Hook
+
+- **ALWAYS** use `useTableExport` hook for CSV/Excel export
+- **NEVER** implement manual export logic
+- Import: `import { useTableExport } from '@/lib/table-core'`
+
+### 4. Handlers Hook
+
+- **ALWAYS** use `useTableHandlers` hook for edit/delete dialogs when applicable
+- Use for standard edit/delete operations
+- For custom dialogs (e.g., assign role), inline state management is acceptable
+- Import: `import { useTableHandlers } from '@/lib/table-core'`
+
+### 5. TableFilter Wrapper
+
+- **ALWAYS** wrap all filter components with `TableFilter`
+- **NEVER** use raw Select/Input components for filters without TableFilter wrapper
+- Import: `import { TableFilter } from '@/lib/table-core'`
+
+### 6. Base Components
+
+- **ALWAYS** use `BaseDataTable` component (not custom table implementations)
+- **ALWAYS** use `TablePagination` component
+- Import from: `@/lib/table-core`
+
+## Type Safety Requirements
+
+### SortOrder Enum
+
+- **ALWAYS** use `SortOrder` enum from `@/types`
+- **NEVER** use string literals: `'asc'` or `'desc'`
+- **ALWAYS** use: `SortOrder.ASC` or `SortOrder.DESC`
+- In config files: `sortOrder: SortOrder.DESC` (not `sortOrder: 'desc'`)
+- In props: `sortOrder?: SortOrder` (not `sortOrder?: 'asc' | 'desc'`)
+- In callbacks: `onSortingChange?: (sortBy?: string, sortOrder?: SortOrder) => void`
+
+### Generic Types
+
+- **ALWAYS** use proper generics for table components
+- Example: `useTableSorting<YourEntity, YourSortBy>`
+- Example: `useTableExport<YourEntity>`
+- Example: `TableControls<YourEntity>`
+
+## File Structure
+
+### Table Component Location
+
+- Place table components in: `src/app/[entity]/components/[entity]-table.tsx`
+- Use kebab-case for file names
+
+### Config File Location
+
+- Place config files in: `src/config/tables/[entity].config.ts`
+- Use kebab-case for file names
+
+### Column Definitions Location
+
+- Place column definitions in: `src/config/tables/columns/[entity]-columns.tsx`
+- Use kebab-case for file names
+
+## Column Visibility
+
+- **ALWAYS** set default hidden columns in `columnVisibility` state
+- Hide optional/less important columns by default
+- Example:
+
+```typescript
+const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
+  {
+    role: false,
+    createdAt: false,
+    // ... other optional columns
+  }
+)
+```
+
+## Filter Reset
+
+- **ALWAYS** implement filter reset functionality when multiple filters exist
+- Use `onResetFilters` prop in `TableControls`
+- Reset all filters to their default/empty state
+- Example:
+
+```typescript
+const handleResetFilters = React.useCallback(() => {
+  onSearchChange?.('')
+  onStatusChange?.(Status.ALL)
+  onCategoryChange?.(undefined)
+}, [onSearchChange, onStatusChange, onCategoryChange])
+```
+
+## Reference Implementations
+
+### Simple Table (Users Table)
+
+- Reference: `src/app/admin/users/components/users-table.tsx`
+- Use for: Tables with basic filters, no bulk actions
+- Features: Search, single filter, column visibility, export (optional)
+
+### Full-Featured Table (Players Table)
+
+- Reference: `src/app/players/components/players-table-refactored.tsx`
+- Use for: Tables with multiple filters, bulk actions, row selection
+- Features: Search, multiple filters, bulk actions, row selection, export
+
+### Config Examples
+
+- Simple: `src/config/tables/users.config.ts`
+- Full-featured: `src/config/tables/players.config.ts`
+
+## Code Patterns
+
+### Table Component Structure
+
+```typescript
+'use client'
+
+import { TableControls, BaseDataTable, TablePagination, useTableSorting, useTableExport, TableFilter } from '@/lib/table-core'
+import { SortOrder } from '@/types'
+import { useReactTable, getCoreRowModel, VisibilityState } from '@tanstack/react-table'
+
+export default function YourEntityTable({ ... }: YourEntityTableProps) {
+  // 1. Column visibility state with defaults
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    optionalColumn: false,
+  })
+
+  // 2. Use sorting hook
+  const { handleSort } = useTableSorting<YourEntity, YourSortBy>({
+    sortBy,
+    sortOrder,
+    onSortingChange,
+  })
+
+  // 3. Use export hook
+  const { handleExport, isExporting } = useTableExport<YourEntity>({
+    data: entities,
+    columns: [...],
+    filename: 'entities',
+    enabled: yourEntityTableConfig.features.export,
+  })
+
+  // 4. Create columns
+  const columns = React.useMemo(() => createYourEntityColumns({ ... }), [...])
+
+  // 5. Initialize table for column visibility
+  const table = useReactTable({ ... })
+
+  // 6. Filter reset handler (if multiple filters)
+  const handleResetFilters = React.useCallback(() => { ... }, [...])
+
+  return (
+    <div className='w-full space-y-4'>
+      {/* 7. TableControls */}
+      <TableControls<YourEntity>
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        table={table}
+        getColumnLabel={getColumnLabel}
+        exportEnabled={config.features.export}
+        onExport={handleExport}
+        isExporting={isExporting}
+        onResetFilters={handleResetFilters}
+        showResetButton={true}
+        filters={
+          <TableFilter label='Status' htmlFor='status'>
+            <Select>...</Select>
+          </TableFilter>
+        }
+      />
+
+      {/* 8. BaseDataTable */}
+      <BaseDataTable
+        data={entities}
+        columns={columns}
+        pagination={pagination}
+        isLoading={isLoading}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        // ... other props
+      />
+
+      {/* 9. TablePagination */}
+      <TablePagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        // ... other props
+      />
+    </div>
+  )
+}
+```
+
+### Config File Pattern
+
+```typescript
+import { TableConfig } from '@/lib/table-core'
+import { SortOrder } from '@/types'
+
+export const yourEntityTableConfig: TableConfig<
+  YourEntity,
+  YourEntityTableFilters
+> = {
+  entity: 'entity',
+  entityPlural: 'entities',
+  routing: {
+    basePath: '/entities',
+    detailPath: (id: string) => `/entities/${id}`,
+  },
+  features: {
+    navigation: true,
+    search: true,
+    filters: true,
+    sorting: true,
+    pagination: true,
+    selection: false,
+    export: false,
+    columnVisibility: true,
+  },
+  defaultSort: {
+    sortBy: 'name',
+    sortOrder: SortOrder.ASC, // ALWAYS use SortOrder enum
+  },
+  defaultPageSize: 25,
+  pageSizeOptions: [10, 25, 50, 100],
+}
+```
+
+## Common Mistakes to Avoid
+
+1. ❌ **DON'T** use string literals for sortOrder: `sortOrder: 'asc'`
+   ✅ **DO** use SortOrder enum: `sortOrder: SortOrder.ASC`
+
+2. ❌ **DON'T** implement manual sorting logic
+   ✅ **DO** use `useTableSorting` hook
+
+3. ✅ **DO** use `TableControls` component
+
+4. ❌ **DON'T** implement manual export logic
+   ✅ **DO** use `useTableExport` hook
+
+5. ❌ **DON'T** use raw Select/Input for filters without wrapper
+   ✅ **DO** wrap filters with `TableFilter` component
+
+6. ❌ **DON'T** forget to set default hidden columns
+   ✅ **DO** initialize `columnVisibility` with hidden columns
+
+7. ❌ **DON'T** forget filter reset for multiple filters
+   ✅ **DO** implement `handleResetFilters` when needed
+
+## Documentation
+
+For complete table creation guide, see: `docs/table-core-guide.md`

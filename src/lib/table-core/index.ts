@@ -14,6 +14,9 @@ export * from './utils'
 
 // Hooks
 export * from './hooks'
+export { useTableSorting } from './hooks/use-table-sorting'
+export { useTableExport } from './hooks/use-table-export'
+export { useTableHandlers } from './hooks/use-table-handlers'
 
 // Components
 export * from './components'

@@ -11,7 +11,7 @@ The `table-core` system provides a reusable, type-safe foundation for building d
 - Search and filtering
 - Sorting and pagination
 - Column visibility toggle
-- CSV export
+- CSV/Excel export
 - Loading skeletons and error states
 - Responsive design
 
@@ -27,7 +27,7 @@ Create a configuration file for your entity table in `/config/tables/`.
 
 ```typescript
 import { TableConfig } from '@/lib/table-core'
-import { YourEntity } from '@/types'
+import { YourEntity, SortOrder } from '@/types'
 
 export interface YourEntityTableFilters extends Record<string, unknown> {
   q?: string
@@ -36,7 +36,10 @@ export interface YourEntityTableFilters extends Record<string, unknown> {
   category?: string
 }
 
-export const yourEntityTableConfig: TableConfig<YourEntity, YourEntityTableFilters> = {
+export const yourEntityTableConfig: TableConfig<
+  YourEntity,
+  YourEntityTableFilters
+> = {
   entity: 'entity',
   entityPlural: 'entities',
   routing: {
@@ -44,18 +47,18 @@ export const yourEntityTableConfig: TableConfig<YourEntity, YourEntityTableFilte
     detailPath: (id: string) => `/entities/${id}`,
   },
   features: {
-    navigation: true,      // Enable row click navigation
-    search: true,          // Enable global search
-    filters: true,         // Enable column filters
-    sorting: true,         // Enable column sorting
-    pagination: true,      // Enable pagination
-    selection: false,      // Enable row selection
-    export: false,         // Enable CSV export
-    columnVisibility: true,// Enable column visibility toggle
+    navigation: true, // Enable row click navigation
+    search: true, // Enable global search
+    filters: true, // Enable column filters
+    sorting: true, // Enable column sorting
+    pagination: true, // Enable pagination
+    selection: false, // Enable row selection
+    export: false, // Enable CSV export
+    columnVisibility: true, // Enable column visibility toggle
   },
   defaultSort: {
     sortBy: 'name',
-    sortOrder: 'asc',
+    sortOrder: SortOrder.ASC,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50, 100],
@@ -70,7 +73,7 @@ Create column definitions using the table-core helpers in `/config/tables/column
 
 ```typescript
 import { ColumnDef } from '@tanstack/react-table'
-import { YourEntity } from '@/types'
+import { YourEntity, SortOrder } from '@/types'
 import {
   createSortableHeader,
   createTextColumn,
@@ -94,7 +97,7 @@ interface CreateColumnsOptions {
   onEdit: (entity: YourEntity) => void
   onDelete: (entity: YourEntity) => void
   sortBy?: string
-  sortOrder?: 'asc' | 'desc'
+  sortOrder?: SortOrder
   onSort?: (columnId: string) => void
 }
 
@@ -109,18 +112,13 @@ export function createYourEntityColumns({
 }: CreateColumnsOptions): ColumnDef<YourEntity>[] {
   const baseColumns: ColumnDef<YourEntity>[] = [
     // Text column with sorting
-    createTextColumn<YourEntity>(
-      'name',
-      'Name',
-      (row) => row.name,
-      {
-        sortable: true,
-        sortBy,
-        sortOrder,
-        onSort,
-        className: 'font-medium',
-      }
-    ),
+    createTextColumn<YourEntity>('name', 'Name', (row) => row.name, {
+      sortable: true,
+      sortBy,
+      sortOrder,
+      onSort,
+      className: 'font-medium',
+    }),
 
     // Date column
     createDateColumn<YourEntity>(
@@ -137,32 +135,33 @@ export function createYourEntityColumns({
     ),
 
     // Badge column with variant mapping
-    createBadgeColumn<YourEntity>(
-      'status',
-      'Status',
-      (row) => row.status,
-      {
-        sortable: true,
-        sortBy,
-        sortOrder,
-        onSort,
-        variantMap: {
-          active: 'default',
-          inactive: 'secondary',
-          pending: 'outline',
-        },
-      }
-    ),
+    createBadgeColumn<YourEntity>('status', 'Status', (row) => row.status, {
+      sortable: true,
+      sortBy,
+      sortOrder,
+      onSort,
+      variantMap: {
+        active: 'default',
+        inactive: 'secondary',
+        pending: 'outline',
+      },
+    }),
 
     // Custom column with full control
     {
       accessorKey: 'customField',
       id: 'customField',
       header: () =>
-        createSortableHeader('Custom', 'customField', sortBy, sortOrder, onSort),
+        createSortableHeader(
+          'Custom',
+          'customField',
+          sortBy,
+          sortOrder,
+          onSort
+        ),
       cell: ({ row }) => {
         const value = row.getValue('customField') as string
-        return <div className="text-sm">{value}</div>
+        return <div className='text-sm'>{value}</div>
       },
     },
   ]
@@ -178,12 +177,12 @@ export function createYourEntityColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
+              <Button variant='ghost' className='h-8 w-8 p-0'>
+                <span className='sr-only'>Open menu</span>
+                <MoreHorizontal className='h-4 w-4' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align='end'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {canEdit && (
@@ -193,7 +192,7 @@ export function createYourEntityColumns({
                     onEdit(entity)
                   }}
                 >
-                  <Pencil className="mr-2 h-4 w-4" />
+                  <Pencil className='mr-2 h-4 w-4' />
                   Edit
                 </DropdownMenuItem>
               )}
@@ -203,9 +202,9 @@ export function createYourEntityColumns({
                     e.stopPropagation()
                     onDelete(entity)
                   }}
-                  className="text-destructive focus:text-destructive"
+                  className='text-destructive focus:text-destructive'
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className='mr-2 h-4 w-4' />
                   Delete
                 </DropdownMenuItem>
               )}
@@ -230,19 +229,32 @@ Create your table component in `/app/[entity]/components/`.
 'use client'
 
 import * as React from 'react'
-import { YourEntity } from '@/types'
+import { YourEntity, SortOrder } from '@/types'
 import {
   BaseDataTable,
-  TableToolbar,
+  TableControls,
+  TableFilter,
   TablePagination,
   PaginationConfig,
+  useTableSorting,
+  useTableExport,
+  useTableHandlers,
 } from '@/lib/table-core'
 import { yourEntityTableConfig } from '@/config/tables/[entity].config'
 import { createYourEntityColumns } from '@/config/tables/columns/[entity]-columns'
 import { useYourEntityPermissions } from '@/hooks/authorization/use-[entity]-permissions'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useReactTable, getCoreRowModel, VisibilityState } from '@tanstack/react-table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  useReactTable,
+  getCoreRowModel,
+  VisibilityState,
+} from '@tanstack/react-table'
 
 export interface YourEntityTableProps {
   entities: YourEntity[]
@@ -255,8 +267,8 @@ export interface YourEntityTableProps {
   status?: string
   onStatusChange?: (status: string) => void
   sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-  onSortingChange?: (sortBy?: string, sortOrder?: 'asc' | 'desc') => void
+  sortOrder?: SortOrder
+  onSortingChange?: (sortBy?: string, sortOrder?: SortOrder) => void
   isLoading?: boolean
   onRefetch?: () => void
 }
@@ -278,38 +290,55 @@ export default function YourEntityTable({
 }: YourEntityTableProps) {
   const { canUpdate, canDelete } = useYourEntityPermissions(null)
 
-  // State for edit/delete dialogs
-  const [editingEntity, setEditingEntity] = React.useState<YourEntity | null>(null)
-  const [deletingEntity, setDeletingEntity] = React.useState<YourEntity | null>(null)
+  // Use table handlers hook for edit/delete dialogs
+  const {
+    editingItem,
+    editDialogOpen,
+    handleEdit,
+    handleEditSuccess,
+    handleEditCancel,
+    setEditDialogOpen,
+    deletingItem,
+    deleteDialogOpen,
+    isDeleting,
+    handleDelete,
+    handleDeleteConfirm,
+    handleDeleteCancel,
+    setDeleteDialogOpen,
+  } = useTableHandlers<YourEntity>({
+    onRefetch,
+    // Add deleteItem if using store-based deletion
+    // deleteItem: deleteEntity,
+  })
 
-  // Column visibility state
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  // Column visibility state - hide optional columns by default
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({
+      createdAt: false,
+      updatedAt: false,
+      // Add other optional columns here
+    })
 
-  // Handler functions
-  const handleEdit = React.useCallback((entity: YourEntity) => {
-    setEditingEntity(entity)
-  }, [])
-
-  const handleDelete = React.useCallback((entity: YourEntity) => {
-    setDeletingEntity(entity)
-  }, [])
-
-  const handleSort = React.useCallback(
-    (columnId: string) => {
-      if (sortBy === columnId) {
-        const newOrder = sortOrder === 'asc' ? 'desc' : sortOrder === 'desc' ? undefined : 'asc'
-        onSortingChange?.(newOrder ? columnId : undefined, newOrder)
-      } else {
-        onSortingChange?.(columnId, 'asc')
-      }
+  // Use table sorting hook
+  const { handleSort } = useTableSorting<YourEntity, string>({
+    sortBy,
+    sortOrder,
+    onSortingChange: (newSortBy?: string, newSortOrder?: SortOrder) => {
+      onSortingChange?.(newSortBy, newSortOrder)
     },
-    [sortBy, sortOrder, onSortingChange]
-  )
+  })
 
-  const handleResetFilters = React.useCallback(() => {
-    onSearchChange?.('')
-    onStatusChange?.('all')
-  }, [onSearchChange, onStatusChange])
+  // Export hook
+  const { handleExport, isExporting } = useTableExport<YourEntity>({
+    data: entities,
+    columns: [
+      { key: 'name', label: 'Name' },
+      { key: 'status', label: 'Status' },
+      { key: 'createdAt', label: 'Created At' },
+    ],
+    filename: 'entities',
+    enabled: yourEntityTableConfig.features.export,
+  })
 
   // Create columns
   const columns = React.useMemo(
@@ -323,7 +352,15 @@ export default function YourEntityTable({
         sortOrder,
         onSort: handleSort,
       }),
-    [canUpdate, canDelete, handleEdit, handleDelete, sortBy, sortOrder, handleSort]
+    [
+      canUpdate,
+      canDelete,
+      handleEdit,
+      handleDelete,
+      sortBy,
+      sortOrder,
+      handleSort,
+    ]
   )
 
   // Initialize table for column visibility control
@@ -337,43 +374,59 @@ export default function YourEntityTable({
     onColumnVisibilityChange: setColumnVisibility,
   })
 
-  // Render filters
-  const filters = (
-    <div className="flex flex-wrap items-end gap-4">
-      {/* Status Filter */}
-      <div className="flex-1 min-w-[150px]">
-        <Label htmlFor="status" className="block mb-2">
-          Status
-        </Label>
-        <Select
-          name="status"
-          value={status}
-          onValueChange={(value) => onStatusChange?.(value)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  )
+  // Column label mapping helper
+  const getColumnLabel = React.useCallback((columnId: string) => {
+    const labels: Record<string, string> = {
+      name: 'Name',
+      status: 'Status',
+      createdAt: 'Created',
+      updatedAt: 'Updated',
+    }
+    return labels[columnId] || columnId
+  }, [])
+
+  // Filter reset handler
+  const handleResetFilters = React.useCallback(() => {
+    onSearchChange?.('')
+    onStatusChange?.('all')
+  }, [onSearchChange, onStatusChange])
 
   return (
-    <div className="space-y-4">
-      {/* Toolbar with search and filters */}
-      <TableToolbar
+    <div className='w-full space-y-4'>
+      {/* Controls */}
+      <TableControls<YourEntity>
         searchValue={searchValue}
-        onSearchChange={onSearchChange}
-        searchPlaceholder="Search entities..."
-        showSearch={true}
-        filters={filters}
-        onReset={handleResetFilters}
+        onSearchChange={onSearchChange || (() => {})}
+        searchPlaceholder='Search entities...'
+        table={table}
+        getColumnLabel={getColumnLabel}
+        exportEnabled={yourEntityTableConfig.features.export}
+        onExport={handleExport}
+        isExporting={isExporting}
+        onResetFilters={handleResetFilters}
         showResetButton={true}
+        filters={
+          <TableFilter
+            label='Status'
+            htmlFor='status'
+            className='w-full md:w-[200px]'
+          >
+            <Select
+              name='status'
+              value={status}
+              onValueChange={(value) => onStatusChange?.(value)}
+            >
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder='Select a Status' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All</SelectItem>
+                <SelectItem value='active'>Active</SelectItem>
+                <SelectItem value='inactive'>Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </TableFilter>
+        }
       />
 
       {/* Table */}
@@ -383,9 +436,12 @@ export default function YourEntityTable({
         pagination={pagination}
         isLoading={isLoading}
         enableNavigation={yourEntityTableConfig.features.navigation}
-        emptyMessage="No entities found."
+        emptyMessage='No entities found.'
         routingBasePath={yourEntityTableConfig.routing.basePath}
         routingDetailPath={yourEntityTableConfig.routing.detailPath}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        enableRowSelection={yourEntityTableConfig.features.selection}
       />
 
       {/* Pagination */}
@@ -398,7 +454,43 @@ export default function YourEntityTable({
         showPageNumbers={true}
       />
 
-      {/* TODO: Add EditEntityDialog and DeleteEntityDialog here */}
+      {/* Edit Entity Dialog */}
+      <YourEntityEditDialog
+        entity={editingItem}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={handleEditSuccess}
+        onCancel={handleEditCancel}
+      />
+
+      {/* Delete Entity Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Entity</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{' '}
+              <span className='font-semibold'>{deletingItem?.name}</span>? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -425,18 +517,12 @@ export default function EntitiesPage() {
     limit: 25,
   })
 
-  const {
-    entities,
-    isLoading,
-    error,
-    pagination,
-    handlePageChange,
-    refetch,
-  } = useYourEntities(filters)
+  const { entities, isLoading, error, pagination, handlePageChange, refetch } =
+    useYourEntities(filters)
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Entities</h1>
+    <div className='container mx-auto px-4 py-8'>
+      <h1 className='text-3xl font-bold mb-6'>Entities</h1>
 
       <YourEntityTable
         entities={entities}
@@ -456,7 +542,12 @@ export default function EntitiesPage() {
         sortBy={filters.sortBy}
         sortOrder={filters.sortOrder}
         onSortingChange={(sortBy, sortOrder) => {
-          setFilters({ ...filters, sortBy, sortOrder, page: 1 })
+          setFilters({
+            ...filters,
+            sortBy: sortBy as YourEntityTableFilters['sortBy'],
+            sortOrder,
+            page: 1,
+          })
         }}
         isLoading={isLoading}
         onRefetch={refetch}
@@ -475,19 +566,14 @@ The table-core system provides several helper functions for creating columns:
 Creates a text column with optional sorting.
 
 ```typescript
-createTextColumn<TData>(
-  'columnId',
-  'Header Label',
-  (row) => row.field,
-  {
-    sortable: true,
-    sortBy,
-    sortOrder,
-    onSort,
-    className: 'font-medium',
-    fallback: 'N/A',
-  }
-)
+createTextColumn<TData>('columnId', 'Header Label', (row) => row.field, {
+  sortable: true,
+  sortBy,
+  sortOrder,
+  onSort,
+  className: 'font-medium',
+  fallback: 'N/A',
+})
 ```
 
 ### createDateColumn
@@ -495,18 +581,13 @@ createTextColumn<TData>(
 Creates a date column with formatting.
 
 ```typescript
-createDateColumn<TData>(
-  'createdAt',
-  'Created',
-  (row) => row.createdAt,
-  {
-    sortable: true,
-    sortBy,
-    sortOrder,
-    onSort,
-    format: 'MMM dd, yyyy', // date-fns format
-  }
-)
+createDateColumn<TData>('createdAt', 'Created', (row) => row.createdAt, {
+  sortable: true,
+  sortBy,
+  sortOrder,
+  onSort,
+  format: 'MMM dd, yyyy', // date-fns format
+})
 ```
 
 ### createBadgeColumn
@@ -514,25 +595,20 @@ createDateColumn<TData>(
 Creates a badge column with variant mapping.
 
 ```typescript
-createBadgeColumn<TData>(
-  'status',
-  'Status',
-  (row) => row.status,
-  {
-    sortable: true,
-    sortBy,
-    sortOrder,
-    onSort,
-    variantMap: {
-      active: 'default',
-      inactive: 'secondary',
-    },
-    labelMap: {
-      active: 'Active',
-      inactive: 'Inactive',
-    },
-  }
-)
+createBadgeColumn<TData>('status', 'Status', (row) => row.status, {
+  sortable: true,
+  sortBy,
+  sortOrder,
+  onSort,
+  variantMap: {
+    active: 'default',
+    inactive: 'secondary',
+  },
+  labelMap: {
+    active: 'Active',
+    inactive: 'Inactive',
+  },
+})
 ```
 
 ### createNumberColumn
@@ -540,17 +616,12 @@ createBadgeColumn<TData>(
 Creates a number column with formatting.
 
 ```typescript
-createNumberColumn<TData>(
-  'amount',
-  'Amount',
-  (row) => row.amount,
-  {
-    format: 'currency', // 'decimal' | 'integer' | 'currency' | 'percentage'
-    decimals: 2,
-    currency: 'USD',
-    sortable: true,
-  }
-)
+createNumberColumn<TData>('amount', 'Amount', (row) => row.amount, {
+  format: 'currency', // 'decimal' | 'integer' | 'currency' | 'percentage'
+  decimals: 2,
+  currency: 'USD',
+  sortable: true,
+})
 ```
 
 ### createBooleanColumn
@@ -558,17 +629,12 @@ createNumberColumn<TData>(
 Creates a boolean column with badges.
 
 ```typescript
-createBooleanColumn<TData>(
-  'isActive',
-  'Active',
-  (row) => row.isActive,
-  {
-    trueLabel: 'Yes',
-    falseLabel: 'No',
-    trueBadge: 'default',
-    falseBadge: 'secondary',
-  }
-)
+createBooleanColumn<TData>('isActive', 'Active', (row) => row.isActive, {
+  trueLabel: 'Yes',
+  falseLabel: 'No',
+  trueBadge: 'default',
+  falseBadge: 'secondary',
+})
 ```
 
 ### createLinkColumn
@@ -589,21 +655,17 @@ createLinkColumn<TData>(
 Creates an avatar column with image and optional text.
 
 ```typescript
-createAvatarColumn<TData>(
-  'avatar',
-  'Player',
-  {
-    imageAccessorFn: (row) => row.avatarUrl,
-    textAccessorFn: (row) => row.name,
-    fallbackText: (row) => row.name.charAt(0).toUpperCase(),
-    size: 'md', // 'sm' | 'md' | 'lg'
-    shape: 'circle', // 'circle' | 'square'
-    sortable: true,
-    sortBy,
-    sortOrder,
-    onSort,
-  }
-)
+createAvatarColumn<TData>('avatar', 'Player', {
+  imageAccessorFn: (row) => row.avatarUrl,
+  textAccessorFn: (row) => row.name,
+  fallbackText: (row) => row.name.charAt(0).toUpperCase(),
+  size: 'md', // 'sm' | 'md' | 'lg'
+  shape: 'circle', // 'circle' | 'square'
+  sortable: true,
+  sortBy,
+  sortOrder,
+  onSort,
+})
 ```
 
 ### createSortableHeader
@@ -614,75 +676,137 @@ Creates a sortable header with arrow icon.
 createSortableHeader('Name', 'name', sortBy, sortOrder, onSort)
 ```
 
-## CSV Export
+## Export (CSV/Excel)
 
-The table-core system includes a built-in CSV export function.
+The table-core system includes built-in export functionality for both CSV and Excel formats.
 
-### Using exportToCSV
+### Using useTableExport Hook
+
+**ALWAYS** use the `useTableExport` hook for export functionality. It handles loading states and provides a consistent API.
 
 ```typescript
-import { exportToCSV } from '@/lib/table-core'
+import { useTableExport } from '@/lib/table-core'
 
-// Export handler
-const handleExport = React.useCallback(() => {
-  const timestamp = new Date().toISOString().split('T')[0]
-  exportToCSV(
-    entities, // Your data array
-    [
-      { key: 'name', label: 'Name' },
-      { key: 'email', label: 'Email' },
-      { key: 'status', label: 'Status' },
-      { key: 'createdAt', label: 'Created At' },
-    ],
-    `entities-${timestamp}.csv` // Filename
-  )
-}, [entities])
+// In your table component
+const { handleExport, isExporting } = useTableExport<YourEntity>({
+  data: entities,
+  columns: [
+    { key: 'name', label: 'Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'status', label: 'Status' },
+    { key: 'createdAt', label: 'Created At' },
+  ],
+  filename: 'entities',
+  enabled: yourEntityTableConfig.features.export,
+  format: 'csv', // or 'xlsx' for Excel export
+})
 
-// In your component
-<Button onClick={handleExport} disabled={entities.length === 0}>
-  <Download className="mr-2 h-4 w-4" />
-  Export
-</Button>
+// Pass to TableControls
+<TableControls
+  exportEnabled={yourEntityTableConfig.features.export}
+  onExport={handleExport}
+  isExporting={isExporting}
+  // ... other props
+/>
 ```
 
-### Export Function Signature
+### Export Hook Options
 
 ```typescript
-exportToCSV<TData>(
-  data: TData[],
-  columns: { key: keyof TData; label: string }[],
+interface UseTableExportOptions<TData> {
+  data: TData[]
+  columns: { key: keyof TData; label: string }[]
   filename: string
-): void
+  enabled?: boolean
+  format?: 'csv' | 'xlsx' // Default: 'csv'
+  selectedRows?: TData[] // Optional: Export only selected rows
+}
 ```
-
-**Parameters:**
-- `data` - Array of entities to export
-- `columns` - Array of column definitions with `key` (field name) and `label` (CSV header)
-- `filename` - Output filename (e.g., `players-2024-01-15.csv`)
 
 **Features:**
-- Automatically handles CSV formatting and escaping
+
+- Automatically handles CSV/Excel formatting
 - Downloads file directly to user's browser
 - Supports nested object fields
 - Handles null/undefined values gracefully
+- Loading state management
+- Optional: Export only selected rows
+- Excel export with column width auto-sizing
+
+## Filter Reset
+
+When your table has multiple filters, **ALWAYS** implement a filter reset functionality.
+
+### Implementation Pattern
+
+```typescript
+// In your table component
+const handleResetFilters = React.useCallback(() => {
+  onSearchChange?.('')
+  onStatusChange?.(Status.ALL)
+  onCategoryChange?.(undefined)
+  onDateRangeChange?.(undefined)
+  // Reset all filters to their default/empty state
+}, [
+  onSearchChange,
+  onStatusChange,
+  onCategoryChange,
+  onDateRangeChange,
+])
+
+// Pass to TableControls
+<TableControls
+  onResetFilters={handleResetFilters}
+  showResetButton={true}
+  // ... other props
+/>
+```
+
+The reset button will appear in the filters row when `showResetButton={true}` is set.
 
 ## Row Selection & Bulk Actions
 
 The table-core system supports row selection with customizable bulk actions.
 
 **📚 For complete bulk actions guide with examples, see:**
+
 - **[Bulk Actions Guide](./BULK_ACTIONS_GUIDE.md)** - Comprehensive guide with patterns and examples
 - **[Bulk Actions Quick Start](./BULK_ACTIONS_QUICKSTART.md)** - 5-minute setup guide
+
+### Using useTableHandlers for Bulk Actions
+
+For bulk delete operations, you can use the `useTableHandlers` hook:
+
+```typescript
+import { useTableHandlers } from '@/lib/table-core'
+
+const {
+  // ... other handlers
+  handleBulkDeleteConfirm,
+  handleBulkDeleteCancel,
+  isBulkDeleting,
+} = useTableHandlers<YourEntity>({
+  deleteItem: deleteEntity, // Store-based deletion
+  bulkDeleteItem: async (ids: string[]) => {
+    // Custom bulk delete logic
+    await Promise.all(ids.map((id) => deleteEntity(id)))
+  },
+  onRefetch,
+})
+```
 
 ### Enable Row Selection
 
 1. **Enable in config:**
 
 ```typescript
-export const yourEntityTableConfig: TableConfig<YourEntity, YourEntityTableFilters> = {
+export const yourEntityTableConfig: TableConfig<
+  YourEntity,
+  YourEntityTableFilters
+> = {
   // ... other config
   features: {
-    selection: true,  // Enable row selection
+    selection: true, // Enable row selection
     // ... other features
   },
 }
@@ -705,9 +829,10 @@ export function createYourEntityColumns({
   }
 
   // Add your other columns...
-  baseColumns.push(
+  baseColumns
+    .push
     // ... your columns
-  )
+    ()
 
   return baseColumns
 }
@@ -736,18 +861,21 @@ export default function YourEntityTable(props) {
 
   // Bulk action handlers
   const handleBulkDelete = React.useCallback(() => {
-    const ids = selectedItems.map(item => item.id)
+    const ids = selectedItems.map((item) => item.id)
     // Call API to delete items
     handleClearSelection()
   }, [selectedItems, handleClearSelection])
 
   // Pass enableSelection to columns
   const columns = React.useMemo(
-    () => createYourEntityColumns({
-      // ... other options
-      enableSelection: yourEntityTableConfig.features.selection,
-    }),
-    [/* dependencies */]
+    () =>
+      createYourEntityColumns({
+        // ... other options
+        enableSelection: yourEntityTableConfig.features.selection,
+      }),
+    [
+      /* dependencies */
+    ]
   )
 
   return (
@@ -760,7 +888,7 @@ export default function YourEntityTable(props) {
           actions={[
             {
               label: 'Delete Selected',
-              icon: <Trash2 className="h-4 w-4" />,
+              icon: <Trash2 className='h-4 w-4' />,
               variant: 'destructive',
               onClick: handleBulkDelete,
             },
@@ -788,28 +916,92 @@ export default function YourEntityTable(props) {
 
 ## Best Practices
 
-1. **Type Safety**: Always define your entity type and extend `BaseTableEntity` for proper type inference.
+1. **Type Safety**:
 
-2. **Filters**: Extend `Record<string, unknown>` for your filter interfaces to satisfy type constraints.
+   - Always define your entity type and extend `BaseTableEntity` for proper type inference
+   - **ALWAYS** use `SortOrder` enum (never string literals 'asc'/'desc')
+   - Use proper generics for hooks: `useTableSorting<YourEntity, YourSortBy>`
 
-3. **Permissions**: Use permission hooks to conditionally show/hide columns and actions.
+2. **Required Hooks**:
 
-4. **Reusability**: Use column helpers for common patterns, create custom columns when needed.
+   - **ALWAYS** use `useTableSorting` for sorting (never implement manual sorting)
+   - **ALWAYS** use `useTableExport` for export functionality
+   - **ALWAYS** use `useTableHandlers` for standard edit/delete dialogs
 
-5. **Performance**: Use `React.useMemo` for column definitions to prevent unnecessary re-renders.
+3. **Required Components**:
 
-6. **Accessibility**: The table-core system handles ARIA labels, keyboard navigation, and focus management.
+   - **ALWAYS** use `TableControls` component (never use deprecated `TableToolbar`)
+   - **ALWAYS** wrap filters with `TableFilter` component
+   - **ALWAYS** use `BaseDataTable` and `TablePagination` components
 
-7. **Responsive**: The components are mobile-responsive by default.
+4. **Filters**:
 
-## Example: Players Table
+   - Extend `Record<string, unknown>` for your filter interfaces
+   - Implement filter reset when multiple filters exist
+   - Use `TableFilter` wrapper for consistent styling
 
-See the refactored Players table implementation in:
-- Config: `/config/tables/players.config.ts`
-- Columns: `/config/tables/columns/players-columns.tsx`
-- Component: `/app/players/components/players-table-refactored.tsx`
+5. **Column Visibility**:
 
-This serves as a complete reference implementation.
+   - **ALWAYS** set default hidden columns in `columnVisibility` state
+   - Hide optional/less important columns by default
+
+6. **Permissions**: Use permission hooks to conditionally show/hide columns and actions.
+
+7. **Reusability**: Use column helpers for common patterns, create custom columns when needed.
+
+8. **Performance**: Use `React.useMemo` for column definitions to prevent unnecessary re-renders.
+
+9. **Accessibility**: The table-core system handles ARIA labels, keyboard navigation, and focus management.
+
+10. **Responsive**: The components are mobile-responsive by default.
+
+## Reference Implementations
+
+### Full-Featured Table: Players Table
+
+The players table is a complete reference implementation with all features:
+
+- **Config**: `src/config/tables/players.config.ts`
+- **Columns**: `src/config/tables/columns/players-columns.tsx`
+- **Component**: `src/app/players/components/players-table-refactored.tsx`
+
+**Features demonstrated:**
+
+- Multiple filters with reset
+- Bulk actions with row selection
+- Export functionality
+- Column visibility
+- Edit/delete dialogs using `useTableHandlers`
+- Advanced filter components
+
+### Simple Table: Users Table
+
+The users table demonstrates a simpler implementation:
+
+- **Config**: `src/config/tables/users.config.ts`
+- **Columns**: `src/config/tables/columns/users-columns.tsx`
+- **Component**: `src/app/admin/users/components/users-table.tsx`
+
+**Features demonstrated:**
+
+- Single filter
+- Custom dialogs (not using `useTableHandlers`)
+- Column visibility
+- Export setup (disabled in config)
+
+### When to Use Which Pattern
+
+- **Use Players Table pattern** when you need:
+
+  - Multiple filters
+  - Bulk actions
+  - Row selection
+  - Standard edit/delete operations
+
+- **Use Users Table pattern** when you need:
+  - Simple filters
+  - Custom dialogs (e.g., assign role, link user)
+  - No bulk actions
 
 ---
 
@@ -820,6 +1012,7 @@ This serves as a complete reference implementation.
 The Rowad Speedball codebase currently has **two table systems**:
 
 1. **Legacy System** (Multi-file fragmentation):
+
    - `[entity]-table.tsx` - Main component
    - `[entity]-columns.tsx` - Column definitions
    - `[entity]-controls.tsx` - Filters and search
@@ -839,18 +1032,23 @@ The Rowad Speedball codebase currently has **two table systems**:
 **Opportunistic Migration** - No forced migration required.
 
 #### For New Features
+
 ✅ **Always use table-core system**
+
 - Faster development (1 config file vs 7 files)
 - Built-in features (search, filters, sorting, export)
 - Consistent behavior across all tables
 
 #### For Existing Tables
+
 🔄 **Migrate when making significant changes**
+
 - If updating table layout or columns
 - If adding new features (export, bulk actions)
 - If fixing bugs that require extensive refactoring
 
 ⏸️ **Keep legacy system if**
+
 - Table works perfectly as-is
 - Only making minor bug fixes
 - Table will be replaced/removed soon
@@ -858,12 +1056,14 @@ The Rowad Speedball codebase currently has **two table systems**:
 ### Benefits of Migration
 
 **Developer Experience**:
+
 - 7 files → 1 config file (86% reduction)
 - Clear separation of concerns
 - Type-safe column definitions
 - Reusable column helpers
 
 **Features**:
+
 - Built-in CSV export
 - Bulk selection and actions
 - Advanced filtering
@@ -871,12 +1071,14 @@ The Rowad Speedball codebase currently has **two table systems**:
 - Loading states handled automatically
 
 **Maintenance**:
+
 - Easier to understand (all config in one place)
 - Less code to maintain
 - Consistent patterns across tables
 - Better TypeScript inference
 
 **Performance**:
+
 - Optimized rendering
 - Memoized column definitions
 - Efficient selection handling
@@ -960,10 +1162,10 @@ const EntitiesPage = () => {
   const { entities, isLoading } = useEntitiesStore()
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8">
-      <PageHeader title="Entities" />
+    <div className='container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-8'>
+      <PageHeader title='Entities' />
       <Card>
-        <CardContent className="p-6">
+        <CardContent className='p-6'>
           <BaseDataTable
             config={entityTableConfig}
             data={entities}
@@ -995,9 +1197,12 @@ rm src/app/[entity]/components/entity-pagination.tsx
 ### Migration Progress Tracking
 
 **Migrated Tables** (Using table-core):
-- ✅ Players (reference implementation)
+
+- ✅ Players (full-featured reference implementation)
+- ✅ Users (simple table reference implementation)
 
 **Legacy Tables** (To be migrated opportunistically):
+
 - Coaches
 - Events
 - Training Sessions
@@ -1010,12 +1215,14 @@ rm src/app/[entity]/components/entity-pagination.tsx
 The players table has been migrated and serves as the reference implementation:
 
 **Before Migration**:
+
 - 7 separate files in `src/app/players/components/`
 - ~1500 lines of code total
 - Complex state management across files
 - Inconsistent patterns
 
 **After Migration**:
+
 - 1 config file: `src/config/tables/playersTableConfig.ts`
 - 1 columns file: `src/config/tables/columns/players-columns.tsx`
 - ~300 lines of code total
@@ -1024,14 +1231,17 @@ The players table has been migrated and serves as the reference implementation:
 
 **Toggle Implementation**:
 The players page currently has both implementations with a toggle for comparison:
+
 ```typescript
 const [useNewTable, setUseNewTable] = useState(false)
 
-{useNewTable ? (
-  <PlayersTableRefactored /> // table-core
-) : (
-  <PlayersTable />            // legacy
-)}
+{
+  useNewTable ? (
+    <PlayersTableRefactored /> // table-core
+  ) : (
+    <PlayersTable /> // legacy
+  )
+}
 ```
 
 This allows side-by-side comparison during migration period.
@@ -1039,6 +1249,7 @@ This allows side-by-side comparison during migration period.
 ### When Migration is Complete
 
 Eventually, when all tables are migrated:
+
 1. Remove toggle from players page
 2. Delete all legacy table components
 3. Update documentation to reference only table-core
@@ -1047,6 +1258,7 @@ Eventually, when all tables are migrated:
 ### No Forced Migration
 
 **Both systems are fully supported**:
+
 - Legacy tables continue to work
 - No breaking changes
 - Migrate at your own pace

@@ -5,6 +5,7 @@
 
 import { TableConfig } from '@/lib/table-core'
 import type { Test } from '@/types'
+import { SortOrder } from '@/types'
 
 export interface TestsTableFilters extends Record<string, unknown> {
   q?: string
@@ -33,7 +34,7 @@ export const testsTableConfig: TableConfig<Test, TestsTableFilters> = {
   },
   defaultSort: {
     sortBy: 'dateConducted',
-    sortOrder: 'desc',
+    sortOrder: SortOrder.DESC,
   },
   defaultPageSize: 25,
   pageSizeOptions: [10, 25, 50, 100],

@@ -5,7 +5,7 @@
 
 'use client'
 
-import * as React from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
 
 export interface TableSkeletonProps {
   rows?: number
@@ -28,14 +27,14 @@ export function TableSkeleton({
   showHeader = true,
 }: TableSkeletonProps) {
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <div className='rounded-md border overflow-x-auto'>
       <Table>
         {showHeader && (
           <TableHeader>
             <TableRow>
               {Array.from({ length: columns }).map((_, i) => (
                 <TableHead key={i}>
-                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className='h-4 w-24' />
                 </TableHead>
               ))}
             </TableRow>
@@ -46,7 +45,7 @@ export function TableSkeleton({
             <TableRow key={rowIndex}>
               {Array.from({ length: columns }).map((_, colIndex) => (
                 <TableCell key={colIndex}>
-                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className='h-4 w-full' />
                 </TableCell>
               ))}
             </TableRow>

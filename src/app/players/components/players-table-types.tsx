@@ -1,5 +1,5 @@
 import { SortableField } from './players-table-utils'
-import { Player } from '@/types'
+import { Player, SortOrder } from '@/types'
 import { Gender, AgeGroup, Team } from '../types/enums'
 
 export interface PlayersTableProps {
@@ -23,8 +23,8 @@ export interface PlayersTableProps {
   onTeamChange?: (team: Team) => void
   onOrganizationChange?: (organizationId: string | null) => void
   sortBy?: SortableField
-  sortOrder?: 'asc' | 'desc'
-  onSortingChange?: (sortBy?: SortableField, sortOrder?: 'asc' | 'desc') => void
+  sortOrder?: SortOrder
+  onSortingChange?: (sortBy?: string, sortOrder?: SortOrder) => void
   isLoading?: boolean
   onRefetch?: () => void
 }

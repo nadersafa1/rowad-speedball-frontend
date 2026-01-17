@@ -140,3 +140,64 @@ export function checkUserListAuthorization(
     'Only system admins, org admins, and org coaches can list users'
   )
 }
+
+/**
+ * Check if user has authorization to update another user's federation role
+ * Returns Response if unauthorized, null if authorized
+ *
+ * Authorization rules:
+ * - Must be authenticated
+ * - System admins can assign any federation role to any user
+ * - Federation admins can only assign 'federation-editor' role within their federation
+ * - Cannot change a system admin's federation role
+ */
+export function checkUserFederationRoleUpdateAuthorization(
+  context: OrganizationContext,
+  targetUserId: string,
+  newRole: string | null,
+  federationId: string | null
+): AuthorizationResult {
+  // Require authentication
+  const authCheck = requireAuthentication(context)
+  if (authCheck) return authCheck
+
+  // System admins can update any user's federation role
+  if (isSystemAdmin(context)) {
+    return null
+  }
+
+  // Federation admins have limited permissions
+  if (context.isFederationAdmin) {
+    // Can only assign 'federation-editor' role (not 'federation-admin')
+    if (newRole === 'federation-admin') {
+      return forbiddenResponse(
+        'Federation admins cannot assign federation-admin role'
+      )
+    }
+
+    // Can only assign within their own federation
+    if (federationId && federationId !== context.federationId) {
+      return forbiddenResponse(
+        'Federation admins can only assign roles within their own federation'
+      )
+    }
+
+    // Can only remove federation roles within their own federation
+    if (newRole === null && context.federationId) {
+      return null
+    }
+
+    // If assigning federation-editor, must be within their federation
+    if (newRole === 'federation-editor' && federationId === context.federationId) {
+      return null
+    }
+
+    return forbiddenResponse(
+      'Federation admins can only assign federation-editor role within their federation'
+    )
+  }
+
+  return forbiddenResponse(
+    'Only system admins and federation admins can update federation roles'
+  )
+}

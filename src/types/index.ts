@@ -375,3 +375,8 @@ export type {
   PointsSchema,
   PointsSchemaEntry,
 } from '@/db/schema'
+
+export enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
+}
