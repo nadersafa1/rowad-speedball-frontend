@@ -1,19 +1,21 @@
 'use client'
 
 import FederationForm from '@/components/federations/federation-form'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, Unauthorized } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import type { FederationsSortBy } from '@/config/tables/federations.config'
 import { useFederationPermissions } from '@/hooks/authorization/use-federation-permissions'
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { SortOrder } from '@/types'
 import { Building2, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { SortOrder } from '@/types'
 import FederationsTable from './components/federations-table'
 import { useFederations } from './hooks/use-federations'
-import type { FederationsSortBy } from '@/config/tables/federations.config'
 
 const FederationsPage = () => {
   const { canCreate } = useFederationPermissions(null)
+  const { isSystemAdmin } = useRoles()
 
   const [federationFormOpen, setFederationFormOpen] = useState(false)
 
@@ -41,6 +43,8 @@ const FederationsPage = () => {
     handlePageChange,
     refetch,
   } = useFederations(filters)
+
+  if (!isSystemAdmin) return <Unauthorized />
 
   if (error) {
     return (
