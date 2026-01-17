@@ -1,9 +1,14 @@
 'use client'
 
 import { Calendar } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
-import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { PageHeader, Unauthorized } from '@/components/ui'
 import SeasonRegistrationForm from '@/components/seasons/season-registration-form'
 import { useRoles } from '@/hooks/authorization/use-roles'
 import { useOrganization } from '@/hooks/authorization/use-organization'
@@ -13,7 +18,12 @@ import { toast } from 'sonner'
 export default function SeasonRegistrationPage() {
   const router = useRouter()
   const { isLoading: rolesLoading } = useRoles()
-  const { isOwner, isAdmin, organizationId, isLoading: orgLoading } = useOrganization()
+  const {
+    isOwner,
+    isAdmin,
+    organizationId,
+    isLoading: orgLoading,
+  } = useOrganization()
 
   // Check if user has access (must be owner or admin)
   const hasAccess = isOwner || isAdmin
@@ -37,13 +47,7 @@ export default function SeasonRegistrationPage() {
 
   // Show unauthorized access component if not owner/admin
   if (!hasAccess || !organizationId) {
-    return (
-      <UnauthorizedAccess
-        title='Organization Admin Access Required'
-        message='Only organization owners and admins can register players for federation seasons. This ensures proper oversight of player registrations and federation membership.'
-        requiredRole='Organization Owner or Admin'
-      />
-    )
+    return <Unauthorized />
   }
 
   return (
@@ -67,23 +71,25 @@ export default function SeasonRegistrationPage() {
         </CardHeader>
         <CardContent className='text-sm text-blue-900 dark:text-blue-100 space-y-2'>
           <div>
-            <span className='font-semibold'>Federation Membership:</span> Players not yet
-            registered with the federation will need a federation ID number. This will be
-            their permanent identifier across all seasons.
+            <span className='font-semibold'>Federation Membership:</span>{' '}
+            Players not yet registered with the federation will need a
+            federation ID number. This will be their permanent identifier across
+            all seasons.
           </div>
           <div>
-            <span className='font-semibold'>Age Groups:</span> Players can register for
-            multiple age groups within a season (subject to season limits). Age warnings
-            are shown but do not block registration.
+            <span className='font-semibold'>Age Groups:</span> Players can
+            register for multiple age groups within a season (subject to season
+            limits). Age warnings are shown but do not block registration.
           </div>
           <div>
-            <span className='font-semibold'>Approval Process:</span> All registrations are
-            submitted to the federation admin for review and approval. You will be
-            notified once your registrations are processed.
+            <span className='font-semibold'>Approval Process:</span> All
+            registrations are submitted to the federation admin for review and
+            approval. You will be notified once your registrations are
+            processed.
           </div>
           <div className='text-xs text-blue-700 dark:text-blue-400 mt-2'>
-            Note: This replaces the previous bulk federation application system with a
-            more flexible season-based approach.
+            Note: This replaces the previous bulk federation application system
+            with a more flexible season-based approach.
           </div>
         </CardContent>
       </Card>

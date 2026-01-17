@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Plus, Calendar } from 'lucide-react'
+import SeasonForm from '@/components/seasons/season-form'
+import { PageHeader, Unauthorized } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,17 +10,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
-import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
-import SeasonForm from '@/components/seasons/season-form'
-import SeasonsTable from './components/seasons-table'
-import { useSeasonsStore } from '@/store/seasons-store'
-import { useRoles } from '@/hooks/authorization/use-roles'
 import { useFederation } from '@/hooks/authorization/use-federation'
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { useSeasonsStore } from '@/store/seasons-store'
+import { Calendar, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import SeasonsTable from './components/seasons-table'
 
 const SeasonsPage = () => {
-  const { isFederationAdmin, isFederationEditor, isSystemAdmin, isLoading: rolesLoading } =
-    useRoles()
+  const {
+    isFederationAdmin,
+    isFederationEditor,
+    isSystemAdmin,
+    isLoading: rolesLoading,
+  } = useRoles()
   const { federationId } = useFederation()
   const { fetchSeasons, isLoading, error, clearError } = useSeasonsStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -52,13 +55,7 @@ const SeasonsPage = () => {
 
   // Show unauthorized access component if not federation admin/editor
   if (!hasAccess) {
-    return (
-      <UnauthorizedAccess
-        title='Federation Admin Access Required'
-        message='Only federation administrators and editors can manage seasons. Seasons are yearly periods where players register for specific age groups and compete in tournaments.'
-        requiredRole='Federation Administrator or Editor'
-      />
-    )
+    return <Unauthorized />
   }
 
   // Show error state
@@ -117,23 +114,25 @@ const SeasonsPage = () => {
             About Federation Seasons
           </CardTitle>
           <CardDescription className='text-blue-700 dark:text-blue-300'>
-            Seasons are yearly periods where players register for specific age groups
+            Seasons are yearly periods where players register for specific age
+            groups
           </CardDescription>
         </CardHeader>
         <CardContent className='text-sm text-blue-900 dark:text-blue-100 space-y-2'>
           <div>
-            <span className='font-semibold'>Season Structure:</span> Each season spans
-            one year (e.g., 2024-2025) and has defined start/end dates for
+            <span className='font-semibold'>Season Structure:</span> Each season
+            spans one year (e.g., 2024-2025) and has defined start/end dates for
             competitions.
           </div>
           <div>
-            <span className='font-semibold'>Registration Periods:</span> Configure up to
-            two registration windows when clubs can register players for age groups.
+            <span className='font-semibold'>Registration Periods:</span>{' '}
+            Configure up to two registration windows when clubs can register
+            players for age groups.
           </div>
           <div>
             <span className='font-semibold'>Age Groups:</span> Define custom age
-            categories (e.g., U-16, U-19, Seniors) with flexible age restrictions for
-            each season.
+            categories (e.g., U-16, U-19, Seniors) with flexible age
+            restrictions for each season.
           </div>
           <div className='text-xs text-blue-700 dark:text-blue-400 mt-2'>
             Note: Players maintain permanent federation membership, but register

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Plus, Award } from 'lucide-react'
+import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
+import { PageHeader, Unauthorized } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,14 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
-import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
-import PointsSchemaForm from '@/components/points-schemas/points-schema-form'
-import PointsSchemasTable from './components/points-schemas-table'
-import { usePointsSchemasStore } from '@/store/points-schemas-store'
-import { useFederation } from '@/hooks/authorization/use-federation'
-import { SortOrder } from '@/types'
 import type { PointsSchemasSortBy } from '@/config/tables/points-schemas.config'
+import { useFederation } from '@/hooks/authorization/use-federation'
+import { usePointsSchemasStore } from '@/store/points-schemas-store'
+import { SortOrder } from '@/types'
+import { Award, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import PointsSchemasTable from './components/points-schemas-table'
 
 const PointsSchemasPage = () => {
   const {
@@ -73,13 +72,7 @@ const PointsSchemasPage = () => {
 
   // Show unauthorized access component if not authorized
   if (!hasAccess) {
-    return (
-      <UnauthorizedAccess
-        title='Federation Admin Access Required'
-        message='Only system administrators and federation administrators can manage points schemas. These are global configuration settings that define how championship points are awarded.'
-        requiredRole='System Administrator or Federation Administrator'
-      />
-    )
+    return <Unauthorized />
   }
 
   // Show error state

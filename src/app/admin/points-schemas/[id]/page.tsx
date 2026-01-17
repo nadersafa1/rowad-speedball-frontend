@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Plus } from 'lucide-react'
+import PointsSchemaEntryForm from '@/components/points-schemas/points-schema-entry-form'
+import { SinglePageHeader, Unauthorized } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,21 +10,28 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { SinglePageHeader } from '@/components/ui'
-import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
 import { Skeleton } from '@/components/ui/skeleton'
-import PointsSchemaEntryForm from '@/components/points-schemas/points-schema-entry-form'
-import PointsSchemaEntriesTable from './components/points-schema-entries-table'
-import { usePointsSchemasStore } from '@/store/points-schemas-store'
-import { usePointsSchemaEntriesStore } from '@/store/points-schema-entries-store'
+import type { PointsSchemaEntriesSortBy } from '@/config/tables/points-schema-entries.config'
 import { useFederation } from '@/hooks/authorization/use-federation'
+import { usePointsSchemaEntriesStore } from '@/store/points-schema-entries-store'
+import { usePointsSchemasStore } from '@/store/points-schemas-store'
+import { SortOrder } from '@/types'
+import { Plus } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import PointsSchemaEntriesTable from './components/points-schema-entries-table'
 
 const PointsSchemaDetailPage = () => {
   const params = useParams()
   const router = useRouter()
   const schemaId = params.id as string
 
-  const { isSystemAdmin, isFederationAdmin, isFederationEditor, isLoading: contextLoading } = useFederation()
+  const {
+    isSystemAdmin,
+    isFederationAdmin,
+    isFederationEditor,
+    isLoading: contextLoading,
+  } = useFederation()
   const {
     selectedSchema,
     fetchSchema,
@@ -38,8 +44,22 @@ const PointsSchemaDetailPage = () => {
     isLoading: entriesLoading,
     error: entriesError,
     clearError,
+    pagination,
   } = usePointsSchemaEntriesStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+
+  // Local filter state for sorting and pagination
+  const [filters, setFilters] = useState<{
+    sortBy: PointsSchemaEntriesSortBy
+    sortOrder: SortOrder
+    page: number
+    limit: number
+  }>({
+    sortBy: 'rank',
+    sortOrder: SortOrder.ASC,
+    page: 1,
+    limit: 25,
+  })
 
   // Check if user is system admin or federation admin/editor
   const hasAccess = isSystemAdmin || isFederationAdmin || isFederationEditor
@@ -51,19 +71,21 @@ const PointsSchemaDetailPage = () => {
       // Fetch entries for this schema
       fetchEntries({
         pointsSchemaId: schemaId,
-        sortBy: 'points',
-        sortOrder: 'desc',
-        limit: 100,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        page: filters.page,
+        limit: filters.limit,
       })
     }
-  }, [schemaId, hasAccess, contextLoading, fetchSchema, fetchEntries])
+  }, [schemaId, hasAccess, contextLoading, fetchSchema, fetchEntries, filters])
 
   const handleRefetch = () => {
     fetchEntries({
       pointsSchemaId: schemaId,
-      sortBy: 'points',
-      sortOrder: 'desc',
-      limit: 100,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
+      page: filters.page,
+      limit: filters.limit,
     })
   }
 
@@ -80,13 +102,7 @@ const PointsSchemaDetailPage = () => {
 
   // Show unauthorized access component if not authorized
   if (!hasAccess) {
-    return (
-      <UnauthorizedAccess
-        title='Federation Admin Access Required'
-        message='Only system administrators and federation administrators can manage points schemas and their entries.'
-        requiredRole='System Administrator or Federation Administrator'
-      />
-    )
+    return <Unauthorized />
   }
 
   // Show schema loading state
@@ -219,6 +235,46 @@ const PointsSchemaDetailPage = () => {
       <div className='mt-6'>
         <PointsSchemaEntriesTable
           pointsSchemaId={schemaId}
+          entries={entries}
+          pagination={pagination}
+          onPageChange={(page) => {
+            setFilters({ ...filters, page })
+            fetchEntries({
+              pointsSchemaId: schemaId,
+              sortBy: filters.sortBy,
+              sortOrder: filters.sortOrder,
+              page,
+              limit: filters.limit,
+            })
+          }}
+          onPageSizeChange={(pageSize) => {
+            setFilters({ ...filters, limit: pageSize, page: 1 })
+            fetchEntries({
+              pointsSchemaId: schemaId,
+              sortBy: filters.sortBy,
+              sortOrder: filters.sortOrder,
+              page: 1,
+              limit: pageSize,
+            })
+          }}
+          sortBy={filters.sortBy}
+          sortOrder={filters.sortOrder}
+          onSortingChange={(sortBy, sortOrder) => {
+            setFilters({
+              ...filters,
+              sortBy: sortBy || 'rank',
+              sortOrder: sortOrder || SortOrder.ASC,
+              page: 1,
+            })
+            fetchEntries({
+              pointsSchemaId: schemaId,
+              sortBy: sortBy || 'rank',
+              sortOrder: sortOrder || SortOrder.ASC,
+              page: 1,
+              limit: filters.limit,
+            })
+          }}
+          isLoading={entriesLoading}
           onRefetch={handleRefetch}
         />
       </div>

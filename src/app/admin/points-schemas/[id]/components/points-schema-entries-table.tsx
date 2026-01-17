@@ -1,25 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Dialog } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import PointsSchemaEntryForm from '@/components/points-schemas/points-schema-entry-form'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,249 +11,303 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { MoreHorizontal, Pencil, Trash2, SortAsc, SortDesc } from 'lucide-react'
-import { usePointsSchemaEntriesStore } from '@/store/points-schema-entries-store'
-import PointsSchemaEntryForm from '@/components/points-schemas/points-schema-entry-form'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { createPointsSchemaEntriesColumns } from '@/config/tables/columns/points-schema-entries-columns'
+import {
+  pointsSchemaEntriesTableConfig,
+  type PointsSchemaEntriesSortBy,
+  type PointsSchemaEntryWithTier,
+} from '@/config/tables/points-schema-entries.config'
+import { useFederation } from '@/hooks/authorization/use-federation'
+import {
+  BaseDataTable,
+  PaginationConfig,
+  TableControls,
+  TablePagination,
+  useTableExport,
+  useTableHandlers,
+  useTableSorting,
+} from '@/lib/table-core'
+import { SortOrder } from '@/types'
+import {
+  getCoreRowModel,
+  useReactTable,
+  VisibilityState,
+} from '@tanstack/react-table'
+import * as React from 'react'
 import { toast } from 'sonner'
 
-interface PointsSchemaEntriesTableProps {
+export interface PointsSchemaEntriesTableProps {
   pointsSchemaId: string
+  entries: PointsSchemaEntryWithTier[]
+  pagination: PaginationConfig
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
+  sortBy?: PointsSchemaEntriesSortBy
+  sortOrder?: SortOrder
+  onSortingChange?: (
+    sortBy?: PointsSchemaEntriesSortBy,
+    sortOrder?: SortOrder
+  ) => void
+  isLoading?: boolean
   onRefetch: () => void
 }
 
 export default function PointsSchemaEntriesTable({
   pointsSchemaId,
+  entries: rawEntries,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  sortBy = 'rank',
+  sortOrder = SortOrder.ASC,
+  onSortingChange,
+  isLoading = false,
   onRefetch,
 }: PointsSchemaEntriesTableProps) {
-  const { entries, isLoading, deleteEntry } = usePointsSchemaEntriesStore()
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedEntry, setSelectedEntry] = useState<any | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [entryToDelete, setEntryToDelete] = useState<any | null>(null)
-  const [sortBy, setSortBy] = useState<'rank' | 'points'>('rank')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-
-  const handleEdit = (entry: any) => {
-    setSelectedEntry(entry)
-    setEditDialogOpen(true)
-  }
-
-  const handleDeleteClick = (entry: any) => {
-    setEntryToDelete(entry)
-    setDeleteDialogOpen(true)
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (!entryToDelete) return
-
-    try {
-      await deleteEntry(entryToDelete.id)
-      toast.success('Points entry deleted successfully')
-      onRefetch()
-    } catch (error: any) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to delete points entry'
-      )
-    } finally {
-      setDeleteDialogOpen(false)
-      setEntryToDelete(null)
-    }
-  }
-
-  const toggleSort = (column: 'rank' | 'points') => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(column)
-      setSortOrder('asc')
-    }
-  }
-
-  // Sort entries
-  const sortedEntries = [...entries].sort((a, b) => {
-    let comparison = 0
+  // Client-side sorting for 'rank' (since API doesn't support it)
+  // API sorting for 'points', 'createdAt', 'updatedAt'
+  const entries = React.useMemo(() => {
     if (sortBy === 'rank') {
-      comparison = (a.placementTier?.rank || 0) - (b.placementTier?.rank || 0)
-    } else {
-      comparison = a.points - b.points
+      return [...rawEntries].sort((a, b) => {
+        const rankA = a.placementTier?.rank ?? 0
+        const rankB = b.placementTier?.rank ?? 0
+        const comparison = rankA - rankB
+        return sortOrder === SortOrder.ASC ? comparison : -comparison
+      })
     }
-    return sortOrder === 'asc' ? comparison : -comparison
+    // For other sortBy values, API handles sorting
+    return rawEntries
+  }, [rawEntries, sortBy, sortOrder])
+  const { isSystemAdmin, isFederationAdmin, isFederationEditor } =
+    useFederation()
+
+  // Permission checks
+  const canEdit = isSystemAdmin || isFederationAdmin || isFederationEditor
+  const canDelete = isSystemAdmin || isFederationAdmin
+
+  // Column visibility state
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({
+      displayName: false,
+    })
+
+  // Use table sorting hook
+  // Note: 'rank' sorting is handled client-side, other fields use API sorting
+  const { handleSort } = useTableSorting<
+    PointsSchemaEntryWithTier,
+    PointsSchemaEntriesSortBy
+  >({
+    sortBy: sortBy === 'rank' ? undefined : sortBy, // Don't pass 'rank' to API
+    sortOrder: sortBy === 'rank' ? undefined : sortOrder, // Don't pass sortOrder for client-side sorting
+    onSortingChange: (
+      newSortBy?: PointsSchemaEntriesSortBy,
+      newSortOrder?: SortOrder
+    ) => {
+      onSortingChange?.(newSortBy, newSortOrder)
+    },
+  })
+
+  // Use table handlers hook
+  const {
+    editingItem: editEntry,
+    editDialogOpen,
+    setEditDialogOpen,
+    handleEdit,
+    handleDelete,
+    handleEditSuccess,
+    deletingItem,
+    handleDeleteConfirm,
+    deleteDialogOpen,
+    isDeleting,
+    handleDeleteCancel,
+    setDeleteDialogOpen,
+  } = useTableHandlers<PointsSchemaEntryWithTier>({
+    deleteItem: async (id: string) => {
+      const { usePointsSchemaEntriesStore } = await import(
+        '@/store/points-schema-entries-store'
+      )
+      const { deleteEntry } = usePointsSchemaEntriesStore.getState()
+      try {
+        await deleteEntry(id)
+        toast.success('Points entry deleted successfully')
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete points entry'
+        )
+        throw error
+      }
+    },
+    onRefetch,
   })
 
   // Get existing tier IDs for the form
   const existingTierIds = entries.map((e) => e.placementTierId)
 
-  if (isLoading) {
-    return (
-      <div className='rounded-md border'>
-        <div className='p-8 text-center text-muted-foreground'>
-          Loading points entries...
-        </div>
-      </div>
-    )
+  // Create columns
+  const columns = React.useMemo(
+    () =>
+      createPointsSchemaEntriesColumns({
+        canEdit,
+        canDelete,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+        sortBy,
+        sortOrder,
+        onSort: (columnId: string) =>
+          handleSort(columnId as PointsSchemaEntriesSortBy),
+      }),
+    [
+      canEdit,
+      canDelete,
+      handleEdit,
+      handleDelete,
+      sortBy,
+      sortOrder,
+      handleSort,
+    ]
+  )
+
+  // Initialize table for column visibility control
+  const table = useReactTable({
+    data: entries,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    state: {
+      columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
+  })
+
+  // Export functionality - map computed fields to exportable data
+  type ExportableEntry = PointsSchemaEntryWithTier & {
+    rank: number
+    tierName: string
+    displayName: string
   }
 
-  return (
-    <>
-      {/* Table Header Info */}
-      <div className='mb-4 flex items-center justify-between'>
-        <Badge variant='outline' className='text-sm'>
-          {sortedEntries.length} entr{sortedEntries.length !== 1 ? 'ies' : 'y'}
-        </Badge>
-        {sortedEntries.length > 0 && (
-          <div className='text-sm text-muted-foreground'>
-            Total points range: {Math.min(...entries.map((e) => e.points))} -{' '}
-            {Math.max(...entries.map((e) => e.points))}
-          </div>
-        )}
-      </div>
+  const exportableData: ExportableEntry[] = entries.map((entry) => ({
+    ...entry,
+    rank: entry.placementTier?.rank ?? 0,
+    tierName: entry.placementTier?.name ?? 'Unknown',
+    displayName: entry.placementTier?.displayName ?? '-',
+  }))
 
-      {/* Table */}
-      <div className='rounded-md border'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className='w-[100px]'>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-8 px-2'
-                  onClick={() => toggleSort('rank')}
-                >
-                  Rank
-                  {sortBy === 'rank' &&
-                    (sortOrder === 'asc' ? (
-                      <SortAsc className='ml-1 h-3 w-3' />
-                    ) : (
-                      <SortDesc className='ml-1 h-3 w-3' />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead>Tier Name</TableHead>
-              <TableHead className='hidden md:table-cell'>
-                Display Name
-              </TableHead>
-              <TableHead className='w-[120px]'>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-8 px-2'
-                  onClick={() => toggleSort('points')}
-                >
-                  Points
-                  {sortBy === 'points' &&
-                    (sortOrder === 'asc' ? (
-                      <SortAsc className='ml-1 h-3 w-3' />
-                    ) : (
-                      <SortDesc className='ml-1 h-3 w-3' />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead className='w-[70px]'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedEntries.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className='h-24 text-center'>
-                  No points entries yet. Create your first one to define how
-                  points are awarded!
-                </TableCell>
-              </TableRow>
-            ) : (
-              sortedEntries.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell>
-                    <Badge variant='secondary'>
-                      {entry.placementTier?.rank || '-'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className='font-mono font-semibold'>
-                    {entry.placementTier?.name || 'Unknown'}
-                  </TableCell>
-                  <TableCell className='hidden md:table-cell'>
-                    {entry.placementTier?.displayName || '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant='outline'
-                      className='font-semibold text-base'
-                    >
-                      {entry.points}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant='ghost' size='icon' className='h-8 w-8'>
-                          <MoreHorizontal className='h-4 w-4' />
-                          <span className='sr-only'>Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end'>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleEdit(entry)}>
-                          <Pencil className='mr-2 h-4 w-4' />
-                          Edit Points
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteClick(entry)}
-                          className='text-destructive'
-                        >
-                          <Trash2 className='mr-2 h-4 w-4' />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+  const { handleExport, isExporting } = useTableExport<ExportableEntry>({
+    data: exportableData,
+    columns: [
+      { key: 'rank', label: 'Rank' },
+      { key: 'tierName', label: 'Tier Name' },
+      { key: 'displayName', label: 'Display Name' },
+      { key: 'points', label: 'Points' },
+    ],
+    filename: 'points-schema-entries',
+    enabled: pointsSchemaEntriesTableConfig.features.export,
+  })
+
+  // Column label mapping helper
+  const getColumnLabel = React.useCallback((columnId: string) => {
+    const labels: Record<string, string> = {
+      rank: 'Rank',
+      tierName: 'Tier Name',
+      displayName: 'Display Name',
+      points: 'Points',
+    }
+    return labels[columnId] || columnId
+  }, [])
+
+  return (
+    <div className='w-full space-y-4'>
+      {/* Table Controls */}
+      <TableControls<PointsSchemaEntryWithTier>
+        searchValue=''
+        onSearchChange={() => {}}
+        table={table}
+        getColumnLabel={getColumnLabel}
+        exportEnabled={pointsSchemaEntriesTableConfig.features.export}
+        onExport={handleExport}
+        isExporting={isExporting}
+      />
+
+      {/* Data Table */}
+      <BaseDataTable
+        data={entries}
+        columns={columns}
+        pagination={pagination}
+        isLoading={isLoading}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+        emptyMessage='No points entries yet. Create your first one to define how points are awarded!'
+      />
+
+      {/* Pagination */}
+      {pointsSchemaEntriesTableConfig.features.pagination && (
+        <TablePagination
+          pagination={pagination}
+          onPageChange={onPageChange ?? (() => {})}
+          onPageSizeChange={onPageSizeChange ?? (() => {})}
+          pageSizeOptions={pointsSchemaEntriesTableConfig.pageSizeOptions}
+        />
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <PointsSchemaEntryForm
-          pointsSchemaId={pointsSchemaId}
-          entry={selectedEntry || undefined}
-          existingTierIds={existingTierIds}
-          onSuccess={() => {
-            setEditDialogOpen(false)
-            setSelectedEntry(null)
-            onRefetch()
-          }}
-          onCancel={() => {
-            setEditDialogOpen(false)
-            setSelectedEntry(null)
-          }}
-        />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editEntry ? 'Edit Points Entry' : 'Create Points Entry'}
+            </DialogTitle>
+          </DialogHeader>
+          <PointsSchemaEntryForm
+            pointsSchemaId={pointsSchemaId}
+            entry={editEntry || undefined}
+            existingTierIds={existingTierIds}
+            onSuccess={() => {
+              handleEditSuccess()
+              onRefetch()
+            }}
+            onCancel={() => {
+              setEditDialogOpen(false)
+            }}
+          />
+        </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Points Entry</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the points entry for "
-              {entryToDelete?.placementTier?.name}" ({entryToDelete?.points}{' '}
-              points). This action cannot be undone.
+              Are you sure you want to delete the points entry for "
+              {deletingItem?.placementTier?.name}" ({deletingItem?.points}{' '}
+              points)? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              disabled={isDeleting}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >
-              Delete
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 }

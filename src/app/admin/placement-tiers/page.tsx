@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Plus, Award } from 'lucide-react'
+import PlacementTierForm from '@/components/placement-tiers/placement-tier-form'
+import { PageHeader, Unauthorized } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,14 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
-import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
-import PlacementTierForm from '@/components/placement-tiers/placement-tier-form'
-import PlacementTiersTable from './components/placement-tiers-table'
-import { usePlacementTiersStore } from '@/store/placement-tiers-store'
-import { useRoles } from '@/hooks/authorization/use-roles'
-import { SortOrder } from '@/types'
 import type { PlacementTiersSortBy } from '@/config/tables/placement-tiers.config'
+import { useRoles } from '@/hooks/authorization/use-roles'
+import { usePlacementTiersStore } from '@/store/placement-tiers-store'
+import { SortOrder } from '@/types'
+import { Award, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import PlacementTiersTable from './components/placement-tiers-table'
 
 const PlacementTiersPage = () => {
   const { isSystemAdmin, isLoading: contextLoading } = useRoles()
@@ -65,13 +64,7 @@ const PlacementTiersPage = () => {
 
   // Show unauthorized access component if not system admin
   if (!isSystemAdmin) {
-    return (
-      <UnauthorizedAccess
-        title='System Admin Access Required'
-        message='Only system administrators can manage placement tiers. These are global configuration settings that affect the entire ranking system.'
-        requiredRole='System Administrator'
-      />
-    )
+    return <Unauthorized />
   }
 
   // Show error state

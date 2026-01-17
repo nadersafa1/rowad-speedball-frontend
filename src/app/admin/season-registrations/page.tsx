@@ -1,30 +1,20 @@
 'use client'
 
 import {
+  ApproveRegistrationDialog,
+  RejectRegistrationDialog,
+} from '@/components/seasons/registration-action-dialogs'
+import { PageHeader, Unauthorized } from '@/components/ui'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui'
-import { ClipboardCheck, Calendar } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
-import { useRoles } from '@/hooks/authorization/use-roles'
-import { useFederation } from '@/hooks/authorization/use-federation'
-import { UnauthorizedAccess } from '@/components/shared/unauthorized-access'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Dialog } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -33,15 +23,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, AlertCircle, CheckCircle2, XCircle } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Season } from '@/db/schema'
+import { useFederation } from '@/hooks/authorization/use-federation'
+import { useRoles } from '@/hooks/authorization/use-roles'
 import { apiClient } from '@/lib/api-client'
-import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
 import {
-  ApproveRegistrationDialog,
-  RejectRegistrationDialog,
-} from '@/components/seasons/registration-action-dialogs'
-import { Season } from '@/db/schema'
+  AlertCircle,
+  CheckCircle2,
+  ClipboardCheck,
+  Search,
+  XCircle,
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export default function SeasonRegistrationsPage() {
   const {
@@ -207,13 +211,7 @@ export default function SeasonRegistrationsPage() {
 
   // Show unauthorized access
   if (!hasAccess) {
-    return (
-      <UnauthorizedAccess
-        title='Federation Admin Access Required'
-        message='Only federation administrators and editors can manage season registrations. This includes approving or rejecting player registrations for federation seasons.'
-        requiredRole='Federation Administrator or Editor'
-      />
-    )
+    return <Unauthorized />
   }
 
   return (
@@ -378,7 +376,9 @@ export default function SeasonRegistrationsPage() {
                             </TableCell>
                             <TableCell className='hidden lg:table-cell'>
                               <div className='flex items-center gap-2'>
-                                <span>{reg.playerAgeAtRegistration || 'N/A'}</span>
+                                <span>
+                                  {reg.playerAgeAtRegistration || 'N/A'}
+                                </span>
                                 {reg.ageWarningType === 'too_young' && (
                                   <Badge
                                     variant='outline'
